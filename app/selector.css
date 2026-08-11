@@ -1,0 +1,269 @@
+/* ==========================================================================
+   FROM THE STUDIO (components/Selector.tsx) — the client's InteractiveSelector
+   rebuilt on this project's plain CSS. Everything the original set through
+   inline style objects lives here instead: it was recomputing flex, shadow,
+   border, cursor and will-change per panel per render for values that never
+   change.
+
+   The original also hard-set `min-width: 600px` on the row, which on a phone
+   is a horizontal scrollbar across the whole page. Below 861px this is a
+   stack of real cards with their titles showing — the same content, laid out
+   for the screen it is on rather than squeezed onto it.
+   ========================================================================== */
+.ap-isel {
+  padding: 0 var(--gutter) clamp(40px, 6vh, 80px);
+}
+
+/* the standing-in note, in the accent that always means "not yet" here */
+.ap-isel__pending {
+  margin: 14px 0 0;
+  max-width: 56ch;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--terracotta-ink);
+}
+
+.ap-isel__strip {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ap-isel__panel {
+  position: relative;
+  display: block;
+  /* THE FRAME IS THE FILM. --ar is the piece's real pixel shape, handed down
+     from lib/content.ts, so a card carries the whole composition rather than a
+     horizontal band cut through the middle of it. Height-capped, because a
+     9:16 reel at full phone width would stand taller than the phone. */
+  width: min(100%, calc(56svh * var(--ar, 0.5625)));
+  aspect-ratio: var(--ar, 0.5625);
+  margin-inline: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 10px;
+  background: var(--paper-3);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 10px 30px -22px rgba(35, 40, 52, 0.5);
+}
+
+.ap-isel__media {
+  position: absolute;
+  inset: 0;
+}
+.ap-isel__img,
+.ap-isel__vid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* THE BED IS GONE (client 2026-08-10). An open panel used to be a wide
+   rectangle, so a 9:16 film had to sit `contain`ed in the middle of it on a
+   blurred, over-scaled copy of its own poster. The frame is now built from the
+   film's own dimensions instead — see the [data-on] width below — so the
+   picture fills it edge to edge with `cover` and there is nothing left over to
+   fill. One less blurred surface, one less repaint, and the film is shown at
+   its own shape rather than pasted onto someone else's. */
+
+/* The label's ground. The original painted this with two stacked inset
+   box-shadows on a 120px block that slid up from -40px; a gradient does the
+   same job in one paint and does not bleed outside the panel. */
+.ap-isel__scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62%;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(18, 20, 28, 0.92), rgba(18, 20, 28, 0.45) 45%, transparent);
+}
+
+.ap-isel__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  pointer-events: none;
+}
+.ap-isel__badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, #fff 34%, transparent);
+  background: rgba(32, 32, 32, 0.82);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.ap-isel__info {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.ap-isel__title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+}
+.ap-isel__line {
+  font-size: 12.5px;
+  /* not --ink-muted: this sits on a dark scrim, not on paper */
+  color: color-mix(in srgb, #fff 74%, transparent);
+}
+
+.ap-isel__panel:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   THE ACCORDION — desktop only. Five panels sharing one row is a shape that
+   needs width; the gate matches the rest of the site's moved layer.
+   -------------------------------------------------------------------------- */
+@media (min-width: 861px) {
+  .ap-isel__strip {
+    /* ONE height for the row, named, because the open panel's width is
+       derived from it below */
+    --isel-h: clamp(400px, 64vh, 600px);
+    display: flex;
+    align-items: stretch;
+    /* the row is as wide as its contents now, not as wide as the page: with
+       the open panel sized to its film, stretching five panels across 1100px
+       would leave the closed ones nearly as wide as the open one and the
+       accordion would stop reading as one */
+    justify-content: center;
+    height: var(--isel-h);
+    gap: 8px;
+  }
+
+  .ap-isel__panel {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: clamp(72px, 7.6vw, 108px);
+    /* undo the plain layer's card shape: in the row the height comes from the
+       strip and the width from flex-basis, and an auto margin here would eat
+       the free space justify-content is meant to centre */
+    width: auto;
+    aspect-ratio: auto;
+    margin-inline: 0;
+    min-width: 62px;
+    min-height: 0;
+    /* the original animated flex-grow, which relayouts every frame. It is
+       still the only honest way to do this effect — the panels genuinely
+       share a row — so it stays (as basis rather than grow, since the widths
+       are now absolute), with the paint kept as cheap as possible around it. */
+    transition:
+      flex-basis 0.7s var(--ease),
+      border-color 0.7s var(--ease),
+      box-shadow 0.7s var(--ease);
+    /* the staggered entrance, started by [data-in] below */
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  .ap-isel__panel[data-on] {
+    /* THE OPEN FRAME IS EXACTLY THE FILM (client 2026-08-10). The panel's
+       content box is (--isel-h − 4px) tall once the 2px border is taken off
+       both edges, so the width that carries a --ar picture edge to edge is
+       that times --ar, with the border added back on. `cover` then crops
+       nothing, and the blurred bed the old `contain` needed is gone. */
+    flex-basis: calc((var(--isel-h) - 4px) * var(--ar) + 4px);
+    /* NEVER SHRINK THE OPEN ONE. Its whole point is that the frame is exactly
+       the film — the moment the row gets tight it is the first thing flex
+       takes width from, and the ratio goes with it. At eight panels the open
+       frame lost 11px and came out at 0.5423 against the film's 0.5625, which
+       is letterboxing creeping back. The closed slivers can absorb it; they
+       have no composition to preserve. */
+    flex-shrink: 0;
+    border-color: #fff;
+    box-shadow: 0 20px 60px -24px rgba(35, 40, 52, 0.75);
+    z-index: 2;
+  }
+
+  /* the picture sits zoomed in until its panel opens, then settles back —
+     a transform, so it composites rather than repainting a background */
+  .ap-isel__img,
+  .ap-isel__vid {
+    transform: scale(1.2);
+    transition: transform 0.7s var(--ease);
+  }
+  .ap-isel__panel[data-on] .ap-isel__img,
+  .ap-isel__panel[data-on] .ap-isel__vid {
+    transform: scale(1);
+  }
+
+  .ap-isel__scrim {
+    opacity: 0;
+    transition: opacity 0.7s var(--ease);
+  }
+  .ap-isel__panel[data-on] .ap-isel__scrim {
+    opacity: 1;
+  }
+
+  /* the title and line belong to the open panel; on a 62px sliver they would
+     only be a smear of clipped letters */
+  .ap-isel__info {
+    opacity: 0;
+    transform: translateX(25px);
+    transition:
+      opacity 0.7s var(--ease),
+      transform 0.7s var(--ease);
+  }
+  .ap-isel__panel[data-on] .ap-isel__info {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .ap-isel__strip[data-in] .ap-isel__panel {
+    animation: ap-isel-in 0.75s var(--ease) forwards;
+    animation-delay: calc(var(--i) * 0.14s);
+  }
+}
+
+@keyframes ap-isel-in {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Someone who asked for less motion gets the strip already assembled: no
+   entrance, no slide, no zoom — but the accordion still opens, because that
+   is the control, not the decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .ap-isel__panel,
+  .ap-isel__img,
+  .ap-isel__vid,
+  .ap-isel__scrim,
+  .ap-isel__info {
+    transition: none;
+    animation: none;
+  }
+  @media (min-width: 861px) {
+    .ap-isel__panel {
+      opacity: 1;
+      transform: none;
+    }
+    .ap-isel__img,
+    .ap-isel__vid {
+      transform: none;
+    }
+  }
+}

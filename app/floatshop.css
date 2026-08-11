@@ -1,0 +1,305 @@
+/* ==========================================================================
+   FLOAT SHOP — the categories as pahari.vercel.app's floating gallery.
+
+   The component sets data-live ONLY when the canvas is actually going to run
+   (desktop width + full motion + scripting + WebGL). Every rule that changes
+   the page is keyed off that attribute rather than a media query, so a
+   browser that fails any one of those tests keeps the ordinary section: the
+   head in flow, the grid visible, nothing pinned. A media query cannot know
+   about WebGL; the attribute can.
+   ========================================================================== */
+
+/* plain layer: only the head renders in flow; stage, pill and name are idle */
+.ap-fs__stage,
+.ap-fs__pill,
+.ap-fs__name {
+  display: none;
+}
+.ap-fs__head {
+  display: grid;
+  gap: 16px;
+  max-width: 62ch;
+  margin-bottom: clamp(34px, 5vw, 60px);
+}
+/* the section's name, standing alone in the centre — the same voice as the
+   flip's back face, so turning between them reads as one card */
+.ap-fs__big {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.8rem, 7vw, 6rem);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   live: the full-bleed pinned room
+   -------------------------------------------------------------------------- */
+.ap-fs[data-live] {
+  position: relative;
+  height: 100svh;
+  /* escape .ap-sec's padding so the room is truly full-bleed */
+  margin: calc(clamp(80px, 13vh, 170px) * -1) calc(var(--gutter) * -1) 0;
+  /* THE BAND'S PAPER MOVED TO THE SECTION — see #shop below. This element is
+     lifted above the travelling sun (it must be, or the products would pass
+     behind it), so painting the paper here made it an opaque lid: the sun
+     went under the whole room and vanished for a fifth of the page. Measured
+     by forcing z-index 99 on the sun, at which point it reappeared. */
+  background: transparent;
+  overflow: hidden;
+  /* Forced onto its own composited layer. Without this, the liquid-glass
+     nav's backdrop-filter layer GHOSTS into the pinned WebGL stage — a
+     phantom copy of the whole nav bar painted mid-canvas (verified: hide the
+     nav and the phantom dies with it). Isolating the room re-layerizes the
+     backdrop sampling and the ghost is gone. */
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+/* The band's paper, on the SECTION instead. A block's own background paints
+   before positioned descendants, so the sun travels OVER this and UNDER the
+   room's contents — which is the whole point of putting it here. Gated on the
+   room actually being live, so the plain layer is unchanged. */
+#shop:has(.ap-fs[data-live]) {
+  background: var(--paper-2);
+}
+.ap-fs[data-live] .ap-fs__stage {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/* The section says what it IS at the top of the room and stays there
+   (client 2026-08-05: "shop text must stay in top, in center must be only
+   product related text"). The middle is left free for the thing you are
+   pointing at, so the two never take turns in the same place. */
+.ap-fs[data-live] .ap-fs__head {
+  position: absolute;
+  left: calc(var(--gutter) - clamp(14px, 2vw, 30px));
+  top: clamp(84px, 12vh, 140px);
+  z-index: 5;
+  margin: 0;
+  max-width: min(34ch, 46vw);
+  text-align: left;
+  justify-items: start;
+  gap: 10px;
+  pointer-events: none;
+  /* the cards pass behind the words; paper needs the faintest ground so the
+     lede stays legible over a dark card. Anchored left, since the block is
+     in the corner now — a centred radial would fade out over the text. */
+  background: radial-gradient(
+    120% 100% at 22% 40%,
+    color-mix(in srgb, var(--paper-2) 88%, transparent) 30%,
+    color-mix(in srgb, var(--paper-2) 55%, transparent) 66%,
+    transparent 100%
+  );
+  padding: clamp(16px, 2.6vh, 30px) clamp(14px, 2vw, 30px);
+}
+/* JUST THE WORD, in the room (client 2026-08-06). The "(Shop)" kicker was
+   the same word twice over, and the sentence has always been repeated in
+   full by the category cards below. They are HIDDEN here rather than deleted
+   from the markup: the plain layer — phones, no JS, reduced motion — has no
+   turning room to explain itself, so there the head IS the introduction and
+   it keeps both lines. */
+.ap-fs[data-live] .ap-fs__head .ap-kicker,
+.ap-fs[data-live] .ap-fs__head .ap-lede {
+  display: none;
+}
+/* with one line left there is nothing for the ground to protect, and the
+   gradient behind a single word reads as a smudge on the paper */
+.ap-fs[data-live] .ap-fs__head {
+  background: none;
+  padding: 0;
+}
+/* a header now, not the hero of the room — the product name in the middle
+   is the biggest type here */
+.ap-fs[data-live] .ap-fs__big {
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+}
+/* cards pass right behind the kicker at the top of the panel, where the scrim
+   is thinnest — --ink-muted measured 2.94:1 there; full ink measures 7+ */
+.ap-fs[data-live] .ap-fs__head .ap-kicker {
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   THE CENTRE — only ever a product: whatever the turning room has brought to
+   the centre position, or the card under the pointer. One panel, replaced on
+   every change by the next logic in the cycle (flip / rise / decipher).
+   Plain layer: the centre does not exist at all — the head above renders in
+   flow and that is the whole section.
+   -------------------------------------------------------------------------- */
+.ap-fs__now {
+  display: none;
+}
+.ap-fs[data-live] .ap-fs__now {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  translate: -50% -50%;
+  z-index: 5;
+  /* px, not ch: `ch` is the BODY font's zero-width (~8px) so 44ch resolved
+     to ~350px and the padding left barely 230px of content — long enough
+     names ("Tote bags") wrapped and the mask clipped the second line */
+  width: min(760px, 88vw);
+  text-align: center;
+  pointer-events: none;
+  /* the ground the faces share — perspective for the turn */
+  perspective: 1100px;
+  background: radial-gradient(
+    closest-side at 50% 50%,
+    color-mix(in srgb, var(--paper-2) 88%, transparent) 36%,
+    color-mix(in srgb, var(--paper-2) 56%, transparent) 74%,
+    transparent 100%
+  );
+  padding: clamp(34px, 6vh, 68px) clamp(30px, 4vw, 60px);
+}
+.ap-fs[data-live] .ap-fs__panel {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+.ap-fs[data-live] .ap-fs__panel .ap-kicker {
+  color: var(--ink);
+}
+/* No transition here: GSAP owns the turn (FloatShop cycles three entrance
+   logics), and a CSS transition on transform would ease every per-frame
+   write the other logics make. */
+.ap-fs[data-live] .ap-fs__prod {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  /* sized so the longest category ("Painted hoodies") still sets on ONE
+     line inside the box above — the back face is pinned to the flip's box,
+     so a wrapped name would overflow it */
+  font-size: clamp(2.2rem, 4.4vw, 3.9rem);
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  /* the RISE logic's mask: letters climb in from 135% below their line; the
+     small padding keeps glyph tails unclipped at rest without growing the
+     box (the negative margin gives it back) */
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+.ap-fs[data-live] .ap-fs__w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ap-fs[data-live] .ap-fs__ch {
+  display: inline-block;
+  will-change: transform;
+}
+.ap-fs[data-live] .ap-fs__from {
+  margin: 0;
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* the catalogue counter, just above the pill */
+.ap-fs__count {
+  display: none;
+}
+.ap-fs[data-live] .ap-fs__count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  translate: -50%;
+  z-index: 6;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  pointer-events: none;
+}
+.ap-fs[data-live] .ap-fs__count-of {
+  color: var(--ink-muted);
+}
+
+/* the pill, bottom-centre, after the reference's "Change the View" */
+.ap-fs[data-live] .ap-fs__pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  translate: -50%;
+  z-index: 6;
+  padding: 5px 6px 5px 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ap-fs[data-live] .ap-fs__pill span {
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  margin-right: 8px;
+  color: var(--ink);
+}
+.ap-fs[data-live] .ap-fs__pill button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  min-height: 34px;
+}
+.ap-fs[data-live] .ap-fs__pill button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --------------------------------------------------------------------------
+   the DOM grid while the canvas runs: sr-only, but the moment keyboard focus
+   lands in it, it returns as a bottom sheet — a shop must not be locked
+   inside a canvas
+   -------------------------------------------------------------------------- */
+/* keyed off the SECTION attribute the component sets: the pin wraps .ap-fs in
+   a pin-spacer, so no sibling combinator from .ap-fs can reach the grid */
+#shop[data-float] .ap-cats {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* the home reveal tween parks every card at visibility:hidden until its
+   ScrollTrigger plays — which never plays inside a 1px clipped box, and a
+   hidden link cannot take keyboard focus. The cards are sr-only here; they
+   must stay focusable, and visible the moment the sheet opens. */
+#shop[data-float] .ap-cat {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+#shop[data-float] .ap-cats:focus-within {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 300;
+  width: auto;
+  height: auto;
+  overflow: auto;
+  max-height: 46vh;
+  clip-path: none;
+  white-space: normal;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  padding: 18px var(--gutter) 22px;
+  background: var(--paper);
+  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  box-shadow: 0 -18px 40px -30px rgba(35, 40, 52, 0.6);
+}

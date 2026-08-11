@@ -1,0 +1,68 @@
+/* ==========================================================================
+   TEXT FX — the spans the TextFX runner creates around [data-tfx] headings.
+
+   These exist only in the moved layer: the runner is gated on the same
+   861px + full-motion media the rest of the site uses, so the plain layer
+   never contains a .tfx span and needs no rules here. The full text lives
+   in aria-label on the heading; the spans are aria-hidden.
+   ========================================================================== */
+
+/* words are atomic: lines may break between words (text nodes), never
+   between the char spans inside one */
+.tfx-w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.tfx-m {
+  display: inline-block;
+}
+.tfx-c {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* RISE climbs through a mask. The padding keeps descenders (g, y) unclipped
+   at rest; the negative margin gives the padding back so the line box does
+   not grow. Letters start at 135% — beyond the padding — so nothing peeks
+   before the cascade. inline-block + overflow:hidden moves the baseline to
+   the box's bottom margin edge; vertical-align pins every mask to the same
+   edge so the letters cannot drift against each other. */
+[data-tfx="rise"] .tfx-m {
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+  vertical-align: bottom;
+}
+
+/* FLIP turns letters over a baseline hinge — give the word a little depth
+   of field so the turn reads as 3D, not a squash */
+[data-tfx="flip"] {
+  perspective: 640px;
+}
+
+/* CUT slices every glyph at the waist: the original span carries the top
+   half, an absolutely-overlaid clone carries the bottom, and they seam
+   together. The mask is the positioning ground; the clone inherits every
+   text metric, so the halves are pixel-twins. */
+[data-tfx="cut"] .tfx-m {
+  position: relative;
+}
+.tfx-cut {
+  position: absolute;
+  inset: 0;
+}
+
+/* WRITE's caret: positioned against the heading (the runner moves it with
+   x/y transforms as each glyph lands) */
+[data-tfx="write"] {
+  position: relative;
+}
+.tfx-caret {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.05em;
+  height: 0.92em;
+  background: currentColor;
+  pointer-events: none;
+}

@@ -1,0 +1,204 @@
+/* ==========================================================================
+   MORPH HERO — the opening of /shop/postcards.
+
+   Same two-layer contract as every moved section in this project:
+
+     1. PLAIN — a static fan of the first seven postcards over the title.
+        No pin, no JS, one ordinary screenful. This is what a phone gets, a
+        reader who asked for less motion, and a browser with scripting off.
+     2. MOVED — behind the media query, the full port: scatter → line → ring
+        on load, ring → bottom arc on scroll (pinned), arc shuffle, pointer
+        sway, hover flip. All card motion is GSAP-inline; this file only
+        provides the stage, the faces and the type.
+   ========================================================================== */
+
+.ap-mh {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --------------------------------------------------------------------------
+   1. PLAIN — a static fan
+   -------------------------------------------------------------------------- */
+.ap-mh__stage {
+  position: relative;
+  padding: clamp(96px, 15vh, 150px) var(--gutter) clamp(40px, 6vh, 70px);
+  /* block + inline-block cards, NOT grid: grid gave every card its own row
+     and the fan arrived as a 900px vertical stack of postcards */
+  display: block;
+  text-align: center;
+  overflow: hidden;
+}
+.ap-mh__card {
+  /* only the first seven take part in the fan; the rest wait for the JS */
+  display: none;
+}
+.ap-mh__flip,
+.ap-mh__face {
+  width: 100%;
+  height: 100%;
+}
+.ap-mh__face {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.8);
+}
+.ap-mh__face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap-mh__face.is-back {
+  display: none;
+}
+.ap-mh__card:nth-child(-n + 7) {
+  display: inline-block;
+  position: relative;
+  vertical-align: bottom;
+  width: clamp(64px, 9vw, 92px);
+  aspect-ratio: 298 / 421;
+  margin: 0 -8px 22px;
+}
+/* the fan: a shallow hand of cards, pure CSS */
+.ap-mh__card:nth-child(1) { transform: rotate(-21deg) translateY(16px); }
+.ap-mh__card:nth-child(2) { transform: rotate(-14deg) translateY(7px); }
+.ap-mh__card:nth-child(3) { transform: rotate(-7deg) translateY(2px); }
+.ap-mh__card:nth-child(4) { transform: rotate(0deg); }
+.ap-mh__card:nth-child(5) { transform: rotate(7deg) translateY(2px); }
+.ap-mh__card:nth-child(6) { transform: rotate(14deg) translateY(7px); }
+.ap-mh__card:nth-child(7) { transform: rotate(21deg) translateY(16px); }
+.ap-mh__card:nth-child(-n + 7) .ap-mh__flip {
+  position: absolute;
+  inset: 0;
+}
+
+.ap-mh__intro {
+  display: none; /* the plain layer goes straight to the point */
+}
+.ap-mh__arc {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  justify-content: center;
+}
+.ap-mh__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6.4vw, 4.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.ap-mh__copy {
+  margin: 0;
+  max-width: 46ch;
+  color: color-mix(in srgb, var(--paper) 86%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   2. MOVED — the pinned stage
+   -------------------------------------------------------------------------- */
+@media (scripting: enabled) and (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+  .ap-mh__stage {
+    height: 100svh;
+    padding: 0;
+    display: block;
+    overflow: hidden;
+    perspective: 1200px;
+  }
+
+  /* every card exists here, parked at the centre; GSAP owns x/y/rotation */
+  .ap-mh__card,
+  .ap-mh__card:nth-child(-n + 7) {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 72px;
+    height: 102px;
+    margin: 0;
+    transform: none;
+    opacity: 0; /* until the scatter tween sets it — no flash at the centre */
+    will-change: transform;
+  }
+
+  /* the hover flip, exactly the original's: front face out, back face
+     pre-turned 180°, the flipper turns on hover */
+  .ap-mh__flip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.55s var(--ease);
+  }
+  .ap-mh__card:hover .ap-mh__flip {
+    transform: rotateY(180deg);
+  }
+  .ap-mh__face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 8px;
+  }
+  .ap-mh__face.is-back {
+    display: grid;
+    place-content: center;
+    gap: 2px;
+    text-align: center;
+    transform: rotateY(180deg);
+    background: var(--ink-indigo);
+    border: 1px solid color-mix(in srgb, var(--paper) 22%, transparent);
+  }
+  .ap-mh__face.is-back span {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+  .ap-mh__face.is-back em {
+    font-style: normal;
+    font-size: 7.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--paper) 66%, transparent);
+  }
+
+  /* intro line inside the ring — GSAP fades it in and the morph fades it out */
+  .ap-mh__intro {
+    display: grid;
+    gap: 12px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 40;
+  }
+  .ap-mh__line {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+    letter-spacing: -0.01em;
+  }
+  .ap-mh__cue {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--paper) 62%, transparent);
+  }
+
+  /* the content that arrives with the arc — top of frame, like the original */
+  .ap-mh__arc {
+    position: absolute;
+    left: 50%;
+    top: 11%;
+    transform: translate(-50%, 20px);
+    opacity: 0; /* GSAP drives it from the morph value */
+    pointer-events: none;
+    z-index: 40;
+    width: min(700px, 84vw);
+  }
+}

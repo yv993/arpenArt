@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env*.local
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# the raw source drop — huge originals, not part of the build
+imgss/
+
+# stray debug dumps from local harnesses
+out*.html

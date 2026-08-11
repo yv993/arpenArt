@@ -1,0 +1,2254 @@
+/* ==========================================================================
+   NAV + SECTION RAIL — imported by globals.css
+   ========================================================================== */
+/* --------------------------------------------------------------------------
+   The bar itself carries no background. `::before` is the pane behind it, so
+   the two states — flush at rest, floating glass once you have scrolled — are
+   one animated element and the links never move.
+
+   The tint stays PAPER-heavy on purpose. Her hero illustration has no calm
+   zone in it (measured), so a fashionable near-clear glass would put 12px
+   uppercase links on gouache at ~2:1. 82% paper behind 22px of blur measures
+   past 4.5:1 over the worst backdrop on the site, which is the number that
+   decides this, not the fashion.
+   -------------------------------------------------------------------------- */
+.ap-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px var(--gutter);
+  isolation: isolate;
+}
+.ap-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--paper) 74%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 -1px 0 color-mix(in srgb, var(--ink) 10%, transparent),
+    0 0 0 rgba(35, 40, 52, 0);
+  transition:
+    inset 0.42s var(--ease),
+    border-radius 0.42s var(--ease),
+    background 0.42s var(--ease),
+    box-shadow 0.42s var(--ease),
+    -webkit-backdrop-filter 0.42s var(--ease),
+    backdrop-filter 0.42s var(--ease);
+}
+.ap-nav > * {
+  transition: transform 0.42s var(--ease);
+}
+
+/* ---- lifted: liquid glass --------------------------------------------------
+   Four things together make glass read as glass rather than as a blurred box:
+   saturate() so colour bleeds through instead of greying out; a bright 1px
+   specular line along the top inner edge; a dark 1px line along the bottom
+   inner edge so the pane has thickness; and a wide soft drop shadow so it is
+   unmistakably floating above the page. */
+.ap-nav[data-lift]::before {
+  inset: 9px calc(var(--gutter) * 0.55);
+  border-radius: 20px;
+  /* CLEAR glass once scrolled (client: "nav must be transparent after some
+     scrolls"): the tint drops 82% → 58% so the page genuinely shows
+     through, and the heavier blur keeps the glass readable. 58% is the
+     MEASURED floor: at 48% the ink links fell to 4.19–4.31:1 over the dark
+     gallery and the tote photographs (the dark tail bleeding through the
+     glass). The tiny brand subline is part of the logotype (exempt). */
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, #fff 22%, transparent),
+      transparent 42%
+    ),
+    color-mix(in srgb, var(--paper) 58%, transparent);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 78%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, #fff 26%, transparent),
+    0 10px 30px -12px color-mix(in srgb, var(--ink) 42%, transparent),
+    0 2px 6px -2px color-mix(in srgb, var(--ink) 20%, transparent);
+}
+.ap-nav[data-lift] {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.ap-nav[data-lift] > * {
+  transform: translateY(-1px);
+}
+
+/* No backdrop-filter (older Firefox, some Android) — fall back to a solid
+   pane so the links keep their contrast instead of sitting on the artwork. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ap-nav::before,
+  .ap-nav[data-lift]::before {
+    background: var(--paper);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-nav::before,
+  .ap-nav > * {
+    transition: none;
+  }
+}
+.ap-nav__mark {
+  display: grid;
+  line-height: 1.1;
+}
+.ap-nav__mark strong {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  letter-spacing: -0.02em;
+}
+.ap-nav__mark span {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  /* --ink-muted is right on paper but measured 4.37:1 against the lifted glass
+     over the tote photographs — the one place in the bar that failed. Darkened
+     until it clears with margin (5.96:1 there, 7.39:1 on paper) rather than
+     thickening the tint, which would have cost the glass its transparency. */
+  color: #4a4f5d;
+}
+.ap-nav__links {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 30px);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.ap-nav__links a:hover {
+  color: var(--indigo);
+}
+.ap-nav__cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap-nav__n {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.ap-nav__n[data-has] {
+  background: var(--terracotta-ink);
+  color: var(--paper);
+}
+.ap-nav__burger {
+  display: none;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  min-height: 44px;
+}
+
+/* the rail: percentage, filling hairline, and the name of where you are */
+.ap-rail {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--gutter) * 0.4);
+  z-index: 200;
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: none;
+  color: #fff;
+  mix-blend-mode: difference;
+}
+.ap-rail__tick {
+  width: 1px;
+  height: 26px;
+  background: currentColor;
+  opacity: 0.5;
+}
+.ap-rail__meter {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.ap-rail__num {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+/* The grabbable part. The rail as a whole stays pointer-events:none so it
+   never eats a click meant for the page behind it; only this 28px strip takes
+   the pointer, and a 1px hairline is impossible to catch without it. */
+.ap-rail__track {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  padding: 6px 0;
+  pointer-events: auto;
+  cursor: grab;
+  /* the drag owns the gesture — without this a touch drag scrolls the page
+     underneath at the same time and the two fight */
+  touch-action: none;
+}
+.ap-rail__track[data-drag] {
+  cursor: grabbing;
+}
+.ap-rail__track:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.ap-rail__line {
+  width: 1px;
+  height: clamp(90px, 18vh, 170px);
+  background: color-mix(in srgb, currentColor 26%, transparent);
+  position: relative;
+  transition: width 0.2s var(--ease);
+}
+/* thickens under the hand, so it reads as a thing you can take hold of */
+.ap-rail__track:hover .ap-rail__line,
+.ap-rail__track:focus-visible .ap-rail__line,
+.ap-rail__track[data-drag] .ap-rail__line {
+  width: 3px;
+}
+.ap-rail__fill {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+}
+/* the handle: the only part that says "drag me" before you touch it */
+.ap-rail__knob {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: currentColor;
+  pointer-events: none;
+  transition:
+    width 0.2s var(--ease),
+    height 0.2s var(--ease),
+    margin 0.2s var(--ease);
+}
+.ap-rail__track:hover .ap-rail__knob,
+.ap-rail__track:focus-visible .ap-rail__knob,
+.ap-rail__track[data-drag] .ap-rail__knob {
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-rail__line,
+  .ap-rail__knob {
+    transition: none;
+  }
+}
+.ap-rail__where {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  opacity: 0.9;
+  /* RESERVED, not fitted. This is vertical text in a centred flex column, so
+     its height is its character count — and every time the section name
+     changed ("Cover" → "The series") the whole rail re-centred and the track
+     jumped under the pointer. Measured: it threw a drag up to 349px off.
+     Holding the tallest label's height keeps the rail still. */
+  display: grid;
+  align-content: center;
+  min-height: 132px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   SHOP / CATEGORY / CART
+   ========================================================================== */
+.ap-shop,
+.ap-cv,
+.ap-cart {
+  padding-top: clamp(110px, 15vh, 190px);
+}
+
+/* ==========================================================================
+   THE CART'S PLATE (components/CartPlate.tsx) — Botticelli's Primavera behind
+   the cart, with coins crossing from one of Venus's hands to the other.
+
+   EVERYTHING HERE IS GATED ON [data-plate], which only the component's effect
+   sets, and which it only sets on desktop with motion allowed. A phone, a
+   reduced-motion reader and a no-JS visitor keep the paper cart untouched:
+   a dark plate under ink-on-paper type is a legibility regression, not a
+   decoration, and this is the page where money is decided.
+   ========================================================================== */
+/* PERSPECTIVE ON BOTH FIXED LAYERS, and the same value on each. `perspective`
+   is per-element, but these two boxes are both inset:0 fixed, so their
+   perspective origins land on the same viewport point — which makes the two
+   arithmetically ONE scene, and lets the page's own title sit between them
+   without breaking the depth. */
+.ap-plate,
+.ap-plate__front {
+  perspective: 1100px;
+  perspective-origin: 50% 50%;
+}
+.ap-plate__cam {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.ap-plate {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  /* nothing here is ever pressed, and the cart's controls are above it */
+  pointer-events: none;
+  /* the component reveals it once it has measured; until then a half-placed
+     coin would flash in the corner */
+  visibility: hidden;
+}
+.ap-plate[data-on] {
+  visibility: visible;
+}
+.ap-plate__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+/* IN FRONT OF THE TITLE, behind the line items. See the layer table in
+   CartPlate.tsx — this is the layer that makes the giant word pass behind
+   Venus, which is the whole look of the reference. */
+.ap-plate__front {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+.ap-plate[data-on] ~ .ap-plate__front {
+  visibility: visible;
+}
+/* PLATE SPACE: a 1600x1000 box the effect lays exactly over the drawn
+   painting. Everything inside is written in the painting's own pixels, so a
+   coin at (620,380) is on Venus's raised hand at every window size. */
+.ap-plate__space {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 1000px;
+  transform-origin: 0 0;
+}
+.ap-plate__fig {
+  position: absolute;
+  height: auto;
+}
+/* the hairline web laid over the sky — long, near-invisible straight lines
+   between the two hands and the corners, like a diagram over a painting */
+.ap-plate__web {
+  position: absolute;
+  left: 0;
+  top: 0;
+  fill: none;
+  stroke: rgba(255, 240, 205, 0.13);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.ap-plate__web circle {
+  fill: rgba(255, 240, 205, 0.22);
+  stroke: none;
+}
+/* the coins turn about a horizontal axis, so they need somewhere to turn in */
+.ap-plate__coins {
+  position: absolute;
+  inset: 0;
+  perspective: 900px;
+}
+.ap-plate__coin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* the transform positions the coin's CENTRE; -50% of its own box gets it
+     there without a wrapper */
+  margin: -17px 0 0 -17px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  /* STRUCK BRONZE, not a flat token. The live page's coins are dark metal
+     that catches one bright edge as they turn — most of the face is in
+     shadow, and the read comes almost entirely from that catch. Three stops
+     do it: a hot quarter top-left, the marigold body, and a deep foot. */
+  background:
+    radial-gradient(circle at 32% 26%, #ffeec0 0%, #e9b64a 26%, var(--marigold) 48%, #8a5c0e 82%, #4e340a 100%);
+  box-shadow:
+    /* the rim, lit on one side and lost on the other */
+    inset 1px 1px 0 0.5px rgba(255, 244, 206, 0.8),
+    inset -1px -1px 0 0.5px rgba(52, 33, 5, 0.85),
+    /* the specular the whole coin reads from */
+    0 0 12px -2px rgba(255, 214, 120, 0.5),
+    0 4px 12px -5px rgba(0, 0, 0, 0.85);
+  will-change: transform, opacity;
+}
+/* the catch: a bright crescent riding the upper rim, which is what sells the
+   spin — as rotateX flattens the disc this stays on its edge */
+.ap-plate__coin::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: linear-gradient(148deg, rgba(255, 248, 220, 0.85) 0%, rgba(255, 248, 220, 0) 38%);
+  pointer-events: none;
+}
+.ap-plate__coin i {
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1;
+  color: #6b4708;
+  /* the glyph is struck INTO the coin, so it must not read as a sticker */
+  text-shadow: 0 1px 0 rgba(255, 240, 190, 0.5);
+}
+
+/* ---- the cart, once the plate is behind it ------------------------------- */
+/* NO z-index HERE, deliberately. A stacking context on .ap-cart would trap its
+   children beneath .ap-plate__front (z 2) and Venus would be painted over the
+   line items. The two children are numbered individually instead: the head at
+   1 so the cut-out figure covers it, the grid at 3 so nothing covers that. */
+.ap-cart[data-plate] {
+  position: relative;
+}
+/* The head sits ON the painting: no panel, light type. Everything below it
+   keeps its paper, because a cart is a table of numbers. */
+.ap-cart[data-plate] .ap-sec__head {
+  position: relative;
+  z-index: 1;
+  min-height: 62svh;
+  display: grid;
+  align-content: end;
+  padding-bottom: clamp(24px, 5vh, 54px);
+}
+.ap-cart[data-plate] .ap-sec__head .ap-kicker {
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
+}
+.ap-cart[data-plate] .ap-sec__head .ap-h2 {
+  /* cream, not white — the live page's word is warm against a night sky, and
+     pure white on this plate reads as a UI label rather than as paint */
+  color: #f4ece0;
+  /* IT RUNS BEHIND HER NOW. The type was shrunk to 5.7vw while there was no
+     cut-out and it had to dodge her raised hand; with .ap-plate__front over
+     it the word can be the size the reference's is, and her arms and gown
+     occlude it. */
+  font-size: clamp(3.2rem, 9.4vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  max-width: 12ch;
+  /* not a glow — a shadow the size of the letters, so the cream holds where
+     the plate behind it is pale foliage */
+  text-shadow: 0 4px 44px rgba(0, 0, 0, 0.6);
+}
+/* the paper the numbers stand on — opaque, because this is the part that has
+   to be read, not admired */
+.ap-cart[data-plate] .ap-cart__grid,
+.ap-cart[data-plate] .ap-cart__empty,
+.ap-cart[data-plate] .ap-cart__done {
+  position: relative;
+  /* above the figure layer: the painting is the room, not the furniture */
+  z-index: 3;
+  padding: clamp(22px, 3vw, 40px);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 30px 80px -50px rgba(0, 0, 0, 0.9);
+}
+.ap-crumb {
+  display: flex;
+  gap: 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 0 var(--gutter);
+  margin-bottom: clamp(20px, 4vh, 42px);
+}
+.ap-crumb a:hover {
+  color: var(--indigo);
+}
+.ap-cv {
+  padding-left: 0;
+  padding-right: 0;
+}
+.ap-cv__grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: clamp(26px, 4vw, 66px);
+  padding: 0 var(--gutter) clamp(80px, 12vh, 150px);
+  align-items: start;
+}
+.ap-cv__hero {
+  position: relative;
+  border-radius: 5px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+/* THE LIVE MOCKUP. The print is placed in percentages of the PHOTO, so the
+   figure has to BE the photo — at 4/3 with `object-fit: contain` a 1578x1600
+   mug is letterboxed and every percentage lands in the wrong place. Matching
+   the ratio makes the drawn image fill the box exactly. */
+.ap-cv__hero[data-mock] {
+  /* PER MOCKUP, not hardcoded: the mug is 1578x1600 and the plate 1600x1600,
+     and baking one in letterboxes the other — which puts every percentage in
+     the print box somewhere other than the object. */
+  aspect-ratio: var(--mock-ar);
+}
+/* `.ap-cv__hero img` is (0,1,1) and would outrank a bare `.ap-cv__print`
+   (0,1,0) — the print came out 100%x100% of the figure instead of the print
+   area. Same specificity trap as `.ap-map__town button` over `.ap-loc`. */
+.ap-cv__hero .ap-cv__print,
+.ap-cv__hero img.ap-cv__print {
+  position: absolute;
+  left: var(--bx);
+  top: var(--by);
+  width: var(--bw);
+  height: var(--bh);
+  /* the artwork keeps its own shape inside the printable area rather than
+     being stretched to it */
+  object-fit: contain;
+  /* seats the ink into the ceramic's own shading instead of floating a
+     rectangle on it — the mug's highlight and shadow read through */
+  mix-blend-mode: multiply;
+  animation: ap-loc-in 0.34s var(--ease) both;
+}
+/* THE PLATE. `contain`, and no round crop — the buyer has to see the WHOLE
+   illustration they are choosing (client 2026-08-11). I had it on `cover`
+   inside a circle, which filled the well handsomely but cut the top and bottom
+   off every portrait picture, i.e. hid part of the very thing being sold.
+   The box is the largest square inside the well (see MOCKUPS), so a contained
+   picture of any shape lands inside the rim on its own.
+   The 1.5% ellipse stays: it is the plate's real one, measured. */
+.ap-cv__hero .ap-cv__print--disc,
+.ap-cv__hero img.ap-cv__print--disc {
+  object-fit: contain;
+  transform: scaleY(var(--squash, 1));
+}
+
+/* THE PUZZLE. The board is square and the illustrations are portrait, so
+   `cover` — the centre of the picture is what gets cut into pieces. The board
+   is card, not ceramic: no `multiply`, because the picture IS the surface here
+   rather than ink laid on a white one. */
+.ap-cv__hero .ap-cv__print--puzzle,
+.ap-cv__hero img.ap-cv__print--puzzle {
+  object-fit: cover;
+  mix-blend-mode: normal;
+  border-radius: 6px;
+}
+/* the cut, over the picture — see MOCKUPS for why it is drawn rather than
+   lifted out of the photograph */
+.ap-cv__hero .ap-cv__seams,
+.ap-cv__hero img.ap-cv__seams {
+  object-fit: fill;
+  mix-blend-mode: normal;
+  animation: none;
+}
+.ap-cv__hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.ap-cv__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ap-cv__thumbs button {
+  width: 68px;
+  height: 68px;
+  border-radius: 3px;
+  overflow: hidden;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.ap-cv__thumbs button.on {
+  outline-color: var(--indigo);
+}
+.ap-cv__thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap-cv__await {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--paper-3);
+  border-radius: 5px;
+  color: var(--ink-muted);
+}
+.ap-cv__say {
+  display: grid;
+  gap: 16px;
+  position: sticky;
+  top: clamp(90px, 12vh, 140px);
+}
+.ap-cv__price {
+  font-size: 1.2rem;
+}
+.ap-cv__price strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+.ap-cv__price.is-soon {
+  color: var(--ink-muted);
+}
+.ap-pick__lab {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+
+/* Pressed Add with nothing chosen: the picker is scrolled to and marked for
+   a moment. --terracotta-ink is the measured 4.5:1 accent — the raw
+   terracotta would fail as text. */
+.ap-pick[data-need] .ap-pick__lab {
+  color: var(--terracotta-ink);
+}
+.ap-pick[data-need] .ap-pick__grid {
+  outline: 2px solid var(--terracotta-ink);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ap-pick[data-need] .ap-pick__grid {
+    animation: ap-need 2.4s ease-out 1;
+  }
+  @keyframes ap-need {
+    0%,
+    22% {
+      outline-color: var(--terracotta-ink);
+    }
+    11% {
+      outline-color: transparent;
+    }
+    100% {
+      outline-color: color-mix(in srgb, var(--terracotta-ink) 35%, transparent);
+    }
+  }
+}
+.ap-pick__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 4px;
+}
+.ap-pick__grid button {
+  aspect-ratio: 298 / 421;
+  width: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+.ap-pick__grid button.on {
+  outline-color: var(--terracotta-ink);
+}
+.ap-pick__grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* variant chips — text buttons in the same grammar as the thumbnails (plain
+   button + aria-pressed, the chosen one marked). Chips rather than a <select>
+   because there are never more than a handful of options, and seeing them all
+   at once is the point of offering the choice. */
+.ap-var__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ap-var__row button {
+  min-height: 40px; /* comfortable touch target on the phones that order */
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: 3px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+.ap-var__row button:hover {
+  border-color: var(--ink);
+}
+/* filled, not outlined: an outline ring reads as focus on a text chip,
+   while ink-on-paper inversion is unmistakably "chosen" */
+.ap-var__row button.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* the three-step "how ordering works" strip — one pattern shared between the
+   category page and the cart, because the flow is unusual (a request, not a
+   checkout) and saying so where the hesitation happens is what makes it work */
+.ap-how {
+  display: grid;
+  gap: 12px;
+}
+.ap-how__title {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-how__steps {
+  display: grid;
+  gap: 10px;
+  counter-reset: ap-how;
+}
+/* the global reset strips list numbering, so the counter restores it — small
+   and tabular, a wayfinding mark rather than a headline */
+.ap-how__steps li {
+  counter-increment: ap-how;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 2px 10px;
+  align-items: baseline;
+}
+.ap-how__steps li::before {
+  content: counter(ap-how, decimal-leading-zero);
+  grid-row: 1 / span 2;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+.ap-how__steps li strong {
+  grid-column: 2;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ap-how__steps li span {
+  grid-column: 2;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.ap-cv__act {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.ap-cv__hint,
+.ap-cv__added {
+  font-size: 12px;
+  color: var(--ink-muted);
+  min-height: 1.2em;
+}
+.ap-cv__spec {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  padding-top: 16px;
+  margin-top: 6px;
+  font-size: 0.92em;
+}
+.ap-cv__spec div {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 10px;
+}
+.ap-cv__spec dt {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-top: 2px;
+}
+.ap-cv__spec dd {
+  margin: 0;
+}
+
+.ap-cart__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: clamp(26px, 4vw, 60px);
+  align-items: start;
+}
+.ap-cart__list {
+  display: grid;
+  gap: 14px;
+}
+.ap-cart__row {
+  display: grid;
+  grid-template-columns: 74px 1fr auto auto auto;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ap-cart__fig {
+  width: 74px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--paper-3);
+}
+.ap-cart__fig img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap-cart__what h2 {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+}
+.ap-cart__what p {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+.ap-cart__qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ap-cart__qty button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: 3px;
+}
+.ap-cart__qty span {
+  min-width: 30px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ap-cart__sum {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ap-cart__rm {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-cart__rm:hover {
+  color: var(--terracotta-ink);
+}
+/* the ordering strip and the form travel as one column, so the sticky moved
+   from the form onto this wrapper — otherwise the strip would scroll away
+   while the form it explains stays put */
+.ap-cart__side {
+  display: grid;
+  gap: 18px;
+  position: sticky;
+  top: clamp(90px, 12vh, 140px);
+}
+.ap-cart__form {
+  display: grid;
+  gap: 14px;
+  background: var(--paper-2);
+  padding: clamp(18px, 2.4vw, 30px);
+  border-radius: 5px;
+}
+.ap-cart__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.ap-cart__total strong {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0;
+}
+.ap-cart__note,
+.ap-cart__err {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+.ap-cart__err {
+  color: var(--terracotta-ink);
+}
+.ap-field {
+  display: grid;
+  gap: 6px;
+}
+
+/* --- the sum, itemised -------------------------------------------------- */
+.ap-cart__sums {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ap-cart__sums div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+}
+.ap-cart__sums dt {
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-cart__sums dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ap-cart__sums-total dt {
+  color: var(--ink);
+}
+.ap-cart__sums-total dd {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+/* --- delivery choice + address ------------------------------------------ */
+.ap-ship {
+  border: 0;
+  padding: 0;
+  margin: 4px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.ap-ship legend {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 0;
+  margin-bottom: 4px;
+}
+.ap-ship__opt {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: start;
+  cursor: pointer;
+}
+/* the charge sits on the same line as the service that carries it */
+.ap-ship__price {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ap-ship__opt input {
+  margin-top: 3px;
+  accent-color: var(--indigo);
+  min-width: 18px;
+  min-height: 18px;
+}
+.ap-ship__opt strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+/* the hint is the promise's small print — it must not shout, but it must be
+   readable, so it stays on the muted ink rather than going lighter */
+.ap-ship__opt em {
+  display: block;
+  font-style: normal;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+/* city + postal code share a line on anything but a narrow phone */
+.ap-cart__pair {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .ap-cart__pair {
+    grid-template-columns: 1fr;
+  }
+}
+.ap-field span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-field input,
+.ap-field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: 3px;
+  background: var(--paper);
+}
+/* consent rides inside an .ap-field but flows sideways: checkbox beside its
+   sentence, the sentence in ordinary case (the 11px uppercase field-label
+   treatment would make a legal line unreadable). Mirrors the contact form. */
+.ap-consent {
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 10px;
+  align-items: center;
+}
+.ap-consent input {
+  width: auto;
+}
+.ap-consent span {
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 12.5px;
+}
+.ap-pot {
+  position: absolute;
+  left: -9999px;
+}
+.ap-cart__empty,
+.ap-cart__done {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+  max-width: 56ch;
+}
+.ap-cart__ref strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+/* contact block on the home page */
+.ap-contact__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(26px, 4vw, 70px);
+  align-items: start;
+}
+.ap-contact__form {
+  display: grid;
+  gap: 14px;
+}
+.ap-contact__ok {
+  font-size: 0.95em;
+  color: var(--indigo);
+}
+.ap-contact__warn {
+  font-size: 0.95em;
+  color: var(--terracotta-ink);
+}
+/* ==========================================================================
+   FIND IN STORE (/find-in-store) — the towns list is the real content and
+   renders for everyone; the 3D map is desktop + motion + WebGL only, and
+   selection runs both ways between them.
+   ========================================================================== */
+.ap-map__pending {
+  margin: 0 0 clamp(22px, 3vw, 36px);
+  padding: 14px 18px;
+  border-left: 2px solid var(--terracotta-ink);
+  background: var(--paper-2);
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 78ch;
+}
+.ap-map__grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: clamp(24px, 3vw, 48px);
+  align-items: start;
+}
+.ap-map__hold {
+  position: relative;
+}
+.ap-map__stage {
+  position: relative;
+  height: clamp(420px, 62vh, 640px);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ink-indigo);
+  /* the map takes horizontal drags; the page keeps vertical ones, or a phone
+     could not scroll past a section that fills the screen */
+  touch-action: pan-y;
+  cursor: grab;
+}
+.ap-map__stage:active {
+  cursor: grabbing;
+}
+/* open data has to be credited, quietly */
+.ap-map__credit {
+  margin: 8px 0 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.ap-map__cue {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  translate: -50%;
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
+  pointer-events: none;
+}
+/* The town label that rides with each pin. It sits on a chip because the
+   land beneath is pale and the sea around it is dark — a plain shadow only
+   worked over one of them. --lift staggers neighbours so close towns do not
+   print on top of each other. */
+.ap-map__tag {
+  display: block;
+  white-space: nowrap;
+  transform: translate(var(--shift, 0), var(--lift, -26px));
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #151b2d 78%, transparent);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  pointer-events: none;
+  user-select: none;
+}
+.ap-map__tag.on {
+  background: var(--marigold);
+  color: var(--ink);
+  font-weight: 600;
+}
+.ap-map__list {
+  display: grid;
+  gap: 8px;
+}
+/* the card is the whole town: its heading button plus the address block */
+.ap-map__town {
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--paper-2);
+  overflow: hidden;
+  transition:
+    border-color 0.24s var(--ease),
+    background 0.24s var(--ease);
+}
+.ap-map__town:hover {
+  border-color: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+.ap-map__town[data-on] {
+  border-color: var(--indigo);
+  box-shadow: inset 3px 0 0 var(--indigo);
+}
+/* DIRECT child only. The street-map toggle is a <button> nested deeper in
+   this card, and `.ap-map__town button` (0,1,1) outranks any single class —
+   it was handing nested buttons this heading's grid layout and 15px padding.
+   (It first bit the location card, which was a <button> then and is a <div>
+   now; the hazard did not leave with it.) */
+.ap-map__town > button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 15px 8px;
+  background: none;
+}
+.ap-map__town strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.ap-map__shop {
+  font-size: 13.5px;
+}
+/* the address block under each town: a small definition list, so the address
+   keeps its label instead of floating as loose grey text */
+.ap-map__addr {
+  padding: 0 15px 13px;
+}
+.ap-map__addr dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+.ap-map__addr dl div {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+.ap-map__addr dt {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-map__addr dd {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ap-map__addr dd em {
+  font-style: normal;
+  color: var(--ink-muted);
+}
+.ap-map__dir {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: 12.5px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  padding-bottom: 1px;
+}
+.ap-map__dir:hover {
+  border-bottom-color: var(--ink);
+}
+/* a town with nothing confirmed says so, in the accent that always means
+   "not yet" on this site */
+.ap-map__soon {
+  font-size: 12.5px;
+  color: var(--terracotta-ink);
+}
+
+/* --------------------------------------------------------------------------
+   GETTING THERE — the row of actions under each town's card, and the
+   "which one is nearest" control above the whole list.
+   -------------------------------------------------------------------------- */
+/* One row, wrapping. Four controls stacked as four block lines read as four
+   unrelated features; in a row with a hairline between them they read as one
+   answer to "how do I get to this shop". */
+.ap-map__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px 16px;
+  margin-top: 11px;
+}
+/* the margins belong to the row now */
+.ap-map__acts .ap-map__dir,
+.ap-map__acts .ap-smap__toggle {
+  margin-top: 0;
+}
+
+.ap-map__near {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 18px;
+  justify-items: start;
+}
+.ap-map__locate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  background: var(--paper);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.ap-map__locate:hover {
+  border-color: var(--ink);
+}
+.ap-map__locate:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+/* A live region that is `display: none` while empty is one assistive tech never
+   registers — same trap as .ap-smap__state. It keeps its box and collapses. */
+.ap-map__nearsay {
+  margin: 0;
+  min-height: 0;
+  max-width: 56ch;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* the distance, once the visitor has asked to be found */
+.ap-map__km {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ap-map__km[data-near] {
+  color: var(--indigo);
+}
+.ap-map__km i {
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+@media (max-width: 860px) {
+  .ap-map__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* the address is only a stand-in until she confirms the shop — said on the
+   line itself, because a banner at the top of the page is a banner someone
+   has already scrolled past */
+.ap-map__prov {
+  font-style: normal;
+  color: var(--terracotta-ink);
+}
+
+/* ==========================================================================
+   STREET-MAP CONTROL (in components/FindInStore.tsx) — the one button that
+   decides whether a visitor loads a map engine and touches a third party at
+   all, plus the live region that reports a failure.
+
+   There is no panel any more. This block used to style a separate disclosure
+   holding its own canvas, address line, coordinates and credit — every one of
+   which duplicated the location card sitting directly above it. The card is
+   the panel now.
+   ========================================================================== */
+.ap-smap__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 11px;
+  padding: 0 0 1px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.ap-smap__toggle:hover {
+  border-bottom-color: var(--ink);
+}
+.ap-smap__toggle span {
+  font-size: 9px;
+  color: var(--ink-muted);
+}
+/* A role="status" that is `display: none` while empty is a live region the
+   assistive tech never registers — when it later gains text there is nothing
+   in the tree to have changed. It collapses to zero height instead, so it
+   takes no space and still announces. */
+.ap-smap__state {
+  margin: 0;
+  min-height: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--terracotta-ink);
+}
+.ap-smap__state:not(:empty) {
+  margin: 9px 0 0;
+}
+
+/* ==========================================================================
+   STREET MAP (components/StreetMap.tsx) — the client's mapcn marker-tooltip,
+   rebuilt without Tailwind/shadcn. maplibre-gl is the one dependency that
+   could NOT be ported away: it is a map engine, not an effect. Its own
+   stylesheet is imported by the component; these rules restyle its furniture
+   to the measured palette and dress the marker and tooltip.
+   ========================================================================== */
+.ap-mlm {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--paper-3);
+}
+/* CARTO Positron is a cool grey sheet; the whole site is warm cream. A light
+   sepia pulls the tiles onto the same paper without touching the marker or
+   the tooltip, which sit in DOM above the canvas. */
+.ap-mlm .maplibregl-canvas {
+  filter: sepia(0.22) saturate(0.94) brightness(1.02);
+}
+.ap-mlm__load {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--paper) 62%, transparent);
+  backdrop-filter: blur(3px);
+}
+.ap-mlm__dots {
+  display: flex;
+  gap: 5px;
+}
+.ap-mlm__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+  animation: ap-mlm-pulse 1.1s ease-in-out infinite;
+}
+.ap-mlm__dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.ap-mlm__dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes ap-mlm-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-mlm__dots i {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* the marker itself — a real button when it is selectable */
+.ap-mlm__pin {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+.ap-mlm__dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  background: var(--indigo);
+  box-shadow: 0 2px 8px -1px rgba(35, 40, 52, 0.5);
+  transition:
+    transform 0.24s var(--ease),
+    background 0.24s var(--ease);
+}
+/* hollow while no shop is confirmed — the same promise the 3D map's pins make */
+.ap-mlm__dot[data-soon] {
+  background: var(--paper);
+  border-color: var(--ink-muted);
+  box-shadow: 0 2px 8px -3px rgba(35, 40, 52, 0.45);
+}
+.ap-mlm__pin:hover .ap-mlm__dot,
+.ap-mlm__pin:focus-visible .ap-mlm__dot {
+  transform: scale(1.25);
+}
+.ap-mlm__pin[aria-pressed="true"] .ap-mlm__dot {
+  background: var(--marigold);
+  border-color: var(--ink);
+  transform: scale(1.3);
+}
+.ap-mlm__pin:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.ap-mlm__tip {
+  pointer-events: none;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 5px 9px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 6px 18px -8px rgba(35, 40, 52, 0.7);
+}
+.ap-mlm__tip b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ap-mlm__tip span {
+  color: color-mix(in srgb, var(--paper) 68%, transparent);
+  font-size: 10.5px;
+}
+
+/* maplibre's own furniture, re-dressed */
+.ap-mlm .maplibregl-popup-content {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.ap-mlm .maplibregl-popup-tip {
+  display: none;
+}
+.ap-mlm .maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--paper) 84%, transparent);
+  font-size: 10px;
+}
+.ap-mlm .maplibregl-ctrl-attrib a {
+  color: var(--ink-muted);
+}
+.ap-mlm .maplibregl-ctrl-group {
+  border-radius: 5px;
+  box-shadow: 0 2px 10px -6px rgba(35, 40, 52, 0.6);
+}
+
+/* ==========================================================================
+   LOCATION CARD (components/LocationCard.tsx) — the client's LocationMap,
+   rebuilt without motion/react or Tailwind, and now the FRAME THE REAL MAP
+   ARRIVES IN. The plate opens on a plain CSS height transition, so it works
+   with GSAP idle, under reduced motion and on a phone; GSAP's only remaining
+   job here is the hover tilt, and that runs on the closed card alone —
+   tilting live tiles would fight the drag. It fills the column rather than
+   sitting at the original's fixed 240px, because here it lives inside a town
+   card, not on an empty stage.
+   ========================================================================== */
+.ap-loc {
+  display: block;
+  position: relative;
+  width: 100%;
+  margin-top: 11px;
+  perspective: 1000px;
+}
+.ap-loc__plate {
+  display: block;
+  position: relative;
+  height: 92px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 13%, transparent);
+  background: var(--paper);
+  transform-style: preserve-3d;
+  transition:
+    height 0.5s var(--ease),
+    border-color 0.3s var(--ease),
+    box-shadow 0.3s var(--ease);
+}
+.ap-loc:hover .ap-loc__plate {
+  border-color: color-mix(in srgb, var(--ink) 32%, transparent);
+  box-shadow: 0 10px 24px -18px rgba(35, 40, 52, 0.55);
+}
+.ap-loc[data-open] .ap-loc__plate {
+  height: 244px;
+}
+
+/* Where the REAL map goes. This used to be an invented street grid that drew
+   itself on open; it was replaced by actual tiles, because a page that ships
+   both is showing an address twice and only one of them is true. */
+.ap-loc__canvas {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.36s var(--ease);
+}
+.ap-loc[data-open] .ap-loc__canvas {
+  opacity: 1;
+}
+
+/* the closed state's faint graph paper, gone the moment the map opens */
+.ap-loc__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  /* FADED IS NOT GONE. At opacity 0 this still hit-tests, and it covers the
+     whole plate — so it silently ate every drag meant for the map underneath.
+     Same bug as .ap-soc__name on the contact page; measured the same way, with
+     elementFromPoint over the open card. */
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease);
+  background-image:
+    linear-gradient(to right, var(--ink) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ink) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+/* THE MAP'S OWN BUTTONS — zoom and recentre.
+   TOP-LEFT, which is the one corner that frees up when the card opens: the
+   status chip holds the top right and the name panel holds the whole bottom
+   edge, while `.ap-loc__icon` fades out exactly here.
+   They live OUTSIDE `.ap-loc__canvas` (which is aria-hidden) and so are real,
+   reachable buttons — and they are the ONLY zoom this map has, since the wheel
+   is deliberately not taken. */
+.ap-loc__ctl {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  gap: 5px;
+  animation: ap-loc-in 0.34s var(--ease) both;
+}
+.ap-loc__btn {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  /* a flat paper chip, not glass: `backdrop-filter` over a WebGL canvas is the
+     combination that painted a phantom nav inside the pinned shop stage */
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px -4px rgba(35, 40, 52, 0.5);
+}
+.ap-loc__btn:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--paper);
+}
+/* spent, not dead: at the style's max zoom "+" can do nothing, and a button
+   that looks live and answers nothing is worse than one that says so */
+.ap-loc__btn:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+.ap-loc__btn--home {
+  margin-top: 3px;
+  color: var(--indigo);
+}
+
+.ap-loc[data-open] .ap-loc__grid {
+  opacity: 0;
+}
+
+.ap-loc__body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 12px 14px;
+  /* the map underneath takes drags; a label sitting on top of it must not
+     swallow them, and nothing in here is interactive */
+  pointer-events: none;
+}
+/* The full-height scrim that used to sit here is GONE. It existed to keep the
+   label readable over a drawn grid, and at 0.94 opacity it would now fog the
+   real tiles — the point of opening the card. The foot carries its own small
+   ground instead, which is all that actually needs one. */
+.ap-loc__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ap-loc__icon {
+  color: var(--indigo);
+  transition: opacity 0.3s var(--ease);
+}
+.ap-loc[data-open] .ap-loc__icon {
+  opacity: 0;
+}
+.ap-loc__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: background 0.24s var(--ease);
+}
+.ap-loc:hover .ap-loc__chip {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.ap-loc__chip i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+}
+.ap-loc__chip[data-on] i {
+  background: var(--olive);
+}
+
+.ap-loc__foot {
+  display: grid;
+  gap: 3px;
+}
+.ap-loc__name {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+  transition: transform 0.34s var(--ease);
+}
+.ap-loc:hover .ap-loc__name {
+  transform: translateX(4px);
+}
+/* over live tiles the name needs its own ground, or it sits on whatever
+   colour the street happens to be */
+.ap-loc[data-open] .ap-loc__foot {
+  padding: 7px 9px;
+  margin: 0 -4px -3px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(2px);
+}
+/* coordinates and the caption exist only in the open state; they collapse to
+   nothing rather than fading in place, so the closed card stays 92px */
+/* These only EXIST when the card is open (LocationCard renders them
+   conditionally), so the max-height clip that used to hide them is gone with
+   the reason for it: clipped text is invisible but still read aloud, and a
+   shut card was reciting coordinates and a tile credit for a map that had
+   never loaded. */
+.ap-loc__co,
+.ap-loc__cap {
+  color: var(--ink-muted);
+  animation: ap-loc-in 0.34s var(--ease) both;
+}
+.ap-loc__co {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+.ap-loc__cap {
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+@keyframes ap-loc-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-loc__co,
+  .ap-loc__cap {
+    animation: none;
+  }
+}
+.ap-loc__rule {
+  height: 1px;
+  margin-top: 4px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--indigo) 55%, transparent),
+    color-mix(in srgb, var(--indigo) 26%, transparent),
+    transparent
+  );
+  transform: scaleX(0.3);
+  transform-origin: left;
+  transition: transform 0.42s var(--ease);
+}
+.ap-loc:hover .ap-loc__rule,
+.ap-loc[data-open] .ap-loc__rule {
+  transform: scaleX(1);
+}
+
+/* The "Click to expand" hint is gone with the card's own button — the control
+   is now the labelled toggle underneath, which says what it does without
+   needing to be hovered first. */
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-loc__plate,
+  .ap-loc__canvas,
+  .ap-loc__grid,
+  .ap-loc__name,
+  .ap-loc__co,
+  .ap-loc__cap,
+  .ap-loc__rule {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   SHOP STRIP (/shop) — the client's expandable gallery. Panels share the row
+   evenly; hovering (or tabbing into) one grows it and dims the rest. Only
+   ever visible when components/ShopStrip.tsx has set [data-live]: the plain
+   grid below is the whole page for phones, reduced motion and no-JS.
+   ========================================================================== */
+.ap-xg {
+  display: none;
+}
+.ap-xg[data-live] {
+  display: block;
+  margin-bottom: clamp(34px, 5vw, 60px);
+}
+.ap-xg__row {
+  display: flex;
+  gap: 8px;
+  height: clamp(340px, 56vh, 560px);
+}
+.ap-xg__panel {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.ap-xg__go {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.ap-xg__go img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap-xg__veil {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  pointer-events: none;
+}
+/* the name sits on its own gradient so it never depends on the photograph
+   underneath being dark in the right place */
+.ap-xg__say {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 16px;
+  color: var(--paper);
+  background: linear-gradient(to top, rgba(21, 27, 45, 0.82), rgba(21, 27, 45, 0.45) 55%, transparent);
+}
+.ap-xg__say strong {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.2vw, 1.35rem);
+  font-weight: 600;
+  line-height: 1.05;
+}
+.ap-xg__say em {
+  font-style: normal;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 86%, transparent);
+}
+/* the sentence is the reward for expanding a panel — a collapsed one is far
+   too narrow to read it in */
+.ap-xg__blurb {
+  font-size: 12.5px;
+  line-height: 1.45;
+  max-width: 34ch;
+  opacity: 0;
+  transition:
+    opacity 0.35s var(--ease),
+    max-height 0.35s var(--ease);
+  max-height: 0;
+  overflow: hidden;
+}
+.ap-xg__panel:hover .ap-xg__blurb,
+.ap-xg__go:focus-visible .ap-xg__blurb {
+  opacity: 1;
+  max-height: 5em;
+}
+.ap-xg__go:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -4px;
+}
+/* the viewer's own control, kept small and separate so it can never be
+   mistaken for the product link that fills the panel */
+.ap-xg__zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--paper);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+.ap-xg__zoom svg {
+  width: 15px;
+  height: 15px;
+}
+.ap-xg__panel:hover .ap-xg__zoom,
+.ap-xg__zoom:focus-visible {
+  opacity: 1;
+}
+.ap-xg__zoom:hover {
+  background: color-mix(in srgb, var(--ink) 68%, transparent);
+}
+
+/* ---- the photograph viewer -------------------------------------------- */
+.ap-xg__lb {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vh, 48px) clamp(56px, 8vw, 120px);
+  background: color-mix(in srgb, var(--ink-indigo) 94%, transparent);
+  animation: ap-xg-in 0.28s var(--ease) 1;
+}
+@keyframes ap-xg-in {
+  from {
+    opacity: 0;
+  }
+}
+.ap-xg__stage {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  max-width: min(1100px, 100%);
+  max-height: 100%;
+}
+.ap-xg__stage img {
+  max-width: 100%;
+  max-height: min(74vh, 780px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 5px;
+  animation: ap-xg-pop 0.3s var(--ease) 1;
+}
+@keyframes ap-xg-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+.ap-xg__x,
+.ap-xg__nav {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: var(--paper);
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+  width: 46px;
+  height: 46px;
+  transition: border-color 0.24s var(--ease);
+}
+.ap-xg__x:hover,
+.ap-xg__nav:hover {
+  border-color: var(--paper);
+}
+.ap-xg__x {
+  top: clamp(14px, 3vh, 30px);
+  right: clamp(14px, 3vw, 30px);
+}
+.ap-xg__x svg,
+.ap-xg__nav svg {
+  width: 22px;
+  height: 22px;
+}
+.ap-xg__nav--prev {
+  left: clamp(10px, 2.4vw, 34px);
+}
+.ap-xg__nav--next {
+  right: clamp(10px, 2.4vw, 34px);
+}
+.ap-xg__count {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(12px, 2.6vh, 26px);
+  translate: -50%;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--paper) 80%, transparent);
+}
+/* the strip carries every category name, price and link, so the grid beneath
+   is a duplicate while it runs */
+.ap-shop[data-strip] .ap-cats {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-xg__lb,
+  .ap-xg__stage img {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   SOCIALS CARD (/contact) — the tiles are stacked off the bottom-left corner
+   and slide in together, each a beat behind the last. Ported from the card
+   the client supplied: Tailwind out, `ap-` classes and the measured palette
+   in, plus keyboard and touch openings the original had no answer for.
+   ========================================================================== */
+.ap-soc__wrap {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  margin-top: 26px;
+}
+.ap-soc {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px -22px rgba(27, 43, 76, 0.55);
+}
+.ap-soc__bg {
+  position: absolute;
+  inset: 2px;
+  border-radius: 20px;
+  background: linear-gradient(43deg, var(--indigo) 0%, var(--terracotta) 62%, var(--marigold) 100%);
+  pointer-events: none;
+}
+/* pointer-events: none is load-bearing. This label covers the WHOLE card at
+   z-index 5 — above the tiles — and fading it to opacity 0 on hover does not
+   stop it hit-testing, so it swallowed every click meant for a link and the
+   cursor showed a text caret over the icons. */
+.ap-soc__name {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  transition: opacity 0.5s var(--ease);
+  pointer-events: none;
+}
+.ap-soc__box {
+  position: absolute;
+  display: grid;
+  place-items: start end;
+  padding: 12px;
+  background: color-mix(in srgb, var(--paper) 34%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-top: 2px solid color-mix(in srgb, var(--paper) 72%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
+  border-radius: 10% 13% 42% 0% / 10% 12% 75% 0%;
+  box-shadow: -7px 7px 29px 0 rgba(27, 43, 76, 0.36);
+  transform-origin: bottom left;
+  transition:
+    bottom 0.8s var(--ease),
+    left 0.8s var(--ease),
+    background 0.3s var(--ease);
+}
+.ap-soc__box svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--paper);
+}
+/* smallest tile on top, so the stack reads as a staircase */
+.ap-soc__box--1 {
+  width: 70%;
+  height: 70%;
+  bottom: -70%;
+  left: -70%;
+  z-index: 2;
+}
+.ap-soc__box--2 {
+  width: 50%;
+  height: 50%;
+  bottom: -50%;
+  left: -50%;
+  z-index: 3;
+}
+.ap-soc__box--3 {
+  width: 30%;
+  height: 30%;
+  bottom: -30%;
+  left: -30%;
+  z-index: 4;
+}
+/* scenery only — it must never take a click meant for the tile above it */
+.ap-soc__box--4 {
+  width: 100%;
+  height: 100%;
+  bottom: -100%;
+  left: -100%;
+  z-index: 1;
+  pointer-events: none;
+}
+.ap-soc:hover .ap-soc__box,
+.ap-soc:focus-within .ap-soc__box {
+  bottom: -1px;
+  left: -1px;
+}
+.ap-soc:hover .ap-soc__name,
+.ap-soc:focus-within .ap-soc__name {
+  opacity: 0;
+}
+a.ap-soc__box:hover {
+  background: color-mix(in srgb, var(--paper) 58%, transparent);
+}
+/* the tiles are links, so they must take a visible focus ring like every
+   other link on the site */
+a.ap-soc__box:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -4px;
+}
+.ap-soc__soon {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  max-width: 32ch;
+}
+/* No hover on a touch screen — the card would never open, so it starts open.
+   Same for reduced motion, where a 0.8s slide is the thing being avoided. */
+@media (hover: none) {
+  .ap-soc .ap-soc__box {
+    bottom: -1px;
+    left: -1px;
+  }
+  .ap-soc .ap-soc__name {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-soc__box,
+  .ap-soc__name {
+    transition: none;
+  }
+}
+
+/* the parcel in flight: a clone on its own fixed layer, above everything
+   including the nav, so nothing in the real layout shifts while it travels */
+.ap-fly {
+  position: fixed;
+  z-index: 400;
+  object-fit: cover;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 24px 50px -22px rgba(27, 43, 76, 0.55);
+  will-change: transform, opacity;
+}
+
+.ap-foot {
+  background: var(--ink-indigo);
+  color: var(--paper);
+  padding: clamp(60px, 9vh, 110px) var(--gutter) 34px;
+}
+/* the grid moved onto the inner wrapper so the reveal can parallax the
+   contents while the footer box itself stays put */
+.ap-foot__in {
+  display: grid;
+  gap: 26px;
+}
+
+/* --------------------------------------------------------------------------
+   MOTION FOOTER REVEAL — html[data-footfx] is set only by FootReveal, only
+   under the desktop+motion gate. main becomes the opaque curtain riding
+   above the fixed footer; its bottom margin is the room the footer shows
+   through. Plain layer never carries the attribute: ordinary flow footer.
+   -------------------------------------------------------------------------- */
+html[data-footfx] main {
+  position: relative;
+  z-index: 1;
+  background: var(--paper);
+  margin-bottom: var(--foot-h, 0px);
+  /* the curtain's lower edge needs a whisper of depth over the footer */
+  box-shadow: 0 30px 60px -30px rgba(27, 43, 76, 0.55);
+}
+html[data-footfx] .ap-foot {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 0;
+}
+.ap-foot__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 26px;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 22%, transparent);
+  padding-top: 20px;
+  font-size: 12.5px;
+}
+.ap-foot__links {
+  display: flex;
+  gap: 20px;
+}
+.ap-foot a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ap-foot__big {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 860px) {
+  /* The drop-down menu hangs off the bottom edge of the bar, so on small
+     screens the glass keeps its full-bleed edges and only changes material —
+     a floating pane would leave the menu hanging in mid-air. */
+  .ap-nav[data-lift]::before {
+    inset: 0;
+    border-radius: 0;
+  }
+  .ap-nav[data-lift] {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  .ap-nav__burger {
+    display: block;
+  }
+  .ap-nav__links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px var(--gutter) 20px;
+    background: var(--paper);
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    display: none;
+  }
+  .ap-nav__links[data-open] {
+    display: flex;
+  }
+  .ap-nav__links a {
+    padding: 10px 0;
+  }
+  .ap-rail {
+    display: none;
+  }
+  .ap-cv__grid,
+  .ap-cart__grid,
+  .ap-contact__grid {
+    grid-template-columns: 1fr;
+  }
+  .ap-cv__say,
+  .ap-cart__side {
+    position: static;
+  }
+  .ap-cart__row {
+    grid-template-columns: 60px 1fr auto;
+    row-gap: 10px;
+  }
+  .ap-cart__sum,
+  .ap-cart__rm {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+}

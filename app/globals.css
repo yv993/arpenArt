@@ -1,0 +1,943 @@
+@import "./shop.css";
+@import "./lookbook.css";
+@import "./cloud.css";
+@import "./morph.css";
+@import "./floatshop.css";
+@import "./selector.css";
+@import "./textfx.css";
+
+/* ===========================================================================
+   ArpenArt — Arpine Baroyan
+
+   Every colour below was MEASURED from her 57 illustrations: pixels binned into
+   a 5-bit histogram, then weighted k-means in CIELAB across the whole
+   collection. The shares are how much of her painted surface each one holds.
+
+     terracotta  32.4% of saturated pixels, present in 37/57 images
+     marigold    30.5%, in 34/57
+     indigo      23.7%, in 30/57
+     sky         in 36/57 — its pale sibling is the largest cluster overall
+     ink         the neutral dark, in 51/57
+
+   --paper is the ONE token that is not measured: she paints edge to edge and
+   leaves no ground (only 2.24% of her pixels are near-white). It is her own
+   warm-cream hue held at its Lab hue angle and re-lit to L*96.
+
+   CONTRAST RULE, measured and non-negotiable: none of her accents can carry
+   body text on paper — marigold is 1.80:1, terracotta 3.45:1. Body copy is
+   --ink or --indigo, full stop. Accents live in fills, rules and large display
+   type. Use --marigold-ink / --terracotta-ink when a coloured label must pass.
+   =========================================================================== */
+
+:root {
+  --paper: #fcf2e6;
+  --paper-2: #fbecd9;
+  --paper-3: #f3e0c8;
+
+  --ink: #232834;
+  --ink-indigo: #1b2b4c;
+  --ink-muted: #5e6371;
+
+  --marigold: #efab23;
+  --terracotta: #d1622d;
+  --indigo: #374897;
+  --sky: #568fc3;
+  --olive: #91a33a;
+
+  /* darkened so they clear 4.5:1 on --paper — do not use on tinted surfaces */
+  --marigold-ink: #9b6400;
+  --terracotta-ink: #b84d19;
+
+  --gutter: clamp(18px, 4.6vw, 76px);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  --font-display: var(--f-display), Georgia, "Times New Roman", serif;
+  --font-body: var(--f-body), "Segoe UI", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: clamp(15.5px, 1.02vw, 17.5px);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+ul,
+ol,
+dl,
+blockquote {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* one visible focus treatment everywhere — indigo clears 7.48:1 on paper */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+:where(.ap-dark) :where(a, button, [tabindex]):focus-visible {
+  outline-color: var(--paper);
+}
+
+.ap-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ap-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 18px;
+}
+.ap-skip:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* --- shared type ------------------------------------------------------- */
+.ap-kicker {
+  font-size: 11.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.4vw, 3.9rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.ap-lede {
+  font-size: 1.08em;
+  max-width: 56ch;
+}
+
+/* --- the one button ----------------------------------------------------- */
+.ap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: var(--indigo);
+  color: var(--paper);
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: background 240ms var(--ease), transform 240ms var(--ease);
+}
+.ap-btn:hover {
+  background: var(--ink-indigo);
+  transform: translateY(-2px);
+}
+.ap-btn.is-ghost {
+  background: none;
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.ap-btn.is-ghost:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.ap-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-btn {
+    transition: none;
+  }
+  .ap-btn:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   HERO — the WHOLE illustration first (client 2026-08-04 "image must show
+   100%, now it's like cut"): contained on the deep-indigo ground like a
+   mounted print, letterboxed rather than cropped. The scroll scrub then
+   scales it past the frame, so the push-in still ends inside the world.
+   The type lives in the RIGHT-BOTTOM as BARE TEXT (client: "remove white
+   frame, it must be only text"). No box, no scrim, no shadow. Two things
+   carry the contrast instead: the painting sits between the fixed nav and
+   a flat indigo GROUND strip, so the sentence and the button rest on that
+   ground (measured 19:1); and the title — which at any workable position
+   crosses BOTH bright artwork and the dark band — carries a layered ink
+   SHADOW behind its paper fill, so the glyphs ground themselves wherever
+   they land. That was a 0.05em stroke until the client called it a border
+   (2026-08-11); the shadow does the same work with no visible edge. A corner
+   vignette was tried and measured
+   useless: soft enough not to read as a box it left 0.92:1 over the
+   snowcaps; strong enough to pass it was a smudge veiling the art.
+   ========================================================================== */
+.ap-hero {
+  position: relative;
+  background: var(--ink-indigo);
+}
+.ap-hero__stage {
+  position: relative;
+  height: 100svh;
+  overflow: clip;
+}
+/* The ground is the series itself: --hero-field is a ribbon of all 57
+   artworks' measured average colours (built in HomeView, hue-sorted),
+   blurred into an aurora, with a warm marigold backlight behind the
+   painting. Masked out before the bottom strip — the sentence and button
+   read on flat indigo, and the field must never creep under them. */
+.ap-hero__stage::before {
+  content: "";
+  position: absolute;
+  inset: -8% -4% 14% -4%;
+  background:
+    radial-gradient(46% 40% at 50% 44%, color-mix(in srgb, var(--marigold) 42%, transparent), transparent 72%),
+    var(--hero-field, var(--ink-indigo));
+  /* the averages of whole paintings are muted by nature — saturation is
+     given back here so the ribbon reads as her palette, not as fog */
+  filter: blur(64px) saturate(1.4);
+  opacity: 0.68;
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 86%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 86%);
+}
+/* THE TRAVELLING SUN (components/Sun.tsx) — cut out of the hero illustration
+   and flown down the page. It is a fixed layer, so it stays with the reader
+   the whole way; the journey is in its transform, not in the document.
+
+   Z-INDEX, MEASURED THE HARD WAY: at 0 it was invisible. Being first in the
+   source does NOT put it behind — a positioned sibling with z-index auto
+   paints in the same layer, so source order alone put the hero's full-bleed
+   illustration on top of it and the sun never appeared at all. It sits at 1,
+   above the sections it crosses. That is the right side of the glass anyway:
+   it is a sun, and it stays faint (opacity 0.3–0.4) through the middle of the
+   journey so it reads as light on the page rather than a sticker over it.
+   It is still under the nav (200) and the footer's own type.
+
+   It exists only once JS has measured the hero and swapped in the sunless
+   plate ([data-on]); with no JS, on a phone, or under reduced motion there is
+   no flying sun and the hero keeps the one painted into it. */
+/* THE SUN TRAVELS BEHIND THE PAGE, and where "behind" sits took measuring.
+   It cannot simply go to z-index -1: `html[data-footfx] main` is an OPAQUE
+   stacking context — it is the curtain the footer reveal rides under — so
+   anything negative inside it is not behind the page, it is invisible.
+   Nor can it go under the sections wholesale: .ap-hero, .ap-cloud and the
+   gallery all paint solid dark backgrounds, and the sun would spend most of
+   the journey hidden inside them.
+   So it sits between the two: ABOVE each section's background, BELOW each
+   section's content. It shows against the dark bands and the paper alike, and
+   every word, card and picture passes in front of it. */
+.ap-sun {
+  position: fixed;
+  inset: 0;
+  /* over the hero at rest, so it still reads as part of the painting */
+  z-index: 3;
+  pointer-events: none;
+  /* nothing shows until the plate is swapped and the geometry read, or a
+     stray sun flashes at the top-left before the first measurement */
+  visibility: hidden;
+  /* it is a picture of a sun, not a light source — but a soft bloom stops it
+     reading as a sticker once it is over the paper */
+  filter: drop-shadow(0 0 42px rgba(239, 171, 35, 0.34));
+}
+.ap-sun[data-on] {
+  visibility: visible;
+}
+/* set once the hero has gone by — from here the sun is scenery */
+.ap-sun[data-behind] {
+  z-index: 0;
+}
+/* Section CONTENT rides above the sun; section BACKGROUNDS stay under it.
+   A block's background paints before positioned descendants, so leaving the
+   sections themselves alone and lifting only their children puts the sun in
+   exactly the gap between the two. The hero is excluded: its own layers are
+   already numbered (picture 1, type 2) and flattening them to a single 1
+   would drop the title behind the illustration. */
+.ap > section:not(.ap-hero) > * {
+  position: relative;
+  z-index: 1;
+}
+.ap-sun__disc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+.ap-hero__img {
+  position: absolute;
+  /* below the fixed glass nav, above the ground strip the type stands on.
+     The height MUST be explicit: an <img> is a replaced element, so with
+     top+bottom set and height auto the height comes from the picture's own
+     ratio and `bottom` is silently ignored — it rendered full-bleed. */
+  top: clamp(70px, 9vh, 84px);
+  left: 0;
+  width: 100%;
+  height: calc(100% - clamp(70px, 9vh, 84px) - clamp(150px, 22vh, 210px));
+  object-fit: contain;
+  object-position: 50% 50%;
+  transform-origin: 42% 55%;
+  will-change: transform;
+  /* above the aurora field */
+  z-index: 1;
+}
+.ap-hero__type {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  align-content: end;
+  justify-items: end;
+  gap: clamp(16px, 2.6vh, 28px);
+  padding: clamp(70px, 12vh, 140px) var(--gutter) clamp(36px, 5vh, 56px);
+  will-change: transform, opacity;
+}
+.ap-hero__title {
+  /* The wordmark's settings exactly (client 2026-08-06). The family was
+     already shared — both are Fraunces — so what actually differed was the
+     weight and the tracking: .ap-nav__mark strong is 700 at -0.02em, this was
+     600 at -0.03em. Matched here, so the headline and the logo are the same
+     letterform at two sizes rather than two near-misses. */
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6.4vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-align: right;
+  color: var(--paper);
+  /* THE RIM IS GONE (client 2026-08-11: "remove border from text its not
+     nice"). It was a 0.05em ink stroke painted behind the fill, and at that
+     weight it read as an outline drawn round the letters rather than as
+     contrast.
+     The job it was doing is real and does not go away with it: this title
+     crosses BOTH the bright yellow hills and the dark band, and the hero has
+     no 4.5:1 zone anywhere. So the ground still travels with the glyphs — as
+     a shadow rather than an edge. Three layered blurs: a tight one that
+     separates the letterform, a mid one that carries over busy paint, and a
+     wide soft one that darkens the field behind the whole line. None of them
+     has a visible boundary, which is the whole difference. */
+  text-shadow:
+    0 1px 2px rgba(23, 26, 44, 0.62),
+    0 3px 12px rgba(23, 26, 44, 0.5),
+    0 8px 34px rgba(23, 26, 44, 0.42);
+}
+/* direct children ONLY: these are the two title lines. A bare descendant
+   `span` here would also hit every letter span the text-FX runner nests
+   inside them and stack the title one character per line. */
+.ap-hero__title > span {
+  display: block;
+}
+.ap-hero__card {
+  color: var(--paper);
+  max-width: 42ch;
+  display: grid;
+  gap: 16px;
+  justify-items: end;
+  text-align: right;
+}
+.ap-hero__hint {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(22px, 4vh, 44px);
+  color: var(--paper);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-shadow: 0 2px 18px rgba(27, 43, 76, 0.7);
+}
+
+/* --------------------------------------------------------------------------
+   SCROLL MEDIA EXPANSION — [data-x] is set ONLY by the desktop moved layer
+   (HomeView's matchMedia callback, which also strips it on revert). Under
+   it the illustration becomes the full-bleed BACKGROUND and a small
+   portrait reel of the Yerevan coffee film stands mid-frame, scaling to
+   cover as you scroll. Everything else (phones, reduced motion, no-JS)
+   never sees these rules: they keep the contained painting.
+   -------------------------------------------------------------------------- */
+.ap-hero[data-x] .ap-hero__img {
+  top: 0;
+  height: 100%;
+  object-fit: cover;
+}
+/* the aurora is invisible behind a cover image — stop paying its blur */
+.ap-hero[data-x] .ap-hero__stage::before {
+  display: none;
+}
+/* The centred film reel lived here — a 46svh portrait card that scaled up to
+   take the frame — and it is gone with its markup. The sentence and CTA that
+   used to land on its gradient now sit on the dimmed painting instead, which
+   is what their contrast was measured against in the first place (5.42:1). */
+@media (min-width: 861px) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .ap-hero {
+    height: 260svh;
+  }
+  .ap-hero__stage {
+    position: sticky;
+    top: 0;
+  }
+}
+
+/* ==========================================================================
+   STRIP — the page turns sideways, runs the 57 pictures past, hands back
+   ========================================================================== */
+.ap-strip {
+  background: var(--paper-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.ap-strip__rail {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 26px);
+  padding: clamp(60px, 10vh, 120px) var(--gutter);
+  width: max-content;
+  will-change: transform;
+}
+.ap-strip__intro {
+  flex: none;
+  width: min(78vw, 460px);
+  display: grid;
+  gap: 16px;
+  padding-right: clamp(20px, 3vw, 50px);
+}
+.ap-strip__card {
+  flex: none;
+  width: clamp(150px, 15vw, 236px);
+  aspect-ratio: 298 / 421;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 18px 40px -26px rgba(35, 40, 52, 0.55);
+}
+.ap-strip__card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap-strip__end {
+  flex: none;
+  width: min(60vw, 260px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  font-size: 1.6rem;
+  color: var(--ink-muted);
+}
+@media (min-width: 861px) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  /* GSAP drives the rail; the native scroller must not also move it */
+  .ap-strip {
+    overflow: clip;
+    height: 100svh;
+    display: grid;
+    align-content: center;
+  }
+}
+
+/* ==========================================================================
+   SECTIONS
+   ========================================================================== */
+.ap-sec {
+  padding: clamp(80px, 13vh, 170px) var(--gutter);
+}
+.ap-sec__head {
+  display: grid;
+  gap: 16px;
+  max-width: 74ch;
+  margin-bottom: clamp(38px, 6vh, 76px);
+}
+.ap-sec--gal {
+  background: var(--ink-indigo);
+  color: var(--paper);
+}
+.ap-sec--gal .ap-kicker {
+  color: color-mix(in srgb, var(--paper) 70%, transparent);
+}
+
+/* --- gallery ------------------------------------------------------------ */
+.ap-gal {
+  position: relative;
+}
+/* the chosen picture's caption: number, series, and the way to buy it.
+   The panel itself passes clicks through; only the link takes them. */
+.ap-gal__info {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(14px, 4vh, 40px);
+  translate: -50%;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+  pointer-events: none;
+}
+.ap-gal__info a {
+  pointer-events: auto;
+}
+.ap-gal__no {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 2.2vw, 1.9rem);
+  color: var(--paper);
+}
+.ap-gal__line {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--paper) 84%, transparent);
+}
+.ap-gal__blurb {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
+}
+.ap-gal__buy {
+  margin-top: 6px;
+  pointer-events: auto;
+}
+/* what still has to be chosen, said under the button rather than found on the
+   next page — the panel sits on the dark gallery band, so this is paper at
+   low weight, not --ink-muted */
+.ap-gal__note {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--paper) 62%, transparent);
+}
+/* wide screens: the picked picture stands ~70% of the view tall, left of
+   centre, and this panel reads BESIDE it like a museum label */
+@media (min-width: 861px) {
+  .ap-gal__info {
+    left: auto;
+    right: clamp(28px, 7vw, 130px);
+    bottom: auto;
+    top: 50%;
+    translate: 0 -50%;
+    justify-items: start;
+    text-align: left;
+    gap: 10px;
+    max-width: 300px;
+  }
+  .ap-gal__no {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+  }
+  .ap-gal__go {
+    margin-top: 8px;
+  }
+}
+.ap-gal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  color: var(--paper);
+  font-size: 15px;
+  line-height: 1;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.ap-gal__close:hover {
+  border-color: var(--paper);
+}
+.ap-gal__canvas {
+  height: clamp(420px, 74vh, 780px);
+  cursor: grab;
+  /* pan-y, not none: the sphere takes horizontal drags and the browser keeps
+     vertical ones, so a phone can still scroll past a section that fills most
+     of the screen. Tipping is a pointer/keyboard gesture only. */
+  touch-action: pan-y;
+}
+.ap-gal__canvas[data-drag] {
+  cursor: grabbing;
+  /* a drag that starts on the canvas must not select the headings above it */
+  user-select: none;
+}
+.ap-gal__canvas:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -6px;
+  border-radius: 4px;
+}
+.ap-gal__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: clamp(8px, 1vw, 16px);
+}
+.ap-gal__grid li {
+  aspect-ratio: 298 / 421;
+  overflow: hidden;
+  border-radius: 3px;
+}
+.ap-gal__grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- category cards ----------------------------------------------------- */
+.ap-cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: clamp(20px, 2.6vw, 40px);
+}
+.ap-cat a {
+  display: grid;
+  gap: 12px;
+}
+.ap-cat__fig {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+}
+.ap-cat__fig img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 620ms var(--ease);
+}
+.ap-cat a:hover .ap-cat__fig img {
+  transform: scale(1.04);
+}
+/* --- unphotographed line: show the designs, not a grey box --------------- */
+.ap-cat__fig.is-swatch {
+  display: block;
+  position: relative;
+}
+.ap-swatch {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 3px;
+  padding: 3px;
+}
+.ap-swatch span {
+  overflow: hidden;
+  border-radius: 2px;
+}
+.ap-swatch img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* held back so the label on top stays the loudest thing in the card and the
+     tile never gets mistaken for a finished product photograph */
+  opacity: 0.9;
+}
+.ap-cat a:hover .ap-swatch img {
+  transform: none;
+}
+.ap-cat__await {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 0 14px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+/* The chip sizes to its own text — a fixed width had the label running out of
+   both ends of it. It needs a ground at all because it sits over six different
+   illustrations and not one of them can be relied on for contrast. */
+.is-swatch .ap-cat__await span {
+  max-width: 100%;
+  padding: 10px 15px;
+  border-radius: 3px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.ap-cat__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  padding-bottom: 8px;
+}
+.ap-cat__row h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+}
+.ap-cat__from {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--terracotta-ink);
+  white-space: nowrap;
+}
+.ap-cat__from.is-soon {
+  color: var(--ink-muted);
+}
+.ap-cat__blurb {
+  font-size: 0.93em;
+  color: var(--ink-muted);
+  max-width: 40ch;
+}
+.ap-cat[data-soon] a {
+  opacity: 0.72;
+}
+
+/* --- about -------------------------------------------------------------- */
+.ap-about {
+  background: var(--paper-3);
+}
+.ap-about__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(28px, 5vw, 80px);
+  align-items: start;
+}
+.ap-about__say {
+  display: grid;
+  gap: 18px;
+  max-width: 60ch;
+}
+.ap-about__lead {
+  font-size: 1.12em;
+  color: var(--ink);
+}
+.ap-about__say p {
+  color: var(--ink-muted);
+}
+.ap-about__facts {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  padding-top: 18px;
+}
+.ap-about__facts div {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 12px;
+}
+.ap-about__facts dt {
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-top: 3px;
+}
+.ap-about__facts dd {
+  margin: 0;
+}
+.ap-about__link {
+  justify-self: start;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--indigo);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+.ap-about__fig {
+  border-radius: 5px;
+  overflow: hidden;
+  position: sticky;
+  top: clamp(20px, 6vh, 70px);
+}
+.ap-about__fig img {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 860px) {
+  .ap-about__grid {
+    grid-template-columns: 1fr;
+  }
+  .ap-about__facts div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .ap-about__fig {
+    position: static;
+  }
+  /* phones: a contained image inside a 100svh stage would strand a small
+     painting in a dark room — instead the stage collapses to the image's
+     own height (the WHOLE illustration, edge to edge) and the type follows
+     in normal flow on the indigo ground below it */
+  .ap-hero__stage {
+    height: auto;
+    /* the nav is FIXED and 76px tall at this width — without this the top
+       quarter of the painting (the sun) hides behind the glass bar */
+    padding-top: 84px;
+  }
+  .ap-hero__img {
+    position: static;
+    height: auto;
+  }
+  .ap-hero__type {
+    position: static;
+    justify-items: stretch;
+    padding: 18px var(--gutter) 30px;
+    /* the type sits on the flat indigo ground here — no vignette needed */
+    background: none;
+  }
+  /* no aurora on phones: the stage wraps the in-flow type here, so the
+     field would glow behind the TEXT — and a 70px blur is battery anyway */
+  .ap-hero__stage::before {
+    display: none;
+  }
+  .ap-hero__title {
+    text-align: left;
+  }
+  .ap-hero__card {
+    justify-items: start;
+    text-align: left;
+  }
+  .ap-hero__hint {
+    display: none;
+  }
+}
+
+/* reduced motion / no-JS: nothing is mid-animation, the rail simply swipes */
+@media (prefers-reduced-motion: reduce) {
+  .ap-cat__fig img {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   ROUTE LOADING (app/loading.tsx) — anatomy from feturesss21's split-reveal
+   preloader, rebuilt on this project's plain CSS.
+
+   It covers the viewport because a partial skeleton on a site whose sections
+   are pinned WebGL rooms would be a worse lie than an honest curtain: there is
+   no small placeholder that resembles a rotating sphere or a plane of 57
+   pictures. Paper, the wordmark, a hairline. Nothing that pretends to be the
+   page underneath.
+   ========================================================================== */
+.ap-load {
+  position: fixed;
+  inset: 0;
+  z-index: 90; /* under the nav's 100, over everything else */
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 22px;
+  background: var(--paper);
+}
+.ap-load__mark {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  /* the same entrance the location card uses, so a navigation feels like part
+     of the site rather than a browser event */
+  animation: ap-loc-in 0.5s var(--ease) both;
+}
+.ap-load__track {
+  display: block;
+  width: min(210px, 42vw);
+  height: 1px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.ap-load__track i {
+  display: block;
+  width: 42%;
+  height: 1px;
+  background: var(--ink);
+  /* INDETERMINATE — see the note in app/loading.tsx. It sweeps because there
+     is no progress number to draw; a width tied to a percentage would be a
+     number this component cannot know. */
+  animation: ap-load-sweep 1.15s var(--ease) infinite;
+}
+@keyframes ap-load-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+/* Someone who asked for less motion still gets the curtain and the wordmark —
+   they are the message — but the hairline holds still and simply reads as a
+   rule rather than sweeping. */
+@media (prefers-reduced-motion: reduce) {
+  .ap-load__mark,
+  .ap-load__track i {
+    animation: none;
+  }
+  .ap-load__track i {
+    width: 100%;
+    opacity: 0.5;
+  }
+}

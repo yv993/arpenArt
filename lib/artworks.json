@@ -1,0 +1,458 @@
+[
+  {
+    "id": "01",
+    "src": "/art/art-01.webp",
+    "thumb": "/art/art-01-sm.webp",
+    "w": 298,
+    "h": 421,
+    "avg": "#9d9aa1"
+  },
+  {
+    "id": "02",
+    "src": "/art/art-02.webp",
+    "thumb": "/art/art-02-sm.webp",
+    "w": 299,
+    "h": 421,
+    "avg": "#756273"
+  },
+  {
+    "id": "03",
+    "src": "/art/art-03.webp",
+    "thumb": "/art/art-03-sm.webp",
+    "w": 298,
+    "h": 421,
+    "avg": "#b8b29d"
+  },
+  {
+    "id": "04",
+    "src": "/art/art-04.webp",
+    "thumb": "/art/art-04-sm.webp",
+    "w": 299,
+    "h": 421,
+    "avg": "#a18067"
+  },
+  {
+    "id": "05",
+    "src": "/art/art-05.webp",
+    "thumb": "/art/art-05-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#8698a6"
+  },
+  {
+    "id": "06",
+    "src": "/art/art-06.webp",
+    "thumb": "/art/art-06-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#828378"
+  },
+  {
+    "id": "07",
+    "src": "/art/art-07.webp",
+    "thumb": "/art/art-07-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#8b8c90"
+  },
+  {
+    "id": "08",
+    "src": "/art/art-08.webp",
+    "thumb": "/art/art-08-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#5b686b"
+  },
+  {
+    "id": "09",
+    "src": "/art/art-09.webp",
+    "thumb": "/art/art-09-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#8a8c7a"
+  },
+  {
+    "id": "10",
+    "src": "/art/art-10.webp",
+    "thumb": "/art/art-10-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#817f9a"
+  },
+  {
+    "id": "11",
+    "src": "/art/art-11.webp",
+    "thumb": "/art/art-11-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#89917f"
+  },
+  {
+    "id": "12",
+    "src": "/art/art-12.webp",
+    "thumb": "/art/art-12-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#74869a"
+  },
+  {
+    "id": "13",
+    "src": "/art/art-13.webp",
+    "thumb": "/art/art-13-sm.webp",
+    "w": 422,
+    "h": 299,
+    "avg": "#6f7576"
+  },
+  {
+    "id": "14",
+    "src": "/art/art-14.webp",
+    "thumb": "/art/art-14-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#b08f7b"
+  },
+  {
+    "id": "15",
+    "src": "/art/art-15.webp",
+    "thumb": "/art/art-15-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#b1a78e"
+  },
+  {
+    "id": "16",
+    "src": "/art/art-16.webp",
+    "thumb": "/art/art-16-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#ab7a5a"
+  },
+  {
+    "id": "17",
+    "src": "/art/art-17.webp",
+    "thumb": "/art/art-17-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#907876"
+  },
+  {
+    "id": "18",
+    "src": "/art/art-18.webp",
+    "thumb": "/art/art-18-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#967d6f"
+  },
+  {
+    "id": "19",
+    "src": "/art/art-19.webp",
+    "thumb": "/art/art-19-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#9a9487"
+  },
+  {
+    "id": "20",
+    "src": "/art/art-20.webp",
+    "thumb": "/art/art-20-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#7b8583"
+  },
+  {
+    "id": "21",
+    "src": "/art/art-21.webp",
+    "thumb": "/art/art-21-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#646063"
+  },
+  {
+    "id": "22",
+    "src": "/art/art-22.webp",
+    "thumb": "/art/art-22-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#6f82b3"
+  },
+  {
+    "id": "23",
+    "src": "/art/art-23.webp",
+    "thumb": "/art/art-23-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#4f5d8b"
+  },
+  {
+    "id": "24",
+    "src": "/art/art-24.webp",
+    "thumb": "/art/art-24-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#887d8b"
+  },
+  {
+    "id": "25",
+    "src": "/art/art-25.webp",
+    "thumb": "/art/art-25-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#8a7272"
+  },
+  {
+    "id": "26",
+    "src": "/art/art-26.webp",
+    "thumb": "/art/art-26-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#655160"
+  },
+  {
+    "id": "27",
+    "src": "/art/art-27.webp",
+    "thumb": "/art/art-27-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#746f78"
+  },
+  {
+    "id": "28",
+    "src": "/art/art-28.webp",
+    "thumb": "/art/art-28-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#9fb6a4"
+  },
+  {
+    "id": "29",
+    "src": "/art/art-29.webp",
+    "thumb": "/art/art-29-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#6b7e82"
+  },
+  {
+    "id": "30",
+    "src": "/art/art-30.webp",
+    "thumb": "/art/art-30-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#404072"
+  },
+  {
+    "id": "31",
+    "src": "/art/art-31.webp",
+    "thumb": "/art/art-31-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#d5bc7e"
+  },
+  {
+    "id": "32",
+    "src": "/art/art-32.webp",
+    "thumb": "/art/art-32-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#45597b"
+  },
+  {
+    "id": "33",
+    "src": "/art/art-33.webp",
+    "thumb": "/art/art-33-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#b7b58e"
+  },
+  {
+    "id": "34",
+    "src": "/art/art-34.webp",
+    "thumb": "/art/art-34-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#aca2b2"
+  },
+  {
+    "id": "35",
+    "src": "/art/art-35.webp",
+    "thumb": "/art/art-35-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#766076"
+  },
+  {
+    "id": "36",
+    "src": "/art/art-36.webp",
+    "thumb": "/art/art-36-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#58506f"
+  },
+  {
+    "id": "38",
+    "src": "/art/art-38.webp",
+    "thumb": "/art/art-38-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#857b66"
+  },
+  {
+    "id": "39",
+    "src": "/art/art-39.webp",
+    "thumb": "/art/art-39-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#948585"
+  },
+  {
+    "id": "40",
+    "src": "/art/art-40.webp",
+    "thumb": "/art/art-40-sm.webp",
+    "w": 299,
+    "h": 421,
+    "avg": "#9c8a72"
+  },
+  {
+    "id": "41",
+    "src": "/art/art-41.webp",
+    "thumb": "/art/art-41-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#959581"
+  },
+  {
+    "id": "42",
+    "src": "/art/art-42.webp",
+    "thumb": "/art/art-42-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#70737e"
+  },
+  {
+    "id": "43",
+    "src": "/art/art-43.webp",
+    "thumb": "/art/art-43-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#73726f"
+  },
+  {
+    "id": "44",
+    "src": "/art/art-44.webp",
+    "thumb": "/art/art-44-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#8f7e6c"
+  },
+  {
+    "id": "45",
+    "src": "/art/art-45.webp",
+    "thumb": "/art/art-45-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#88867c"
+  },
+  {
+    "id": "46",
+    "src": "/art/art-46.webp",
+    "thumb": "/art/art-46-sm.webp",
+    "w": 300,
+    "h": 422,
+    "avg": "#9b9582"
+  },
+  {
+    "id": "47",
+    "src": "/art/art-47.webp",
+    "thumb": "/art/art-47-sm.webp",
+    "w": 300,
+    "h": 422,
+    "avg": "#60808c"
+  },
+  {
+    "id": "48",
+    "src": "/art/art-48.webp",
+    "thumb": "/art/art-48-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#8b9282"
+  },
+  {
+    "id": "49",
+    "src": "/art/art-49.webp",
+    "thumb": "/art/art-49-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#8c956a"
+  },
+  {
+    "id": "50",
+    "src": "/art/art-50.webp",
+    "thumb": "/art/art-50-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#948e5b"
+  },
+  {
+    "id": "51",
+    "src": "/art/art-51.webp",
+    "thumb": "/art/art-51-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#587684"
+  },
+  {
+    "id": "52",
+    "src": "/art/art-52.webp",
+    "thumb": "/art/art-52-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#687d52"
+  },
+  {
+    "id": "53",
+    "src": "/art/art-53.webp",
+    "thumb": "/art/art-53-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#9c8070"
+  },
+  {
+    "id": "54",
+    "src": "/art/art-54.webp",
+    "thumb": "/art/art-54-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#376c89"
+  },
+  {
+    "id": "55",
+    "src": "/art/art-55.webp",
+    "thumb": "/art/art-55-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#91895a"
+  },
+  {
+    "id": "56",
+    "src": "/art/art-56.webp",
+    "thumb": "/art/art-56-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#8e7f62"
+  },
+  {
+    "id": "57",
+    "src": "/art/art-57.webp",
+    "thumb": "/art/art-57-sm.webp",
+    "w": 299,
+    "h": 422,
+    "avg": "#847a67"
+  },
+  {
+    "id": "58",
+    "src": "/art/art-58.webp",
+    "thumb": "/art/art-58-sm.webp",
+    "w": 298,
+    "h": 422,
+    "avg": "#918d73"
+  }
+]

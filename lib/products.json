@@ -1,0 +1,569 @@
+{
+  "totes": [
+    {
+      "id": "01",
+      "src": "/products/totes-01.webp",
+      "thumb": "/products/totes-01-sm.webp",
+      "w": 1067,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#3e5a69"
+    },
+    {
+      "id": "02",
+      "src": "/products/totes-02.webp",
+      "thumb": "/products/totes-02-sm.webp",
+      "w": 1600,
+      "h": 1066,
+      "alpha": false,
+      "avg": "#4c576f"
+    },
+    {
+      "id": "03",
+      "src": "/products/totes-03.webp",
+      "thumb": "/products/totes-03-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#3a4645"
+    },
+    {
+      "id": "04",
+      "src": "/products/totes-04.webp",
+      "thumb": "/products/totes-04-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#485448"
+    },
+    {
+      "id": "05",
+      "src": "/products/totes-05.webp",
+      "thumb": "/products/totes-05-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#6e6260"
+    },
+    {
+      "id": "06",
+      "src": "/products/totes-06.webp",
+      "thumb": "/products/totes-06-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#49514c"
+    },
+    {
+      "id": "07",
+      "src": "/products/totes-07.webp",
+      "thumb": "/products/totes-07-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#73757c"
+    },
+    {
+      "id": "08",
+      "src": "/products/totes-08.webp",
+      "thumb": "/products/totes-08-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#8d7b7b"
+    },
+    {
+      "id": "09",
+      "src": "/products/totes-09.webp",
+      "thumb": "/products/totes-09-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#695757"
+    }
+  ],
+  "mugs": [
+    {
+      "id": "01",
+      "src": "/products/mugs-01.webp",
+      "thumb": "/products/mugs-01-sm.webp",
+      "w": 1578,
+      "h": 1600,
+      "alpha": true,
+      "avg": "#706f6e"
+    }
+  ],
+  "plates": [
+    {
+      "id": "01",
+      "src": "/products/plates-01.webp",
+      "thumb": "/products/plates-01-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": true,
+      "avg": "#5f5e5d"
+    }
+  ],
+  "puzzles": [
+    {
+      "id": "01",
+      "src": "/products/puzzles-01.webp",
+      "thumb": "/products/puzzles-01-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": true,
+      "avg": "#20221c"
+    },
+    {
+      "id": "02",
+      "src": "/products/puzzles-02.webp",
+      "thumb": "/products/puzzles-02-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#ac989d"
+    }
+  ],
+  "postcards": [
+    {
+      "id": "01",
+      "src": "/products/postcards-01.webp",
+      "thumb": "/products/postcards-01-sm.webp",
+      "w": 1280,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#b2aa9b"
+    },
+    {
+      "id": "02",
+      "src": "/products/postcards-02.webp",
+      "thumb": "/products/postcards-02-sm.webp",
+      "w": 1280,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#b0ad98"
+    },
+    {
+      "id": "03",
+      "src": "/products/postcards-03.webp",
+      "thumb": "/products/postcards-03-sm.webp",
+      "w": 1280,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#acb3b9"
+    },
+    {
+      "id": "04",
+      "src": "/products/postcards-04.webp",
+      "thumb": "/products/postcards-04-sm.webp",
+      "w": 1280,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#ada4a4"
+    },
+    {
+      "id": "05",
+      "src": "/products/postcards-05.webp",
+      "thumb": "/products/postcards-05-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#617251"
+    },
+    {
+      "id": "06",
+      "src": "/products/postcards-06.webp",
+      "thumb": "/products/postcards-06-sm.webp",
+      "w": 1067,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#a69071"
+    },
+    {
+      "id": "07",
+      "src": "/products/postcards-07.webp",
+      "thumb": "/products/postcards-07-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#b4aaa7"
+    },
+    {
+      "id": "08",
+      "src": "/products/postcards-08.webp",
+      "thumb": "/products/postcards-08-sm.webp",
+      "w": 1600,
+      "h": 1275,
+      "alpha": false,
+      "avg": "#75a0c0"
+    },
+    {
+      "id": "09",
+      "src": "/products/postcards-09.webp",
+      "thumb": "/products/postcards-09-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#929690"
+    },
+    {
+      "id": "10",
+      "src": "/products/postcards-10.webp",
+      "thumb": "/products/postcards-10-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#b6bccd"
+    },
+    {
+      "id": "11",
+      "src": "/products/postcards-11.webp",
+      "thumb": "/products/postcards-11-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#ece7e4"
+    }
+  ],
+  "scarves": [
+    {
+      "id": "01",
+      "src": "/products/scarves-01.webp",
+      "thumb": "/products/scarves-01-sm.webp",
+      "w": 1600,
+      "h": 1200,
+      "alpha": false,
+      "avg": "#b2aca6"
+    },
+    {
+      "id": "02",
+      "src": "/products/scarves-02.webp",
+      "thumb": "/products/scarves-02-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#8a867e"
+    },
+    {
+      "id": "03",
+      "src": "/products/scarves-03.webp",
+      "thumb": "/products/scarves-03-sm.webp",
+      "w": 1525,
+      "h": 1600,
+      "alpha": true,
+      "avg": "#201a13"
+    },
+    {
+      "id": "04",
+      "src": "/products/scarves-04.webp",
+      "thumb": "/products/scarves-04-sm.webp",
+      "w": 1525,
+      "h": 1600,
+      "alpha": true,
+      "avg": "#1c1e1b"
+    },
+    {
+      "id": "05",
+      "src": "/products/scarves-05.webp",
+      "thumb": "/products/scarves-05-sm.webp",
+      "w": 1600,
+      "h": 1200,
+      "alpha": false,
+      "avg": "#b0b0ad"
+    },
+    {
+      "id": "06",
+      "src": "/products/scarves-06.webp",
+      "thumb": "/products/scarves-06-sm.webp",
+      "w": 1600,
+      "h": 1200,
+      "alpha": false,
+      "avg": "#b0b6b7"
+    },
+    {
+      "id": "07",
+      "src": "/products/scarves-07.webp",
+      "thumb": "/products/scarves-07-sm.webp",
+      "w": 1600,
+      "h": 1066,
+      "alpha": false,
+      "avg": "#b4a79a"
+    },
+    {
+      "id": "08",
+      "src": "/products/scarves-08.webp",
+      "thumb": "/products/scarves-08-sm.webp",
+      "w": 1600,
+      "h": 1029,
+      "alpha": false,
+      "avg": "#9baab4"
+    },
+    {
+      "id": "09",
+      "src": "/products/scarves-09.webp",
+      "thumb": "/products/scarves-09-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#3f3950"
+    },
+    {
+      "id": "10",
+      "src": "/products/scarves-10.webp",
+      "thumb": "/products/scarves-10-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#423d54"
+    },
+    {
+      "id": "11",
+      "src": "/products/scarves-11.webp",
+      "thumb": "/products/scarves-11-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#3b344d"
+    },
+    {
+      "id": "12",
+      "src": "/products/scarves-12.webp",
+      "thumb": "/products/scarves-12-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#443f54"
+    },
+    {
+      "id": "13",
+      "src": "/products/scarves-13.webp",
+      "thumb": "/products/scarves-13-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#37304a"
+    },
+    {
+      "id": "14",
+      "src": "/products/scarves-14.webp",
+      "thumb": "/products/scarves-14-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#c4c9cc"
+    },
+    {
+      "id": "15",
+      "src": "/products/scarves-15.webp",
+      "thumb": "/products/scarves-15-sm.webp",
+      "w": 1600,
+      "h": 1051,
+      "alpha": false,
+      "avg": "#d5d0cd"
+    }
+  ],
+  "apparel": [
+    {
+      "id": "01",
+      "src": "/products/apparel-01.webp",
+      "thumb": "/products/apparel-01-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#93865a"
+    },
+    {
+      "id": "02",
+      "src": "/products/apparel-02.webp",
+      "thumb": "/products/apparel-02-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#f6f5f5"
+    },
+    {
+      "id": "03",
+      "src": "/products/apparel-03.webp",
+      "thumb": "/products/apparel-03-sm.webp",
+      "w": 1600,
+      "h": 1599,
+      "alpha": true,
+      "avg": "#111417"
+    },
+    {
+      "id": "04",
+      "src": "/products/apparel-04.webp",
+      "thumb": "/products/apparel-04-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#f7f7f7"
+    },
+    {
+      "id": "05",
+      "src": "/products/apparel-05.webp",
+      "thumb": "/products/apparel-05-sm.webp",
+      "w": 1441,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#8d8d8d"
+    },
+    {
+      "id": "06",
+      "src": "/products/apparel-06.webp",
+      "thumb": "/products/apparel-06-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#a9a9a9"
+    },
+    {
+      "id": "07",
+      "src": "/products/apparel-07.webp",
+      "thumb": "/products/apparel-07-sm.webp",
+      "w": 1600,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#a9a9a9"
+    },
+    {
+      "id": "08",
+      "src": "/products/apparel-08.webp",
+      "thumb": "/products/apparel-08-sm.webp",
+      "w": 1440,
+      "h": 1600,
+      "alpha": true,
+      "avg": "#131212"
+    },
+    {
+      "id": "09",
+      "src": "/products/apparel-09.webp",
+      "thumb": "/products/apparel-09-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#5e9192"
+    },
+    {
+      "id": "10",
+      "src": "/products/apparel-10.webp",
+      "thumb": "/products/apparel-10-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#c1b3c1"
+    }
+  ],
+  "stickers": [
+    {
+      "id": "01",
+      "src": "/products/stickers-01.webp",
+      "thumb": "/products/stickers-01-sm.webp",
+      "w": 1600,
+      "h": 1200,
+      "alpha": false,
+      "avg": "#a37d7c"
+    },
+    {
+      "id": "02",
+      "src": "/products/stickers-02.webp",
+      "thumb": "/products/stickers-02-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#d3cecc"
+    },
+    {
+      "id": "03",
+      "src": "/products/stickers-03.webp",
+      "thumb": "/products/stickers-03-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": true,
+      "avg": "#312c2b"
+    },
+    {
+      "id": "04",
+      "src": "/products/stickers-04.webp",
+      "thumb": "/products/stickers-04-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#9da8e2"
+    },
+    {
+      "id": "05",
+      "src": "/products/stickers-05.webp",
+      "thumb": "/products/stickers-05-sm.webp",
+      "w": 1600,
+      "h": 1003,
+      "alpha": false,
+      "avg": "#e2a224"
+    },
+    {
+      "id": "06",
+      "src": "/products/stickers-06.webp",
+      "thumb": "/products/stickers-06-sm.webp",
+      "w": 1600,
+      "h": 1067,
+      "alpha": false,
+      "avg": "#cccccc"
+    },
+    {
+      "id": "07",
+      "src": "/products/stickers-07.webp",
+      "thumb": "/products/stickers-07-sm.webp",
+      "w": 877,
+      "h": 1240,
+      "alpha": false,
+      "avg": "#c6b4a3"
+    },
+    {
+      "id": "08",
+      "src": "/products/stickers-08.webp",
+      "thumb": "/products/stickers-08-sm.webp",
+      "w": 1272,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#9fa3a6"
+    },
+    {
+      "id": "09",
+      "src": "/products/stickers-09.webp",
+      "thumb": "/products/stickers-09-sm.webp",
+      "w": 1272,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#a7a8a9"
+    },
+    {
+      "id": "10",
+      "src": "/products/stickers-10.webp",
+      "thumb": "/products/stickers-10-sm.webp",
+      "w": 1270,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#a39e9b"
+    },
+    {
+      "id": "11",
+      "src": "/products/stickers-11.webp",
+      "thumb": "/products/stickers-11-sm.webp",
+      "w": 1272,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#b2a29c"
+    }
+  ],
+  "about": [
+    {
+      "id": "01",
+      "src": "/products/about-01.webp",
+      "thumb": "/products/about-01-sm.webp",
+      "w": 1067,
+      "h": 1600,
+      "alpha": false,
+      "avg": "#575746"
+    }
+  ]
+}

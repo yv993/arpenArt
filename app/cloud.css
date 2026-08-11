@@ -1,0 +1,321 @@
+/* ==========================================================================
+   CLOUD — the series lying freely in space.
+
+   Two layers, same as the lookbook:
+
+     1. PLAIN — a swipeable horizontal rail of the pictures. This is what a
+        phone gets, and a reader who asked for less motion, and a browser with
+        scripting off. It is the behaviour this section already had.
+     2. MOVED — behind one media query, the same markup becomes a pinned frame
+        onto a plane wider than the screen, with the pictures scattered
+        across it. Scroll drifts the plane; a drag pans it.
+
+   Geometry follows the MEASURED reference (creativeapproa.ch): axis-aligned
+   cards, 6px radius, no heavy shadow, a paper mount on about a third. The
+   cards are <button>s — choosing one enlarges it with a caption; the choose /
+   dim / grow choreography is GSAP's, but the caption itself is CSS on
+   [aria-pressed], so it works on the plain rail too.
+
+   Every card's place comes in as --x/--y/--w custom properties rather than
+   inline geometry. Inline geometry beats every stylesheet rule, so on a phone
+   the scatter would survive into the rail and tear it apart — the same trap
+   the lookbook tiles hit.
+   ========================================================================== */
+
+.ap-cloud {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --------------------------------------------------------------------------
+   1. PLAIN — a swipeable rail
+   -------------------------------------------------------------------------- */
+.ap-cloud__frame {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.ap-cloud__plane {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 26px);
+  width: max-content;
+  padding: clamp(30px, 5vh, 60px) var(--gutter);
+}
+/* buttons now, so every trace of the UA button costume goes */
+.ap-cloud__card {
+  flex: none;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  position: relative;
+  width: clamp(150px, 15vw, 236px);
+  aspect-ratio: 298 / 421;
+  border-radius: 6px;
+}
+/* the crop lives on the IMG, not the card: the card must stay
+   overflow-visible or the caption under it is clipped away */
+.ap-cloud__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+/* the caption — pure CSS off aria-pressed, so the rail gets it too. On the
+   rail it sits INSIDE the picture's bottom edge (the rail clips overflow). */
+.ap-cloud__card::after {
+  content: attr(data-caption);
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 16px);
+  padding: 6px 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  color: var(--paper);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease), visibility 0.3s;
+  pointer-events: none;
+}
+.ap-cloud__card[aria-pressed="true"]::after {
+  opacity: 1;
+  visibility: visible;
+}
+.ap-cloud__card:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 3px;
+}
+.ap-cloud__say {
+  padding: 0 var(--gutter) clamp(56px, 9vh, 110px);
+  max-width: 62ch;
+  display: grid;
+  gap: 14px;
+}
+/* the "Drag to move" cue is gone from the markup with the drag itself */
+
+/* --------------------------------------------------------------------------
+   2. MOVED — the pinned frame and its plane
+   -------------------------------------------------------------------------- */
+@media (scripting: enabled) and (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+  /* The grab/grabbing cursors and the touch-action guard went with the drag
+     (client 2026-08-06). Nothing here takes a gesture any more, so the frame
+     no longer has to fight the page for the wheel or claim the pointer. */
+  .ap-cloud__frame {
+    position: relative;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  /* A vignette over the WHOLE frame rather than a panel behind the words.
+     A panel-shaped scrim has to be a rectangle, and a rectangle over a cloud
+     reads as a slab however softly it fades; worse, the kicker and the cue sat
+     past the strong part of it and measured 1.49:1 and 1.39:1. Dimming the
+     frame itself is what the reference does with its dark room — the artwork
+     keeps its colour, the middle is quiet enough to read on, and there is no
+     edge anywhere. */
+  .ap-cloud__frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 500; /* over every resting card; a CHOSEN card rises to 600 */
+    pointer-events: none;
+    /* THE MIDDLE IS CLEAR NOW (client 2026-08-11: "central part like in shadow
+       but it must view cleanest way"). This used to be 92% ink at the CENTRE
+       falling to 26% at the edges — the darkest point sat exactly where the
+       pictures are. It was built that way for a reason that has since gone:
+       the intro was a centred block of kicker, title and sentence, and it
+       needed the cloud dimmed underneath it to be readable. That block moved
+       to the left gutter and the per-card caption moved into the info panel,
+       so nothing is being read off the middle any more.
+       Inverted: nothing over the centre, a soft fall-off at the frame's edges
+       so the scatter still ends rather than being cut, and a wash down the
+       LEFT where the title actually lives. */
+    background:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--ink) 76%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 40%, transparent) 22%,
+        transparent 46%
+      ),
+      radial-gradient(
+        closest-side at 50% 50%,
+        transparent 0%,
+        transparent 44%,
+        color-mix(in srgb, var(--ink) 26%, transparent) 78%,
+        color-mix(in srgb, var(--ink) 58%, transparent) 100%
+      );
+    transition: opacity 0.4s var(--ease);
+  }
+  /* with a picture chosen the room goes dark its own way (every other card is
+     dimmed to 0.16) — the vignette on top of that would bury the chosen card's
+     neighbourhood completely, so it steps back */
+  .ap-cloud__frame[data-chosen]::after {
+    opacity: 0.35;
+  }
+
+  /* .ap-dark only fixes focus rings — every dark band sets its own type
+     colours, and --ink-muted on --ink is 1.5:1. */
+  .ap-cloud .ap-kicker {
+    color: color-mix(in srgb, var(--paper) 74%, transparent);
+  }
+  .ap-cloud .ap-lede {
+    color: color-mix(in srgb, var(--paper) 88%, transparent);
+  }
+
+  /* THE element that travels — and only a DRAG travels it now; the section
+     takes no part in page scroll. Sized so the tightened scatter nearly all
+     fits the frame at rest: smaller cards, more of them in view, a little
+     slack left over for the drag. */
+  .ap-cloud__plane {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    display: block;
+    width: 150vw;
+    height: 120svh;
+    padding: 0;
+    gap: 0;
+    will-change: transform;
+  }
+
+  /* Reference geometry: axis-aligned, 6px radius, NO heavy shadow — the dark
+     room does the separating. GSAP owns the transform (centring + float),
+     which replaces the static translate the plain layer never needed. */
+  .ap-cloud__card {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    height: auto;
+    z-index: var(--z);
+    transform: translate(-50%, -50%);
+    border-radius: 6px;
+    box-shadow: 0 10px 26px -18px rgba(0, 0, 0, 0.7);
+  }
+  /* A paper mount behind about a third of them, as in the reference.
+     BORDER, not padding: a percentage padding resolves against the containing
+     block's width, and the containing block here is the 2592px plane, so
+     `padding: 7%` put 414px of mount on a 444px card and collapsed its
+     photograph to 0×0. */
+  .ap-cloud__card.is-mounted {
+    border: 5px solid var(--paper);
+    border-bottom-width: 13px;
+    background: var(--paper) !important;
+    border-radius: 6px;
+  }
+  .ap-cloud__card.is-mounted img {
+    border-radius: 1px;
+  }
+
+  /* The caption that used to hang under the chosen card is OFF here: the
+     panel beside the picture now says the same number and the same series,
+     and printing both put the words on screen twice. It stays for the plain
+     rail (the rule above this media query), which has no panel — that is the
+     whole reason the caption was built out of `data-caption` in CSS. */
+  .ap-cloud__card::after {
+    content: none;
+  }
+
+  /* THE TITLE ALONE, ON THE LEFT (client 2026-08-06). It used to be a centred
+     block of kicker + title + sentence + drag cue, sitting in the middle of
+     the cloud — which is where the pictures are. Moved to the corner, the way
+     the shop room's name sits in its corner, and reduced to the one line that
+     names the section. The others stay in the markup for the plain layer,
+     which has no other introduction. */
+  .ap-cloud__say {
+    position: absolute;
+    left: calc(var(--gutter) - clamp(14px, 2vw, 30px));
+    top: clamp(84px, 12vh, 140px);
+    z-index: 999; /* above every card, whatever its --z */
+    width: min(30ch, 44vw);
+    max-width: none; /* the plain layer's 62ch was still winning */
+    justify-items: start;
+    text-align: left;
+    padding: 0;
+    pointer-events: none;
+  }
+  .ap-cloud__say .ap-kicker,
+  .ap-cloud__say .ap-lede {
+    display: none;
+  }
+  .ap-cloud__say .ap-h2 {
+    font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+  }
+
+  /* ---- what a picked picture says -------------------------------------- */
+  /* The picture is panned to 36% of the frame's width, so this reads beside
+     it like a label beside a print, rather than on top of the thing it is
+     describing. */
+  .ap-cloud__info {
+    position: absolute;
+    right: clamp(24px, 6vw, 96px);
+    top: 50%;
+    translate: 0 -50%;
+    z-index: 1000;
+    width: min(340px, 34vw);
+    display: grid;
+    gap: 7px;
+    color: var(--paper);
+    animation: ap-cloud-say 0.4s var(--ease) both;
+  }
+  .ap-cloud__no {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .ap-cloud__series {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--paper) 72%, transparent);
+  }
+  .ap-cloud__body {
+    margin: 4px 0 0;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--paper) 80%, transparent);
+  }
+  .ap-cloud__go {
+    margin-top: 10px;
+    justify-self: start;
+  }
+  .ap-cloud__close {
+    position: absolute;
+    right: 0;
+    top: -46px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    background: color-mix(in srgb, var(--ink) 55%, transparent);
+    backdrop-filter: blur(6px);
+    color: var(--paper);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .ap-cloud__close:hover {
+    background: color-mix(in srgb, var(--ink) 78%, transparent);
+  }
+  @keyframes ap-cloud-say {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+  }
+}
