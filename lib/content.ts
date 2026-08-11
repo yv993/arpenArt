@@ -532,9 +532,10 @@ export const home = {
   },
   strip: {
     kicker: "(The series)",
-    title: "FIFTY-SEVEN PICTURES OF ONE COUNTRY",
+    // Arpine's own header for the series (Header - Text.txt, 2026-08-12)
+    title: "A JOURNEY THROUGH ARMENIA",
     copy:
-      "Yerevan's courtyards and its Opera House, Ararat over the fields, the monasteries, the coffee, the wine, and the people in the middle of all of it.",
+      "A collection of over 50 illustrations inspired by Armenia’s cities, landscapes, traditions and everyday moments. Each piece tells a unique story — capturing the spirit, colors and memories of Armenia.",
     /** What a picked picture says. STILL only facts we have: its number and
      *  the series. The artworks have no titles yet — see the note at the top
      *  of this file — so nothing here invents one. */
