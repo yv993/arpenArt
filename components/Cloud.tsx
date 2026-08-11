@@ -26,6 +26,15 @@ type Art = {
 
 /** which face of the chosen picture the big card is showing */
 type View = "front" | "back" | "mock";
+const VIEWS: View[] = ["front", "back", "mock"];
+
+/** one face of a picture: its file and its real box, for the fit decision */
+const face = (p: Art, v: View) =>
+  v === "back"
+    ? { src: p.back, w: p.lgW, h: p.lgH }
+    : v === "mock"
+      ? { src: p.mock, w: p.mockW, h: p.mockH }
+      : { src: p.lg, w: p.lgW, h: p.lgH };
 
 // ============================================================================
 // CLOUD — the series lying freely in space, after creativeapproa.ch.
@@ -108,9 +117,33 @@ export default function Cloud({
   const [chosen, setChosen] = useState<string | null>(null);
   // every picture opens on its front; the switcher below the note changes it
   const [view, setView] = useState<View>("front");
+  /** the page mid-turn. Forward: the OLD face rides on top, turning away,
+   *  the new one already beneath. Backward: the NEW face turns back in on
+   *  top, while the old one holds beneath until it is covered. */
+  type Face = { src?: string; w?: number; h?: number };
+  const [page, setPage] = useState<{ over: Face; under?: Face; dir: 1 | -1 } | null>(null);
   useEffect(() => {
     setView("front");
+    setPage(null);
   }, [chosen]);
+
+  const switchView = useCallback(
+    (v: View, art: Art | undefined) => {
+      if (v === view || !art) return;
+      const dir: 1 | -1 = VIEWS.indexOf(v) > VIEWS.indexOf(view) ? 1 : -1;
+      const oldFace = face(art, view);
+      const newFace = face(art, v);
+      setPage(
+        oldFace.src && newFace.src
+          ? dir === 1
+            ? { over: oldFace, dir }
+            : { over: newFace, under: oldFace, dir }
+          : null,
+      );
+      setView(v);
+    },
+    [view],
+  );
 
   // THE DRAG IS GONE (client 2026-08-06). It took the pointer-capture dance
   // with it — the capture-on-frame trick, the down-card ref, the click slop,
@@ -307,29 +340,46 @@ export default function Cloud({
               }
             >
               <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" />
-              {/* the chosen card swaps up to the selected face — front print,
-                  the postcard's back, or the printed mockup. When the face's
-                  aspect differs from the card's (art-13's portrait print of a
-                  landscape original; every landscape mockup), it letterboxes
-                  on the artwork's own average colour instead of cropping. */}
+              {/* the chosen card shows the selected face — front print, the
+                  postcard's back, or the printed mockup — and CHANGES FACE
+                  LIKE A BOOK PAGE (client 2026-08-12): forward turns the
+                  current face away around its left edge, backward turns the
+                  previous face back in, over the face beneath. A face whose
+                  aspect differs from the card (art-13's portrait print of a
+                  landscape original; every landscape mockup) letterboxes on
+                  the artwork's own average colour instead of cropping. */}
               {chosen === p.id &&
                 (() => {
-                  const src = view === "back" ? p.back : view === "mock" ? p.mock : p.lg;
-                  if (!src) return null;
-                  const w = view === "mock" ? p.mockW : p.lgW;
-                  const h = view === "mock" ? p.mockH : p.lgH;
-                  const crop = w && h && Math.abs(p.w / p.h - w / h) < 0.08;
+                  const cur = face(p, view);
+                  if (!cur.src) return null;
+                  const fit = (w?: number, h?: number) => !(w && h && Math.abs(p.w / p.h - w / h) < 0.08);
+                  const under = page?.under ?? cur;
                   return (
-                    <img
-                      className={`ap-cloud__lg${crop ? "" : " is-fit"}`}
-                      key={src}
-                      src={src}
-                      alt=""
-                      width={w}
-                      height={h}
-                      decoding="async"
-                      style={crop ? undefined : { background: p.avg }}
-                    />
+                    <>
+                      <img
+                        className={`ap-cloud__lg${fit(under.w, under.h) ? " is-fit" : ""}${page ? " no-fade" : ""}`}
+                        key={under.src}
+                        src={under.src}
+                        alt=""
+                        width={under.w}
+                        height={under.h}
+                        decoding="async"
+                        style={fit(under.w, under.h) ? { background: p.avg } : undefined}
+                      />
+                      {page && (
+                        <img
+                          className={`ap-cloud__page ${page.dir === 1 ? "is-out" : "is-in"}${fit(page.over.w, page.over.h) ? " is-fit" : ""}`}
+                          key={(page.over.src ?? "") + view}
+                          src={page.over.src}
+                          alt=""
+                          width={page.over.w}
+                          height={page.over.h}
+                          decoding="async"
+                          style={fit(page.over.w, page.over.h) ? { background: p.avg } : undefined}
+                          onAnimationEnd={() => setPage(null)}
+                        />
+                      )}
+                    </>
                   );
                 })()}
             </button>
@@ -368,16 +418,16 @@ export default function Cloud({
               if (!art?.back && !art?.mock) return null;
               return (
                 <div className="ap-cloud__views" role="group" aria-label="Faces of this picture">
-                  <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")}>
+                  <button type="button" aria-pressed={view === "front"} onClick={() => switchView("front", art)}>
                     Front
                   </button>
                   {art.back && (
-                    <button type="button" aria-pressed={view === "back"} onClick={() => setView("back")}>
+                    <button type="button" aria-pressed={view === "back"} onClick={() => switchView("back", art)}>
                       Back
                     </button>
                   )}
                   {art.mock && (
-                    <button type="button" aria-pressed={view === "mock"} onClick={() => setView("mock")}>
+                    <button type="button" aria-pressed={view === "mock"} onClick={() => switchView("mock", art)}>
                       Printed
                     </button>
                   )}

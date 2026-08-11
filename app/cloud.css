@@ -81,6 +81,57 @@
 .ap-cloud__lg.is-fit {
   object-fit: contain;
 }
+.ap-cloud__lg.no-fade {
+  animation: none;
+}
+/* ---- THE PAGE TURN (client 2026-08-12: faces change "like book pages").
+   The card gets depth; the turning face hinges on its left edge like a page
+   on its spine. Forward lifts the current face away to reveal the next
+   beneath; backward turns the previous face back in over it. */
+.ap-cloud__card {
+  perspective: 1100px;
+}
+.ap-cloud__page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  will-change: transform;
+  /* the lifted page needs an edge shadow to read as paper, not a texture */
+  box-shadow: 6px 0 18px rgb(0 0 0 / 0.35);
+}
+.ap-cloud__page.is-fit {
+  object-fit: contain;
+}
+.ap-cloud__page.is-out {
+  animation: ap-page-out 0.55s cubic-bezier(0.55, 0.06, 0.68, 0.19) both;
+}
+.ap-cloud__page.is-in {
+  animation: ap-page-in 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes ap-page-out {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(-88deg);
+    opacity: 0.9;
+  }
+}
+@keyframes ap-page-in {
+  from {
+    transform: rotateY(-88deg);
+    opacity: 0.9;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
 @keyframes ap-lg-in {
   from {
     opacity: 0;
