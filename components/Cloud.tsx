@@ -125,7 +125,16 @@ export default function Cloud({
   useEffect(() => {
     setView("front");
     setPage(null);
-  }, [chosen]);
+    // warm the picture's other faces the moment it opens, so the first
+    // switch doesn't have to wait on the network
+    const art = chosen ? items.find((a) => a.id === chosen) : undefined;
+    [art?.back, art?.mock].forEach((s) => {
+      if (s) new Image().src = s;
+    });
+  }, [chosen, items]);
+
+  /** A later click supersedes a turn still waiting on its image. */
+  const turnToken = useRef(0);
 
   const switchView = useCallback(
     (v: View, art: Art | undefined) => {
@@ -133,14 +142,24 @@ export default function Cloud({
       const dir: 1 | -1 = VIEWS.indexOf(v) > VIEWS.indexOf(view) ? 1 : -1;
       const oldFace = face(art, view);
       const newFace = face(art, v);
-      setPage(
-        oldFace.src && newFace.src
-          ? dir === 1
-            ? { over: oldFace, dir }
-            : { over: newFace, under: oldFace, dir }
-          : null,
-      );
-      setView(v);
+      if (!oldFace.src || !newFace.src) {
+        setPage(null);
+        setView(v);
+        return;
+      }
+      // NEVER start the turn before the incoming face has decoded — faces
+      // load lazily, and turning onto an empty <img> showed whatever sat
+      // beneath (the front thumb) until the real face popped in
+      // (client 2026-08-12: "brings the first image then changes").
+      const token = ++turnToken.current;
+      const img = new Image();
+      img.src = newFace.src;
+      const go = () => {
+        if (token !== turnToken.current) return;
+        setPage(dir === 1 ? { over: oldFace, dir } : { over: newFace, under: oldFace, dir });
+        setView(v);
+      };
+      img.decode().then(go, go);
     },
     [view],
   );
