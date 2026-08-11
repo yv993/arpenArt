@@ -941,3 +941,86 @@ select {
     opacity: 0.5;
   }
 }
+
+/* ==========================================================================
+   TOUCH TARGETS — measured at 390x844 across every page.
+
+   The layout itself was already sound on a phone: no horizontal overflow and
+   no clipped text on any of the eight pages. What failed was hit area. The
+   worst was the consent checkbox on /contact at 13x13 CSS px — a control a
+   visitor must tick before they can order, roughly a quarter of the 44px the
+   platform guidelines ask for. Text inputs sat at 31px, and the inline text
+   links (footer legal, the map's actions, the about links) were 17-22px tall
+   because a line of 12.5px type is exactly that tall.
+
+   `pointer: coarse` rather than a width query — this is about fingers, not
+   screens. A touch laptop needs it at 1440px; a mouse at 380px does not. The
+   desktop appearance is therefore untouched.
+
+   The technique is padding, not scale: growing the BOX keeps the type at the
+   size it was designed at. Where a link sits in flowing text, the padding is
+   vertical only and paired with a negative margin so the line rhythm around
+   it does not open up.
+   ========================================================================== */
+@media (pointer: coarse) {
+  /* form controls a thumb has to land on */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  .ap-btn,
+  .ap-map__locate,
+  button[type="submit"] {
+    min-height: 46px;
+  }
+  textarea {
+    min-height: 96px;
+  }
+  /* THE CONSENT BOX. 13x13 is not a target, it is a dare. The box keeps its
+     drawn size — a huge tick would look wrong — and gains reach with padding
+     and a negative margin, so the label beside it does not move. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    /* content-box ON PURPOSE. The global reset is border-box, so padding grew
+       the reach by nothing at all — the box still measured 22x22. Switching
+       the model here makes 22 + 2x11 a real 44px target while the drawn tick
+       stays 22px. */
+    box-sizing: content-box;
+    width: 22px;
+    height: 22px;
+    padding: 11px;
+    margin: -11px;
+    background-clip: content-box;
+  }
+  /* inline text links: the same type, a box a finger can find */
+  .ap-foot a,
+  .ap-map__dir,
+  .ap-smap__toggle,
+  .ap-about__link,
+  .ap-crumb a,
+  .ap-cat__from,
+  .ap-soc__note a,
+  .ap-cv__say a,
+  .ap-form a,
+  .ap-nav__mark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    /* the height is bought back so paragraphs and footer columns keep their
+       spacing — without this every list of links grows by 22px a row */
+    margin-block: -11px;
+  }
+  /* THE REAL TARGET IS THE LABEL. The consent control is an <input> wrapped in
+     its <label>, and a tap anywhere on that label toggles it — so the label is
+     what has to be reachable, not the 13px box. It already spans 354px across;
+     it just needed height. This works whatever the input's own box model does,
+     which is why it is here instead of more padding on the input. */
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  /* a row of actions must not have its items overlap once they are 44px tall */
+  .ap-map__acts {
+    gap: 2px 16px;
+  }
+}
