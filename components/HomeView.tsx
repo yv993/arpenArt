@@ -202,7 +202,7 @@ export default function HomeView() {
             disablePictureInPicture
             aria-label={home.hero.alt}
             width={1280}
-            height={1064}
+            height={720}
           >
             <source
               src="/hero/intro.mp4"
