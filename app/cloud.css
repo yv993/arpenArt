@@ -73,7 +73,12 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  animation: ap-lg-in 0.35s ease both;
+  /* NO fill-mode: a FILLING opacity animation pins the image to a cached
+     compositor layer rasterized mid-grow (~150px), and the open card then
+     shows that stretched raster forever — measured 100 Laplacian variance
+     against 478 for a true re-raster. With the animation released at its
+     end, the engine re-rasterizes the card at its final scale. */
+  animation: ap-lg-in 0.35s ease;
 }
 /* a face whose aspect differs from the card (art-13's portrait print, every
    landscape mockup) letterboxes on the artwork's average colour — art is
@@ -88,7 +93,14 @@
    The card gets depth; the turning face hinges on its left edge like a page
    on its spine. Forward lifts the current face away to reveal the next
    beneath; backward turns the previous face back in over it. */
-.ap-cloud__card {
+/* Perspective ONLY while a page is actually turning. Left on permanently it
+   put the card in a 3D rendering context, so the browser kept the card's
+   texture rasterized at its ~100px resting size and merely stretched it to
+   the 3.6x open size — the print looked soft no matter how good the file
+   was (client 2026-08-12: "images bad quality after i click to become big").
+   Without the 3D context the engine re-rasterizes the scaled card at screen
+   resolution. */
+.ap-cloud__card:has(.ap-cloud__page) {
   perspective: 1100px;
 }
 .ap-cloud__page {

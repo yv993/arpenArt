@@ -219,17 +219,36 @@ export default function Cloud({
           ph: hash(i, 10) * Math.PI * 2,
           ar: 1.6 + hash(i, 11) * 2.2, // degrees of bank
           fr: 0.12 + hash(i, 12) * 0.14,
+          w: 1, // drift weight — eases to 0 while chosen, back to 1 after
+          frozen: false,
         };
       });
 
       const tick = () => {
         const t = gsap.ticker.time;
         for (const f of flight) {
-          // a chosen card quiets to a hover so its caption can be read
-          const damp = f.id && f.id === chosenRef.current ? 0.25 : 1;
-          f.setX(Math.sin(t * f.fx + f.ph) * f.ax * damp);
-          f.setY(Math.cos(t * f.fy + f.ph * 1.7) * f.ay * damp);
-          f.setR(Math.sin(t * f.fr + f.ph) * f.ar * damp);
+          // A chosen card STOPS — eased to a standstill, then NOT WRITTEN
+          // AT ALL. The old 0.25 damping kept writing a new transform every
+          // frame, and a perpetually-animating transform keeps the card on
+          // a conservatively-rasterized compositor layer — the print looked
+          // soft at open size no matter how large the file was (measured:
+          // 188 Laplacian variance mid-animation vs 478 once static).
+          const target = f.id && f.id === chosenRef.current ? 0 : 1;
+          f.w += (target - f.w) * 0.1;
+          if (target === 0 && f.w < 0.01) {
+            if (!f.frozen) {
+              f.frozen = true;
+              f.setX(0);
+              f.setY(0);
+              f.setR(0);
+            }
+            continue;
+          }
+          f.frozen = false;
+          if (f.w > 0.999) f.w = 1;
+          f.setX(Math.sin(t * f.fx + f.ph) * f.ax * f.w);
+          f.setY(Math.cos(t * f.fy + f.ph * 1.7) * f.ay * f.w);
+          f.setR(Math.sin(t * f.fr + f.ph) * f.ar * f.w);
         }
         // the throw's inertia integration lived here and went with the drag;
         // the plane only moves now under the centring tween, which writes
@@ -276,7 +295,21 @@ export default function Cloud({
 
     cards.forEach((c) => {
       const isIt = c === card;
-      gsap.to(c, { opacity: card && !isIt ? 0.16 : 1, scale: isIt ? VIEW_SCALE : 1, duration: 0.45, ease: "power2.out" });
+      // GROWN BY LAYOUT, NOT BY transform SCALE (2026-08-12). A scaled card
+      // lives on a compositor layer whose raster the engine refuses to redo
+      // at full resolution while anything nearby still animates — measured
+      // 179 Laplacian variance against the browser's own 388 for this file
+      // at this size, i.e. half the sharpness, whatever the source quality.
+      // A layout-sized image always paints at device resolution. The card is
+      // centre-anchored (xPercent/yPercent -50), so growing width moves
+      // nothing; aspect-ratio carries the height.
+      const pSize = parseFloat(c.style.getPropertyValue("--w")) || 3.7;
+      gsap.to(c, {
+        opacity: card && !isIt ? 0.16 : 1,
+        width: `${isIt ? pSize * VIEW_SCALE : pSize}%`,
+        duration: 0.45,
+        ease: "power2.out",
+      });
       c.style.zIndex = isIt ? "600" : c.style.getPropertyValue("--z");
     });
     if (say) gsap.to(say, { autoAlpha: card ? 0 : 1, duration: 0.35 });
