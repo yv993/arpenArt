@@ -90,8 +90,21 @@ export default function Sun() {
     const box = wrap.current;
     if (!el || !box) return;
 
-    const hero = document.querySelector<HTMLImageElement>(".ap-hero__img");
+    const hero = document.querySelector<HTMLElement>(".ap-hero__img");
     if (!hero) return;
+
+    // THE ANIMATED HERO HAS NO SUN TO LEAVE (2026-08-11). This whole component
+    // exists because the painted illustration had a sun in its top-left: it is
+    // cut out, the plate is swapped for one with the sun inpainted away, and
+    // the cutout then flies down the page. Arpine's animated cut of the same
+    // artwork is framed tighter and the sun is not in it — so there is nothing
+    // to take out, nothing to fly, and a sun appearing over her sky would be a
+    // decoration we invented rather than a piece of her painting that moved.
+    // Every constant below (SUN_CX/CY, the geometry read off ART_W x ART_H) is
+    // measured against the STILL, and would land in the wrong place here.
+    // So: while the hero is the film, the sun stays out of it. Put the still
+    // back in HomeView and this returns on its own.
+    if (hero.tagName === "VIDEO") return;
 
     // The sunless plate is chosen by <picture> in HomeView, not swapped here.
     // A JS swap made desktop download both plates and showed the change; the

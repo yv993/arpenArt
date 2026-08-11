@@ -174,20 +174,47 @@ export default function HomeView() {
               pure CSS, so <picture> resolves it before a byte is requested.
               `scripting: enabled` is load-bearing: without it a no-JS desktop
               would get the sunless plate and nothing to fly it. */}
-          <picture>
+          {/* THE PAINTING NOW MOVES. Arpine sent an animated cut of this exact
+              illustration — she blinks, her hair drifts, the clouds cross —
+              and it replaces the still wherever motion is welcome.
+
+              A <video> with the STILL as its poster, not a <picture>: the
+              poster is what a phone, a reduced-motion reader and anyone whose
+              autoplay is refused actually see, and it is the same file the
+              plain layer used before, so nothing regressed for them. `preload
+              ="none"` on the phone breakpoint would be ideal but a poster
+              alone already costs them nothing — the source elements are
+              media-gated, so a narrow screen matches NEITHER and downloads no
+              video at all.
+
+              muted + playsInline + loop is the combination every current
+              autoplay policy accepts; `disablePictureInPicture` and no
+              controls because this is scenery, not a film someone should be
+              offered a scrubber for. */}
+          <video
+            className="ap-hero__img"
+            poster="/hero/intro.webp"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            aria-label={home.hero.alt}
+            width={1280}
+            height={1064}
+          >
             <source
-              srcSet="/hero/hero-nosun.webp"
-              media="(min-width: 861px) and (prefers-reduced-motion: no-preference) and (scripting: enabled)"
+              src="/hero/intro.mp4"
+              type="video/mp4"
+              media="(min-width: 861px) and (prefers-reduced-motion: no-preference)"
             />
-            <img
-              className="ap-hero__img"
-              src="/hero/hero.webp"
-              alt={home.hero.alt}
-              width={1427}
-              height={1102}
-              fetchPriority="high"
+            <source
+              src="/hero/intro-sm.mp4"
+              type="video/mp4"
+              media="(min-width: 561px) and (prefers-reduced-motion: no-preference)"
             />
-          </picture>
+          </video>
           {/* The expanding reel of the Yerevan coffee film stood here and is
               removed (client 2026-08-06). /hero/coffee.mp4 and its poster are
               left in public/ — nothing references them now, so they cost
