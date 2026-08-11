@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FX_MEDIA, POOL, settle, splitChars, unsplit } from "@/lib/textfx";
 
 // ============================================================================
-// The one runner for every [data-tfx] heading on the site. It lives in the
-// layout, rescans on each route, splits the marked headings and plays their
-// assigned logic when they enter the viewport. See lib/textfx.ts for the
-// vocabulary and the plain-layer contract.
+// The one runner for every [data-tfx] heading on the site. It is mounted at
+// the FOOT OF EVERY PAGE — never the layout — splits the marked headings and
+// plays their assigned logic when they enter the viewport. See lib/textfx.ts
+// for the vocabulary and the plain-layer contract.
 //
 // data-tfx="rise|flip|decipher|focus|write|cut"   the logic
 // data-tfx-delay="0.14"                 stagger between sibling lines
@@ -243,36 +242,30 @@ const BUILD: Record<string, Build> = {
 };
 
 export default function TextFX() {
-  const pathname = usePathname();
-
   useEffect(() => {
     if (!window.matchMedia(FX_MEDIA).matches) return;
     gsap.registerPlugin(ScrollTrigger);
 
     const cleanups: (() => void)[] = [];
 
-    // WAIT FOR HYDRATION BEFORE TOUCHING THE DOM.
+    // WHY THIS RUNNER LIVES IN THE PAGE AND NOT THE LAYOUT (2026-08-11).
     //
-    // This runner is mounted in the LAYOUT, and a layout's effect can fire
-    // before the page's own subtree has hydrated — React hydrates
-    // incrementally. Splitting a heading in that gap rewrites HTML React has
-    // not yet claimed, and hydration then fails on exactly what we changed:
-    //   "server rendered text didn't match" on <span data-tfx="rise"
-    //    data-tfx-done="1" aria-label="ARMENIA,"> — attributes and an
-    //   aria-label the server never sent, because we had just added them.
-    // React recovers by regenerating the tree, which throws our split away and
-    // costs a full client re-render of the page.
+    // app/loading.tsx wraps every route in a Suspense boundary, so React
+    // hydrates SELECTIVELY: the layout's tree first, the page's boundary
+    // later. A layout-mounted runner's effect therefore fires while the
+    // page's headings are still unhydrated HTML — splitting one in that gap
+    // rewrites markup React has not yet claimed, and hydration then fails on
+    // exactly what we changed ("server rendered text didn't match" on
+    // attributes the server never sent). Two rAFs did not fix it — a guess at
+    // hydration's duration. Waiting for `load` did not fix it either — with
+    // cached assets `load` fires while the big home tree is still hydrating.
+    // No browser event can see a Suspense boundary.
     //
-    // TWO FRAMES WAS NOT ENOUGH — it was a guess at how long hydration takes,
-    // and on the home page (a hero, a 57-card cloud, two WebGL rooms) it takes
-    // longer than 32ms. The wait has to be an EVENT, not a duration.
-    //
-    // `load` is the one that is guaranteed to be after hydration: React
-    // hydrates during the document's loading, and `load` fires once every
-    // subresource is in. Late is harmless here — every effect is ScrollTrigger
-    // -gated at "top 88%" and plays when its heading is reached, not on mount.
-    // rAF after it, so the scan lands on a fresh frame rather than in the
-    // middle of the load handler.
+    // React itself is the only reliable clock: an effect of a component
+    // INSIDE the page's boundary cannot run before that boundary has
+    // hydrated. So every page mounts <TextFX /> as its LAST child, and this
+    // effect starts strictly after the headings it will split are React's.
+    // Remounting per route also replaces the old pathname rescan.
     let a = 0;
     let b = 0;
     const scan = () => {
@@ -309,24 +302,17 @@ export default function TextFX() {
       });
     };
 
-    const arm = () => {
-      a = requestAnimationFrame(() => {
-        b = requestAnimationFrame(scan);
-      });
-    };
-    // On a client-side route change the document is long since `complete`, so
-    // `load` will never fire again — arm straight away. Only the FIRST load has
-    // hydration to wait for.
-    if (document.readyState === "complete") arm();
-    else window.addEventListener("load", arm, { once: true });
+    // one fresh frame so the scan never lands inside the hydration commit
+    a = requestAnimationFrame(() => {
+      b = requestAnimationFrame(scan);
+    });
 
     return () => {
-      window.removeEventListener("load", arm);
       cancelAnimationFrame(a);
       cancelAnimationFrame(b);
       cleanups.forEach((fn) => fn());
     };
-  }, [pathname]);
+  }, []);
 
   return null;
 }

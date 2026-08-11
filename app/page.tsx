@@ -2,6 +2,7 @@ import Chrome from "@/components/Chrome";
 import SectionRail from "@/components/SectionRail";
 import HomeView from "@/components/HomeView";
 import { about, brand } from "@/lib/content";
+import TextFX from "@/components/TextFX";
 
 // Structured data wants absolute URLs. Same guard as robots.ts and layout.tsx:
 // a real https origin when configured, the dev origin otherwise — harmless,
@@ -49,6 +50,9 @@ export default function Page() {
       <SectionRail />
       <HomeView />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

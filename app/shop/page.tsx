@@ -6,6 +6,7 @@ import ShopStrip, { type StripCat } from "@/components/ShopStrip";
 import { categories } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
+import TextFX from "@/components/TextFX";
 
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
@@ -77,6 +78,9 @@ export default function ShopPage() {
           ))}
         </ul>
       </div>
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

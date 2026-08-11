@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Chrome from "@/components/Chrome";
 import { brand } from "@/lib/content";
+import TextFX from "@/components/TextFX";
 
 export const metadata: Metadata = { title: "Terms" };
 
@@ -26,6 +27,9 @@ export default function Page() {
           <p>Questions: <a href={"mailto:" + brand.email}>{brand.email}</a>.</p>
         </div>
       </div>
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

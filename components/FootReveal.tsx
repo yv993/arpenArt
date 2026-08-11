@@ -33,9 +33,10 @@ export default function FootReveal() {
 
     // The tagline's decipher trigger assumes the footer SCROLLS into view;
     // a fixed element never does, so the trigger would fire at load,
-    // unseen. Pre-mark it done — this effect runs before the TextFX runner
-    // (Foot precedes TextFX in the layout), so the runner skips it, and
-    // the curtain rise is this footer's motion instead.
+    // unseen. Pre-mark it done — this layout effect runs while the page's
+    // Suspense boundary is still hydrating, so it always beats the
+    // page-mounted TextFX runner; the runner skips the mark, and the
+    // curtain rise is this footer's motion instead.
     const big = foot.querySelector<HTMLElement>("[data-tfx]");
     big?.setAttribute("data-tfx-done", "1");
 

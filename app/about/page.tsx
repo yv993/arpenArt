@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Chrome from "@/components/Chrome";
 import AboutView from "@/components/AboutView";
 import { about, brand } from "@/lib/content";
+import TextFX from "@/components/TextFX";
 
 export const metadata: Metadata = {
   title: "About",
@@ -33,6 +34,9 @@ export default function Page() {
           }),
         }}
       />
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Chrome from "@/components/Chrome";
 import ContactBlock from "@/components/ContactBlock";
 import { brand, home } from "@/lib/content";
+import TextFX from "@/components/TextFX";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -32,6 +33,9 @@ export default function Page() {
           }),
         }}
       />
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

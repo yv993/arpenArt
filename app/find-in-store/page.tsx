@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Chrome from "@/components/Chrome";
 import FindInStore from "@/components/FindInStore";
 import { brand, stockistPage, stockists } from "@/lib/content";
+import TextFX from "@/components/TextFX";
 
 export const metadata: Metadata = {
   title: "Find in store",
@@ -46,6 +47,9 @@ export default function Page() {
           }}
         />
       )}
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

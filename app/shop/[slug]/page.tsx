@@ -17,6 +17,7 @@ import MorphHero from "@/components/MorphHero";
 import { brand, categories, lookbooks, morphs, overtures } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
+import TextFX from "@/components/TextFX";
 
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
 const ART = artworks as Art[];
@@ -135,6 +136,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumbLd]) }}
       />
+      {/* splits and reveals the [data-tfx] headings — page-mounted so it
+          cannot run before this page hydrates */}
+      <TextFX />
     </>
   );
 }

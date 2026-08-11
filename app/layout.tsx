@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
 import { brand } from "@/lib/content";
-import TextFX from "@/components/TextFX";
 import Foot from "@/components/Foot";
 import "./globals.css";
 
@@ -78,8 +77,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             like a curtain. Inside main, a fixed footer could never sit
             behind main's own background — stacking contexts forbid it. */}
         <Foot />
-        {/* splits and reveals every [data-tfx] heading; renders nothing */}
-        <TextFX />
+        {/* The TextFX runner is mounted by EVERY PAGE, not here: loading.tsx
+            makes each route a Suspense boundary, and a layout effect fires
+            before that boundary hydrates — the runner would split headings
+            React had not yet claimed (the hydration mismatch of 2026-08-11).
+            An effect inside the page's own tree cannot run that early. */}
       </body>
     </html>
   );
