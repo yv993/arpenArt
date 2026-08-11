@@ -17,10 +17,12 @@ export default function manifest(): MetadataRoute.Manifest {
     // both are --paper: the splash/tile should look like the page it opens
     background_color: "#fcf2e6",
     theme_color: "#fcf2e6",
-    // app/icon.svg and app/apple-icon.png are Next metadata file conventions,
-    // served at exactly these paths — no copies in /public needed.
+    // app/icon.png and app/apple-icon.png are Next metadata file conventions,
+    // served at exactly these paths — no copies in /public needed. Both carry
+    // Arpine's moon-face mark (client files, 2026-08-11) on a paper ground —
+    // the ink line would vanish on a dark tab strip without it.
     icons: [
-      { src: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+      { src: "/icon.png", type: "image/png", sizes: "512x512" },
       { src: "/apple-icon.png", type: "image/png", sizes: "180x180" },
     ],
   };

@@ -117,9 +117,17 @@ const EASE = 0.055; // exponential chase toward the cursor
 /** covers what the orbit and the shrink would otherwise expose. MEASURED, not
  *  guessed: at 1.1 the right edge finished 14px INSIDE the viewport at full
  *  scroll and full sway, i.e. a visible strip of void. */
-const OVERSCAN = 1.22;
+const OVERSCAN = 1.38;
 const SHRINK = 0.05; // scroll scales the scene DOWN — measured, see above
 const TURN = 1.4; // deg of rotateX across the scroll
+/** HER FACE WAS UNDER THE NAV (client 2026-08-11). Venus's crown sat at y≈85
+ *  against a bar that ends at 65 — the first thing a visitor met of the figure
+ *  was her chin. The whole scene drops by this fraction of the viewport, in the
+ *  SHARED rotation string, so the far plate and the cut-out figure move as one
+ *  and the coins stay on the hand they are thrown from. The overscan above is
+ *  what pays for it: at 1.22 there is far more than 7% of margin, so nothing
+ *  opens at the top. */
+const DROP = 0.14;
 
 export default function CartPlate() {
   const box = useRef<HTMLDivElement>(null);
@@ -196,7 +204,7 @@ export default function CartPlate() {
       // ONE rotation, shared. The depth is what differs, and depth is what
       // makes the near foliage and the far sky move against each other.
       const rot =
-        `translate3d(${(sx * SWAY_X).toFixed(2)}px, ${(sy * SWAY_Y).toFixed(2)}px, 0) ` +
+        `translate3d(${(sx * SWAY_X).toFixed(2)}px, ${(sy * SWAY_Y + window.innerHeight * DROP).toFixed(2)}px, 0) ` +
         `rotateY(${(sx * YAW).toFixed(3)}deg) rotateX(${(-sy * PITCH - p * TURN).toFixed(3)}deg) ` +
         `scale(${(1 - p * SHRINK).toFixed(4)})`;
       const at = (z: number, extra = 1) =>

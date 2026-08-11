@@ -100,24 +100,21 @@
     transition: none;
   }
 }
+/* the brand is now Arpine's own lockup image (2026-08-11) — the moon-face
+   mark with the wordmark beneath, ink on transparent, riding the glass bar
+   the same way the ink text did */
 .ap-nav__mark {
-  display: grid;
-  line-height: 1.1;
+  display: block;
 }
-.ap-nav__mark strong {
-  font-family: var(--font-display);
-  font-size: 1.22rem;
-  letter-spacing: -0.02em;
+.ap-nav__mark img {
+  display: block;
+  height: 58px;
+  width: auto;
 }
-.ap-nav__mark span {
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  /* --ink-muted is right on paper but measured 4.37:1 against the lifted glass
-     over the tote photographs — the one place in the bar that failed. Darkened
-     until it clears with margin (5.96:1 there, 7.39:1 on paper) rather than
-     thickening the tint, which would have cost the glass its transparency. */
-  color: #4a4f5d;
+@media (max-width: 860px) {
+  .ap-nav__mark img {
+    height: 46px;
+  }
 }
 .ap-nav__links {
   display: flex;
@@ -462,7 +459,11 @@
      cut-out and it had to dodge her raised hand; with .ap-plate__front over
      it the word can be the size the reference's is, and her arms and gown
      occlude it. */
-  font-size: clamp(3.2rem, 9.4vw, 9rem);
+  /* SIZED SO THE LAST LETTER CLEARS HER (client 2026-08-11). At 9.4vw the word
+     ran to x=762 while the cut-out figure starts at x=510, so the N of
+     SELECTION was behind her mantle — the layering trick was eating the word
+     rather than framing it. 5.2vw ends the line at ~499, just clear. */
+  font-size: clamp(2.4rem, 5.2vw, 5.4rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
   max-width: 12ch;

@@ -48,9 +48,13 @@ export default function Chrome() {
 
   return (
     <header className="ap-nav" data-lift={lift || undefined}>
-      <Link className="ap-nav__mark" href="/">
-        <strong>{brand.name}</strong>
-        <span>{brand.artist}</span>
+      {/* Arpine's own lockup (client files, 2026-08-11) replaces the text
+          wordmark — the moon-face mark over the Arpen Art wordmark, ink on
+          transparent, served at 2x for retina */}
+      <Link className="ap-nav__mark" href="/" aria-label={`${brand.name} — home`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size
+            brand asset in the chrome; next/image's wrapper adds nothing here */}
+        <img src="/brand/arpenart-lockup.png" alt={brand.name} width={244} height={256} />
       </Link>
 
       <button
