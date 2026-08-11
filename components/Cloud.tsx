@@ -11,13 +11,21 @@ type Art = {
   w: number;
   h: number;
   avg: string;
-  /** the print-resolution scan and Arpine's own note (client files
-      2026-08-11) — three pictures (23/25/34) don't have them yet */
+  /** the print-resolution scan, the postcard's back, the printed mockup and
+      Arpine's own note (client files 2026-08-11) — three pictures (23/25/34)
+      don't have them yet */
   lg?: string;
   lgW?: number;
   lgH?: number;
+  back?: string;
+  mock?: string;
+  mockW?: number;
+  mockH?: number;
   text?: string;
 };
+
+/** which face of the chosen picture the big card is showing */
+type View = "front" | "back" | "mock";
 
 // ============================================================================
 // CLOUD — the series lying freely in space, after creativeapproa.ch.
@@ -98,6 +106,11 @@ export default function Cloud({
 }) {
   const root = useRef<HTMLDivElement | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
+  // every picture opens on its front; the switcher below the note changes it
+  const [view, setView] = useState<View>("front");
+  useEffect(() => {
+    setView("front");
+  }, [chosen]);
 
   // THE DRAG IS GONE (client 2026-08-06). It took the pointer-capture dance
   // with it — the capture-on-frame trick, the down-card ref, the click slop,
@@ -294,13 +307,31 @@ export default function Cloud({
               }
             >
               <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" />
-              {/* the chosen card swaps up to the print-resolution scan — the
-                  thumb is 298px and the card opens to ~370. Skipped when the
-                  print's aspect differs from the card's (art-13's print is a
-                  portrait of a landscape original): covering would crop art. */}
-              {chosen === p.id && p.lg && p.lgW && p.lgH && Math.abs(p.w / p.h - p.lgW / p.lgH) < 0.08 && (
-                <img className="ap-cloud__lg" src={p.lg} alt="" width={p.lgW} height={p.lgH} decoding="async" />
-              )}
+              {/* the chosen card swaps up to the selected face — front print,
+                  the postcard's back, or the printed mockup. When the face's
+                  aspect differs from the card's (art-13's portrait print of a
+                  landscape original; every landscape mockup), it letterboxes
+                  on the artwork's own average colour instead of cropping. */}
+              {chosen === p.id &&
+                (() => {
+                  const src = view === "back" ? p.back : view === "mock" ? p.mock : p.lg;
+                  if (!src) return null;
+                  const w = view === "mock" ? p.mockW : p.lgW;
+                  const h = view === "mock" ? p.mockH : p.lgH;
+                  const crop = w && h && Math.abs(p.w / p.h - w / h) < 0.08;
+                  return (
+                    <img
+                      className={`ap-cloud__lg${crop ? "" : " is-fit"}`}
+                      key={src}
+                      src={src}
+                      alt=""
+                      width={w}
+                      height={h}
+                      decoding="async"
+                      style={crop ? undefined : { background: p.avg }}
+                    />
+                  );
+                })()}
             </button>
           ))}
         </div>
@@ -332,6 +363,27 @@ export default function Cloud({
                 {t}
               </p>
             ))}
+            {(() => {
+              const art = items.find((a) => a.id === chosen);
+              if (!art?.back && !art?.mock) return null;
+              return (
+                <div className="ap-cloud__views" role="group" aria-label="Faces of this picture">
+                  <button type="button" aria-pressed={view === "front"} onClick={() => setView("front")}>
+                    Front
+                  </button>
+                  {art.back && (
+                    <button type="button" aria-pressed={view === "back"} onClick={() => setView("back")}>
+                      Back
+                    </button>
+                  )}
+                  {art.mock && (
+                    <button type="button" aria-pressed={view === "mock"} onClick={() => setView("mock")}>
+                      Printed
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
             <div className="ap-cloud__nav">
               <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
                 ←

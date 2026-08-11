@@ -9,7 +9,11 @@
   "lg": "/art/art-01-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures one of Yerevan’s most recognizable scenes — Republic Square with its iconic architecture and the classic Soviet-era trolleybus.\nOnce an essential part of the city’s everyday life, these trolleybuses moved quietly through the streets, becoming a familiar presence for generations.\nToday, they remain a symbol of memory, nostalgia, and the rhythm of old Yerevan."
+  "text": "This illustration captures one of Yerevan’s most recognizable scenes — Republic Square with its iconic architecture and the classic Soviet-era trolleybus.\nOnce an essential part of the city’s everyday life, these trolleybuses moved quietly through the streets, becoming a familiar presence for generations.\nToday, they remain a symbol of memory, nostalgia, and the rhythm of old Yerevan.",
+  "back": "/art/art-01-back.webp",
+  "mock": "/art/art-01-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "02",
@@ -21,7 +25,11 @@
   "lg": "/art/art-02-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet night in Yerevan, as a figure walks past Republic Square under the city lights.\nKnown as the heart of the city, Republic Square is famous for its pink tuff architecture and iconic clock tower, serving as a central meeting point in Yerevan."
+  "text": "This illustration captures a quiet night in Yerevan, as a figure walks past Republic Square under the city lights.\nKnown as the heart of the city, Republic Square is famous for its pink tuff architecture and iconic clock tower, serving as a central meeting point in Yerevan.",
+  "back": "/art/art-02-back.webp",
+  "mock": "/art/art-02-mock.webp",
+  "mockW": 1400,
+  "mockH": 1115
  },
  {
   "id": "03",
@@ -33,7 +41,11 @@
   "lg": "/art/art-03-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a peaceful moment at Haghartsin Monastery, surrounded by the lush forests of Dilijan.\nBuilt between the 10th and 13th centuries, Haghartsin is known for its harmonious architecture and its deep connection to nature, making it one of Armenia’s most serene monastic complexes."
+  "text": "This illustration captures a peaceful moment at Haghartsin Monastery, surrounded by the lush forests of Dilijan.\nBuilt between the 10th and 13th centuries, Haghartsin is known for its harmonious architecture and its deep connection to nature, making it one of Armenia’s most serene monastic complexes.",
+  "back": "/art/art-03-back.webp",
+  "mock": "/art/art-03-mock.webp",
+  "mockW": 1400,
+  "mockH": 1232
  },
  {
   "id": "04",
@@ -45,7 +57,11 @@
   "lg": "/art/art-04-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment in Yerevan, overlooking Republic Square — the city’s central landmark, known for its unique pink tuff architecture and iconic clock tower.\nDesigned in the early 20th century, the square has long been a meeting point where everyday life, culture and history come together."
+  "text": "This illustration captures a quiet moment in Yerevan, overlooking Republic Square — the city’s central landmark, known for its unique pink tuff architecture and iconic clock tower.\nDesigned in the early 20th century, the square has long been a meeting point where everyday life, culture and history come together.",
+  "back": "/art/art-04-back.webp",
+  "mock": "/art/art-04-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "05",
@@ -57,7 +73,11 @@
   "lg": "/art/art-05-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a peaceful moment in the Armenian highlands, where a figure looks out toward Mount Ararat as a hot air balloon drifts across the sky.\nMount Ararat, though located just beyond Armenia’s borders, remains the country’s most powerful symbol — deeply connected to its history, identity and cultural memory."
+  "text": "This illustration captures a peaceful moment in the Armenian highlands, where a figure looks out toward Mount Ararat as a hot air balloon drifts across the sky.\nMount Ararat, though located just beyond Armenia’s borders, remains the country’s most powerful symbol — deeply connected to its history, identity and cultural memory.",
+  "back": "/art/art-05-back.webp",
+  "mock": "/art/art-05-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "06",
@@ -69,7 +89,11 @@
   "lg": "/art/art-06-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment inside a Yerevan café, overlooking the Armenian National Opera and Ballet Theatre.\nLocated in the heart of the city, the Opera House is one of Yerevan’s most iconic cultural landmarks, opened in 1933 and known for its distinctive circular architecture."
+  "text": "This illustration captures a quiet moment inside a Yerevan café, overlooking the Armenian National Opera and Ballet Theatre.\nLocated in the heart of the city, the Opera House is one of Yerevan’s most iconic cultural landmarks, opened in 1933 and known for its distinctive circular architecture.",
+  "back": "/art/art-06-back.webp",
+  "mock": "/art/art-06-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "07",
@@ -81,7 +105,11 @@
   "lg": "/art/art-07-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration portrays a symbolic connection between a girl and Yerevan, as she gently holds the Armenian National Opera and Ballet Theatre.\nLocated in the heart of the city, the Opera House is one of Yerevan’s most iconic cultural landmarks, representing the city’s artistic spirit and identity."
+  "text": "This illustration portrays a symbolic connection between a girl and Yerevan, as she gently holds the Armenian National Opera and Ballet Theatre.\nLocated in the heart of the city, the Opera House is one of Yerevan’s most iconic cultural landmarks, representing the city’s artistic spirit and identity.",
+  "back": "/art/art-07-back.webp",
+  "mock": "/art/art-07-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "08",
@@ -93,7 +121,11 @@
   "lg": "/art/art-08-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment inside a train, where a passenger gazes through the window toward the vast Armenian landscape and Mount Ararat in the distance.\nSeen from different parts of the country, Mount Ararat remains a powerful national symbol — deeply rooted in Armenian history, identity and collective memory."
+  "text": "This illustration captures a quiet moment inside a train, where a passenger gazes through the window toward the vast Armenian landscape and Mount Ararat in the distance.\nSeen from different parts of the country, Mount Ararat remains a powerful national symbol — deeply rooted in Armenian history, identity and collective memory.",
+  "back": "/art/art-08-back.webp",
+  "mock": "/art/art-08-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "09",
@@ -105,7 +137,11 @@
   "lg": "/art/art-09-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment overlooking the Yerevan Cascade, as the viewer looks toward one of the city’s most iconic landmarks.\nThe Cascade is a monumental stairway connecting central Yerevan with higher districts, known for its terraced design, contemporary art installations, and panoramic views of the city."
+  "text": "This illustration captures a quiet moment overlooking the Yerevan Cascade, as the viewer looks toward one of the city’s most iconic landmarks.\nThe Cascade is a monumental stairway connecting central Yerevan with higher districts, known for its terraced design, contemporary art installations, and panoramic views of the city.",
+  "back": "/art/art-09-back.webp",
+  "mock": "/art/art-09-mock.webp",
+  "mockW": 1400,
+  "mockH": 2100
  },
  {
   "id": "10",
@@ -117,7 +153,11 @@
   "lg": "/art/art-10-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a gentle moment in the Armenian landscape, where a girl holds a bouquet of wildflowers gathered from nature.\nRich in color and symbolism, Armenian flora and landscapes have long been a source of inspiration, reflecting the country’s natural beauty and cultural warmth."
+  "text": "This illustration captures a gentle moment in the Armenian landscape, where a girl holds a bouquet of wildflowers gathered from nature.\nRich in color and symbolism, Armenian flora and landscapes have long been a source of inspiration, reflecting the country’s natural beauty and cultural warmth.",
+  "back": "/art/art-10-back.webp",
+  "mock": "/art/art-10-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "11",
@@ -129,7 +169,11 @@
   "lg": "/art/art-11-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a moment of freedom in the Armenian landscape, where a figure walks through a field of wildflowers with Mount Ararat rising in the distance.\nKnown as a powerful national symbol, Mount Ararat represents identity, memory and a deep connection to the land."
+  "text": "This illustration captures a moment of freedom in the Armenian landscape, where a figure walks through a field of wildflowers with Mount Ararat rising in the distance.\nKnown as a powerful national symbol, Mount Ararat represents identity, memory and a deep connection to the land.",
+  "back": "/art/art-11-back.webp",
+  "mock": "/art/art-11-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "12",
@@ -141,7 +185,11 @@
   "lg": "/art/art-12-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment overlooking Yerevan, as the city unfolds beneath the silhouette of Mount Ararat.\nAs Armenia’s capital and one of the world’s oldest continuously inhabited cities, Yerevan stands at the heart of the country, while Mount Ararat remains its most powerful symbol of identity and belonging."
+  "text": "This illustration captures a quiet moment overlooking Yerevan, as the city unfolds beneath the silhouette of Mount Ararat.\nAs Armenia’s capital and one of the world’s oldest continuously inhabited cities, Yerevan stands at the heart of the country, while Mount Ararat remains its most powerful symbol of identity and belonging.",
+  "back": "/art/art-12-back.webp",
+  "mock": "/art/art-12-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "13",
@@ -153,7 +201,11 @@
   "lg": "/art/art-13-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment inside a café, overlooking the former Zvartnots Airport terminal through the window.\nBuilt in the 1970s, this iconic circular structure is a unique example of Soviet modernist architecture and remains a symbolic landmark of Armenia’s aviation history."
+  "text": "This illustration captures a quiet moment inside a café, overlooking the former Zvartnots Airport terminal through the window.\nBuilt in the 1970s, this iconic circular structure is a unique example of Soviet modernist architecture and remains a symbolic landmark of Armenia’s aviation history.",
+  "back": "/art/art-13-back.webp",
+  "mock": "/art/art-13-mock.webp",
+  "mockW": 1400,
+  "mockH": 1116
  },
  {
   "id": "14",
@@ -165,7 +217,11 @@
   "lg": "/art/art-14-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment in Yerevan, with the iconic Rossiya Cinema building in the background.\nBuilt in the 1970s, the Rossiya Cinema is a notable example of Soviet modernist architecture and remains an important part of the city’s cultural and urban history."
+  "text": "This illustration captures a quiet moment in Yerevan, with the iconic Rossiya Cinema building in the background.\nBuilt in the 1970s, the Rossiya Cinema is a notable example of Soviet modernist architecture and remains an important part of the city’s cultural and urban history.",
+  "back": "/art/art-14-back.webp",
+  "mock": "/art/art-14-mock.webp",
+  "mockW": 1400,
+  "mockH": 2099
  },
  {
   "id": "15",
@@ -177,7 +233,11 @@
   "lg": "/art/art-15-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a peaceful moment beneath the Armenian sun, with the Tatev Monastery standing high on the edge of a dramatic gorge.\nFounded in the 9th century, Tatev is one of Armenia’s most remarkable spiritual and architectural landmarks, known for its remote location and deep connection to the country’s history and faith."
+  "text": "This illustration captures a peaceful moment beneath the Armenian sun, with the Tatev Monastery standing high on the edge of a dramatic gorge.\nFounded in the 9th century, Tatev is one of Armenia’s most remarkable spiritual and architectural landmarks, known for its remote location and deep connection to the country’s history and faith.",
+  "back": "/art/art-15-back.webp",
+  "mock": "/art/art-15-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "16",
@@ -189,7 +249,11 @@
   "lg": "/art/art-16-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a joyful moment under the Armenian sun, surrounded by vibrant landscapes and colors.\nKnown for its mountainous terrain and warm light, Armenia is often associated with brightness, resilience and a deep connection to nature and culture."
+  "text": "This illustration captures a joyful moment under the Armenian sun, surrounded by vibrant landscapes and colors.\nKnown for its mountainous terrain and warm light, Armenia is often associated with brightness, resilience and a deep connection to nature and culture.",
+  "back": "/art/art-16-back.webp",
+  "mock": "/art/art-16-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "17",
@@ -201,7 +265,11 @@
   "lg": "/art/art-17-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment of reading at home, with a view opening toward Republic Square in Yerevan.\nAs the city’s central landmark, Republic Square is known for its distinctive tuff stone architecture and plays an important role in Yerevan’s cultural and urban life."
+  "text": "This illustration captures a quiet moment of reading at home, with a view opening toward Republic Square in Yerevan.\nAs the city’s central landmark, Republic Square is known for its distinctive tuff stone architecture and plays an important role in Yerevan’s cultural and urban life.",
+  "back": "/art/art-17-back.webp",
+  "mock": "/art/art-17-mock.webp",
+  "mockW": 1400,
+  "mockH": 1202
  },
  {
   "id": "18",
@@ -213,7 +281,11 @@
   "lg": "/art/art-18-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment near the Yerevan Opera House, where everyday life blends with the city’s cultural rhythm.\nThe Armenian National Academic Theatre of Opera and Ballet is one of Yerevan’s most iconic landmarks, known for its unique circular architecture and its role as a center of art, music and public life."
+  "text": "This illustration captures a quiet moment near the Yerevan Opera House, where everyday life blends with the city’s cultural rhythm.\nThe Armenian National Academic Theatre of Opera and Ballet is one of Yerevan’s most iconic landmarks, known for its unique circular architecture and its role as a center of art, music and public life.",
+  "back": "/art/art-18-back.webp",
+  "mock": "/art/art-18-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "19",
@@ -225,7 +297,11 @@
   "lg": "/art/art-19-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment near the Mother See of Holy Etchmiadzin, the spiritual center of the Armenian Apostolic Church.\nFounded in the early 4th century, Etchmiadzin is considered one of the oldest Christian cathedrals in the world and remains a sacred symbol of Armenia’s faith and identity."
+  "text": "This illustration captures a quiet moment near the Mother See of Holy Etchmiadzin, the spiritual center of the Armenian Apostolic Church.\nFounded in the early 4th century, Etchmiadzin is considered one of the oldest Christian cathedrals in the world and remains a sacred symbol of Armenia’s faith and identity.",
+  "back": "/art/art-19-back.webp",
+  "mock": "/art/art-19-mock.webp",
+  "mockW": 1024,
+  "mockH": 1536
  },
  {
   "id": "20",
@@ -237,7 +313,11 @@
   "lg": "/art/art-20-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Holding a glass of wine beneath the open sky, surrounded by silence and color — a moment of calm and reflection.\nIn Armenia, wine is more than a drink — it is a tradition shaped by land, history and time."
+  "text": "Holding a glass of wine beneath the open sky, surrounded by silence and color — a moment of calm and reflection.\nIn Armenia, wine is more than a drink — it is a tradition shaped by land, history and time.",
+  "back": "/art/art-20-back.webp",
+  "mock": "/art/art-20-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "21",
@@ -249,7 +329,11 @@
   "lg": "/art/art-21-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration portrays Komitas Vardapet, a pioneering Armenian composer, ethnomusicologist and priest, captured in a quiet moment at the piano.\nIn the early 20th century, Komitas played a crucial role in preserving and documenting Armenian folk music, shaping the foundation of the country’s national musical identity."
+  "text": "This illustration portrays Komitas Vardapet, a pioneering Armenian composer, ethnomusicologist and priest, captured in a quiet moment at the piano.\nIn the early 20th century, Komitas played a crucial role in preserving and documenting Armenian folk music, shaping the foundation of the country’s national musical identity.",
+  "back": "/art/art-21-back.webp",
+  "mock": "/art/art-21-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "22",
@@ -261,7 +345,11 @@
   "lg": "/art/art-22-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a moment from the Armenian legend of Akhtamar, where a girl stands by the water, holding a flame as a guiding light.\nThe story tells of a tragic love on Lake Van, where the light became a symbol of hope, devotion and loss — remaining one of the most well-known legends in Armenian folklore."
+  "text": "This illustration captures a moment from the Armenian legend of Akhtamar, where a girl stands by the water, holding a flame as a guiding light.\nThe story tells of a tragic love on Lake Van, where the light became a symbol of hope, devotion and loss — remaining one of the most well-known legends in Armenian folklore.",
+  "back": "/art/art-22-back.webp",
+  "mock": "/art/art-22-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "23",
@@ -281,7 +369,11 @@
   "lg": "/art/art-24-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration represents a gentle, dreamlike Armenia — where mountains feel alive, warm and protective.\nInspired by the softness of Armenian landscapes, it reflects a sense of comfort, belonging and quiet love for the land."
+  "text": "This illustration represents a gentle, dreamlike Armenia — where mountains feel alive, warm and protective.\nInspired by the softness of Armenian landscapes, it reflects a sense of comfort, belonging and quiet love for the land.",
+  "back": "/art/art-24-back.webp",
+  "mock": "/art/art-24-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "25",
@@ -301,7 +393,11 @@
   "lg": "/art/art-26-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet evening in a Yerevan courtyard, where warm lights, music and everyday moments come together.\nKnown for their intimate atmosphere, Yerevan’s courtyards have long been spaces of connection, where neighbors gather, share stories and create a sense of community."
+  "text": "This illustration captures a quiet evening in a Yerevan courtyard, where warm lights, music and everyday moments come together.\nKnown for their intimate atmosphere, Yerevan’s courtyards have long been spaces of connection, where neighbors gather, share stories and create a sense of community.",
+  "back": "/art/art-26-back.webp",
+  "mock": "/art/art-26-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "27",
@@ -313,7 +409,11 @@
   "lg": "/art/art-27-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a joyful journey through the Armenian landscape, as a figure rides above a car surrounded by mountains and open space.\nKnown for its diverse terrain and scenic roads, Armenia offers a unique sense of movement and discovery, where travel becomes part of the experience."
+  "text": "This illustration captures a joyful journey through the Armenian landscape, as a figure rides above a car surrounded by mountains and open space.\nKnown for its diverse terrain and scenic roads, Armenia offers a unique sense of movement and discovery, where travel becomes part of the experience.",
+  "back": "/art/art-27-back.webp",
+  "mock": "/art/art-27-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "28",
@@ -325,7 +425,11 @@
   "lg": "/art/art-28-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures the iconic Mother Armenia statue, standing tall above Yerevan as a symbol of strength and protection.\nLocated in Victory Park, the monument represents peace through strength and has become one of the most powerful symbols of resilience and national pride in Armenia."
+  "text": "This illustration captures the iconic Mother Armenia statue, standing tall above Yerevan as a symbol of strength and protection.\nLocated in Victory Park, the monument represents peace through strength and has become one of the most powerful symbols of resilience and national pride in Armenia.",
+  "back": "/art/art-28-back.webp",
+  "mock": "/art/art-28-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "29",
@@ -337,7 +441,11 @@
   "lg": "/art/art-29-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures the iconic “We Are Our Mountains” monument, standing proudly in the landscape of Artsakh.\nCreated in 1967, the monument — often called “Grandmother and Grandfather” — symbolizes the roots, strength and enduring presence of the Armenian people."
+  "text": "This illustration captures the iconic “We Are Our Mountains” monument, standing proudly in the landscape of Artsakh.\nCreated in 1967, the monument — often called “Grandmother and Grandfather” — symbolizes the roots, strength and enduring presence of the Armenian people.",
+  "back": "/art/art-29-back.webp",
+  "mock": "/art/art-29-mock.webp",
+  "mockW": 1400,
+  "mockH": 2099
  },
  {
   "id": "30",
@@ -349,7 +457,11 @@
   "lg": "/art/art-30-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet evening in Yerevan, where two people share a moment of closeness above the city.\nIn the soft glow of night lights, Yerevan becomes a space of warmth and connection, where everyday moments turn into lasting memories."
+  "text": "This illustration captures a quiet evening in Yerevan, where two people share a moment of closeness above the city.\nIn the soft glow of night lights, Yerevan becomes a space of warmth and connection, where everyday moments turn into lasting memories.",
+  "back": "/art/art-30-back.webp",
+  "mock": "/art/art-30-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "31",
@@ -361,7 +473,11 @@
   "lg": "/art/art-31-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a peaceful moment in the Armenian landscape, where nature and stillness come together.\nSurrounded by mountains and sunlight, it reflects the quiet harmony and warmth that define the spirit of Armenia."
+  "text": "This illustration captures a peaceful moment in the Armenian landscape, where nature and stillness come together.\nSurrounded by mountains and sunlight, it reflects the quiet harmony and warmth that define the spirit of Armenia.",
+  "back": "/art/art-31-back.webp",
+  "mock": "/art/art-31-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "32",
@@ -373,7 +489,11 @@
   "lg": "/art/art-32-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment above Yerevan, as two figures sit together watching the sun set behind Mount Ararat.\nAs Armenia’s capital, Yerevan stretches beneath them, while Mount Ararat remains a timeless symbol of memory, identity and belonging."
+  "text": "This illustration captures a quiet moment above Yerevan, as two figures sit together watching the sun set behind Mount Ararat.\nAs Armenia’s capital, Yerevan stretches beneath them, while Mount Ararat remains a timeless symbol of memory, identity and belonging.",
+  "back": "/art/art-32-back.webp",
+  "mock": "/art/art-32-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "33",
@@ -385,7 +505,11 @@
   "lg": "/art/art-33-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration is inspired by the Sardarapat Memorial, one of the most important symbols of Armenian history.\nIt commemorates the Battle of Sardarapat (1918), where Armenians defended their homeland and secured their independence, turning a moment of survival into a victory."
+  "text": "This illustration is inspired by the Sardarapat Memorial, one of the most important symbols of Armenian history.\nIt commemorates the Battle of Sardarapat (1918), where Armenians defended their homeland and secured their independence, turning a moment of survival into a victory.",
+  "back": "/art/art-33-back.webp",
+  "mock": "/art/art-33-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "34",
@@ -405,7 +529,11 @@
   "lg": "/art/art-35-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet evening at home, where two people sit together sharing a simple, intimate moment.\nIn Armenian homes, warmth is often found in everyday rituals — conversation, tea, and details like traditional carpets that reflect the country’s rich cultural heritage."
+  "text": "This illustration captures a quiet evening at home, where two people sit together sharing a simple, intimate moment.\nIn Armenian homes, warmth is often found in everyday rituals — conversation, tea, and details like traditional carpets that reflect the country’s rich cultural heritage.",
+  "back": "/art/art-35-back.webp",
+  "mock": "/art/art-35-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "36",
@@ -417,7 +545,11 @@
   "lg": "/art/art-36-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration features the Mother Armenia statue, a powerful symbol overlooking Yerevan.\nRepresenting strength, protection and peace, it reflects the enduring spirit of the Armenian people and their connection to the land."
+  "text": "This illustration features the Mother Armenia statue, a powerful symbol overlooking Yerevan.\nRepresenting strength, protection and peace, it reflects the enduring spirit of the Armenian people and their connection to the land.",
+  "back": "/art/art-36-back.webp",
+  "mock": "/art/art-36-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "38",
@@ -429,7 +561,11 @@
   "lg": "/art/art-38-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet coffee moment in Yerevan, overlooking the Moscow Cinema and its lively fountain square.\nLocated in the city center, the Moscow Cinema is one of Yerevan’s well-known cultural landmarks, surrounded by public spaces where people gather, relax and enjoy everyday life."
+  "text": "This illustration captures a quiet coffee moment in Yerevan, overlooking the Moscow Cinema and its lively fountain square.\nLocated in the city center, the Moscow Cinema is one of Yerevan’s well-known cultural landmarks, surrounded by public spaces where people gather, relax and enjoy everyday life.",
+  "back": "/art/art-38-back.webp",
+  "mock": "/art/art-38-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "39",
@@ -441,7 +577,11 @@
   "lg": "/art/art-39-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment beside the ruins of Zvartnots Cathedral, one of Armenia’s most remarkable architectural monuments.\nBuilt in the 7th century, Zvartnots is a UNESCO World Heritage Site, known for its unique circular design and its significance in early Armenian Christian architecture."
+  "text": "This illustration captures a quiet moment beside the ruins of Zvartnots Cathedral, one of Armenia’s most remarkable architectural monuments.\nBuilt in the 7th century, Zvartnots is a UNESCO World Heritage Site, known for its unique circular design and its significance in early Armenian Christian architecture.",
+  "back": "/art/art-39-back.webp",
+  "mock": "/art/art-39-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "40",
@@ -453,7 +593,11 @@
   "lg": "/art/art-40-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment at Garni Temple, as a figure sits peacefully with the ancient monument rising behind.\nBuilt in the 1st century AD, Garni is the only surviving Greco-Roman colonnaded temple in Armenia, reflecting the country’s pre-Christian history and architectural heritage."
+  "text": "This illustration captures a quiet moment at Garni Temple, as a figure sits peacefully with the ancient monument rising behind.\nBuilt in the 1st century AD, Garni is the only surviving Greco-Roman colonnaded temple in Armenia, reflecting the country’s pre-Christian history and architectural heritage.",
+  "back": "/art/art-40-back.webp",
+  "mock": "/art/art-40-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "41",
@@ -465,7 +609,11 @@
   "lg": "/art/art-41-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "This illustration captures a moment at the Cascade Complex, one of Yerevan’s most iconic landmarks.\nConnecting the city center with the hills above, the Cascade is known for its grand stairways, open-air art and panoramic views of the city."
+  "text": "This illustration captures a moment at the Cascade Complex, one of Yerevan’s most iconic landmarks.\nConnecting the city center with the hills above, the Cascade is known for its grand stairways, open-air art and panoramic views of the city.",
+  "back": "/art/art-41-back.webp",
+  "mock": "/art/art-41-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "42",
@@ -477,7 +625,11 @@
   "lg": "/art/art-42-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "This illustration captures a traditional Armenian gathering, where a large family comes together around a table filled with bread, wine and shared dishes.\nIn Armenian culture, food is more than nourishment — it is a symbol of hospitality, unity and togetherness, where no table is complete without bread and wine."
+  "text": "This illustration captures a traditional Armenian gathering, where a large family comes together around a table filled with bread, wine and shared dishes.\nIn Armenian culture, food is more than nourishment — it is a symbol of hospitality, unity and togetherness, where no table is complete without bread and wine.",
+  "back": "/art/art-42-back.webp",
+  "mock": "/art/art-42-mock.webp",
+  "mockW": 1400,
+  "mockH": 1209
  },
  {
   "id": "43",
@@ -489,7 +641,11 @@
   "lg": "/art/art-43-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment of connection, as two people share a glass of wine overlooking the city.\nIn Armenian culture, wine and togetherness go hand in hand, symbolizing warmth, love and the joy of shared moments."
+  "text": "This illustration captures a quiet moment of connection, as two people share a glass of wine overlooking the city.\nIn Armenian culture, wine and togetherness go hand in hand, symbolizing warmth, love and the joy of shared moments.",
+  "back": "/art/art-43-back.webp",
+  "mock": "/art/art-43-mock.webp",
+  "mockW": 1400,
+  "mockH": 1202
  },
  {
   "id": "44",
@@ -501,7 +657,11 @@
   "lg": "/art/art-44-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "Armenian love and wine — two things that have always gone hand in hand.\nThis illustration reflects the warmth, intimacy and simple joy of sharing a moment together."
+  "text": "Armenian love and wine — two things that have always gone hand in hand.\nThis illustration reflects the warmth, intimacy and simple joy of sharing a moment together.",
+  "back": "/art/art-44-back.webp",
+  "mock": "/art/art-44-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "45",
@@ -513,7 +673,11 @@
   "lg": "/art/art-45-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "Our wine is different — shaped by sun, land and centuries of tradition.\nThis illustration reflects the unique spirit of Armenian wine and the stories it carries."
+  "text": "Our wine is different — shaped by sun, land and centuries of tradition.\nThis illustration reflects the unique spirit of Armenian wine and the stories it carries.",
+  "back": "/art/art-45-back.webp",
+  "mock": "/art/art-45-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "46",
@@ -525,7 +689,11 @@
   "lg": "/art/art-46-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Standing strong beneath the sun, watching over the city — a symbol of protection and quiet power.\nMother Armenia embodies resilience, dignity and the enduring spirit of the nation."
+  "text": "Standing strong beneath the sun, watching over the city — a symbol of protection and quiet power.\nMother Armenia embodies resilience, dignity and the enduring spirit of the nation.",
+  "back": "/art/art-46-back.webp",
+  "mock": "/art/art-46-mock.webp",
+  "mockW": 1400,
+  "mockH": 1750
  },
  {
   "id": "47",
@@ -537,7 +705,11 @@
   "lg": "/art/art-47-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a layered view of Yerevan, bringing together some of the city’s most iconic landmarks in a single composition. From Republic Square and the Opera House to the Zvartnots, these places reflect the city’s rich architectural diversity and vibrant urban life."
+  "text": "This illustration captures a layered view of Yerevan, bringing together some of the city’s most iconic landmarks in a single composition. From Republic Square and the Opera House to the Zvartnots, these places reflect the city’s rich architectural diversity and vibrant urban life.",
+  "back": "/art/art-47-back.webp",
+  "mock": "/art/art-47-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "48",
@@ -549,7 +721,11 @@
   "lg": "/art/art-48-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet, dreamlike moment in the Armenian landscape, where two figures sit together beneath a small bell tower overlooking the mountains.\nScattered across Armenia, such rural architectural elements and open landscapes reflect a deep connection to nature, simplicity and shared moments."
+  "text": "This illustration captures a quiet, dreamlike moment in the Armenian landscape, where two figures sit together beneath a small bell tower overlooking the mountains.\nScattered across Armenia, such rural architectural elements and open landscapes reflect a deep connection to nature, simplicity and shared moments.",
+  "back": "/art/art-48-back.webp",
+  "mock": "/art/art-48-mock.webp",
+  "mockW": 1400,
+  "mockH": 1750
  },
  {
   "id": "49",
@@ -561,7 +737,11 @@
   "lg": "/art/art-49-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Memories from Yerevan — small moments, familiar places and everyday rituals.\nFrom coffee and art to city views, this illustration captures the simple things that stay with you."
+  "text": "Memories from Yerevan — small moments, familiar places and everyday rituals.\nFrom coffee and art to city views, this illustration captures the simple things that stay with you.",
+  "back": "/art/art-49-back.webp",
+  "mock": "/art/art-49-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "50",
@@ -573,7 +753,11 @@
   "lg": "/art/art-50-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment in Dilijan, with the traditional architecture of the Tufenkian Old Dilijan Complex in the background.\nKnown for its preserved wooden balconies and 19th-century style buildings, Dilijan is often called the “Armenian Switzerland,” reflecting its natural beauty and cultural charm."
+  "text": "This illustration captures a quiet moment in Dilijan, with the traditional architecture of the Tufenkian Old Dilijan Complex in the background.\nKnown for its preserved wooden balconies and 19th-century style buildings, Dilijan is often called the “Armenian Switzerland,” reflecting its natural beauty and cultural charm.",
+  "back": "/art/art-50-back.webp",
+  "mock": "/art/art-50-mock.webp",
+  "mockW": 1400,
+  "mockH": 1232
  },
  {
   "id": "51",
@@ -585,7 +769,11 @@
   "lg": "/art/art-51-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Rising among the trees, quiet and striking — a modern symbol within an ancient landscape.\nIn Dilijan, nature and culture exist side by side, shaping a place full of memory and character."
+  "text": "Rising among the trees, quiet and striking — a modern symbol within an ancient landscape.\nIn Dilijan, nature and culture exist side by side, shaping a place full of memory and character.",
+  "back": "/art/art-51-back.webp",
+  "mock": "/art/art-51-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "52",
@@ -597,7 +785,11 @@
   "lg": "/art/art-52-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a peaceful moment in the Armenian countryside, where open green fields stretch beneath the mountains and sheep graze freely.\nRural life has long been an essential part of Armenia’s culture, reflecting a deep connection to the land, nature and traditional ways of living."
+  "text": "This illustration captures a peaceful moment in the Armenian countryside, where open green fields stretch beneath the mountains and sheep graze freely.\nRural life has long been an essential part of Armenia’s culture, reflecting a deep connection to the land, nature and traditional ways of living.",
+  "back": "/art/art-52-back.webp",
+  "mock": "/art/art-52-mock.webp",
+  "mockW": 1400,
+  "mockH": 933
  },
  {
   "id": "53",
@@ -609,7 +801,11 @@
   "lg": "/art/art-53-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Erebuni–Yerevan — where the story of the city begins.\nThis illustration is inspired by the ancient roots of Yerevan, tracing back to 782 BC, and reflects the deep connection between past and present."
+  "text": "Erebuni–Yerevan — where the story of the city begins.\nThis illustration is inspired by the ancient roots of Yerevan, tracing back to 782 BC, and reflects the deep connection between past and present.",
+  "back": "/art/art-53-back.webp",
+  "mock": "/art/art-53-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "54",
@@ -621,7 +817,11 @@
   "lg": "/art/art-54-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "Standing in silence, between light and shadow, holding a moment of prayer.\nIn the distance, the “Grandmother and Grandfather” of Artsakh remain — steady and timeless, carrying memory, identity and strength."
+  "text": "Standing in silence, between light and shadow, holding a moment of prayer.\nIn the distance, the “Grandmother and Grandfather” of Artsakh remain — steady and timeless, carrying memory, identity and strength.",
+  "back": "/art/art-54-back.webp",
+  "mock": "/art/art-54-mock.webp",
+  "mockW": 1400,
+  "mockH": 1750
  },
  {
   "id": "55",
@@ -633,7 +833,11 @@
   "lg": "/art/art-55-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "Inspired by the film “Mer Mankutyan Tango”, this illustration reflects the spirit of Gyumri — a city full of character, memory and quiet stories.\nThe old architecture carries a sense of nostalgia, where everyday life feels like a scene from a film."
+  "text": "Inspired by the film “Mer Mankutyan Tango”, this illustration reflects the spirit of Gyumri — a city full of character, memory and quiet stories.\nThe old architecture carries a sense of nostalgia, where everyday life feels like a scene from a film.",
+  "back": "/art/art-55-back.webp",
+  "mock": "/art/art-55-mock.webp",
+  "mockW": 1400,
+  "mockH": 2099
  },
  {
   "id": "56",
@@ -645,7 +849,11 @@
   "lg": "/art/art-56-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "This illustration captures a quiet moment overlooking the Yerevan Cascade, as the city unfolds step by step beneath the open sky.\nThe Cascade is one of Yerevan’s most iconic landmarks, a monumental stairway known for its terraced design, art spaces and panoramic views of the city."
+  "text": "This illustration captures a quiet moment overlooking the Yerevan Cascade, as the city unfolds step by step beneath the open sky.\nThe Cascade is one of Yerevan’s most iconic landmarks, a monumental stairway known for its terraced design, art spaces and panoramic views of the city.",
+  "back": "/art/art-56-back.webp",
+  "mock": "/art/art-56-mock.webp",
+  "mockW": 1400,
+  "mockH": 1120
  },
  {
   "id": "57",
@@ -657,7 +865,11 @@
   "lg": "/art/art-57-lg.webp",
   "lgW": 622,
   "lgH": 878,
-  "text": "An Armenian soldier — standing quietly between home and horizon.\nThis illustration reflects strength, responsibility and a deep connection to the land he protects."
+  "text": "An Armenian soldier — standing quietly between home and horizon.\nThis illustration reflects strength, responsibility and a deep connection to the land he protects.",
+  "back": "/art/art-57-back.webp",
+  "mock": "/art/art-57-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  },
  {
   "id": "58",
@@ -669,6 +881,10 @@
   "lg": "/art/art-58-lg.webp",
   "lgW": 621,
   "lgH": 878,
-  "text": "Garni Temple — the only standing Greco-Roman colonnaded temple in Armenia.\nThis illustration reflects the timeless beauty of Garni, where history, architecture and nature come together."
+  "text": "Garni Temple — the only standing Greco-Roman colonnaded temple in Armenia.\nThis illustration reflects the timeless beauty of Garni, where history, architecture and nature come together.",
+  "back": "/art/art-58-back.webp",
+  "mock": "/art/art-58-mock.webp",
+  "mockW": 1400,
+  "mockH": 934
  }
 ]

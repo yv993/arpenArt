@@ -75,6 +75,12 @@
   border-radius: inherit;
   animation: ap-lg-in 0.35s ease both;
 }
+/* a face whose aspect differs from the card (art-13's portrait print, every
+   landscape mockup) letterboxes on the artwork's average colour — art is
+   never cropped to fit */
+.ap-cloud__lg.is-fit {
+  object-fit: contain;
+}
 @keyframes ap-lg-in {
   from {
     opacity: 0;
@@ -327,6 +333,32 @@
   }
   .ap-cloud__close:hover {
     background: color-mix(in srgb, var(--ink) 78%, transparent);
+  }
+  /* Front · Back · Printed — the faces of the chosen picture */
+  .ap-cloud__views {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .ap-cloud__views button {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    background: none;
+    color: color-mix(in srgb, var(--paper) 78%, transparent);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  .ap-cloud__views button:hover {
+    color: var(--paper);
+  }
+  .ap-cloud__views button[aria-pressed="true"] {
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--paper);
   }
   /* browse the series without closing — ‹ n/57 › under the note */
   .ap-cloud__nav {
