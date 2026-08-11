@@ -375,14 +375,20 @@ export default function Cloud({
                   const under = page?.under ?? cur;
                   return (
                     <>
+                      {/* ONE persistent element, NEVER keyed by its file: a
+                          remount paints empty for a few frames and the front
+                          thumb beneath showed through on every switch (client
+                          2026-08-12, twice). Swapping src in place keeps the
+                          old bitmap until the new one paints, and the new one
+                          is already decoded (the gate in switchView), so
+                          decoding=sync makes the swap a single clean frame. */}
                       <img
-                        className={`ap-cloud__lg${fit(under.w, under.h) ? " is-fit" : ""}${page ? " no-fade" : ""}`}
-                        key={under.src}
+                        className={`ap-cloud__lg${fit(under.w, under.h) ? " is-fit" : ""}`}
                         src={under.src}
                         alt=""
                         width={under.w}
                         height={under.h}
-                        decoding="async"
+                        decoding="sync"
                         style={fit(under.w, under.h) ? { background: p.avg } : undefined}
                       />
                       {page && (
@@ -393,7 +399,7 @@ export default function Cloud({
                           alt=""
                           width={page.over.w}
                           height={page.over.h}
-                          decoding="async"
+                          decoding="sync"
                           style={fit(page.over.w, page.over.h) ? { background: p.avg } : undefined}
                           onAnimationEnd={() => setPage(null)}
                         />
