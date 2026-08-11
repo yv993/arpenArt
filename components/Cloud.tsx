@@ -4,7 +4,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 
-type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
+type Art = {
+  id: string;
+  src: string;
+  thumb: string;
+  w: number;
+  h: number;
+  avg: string;
+  /** the print-resolution scan and Arpine's own note (client files
+      2026-08-11) — three pictures (23/25/34) don't have them yet */
+  lg?: string;
+  lgW?: number;
+  lgH?: number;
+  text?: string;
+};
 
 // ============================================================================
 // CLOUD — the series lying freely in space, after creativeapproa.ch.
@@ -168,6 +181,20 @@ export default function Cloud({
     return () => mm.revert();
   }, [write]);
 
+  /** Step to the next or previous picture without closing the viewer — the
+   *  pan choreography below flies the plane to wherever it lies. Declared
+   *  before the choosing effect, which wires it to the arrow keys. */
+  const step = useCallback(
+    (dir: 1 | -1) => {
+      setChosen((cur) => {
+        if (!cur) return cur;
+        const i = items.findIndex((a) => a.id === cur);
+        return items[(i + dir + items.length) % items.length].id;
+      });
+    },
+    [items],
+  );
+
   // ---- choosing a picture --------------------------------------------------
   // Measured contract: the chosen card grows in place, the rest dim hard, the
   // intro clears out, a caption sits under the card. Here the plane also pans
@@ -206,10 +233,19 @@ export default function Cloud({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setChosen(null);
+      if (!chosenRef.current) return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        step(1);
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        step(-1);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chosen, write]);
+  }, [chosen, write, step]);
 
   /** Press a card to open it, press it again to put it back. With no drag to
    *  distinguish this from, onClick is the whole of it — pointer and keyboard
@@ -258,6 +294,13 @@ export default function Cloud({
               }
             >
               <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" />
+              {/* the chosen card swaps up to the print-resolution scan — the
+                  thumb is 298px and the card opens to ~370. Skipped when the
+                  print's aspect differs from the card's (art-13's print is a
+                  portrait of a landscape original): covering would crop art. */}
+              {chosen === p.id && p.lg && p.lgW && p.lgH && Math.abs(p.w / p.h - p.lgW / p.lgH) < 0.08 && (
+                <img className="ap-cloud__lg" src={p.lg} alt="" width={p.lgW} height={p.lgH} decoding="async" />
+              )}
             </button>
           ))}
         </div>
@@ -276,13 +319,30 @@ export default function Cloud({
           <p className="ap-lede">{copy}</p>
         </div>
 
-        {/* what a picked picture IS. Its number and its series, and nothing
-            else: these illustrations have no titles yet. */}
+        {/* what a picked picture IS: its number, its series, and Arpine's own
+            note for it (client files 2026-08-11). The three pictures without
+            a note yet (23/25/34) keep the series body. ‹ › browse the whole
+            series without closing — the plane flies to each one. */}
         {chosen && (
           <div className="ap-cloud__info" role="status">
             <p className="ap-cloud__no">No. {chosen}</p>
             <p className="ap-cloud__series">{pick.line}</p>
-            <p className="ap-cloud__body">{pick.body}</p>
+            {(items.find((a) => a.id === chosen)?.text ?? pick.body).split("\n").map((t) => (
+              <p className="ap-cloud__body" key={t.slice(0, 24)}>
+                {t}
+              </p>
+            ))}
+            <div className="ap-cloud__nav">
+              <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
+                ←
+              </button>
+              <span aria-hidden="true">
+                {items.findIndex((a) => a.id === chosen) + 1} / {items.length}
+              </span>
+              <button type="button" onClick={() => step(1)} aria-label="Next picture">
+                →
+              </button>
+            </div>
             <Link className="ap-btn ap-cloud__go" href="/shop">
               {pick.cta} <span aria-hidden>→</span>
             </Link>

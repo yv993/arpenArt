@@ -14,7 +14,7 @@ import { brand, categories, home } from "@/lib/content";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 
-type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
+type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string; lg?: string; lgW?: number; lgH?: number; text?: string };
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 const ART = artworks as Art[];
 const P = products as Record<string, Shot[]>;

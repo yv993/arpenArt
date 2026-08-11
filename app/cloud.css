@@ -67,6 +67,22 @@
   object-fit: cover;
   border-radius: inherit;
 }
+/* the print-resolution scan laid over the chosen card — same box, same
+   radius, fading in as it decodes so the thumb never visibly pops */
+.ap-cloud__lg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: ap-lg-in 0.35s ease both;
+}
+@keyframes ap-lg-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 /* the caption — pure CSS off aria-pressed, so the rail gets it too. On the
    rail it sits INSIDE the picture's bottom edge (the rail clips overflow). */
 .ap-cloud__card::after {
@@ -311,6 +327,36 @@
   }
   .ap-cloud__close:hover {
     background: color-mix(in srgb, var(--ink) 78%, transparent);
+  }
+  /* browse the series without closing — ‹ n/57 › under the note */
+  .ap-cloud__nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 2px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: color-mix(in srgb, var(--paper) 72%, transparent);
+  }
+  .ap-cloud__nav button {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    background: none;
+    color: var(--paper);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.25s ease;
+  }
+  .ap-cloud__nav button:hover {
+    background: color-mix(in srgb, var(--ink) 60%, transparent);
+  }
+  /* Arpine's notes run to three sentences — never let a long one push the
+     CTA off screen */
+  .ap-cloud__info {
+    max-height: 78vh;
+    overflow: auto;
   }
   @keyframes ap-cloud-say {
     from {
