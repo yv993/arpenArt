@@ -1,8 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+// A PIN MUST BE TORN DOWN IN A *LAYOUT* EFFECT (2026-08-12).
+//
+// ScrollTrigger's `pin` wraps its element in a pin-spacer — it REPARENTS a
+// node React owns. React only tolerates that if the wrapper is gone before
+// it unmounts the tree. And the two effect kinds unmount at different times:
+// a deleted tree's useEffect cleanups run in the PASSIVE phase, which is
+// AFTER React has already removed the DOM, while useLayoutEffect cleanups
+// run during the mutation phase, BEFORE removal. With useEffect the un-pin
+// was always too late — React looked for <section class="ap-mh"> inside
+// <main>, found the pin-spacer there instead, and threw
+//   NotFoundError: Failed to execute 'removeChild' on 'Node'
+// on every navigation away from this page. Proved by instrumenting
+// removeChild: child section.ap-mh, expected parent main, actual parent
+// div.pin-spacer.
+//
+// SSR renders this file, and useLayoutEffect warns there, so it is only
+// swapped in once there is a window.
+const useLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
 
@@ -57,7 +76,7 @@ export default function MorphHero({
 }) {
   const root = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  useLayout(() => {
     const el = root.current;
     if (!el) return;
     gsap.registerPlugin(ScrollTrigger);
@@ -207,7 +226,13 @@ export default function MorphHero({
         stage.removeEventListener("mousemove", onMouse);
         gsap.ticker.remove(tick);
         tl.kill();
-        st.kill();
+        // kill(TRUE) — REVERT THE PIN (2026-08-12). A pin wraps its element
+        // in a pin-spacer, i.e. it REPARENTS a node React owns. Killing the
+        // trigger without reverting leaves that wrapper in place, so when
+        // React unmounts this page it looks for the section in its original
+        // parent, finds the spacer instead, and throws NotFoundError:
+        // "The node to be removed is not a child of this node".
+        st.kill(true);
       };
     });
 

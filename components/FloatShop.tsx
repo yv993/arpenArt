@@ -1,12 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { POOL, settle } from "@/lib/textfx";
+
+/** Pins must be torn down in a LAYOUT effect — see the note in MorphHero.
+ *  SSR has no window and useLayoutEffect warns there, so it swaps in only
+ *  on the client. */
+const useLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 // ============================================================================
 // FLOAT SHOP — the shop categories as pahari.vercel.app's floating gallery.
@@ -438,7 +443,10 @@ export default function FloatShop({
   // section attribute is what hides the sibling grid — a CSS `+` selector
   // cannot do it, because the pin wraps this element in a pin-spacer and the
   // grid's sibling becomes the spacer, not us.
-  useEffect(() => {
+  // LAYOUT effect, not passive — a pin reparents this element into a
+  // pin-spacer, and only a layout cleanup un-pins before React removes the
+  // node. See the note at the top of MorphHero for the whole story.
+  useLayout(() => {
     const el = root.current;
     if (!el || !live) return;
     const section = el.closest("#shop");
@@ -458,7 +466,9 @@ export default function FloatShop({
       },
     });
     return () => {
-      st.kill();
+      // kill(TRUE) — revert the pin, so the pin-spacer stops wrapping a node
+      // React owns before React unmounts it. See the note in MorphHero.
+      st.kill(true);
       section?.removeAttribute("data-float");
     };
   }, [live, cats.length]);
