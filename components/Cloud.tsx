@@ -75,16 +75,22 @@ function scatter(items: Art[]): Placed[] {
   return items.map((a, i) => {
     const ang = i * GOLDEN;
     const rad = Math.sqrt((i + 0.55) / n);
-    const jx = (hash(i, 1) - 0.5) * 9;
-    const jy = (hash(i, 2) - 0.5) * 10;
+    const jx = (hash(i, 1) - 0.5) * 7;
+    const jy = (hash(i, 2) - 0.5) * 8;
     const t = hash(i, 3);
     // roughly the reference's 92px cards at 1440 — smaller and denser than the
     // first cut, so far more of the series is in the frame at once
     const size = t < 0.24 ? 2.9 : t < 0.78 ? 3.7 : 4.7;
     return {
       ...a,
-      x: q(50 + Math.cos(ang) * rad * 34 + jx),
-      y: q(50 + Math.sin(ang) * rad * 31 + jy),
+      // DRAWN IN TOWARDS THE MIDDLE (client 2026-08-12: "make more dense in
+      // center, move from left side postcards to center"). The spread was
+      // ±34% of the frame, which pushed cards to both edges and strewed a
+      // thin group down the left, underneath the title. Tighter radii pile
+      // the series in the centre, and the centre itself sits a little right
+      // of middle so the title's column stays its own.
+      x: q(54 + Math.cos(ang) * rad * 24 + jx),
+      y: q(50 + Math.sin(ang) * rad * 27 + jy),
       size,
       z: Math.round(size * 10),
       mount: hash(i, 5) > 0.62,

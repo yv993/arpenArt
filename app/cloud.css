@@ -188,6 +188,18 @@
   display: grid;
   gap: 14px;
 }
+/* THE SERIES TITLE TAKES THE CLIENT'S REFERENCE TREATMENT (2026-08-12):
+   a bold grotesque rather than the display serif, and smaller. Karla is
+   already loaded as a variable font, so real 700 costs nothing and no new
+   family enters the build. Scoped to the cloud — .ap-h2 is the site's
+   shared heading and every other section keeps the serif. */
+.ap-cloud__say .ap-h2 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(1.25rem, 4.4vw, 1.7rem);
+  line-height: 1.14;
+  letter-spacing: 0.005em;
+}
 /* the "Drag to move" cue is gone from the markup with the drag itself */
 
 /* --------------------------------------------------------------------------
@@ -337,7 +349,7 @@
     display: none;
   }
   .ap-cloud__say .ap-h2 {
-    font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+    font-size: clamp(1.35rem, 2.1vw, 1.95rem);
   }
 
   /* ---- what a picked picture says -------------------------------------- */
