@@ -1,0 +1,11 @@
+{
+  "bbox": [
+    43.4636,
+    38.8501,
+    46.6375,
+    41.2982
+  ],
+  "elevMin": 300,
+  "elevMax": 5075,
+  "source": "SRTM via AWS terrain tiles (terrarium z10), reprojected equirectangular"
+}
