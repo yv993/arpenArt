@@ -439,7 +439,15 @@ select {
    is what their contrast was measured against in the first place (5.42:1). */
 @media (min-width: 861px) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
   .ap-hero {
-    height: 260svh;
+    /* SHORTER (client 2026-08-12: "hero section must be smaller"). It was
+       260svh — the frame is one screen, but the section held the reader for
+       2.6 of them before the page would move on, which is what made it feel
+       big. 160svh keeps the whole scrub (push-in, title away, card back over
+       the painting) and simply plays it over less of the page. The FRAME
+       itself is untouched: their artwork is a full-bleed banner at 1.85:1
+       and a filled screen is 1.78:1, so the picture is already the right
+       shape. */
+    height: 160svh;
   }
   .ap-hero__stage {
     position: sticky;
