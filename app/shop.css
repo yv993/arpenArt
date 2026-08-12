@@ -571,6 +571,17 @@
   mix-blend-mode: normal;
   border-radius: 6px;
 }
+/* THE CARD IN THE SCENE. Covers the photographed postcard edge to edge, so
+   the design underneath never shows. `normal` rather than the mug's
+   `multiply`: the card is lit flat and square, and multiplying would drag
+   the scene's shadow across a picture that is standing in the light. The
+   1px radius is the printed card's own corner. */
+.ap-cv__hero .ap-cv__print--card,
+.ap-cv__hero img.ap-cv__print--card {
+  object-fit: cover;
+  mix-blend-mode: normal;
+  border-radius: 1px;
+}
 /* the cut, over the picture — see MOCKUPS for why it is drawn rather than
    lifted out of the photograph */
 .ap-cv__hero .ap-cv__seams,

@@ -30,11 +30,16 @@ type Mock = {
    *  cylinder warp on a disc would squeeze the sides of a picture that is not
    *  curving away at all. Measured, not assumed: the plate object's bounding
    *  box is 1171x1154, a 1.5% ellipse, i.e. shot essentially head on. */
-  kind: "cylinder" | "disc" | "puzzle";
+  kind: "cylinder" | "disc" | "puzzle" | "card";
   /** a transparent overlay laid over the print — the puzzle's cut */
   seams?: string;
   /** how much the disc is squashed vertically by the camera's angle */
   squash?: number;
+  /** WHICH SHOT carries the mockup. The mug, plate and puzzle were each
+   *  photographed blank as the first shot; the postcard has no blank — the
+   *  card in the styled scene is simply covered — so its mockup lives on the
+   *  shot that shows one card square to the camera. */
+  at?: number;
 };
 
 const MOCKUPS: Record<string, Mock> = {
@@ -82,6 +87,20 @@ const MOCKUPS: Record<string, Mock> = {
     // artwork over every new one.
     seams: "/products/puzzle-seams.webp",
   },
+  postcards: {
+    // NO BLANK EXISTS, and none is needed: the card in this scene is covered
+    // edge to edge, exactly like the puzzle board. Shot 2 is the one that
+    // stands a single card square to the camera.
+    blank: "/products/postcards-03.webp",
+    at: 2,
+    // The card's rectangle, found by gradient rather than by eye: the two
+    // strongest vertical edges across the card's height are x=682 and x=963,
+    // and the strongest horizontals across its width are y=944 and y=1367.
+    // 281 x 423 of 1280 x 1600.
+    box: [682 / 1280, 944 / 1600, 281 / 1280, 423 / 1600],
+    photo: [1280, 1600],
+    kind: "card",
+  },
 };
 
 /** the print area, as the four custom properties the stylesheet positions from */
@@ -95,6 +114,7 @@ const boxVars = (b: [number, number, number, number]) =>
 
 /** Categories where the buyer picks which illustration goes on the thing. */
 const CHOOSES_DESIGN = new Set(["postcards", "stickers", "cups", "plates", "puzzles", "totes"]);
+
 
 /** The "how ordering works" strip. It lives here but renders on the cart page
  *  too — one component, so the two tellings of the flow can never drift. */
@@ -142,6 +162,11 @@ export default function CategoryView({
   const mock = MOCKUPS[cat.slug];
   const chosenArt = art ? ART.find((a) => a.id === art) : undefined;
   const hero = shots[shot];
+  /** Which product shot carries the mockup. Mugs, plates and puzzles are
+   *  photographed blank as shot 0; the postcard mockup is a styled scene
+   *  further along the roll, so the index is part of the table. */
+  const mockAt = mock?.at ?? 0;
+  const onMock = !!mock && shot === mockAt;
   // Every product shot's `thumb` is its -sm.webp sibling, resized to fit a
   // 700px box (verified against all 61 files in the manifest), so the width
   // descriptor below is derived from real pixels, not guessed.
@@ -194,10 +219,10 @@ export default function CategoryView({
                 style={
                   {
                     background: hero.avg,
-                    ...(mock && shot === 0 ? { "--mock-ar": `${mock.photo[0]} / ${mock.photo[1]}` } : null),
+                    ...(onMock ? { "--mock-ar": `${mock.photo[0]} / ${mock.photo[1]}` } : null),
                   } as React.CSSProperties
                 }
-                data-mock={mock && shot === 0 ? "" : undefined}
+                data-mock={onMock ? "" : undefined}
               >
                 {/* srcSet lets a phone take the 700px -sm file instead of the
                     full master; sizes mirrors the real layout — one column
@@ -209,10 +234,14 @@ export default function CategoryView({
                   // design, and laying a second illustration over it would just
                   // stack two pictures. The other shots are left alone: they are
                   // photographs of real pieces, not previews.
-                  src={mock && shot === 0 ? mock.blank : hero.src}
-                  srcSet={mock && shot === 0 ? undefined : `${hero.thumb} ${heroSmW}w, ${hero.src} ${hero.w}w`}
+                  src={onMock ? mock.blank : hero.src}
+                  srcSet={onMock ? undefined : `${hero.thumb} ${heroSmW}w, ${hero.src} ${hero.w}w`}
                   sizes="(max-width: 860px) 92vw, 50vw"
-                  alt={`${cat.name} by ${"Arpine Baroyan"}`}
+                  alt={
+                    onMock && chosenArt
+                      ? `${cat.name} — illustration no. ${chosenArt.id} by Arpine Baroyan`
+                      : `${cat.name} by ${"Arpine Baroyan"}`
+                  }
                   width={hero.w}
                   height={hero.h}
                   decoding="async"
@@ -223,8 +252,23 @@ export default function CategoryView({
                     1578x1600), so it lands on the mug at any rendered size.
                     `multiply` seats it into the ceramic's own shading instead
                     of floating a rectangle on top of it. */}
-                {mock && shot === 0 && chosenArt &&
-                  (mock.kind === "cylinder" ? (
+                {onMock && chosenArt &&
+                  (mock.kind === "card" ? (
+                    // A CARD IS FLAT AND SQUARE TO THE CAMERA — nothing to
+                    // project. The scan simply covers the card in the scene,
+                    // `cover` because the photographed card is a touch
+                    // narrower than the true A6 (it leans back by a degree or
+                    // two), so a contain fit would leave slivers of the old
+                    // design showing at the sides.
+                    <img
+                      className="ap-cv__print ap-cv__print--card"
+                      src={chosenArt.src}
+                      alt=""
+                      aria-hidden="true"
+                      decoding="async"
+                      style={boxVars(mock.box)}
+                    />
+                  ) : mock.kind === "cylinder" ? (
                     <MugPrint src={chosenArt.thumb} box={mock.box} photo={mock.photo} />
                   ) : mock.kind === "puzzle" ? (
                     // THE BOARD IS SQUARE AND THE ILLUSTRATIONS ARE PORTRAIT,
@@ -337,7 +381,13 @@ export default function CategoryView({
                       aria-pressed={art === a.id}
                       aria-label={`Illustration number ${a.id}`}
                       className={art === a.id ? "on" : ""}
-                      onClick={() => setArt(a.id)}
+                      onClick={() => {
+                        setArt(a.id);
+                        // and SHOW it: the preview only exists on the mockup
+                        // shot, so a pick made while looking at another
+                        // photograph would otherwise change nothing visible
+                        if (mock) setShot(mockAt);
+                      }}
                       style={{ background: a.avg }}
                     >
                       <img src={a.thumb} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />
