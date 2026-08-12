@@ -108,12 +108,18 @@
 }
 .ap-nav__mark img {
   display: block;
-  height: 58px;
+  /* THE BAR'S HEIGHT IS THIS NUMBER (client 2026-08-12: "navbar thick, make
+     it like previous narrow"). The lockup replaced a two-line text wordmark
+     that stood ~33px tall — name 1.22rem over a 10.5px subline — and at 58px
+     it pushed the bar from 65px to 90px. Back to the wordmark's own height,
+     so the bar measures what it always did. */
+  height: 34px;
   width: auto;
 }
 @media (max-width: 860px) {
+  /* phones may go larger for free: the 44px burger already sets the floor */
   .ap-nav__mark img {
-    height: 46px;
+    height: 40px;
   }
 }
 .ap-nav__links {
