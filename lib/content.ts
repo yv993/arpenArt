@@ -524,8 +524,11 @@ export const home = {
     src: "/hero/hero.webp",
     alt:
       "An illustrated young woman with long dark hair smiling beneath a bright sun, against rolling yellow hills and snow-capped mountains",
-    line1: "ARMENIA,",
-    line2: "DRAWN BY HAND",
+    // the client's own hero line (2026-08-12), replacing "ARMENIA, / DRAWN
+    // BY HAND". Two lines, and the break is theirs: the verb alone, then the
+    // phrase it lands on.
+    line1: "ILLUSTRATING",
+    line2: "THE SOUL OF ARMENIA",
     sub: "Original illustration by Arpine Baroyan — on paper, silk, cotton and clay.",
     cta: "See the shop",
     hint: "Scroll",
