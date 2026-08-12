@@ -202,6 +202,12 @@ const CARD_SHOTS: CardShot[] = [
   // LANDSCAPE here and the illustrations are portrait, so this is one of the
   // two scenes where the print is a centred crop rather than the whole
   // picture — see CardPrint on why stretching it instead was wrong.
+  // TWO EXTRAS in this scene (client 2026-08-13): the photographed card
+  // wears an ornamental frame the client wants KEPT — the front plate is
+  // that frame cut from the photo, laid back over the print so the chosen
+  // picture sits INSIDE it — and the little illustrated STAMP on the
+  // envelope card is a print surface of its own, so the stamp changes with
+  // the choice too.
   {
     at: 7,
     quads: [
@@ -211,8 +217,15 @@ const CARD_SHOTS: CardShot[] = [
         [1133.4, 1048.1],
         [638.8, 876.3],
       ],
+      [
+        [790, 358],
+        [851, 381],
+        [823, 455],
+        [762, 432],
+      ],
     ],
     photo: [1600, 1275],
+    front: "/products/postcards-08-front.png",
   },
   // 8 — tucked into the dungaree pocket: the pocket lip and the denim in
   // front of it are cut out, and the hidden corners are extrapolated from the

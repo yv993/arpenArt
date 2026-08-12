@@ -126,7 +126,7 @@ export default function CardPrint({
   /** an RGBA cut-out of whatever must stay in FRONT of the cards */
   occluder?: string;
 }) {
-  const el = useRef<HTMLImageElement | null>(null);
+  const el = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 
   // the figure's rendered size, kept current — see the note above on why the
@@ -144,7 +144,9 @@ export default function CardPrint({
     return () => ro.disconnect();
   }, []);
 
-  const transformFor = (measured: Quad) => {
+  const transformFor = (
+    measured: Quad,
+  ): { transform: string; x0: number; y0: number; w: number; h: number } | undefined => {
     if (!box) return undefined;
     const quad = dilate(measured, BLEED);
     const kx = box.w / photo[0];
@@ -163,45 +165,79 @@ export default function CardPrint({
     const sv = ca >= aa ? aa / ca : 1;
     const x0 = ((1 - su) / 2) * box.w, x1 = box.w - x0;
     const y0 = ((1 - sv) / 2) * box.h, y1 = box.h - y0;
+    const w = x1 - x0, h = y1 - y0;
+    // THE CROP IS A WINDOW, NOT JUST A MAPPING. The homography maps the
+    // source rectangle onto the card, but it is defined for the whole
+    // plane: the parts of the artwork the centred crop excluded do not
+    // vanish, they render PROJECTED BEYOND the card — on the framed
+    // landscape card the cropped-away top and bottom of a portrait
+    // illustration spilled out as a giant tilted ghost across half the
+    // photograph. So the transform rides on an overflow-hidden WRAPPER the
+    // exact size of the crop, with the full artwork shifted inside it —
+    // clip-path was tried first and Chrome rasterized it in the wrong
+    // space under a perspective matrix, cutting a screen-aligned hole
+    // through the middle of the print. Overflow clipping under a 3D
+    // transform is the path every card-flip UI leans on; it does not bend.
     const srcQ: Quad = [
-      [x0, y0],
-      [x1, y0],
-      [x1, y1],
-      [x0, y1],
+      [0, 0],
+      [w, 0],
+      [w, h],
+      [0, h],
     ];
     // the card, in the same rendered pixels
     const dstQ = quad.map(([x, y]) => [x * kx, y * ky]) as Quad;
     const [a, bb, c, d, e, f, g, i, j] = homography(srcQ, dstQ);
-    // CSS matrix3d is column-major, with z carried through untouched
-    return `matrix3d(${[a, d, 0, g, bb, e, 0, i, 0, 0, 1, 0, c, f, 0, j].join(",")})`;
+    return {
+      // CSS matrix3d is column-major, with z carried through untouched
+      transform: `matrix3d(${[a, d, 0, g, bb, e, 0, i, 0, 0, 1, 0, c, f, 0, j].join(",")})`,
+      x0,
+      y0,
+      w,
+      h,
+    };
   };
 
   return (
     <>
       {quads.map((quad, n) => {
-        const transform = transformFor(quad);
+        const t = transformFor(quad);
         return (
-          <img
+          <div
             key={n}
             ref={n === 0 ? el : undefined}
-            className="ap-cv__print ap-cv__print--card"
-            src={src}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
             style={{
               position: "absolute",
               left: 0,
               top: 0,
-              width: "100%",
-              height: "100%",
+              width: t ? t.w : "100%",
+              height: t ? t.h : "100%",
+              overflow: "hidden",
               transformOrigin: "0 0",
               // until the figure has been measured the print stays invisible —
               // an untransformed copy would flash across the whole photograph
-              transform,
-              visibility: transform ? "visible" : "hidden",
+              transform: t?.transform,
+              visibility: t ? "visible" : "hidden",
+              pointerEvents: "none",
             }}
-          />
+          >
+            {box && t && (
+              <img
+                className="ap-cv__print ap-cv__print--card"
+                src={src}
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+                style={{
+                  position: "absolute",
+                  left: -t.x0,
+                  top: -t.y0,
+                  width: box.w,
+                  height: box.h,
+                  maxWidth: "none",
+                }}
+              />
+            )}
+          </div>
         );
       })}
       {/* what belongs in front of the cards — a petal, a leaf, the lip of a
