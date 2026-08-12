@@ -1127,8 +1127,14 @@
   gap: clamp(24px, 3vw, 48px);
   align-items: start;
 }
+/* STICKY, so choosing a town shows BOTH answers at once (client 2026-08-13:
+   "highlighted in map and in right side"). Picking a pin scrolls the list to
+   the town's card, and before this the country map simply left the screen
+   with it — the pin lit marigold in a viewport nobody was looking at. The
+   list column is the tall one; the map now rides alongside it. */
 .ap-map__hold {
-  position: relative;
+  position: sticky;
+  top: clamp(64px, 9vh, 96px);
 }
 .ap-map__stage {
   position: relative;
