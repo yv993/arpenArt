@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
+import { add, dram, unit } from "@/lib/cart";
+import { flyToCart } from "@/lib/fly";
 
 type Art = {
   id: string;
@@ -141,6 +143,21 @@ export default function Cloud({
 
   /** A later click supersedes a turn still waiting on its image. */
   const turnToken = useRef(0);
+
+  /** Bought straight from the cloud (client 2026-08-12). The line is the
+   *  SAME shape the shop writes — postcards / this illustration / Single
+   *  card — so the cart, the totals and the order endpoint's server-side
+   *  re-pricing all treat it identically; nothing here names a price. */
+  const [added, setAdded] = useState(false);
+  const buy = useCallback((id: string) => {
+    add("postcards", id, 1, "Single card");
+    flyToCart(document.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${id}"]`));
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 2400);
+  }, []);
+  useEffect(() => {
+    setAdded(false);
+  }, [chosen]);
 
   const switchView = useCallback(
     (v: View, art: Art | undefined) => {
@@ -509,9 +526,18 @@ export default function Cloud({
                 →
               </button>
             </div>
-            <Link className="ap-btn ap-cloud__go" href="/shop">
-              {pick.cta} <span aria-hidden>→</span>
-            </Link>
+            {/* buy this card without leaving the cloud */}
+            <p className="ap-cloud__price">
+              <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
+            </p>
+            <div className="ap-cloud__buy">
+              <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
+                {added ? "Added ✓" : "Add to cart"}
+              </button>
+              <Link className="ap-cloud__go" href="/shop/postcards">
+                {pick.cta} <span aria-hidden>→</span>
+              </Link>
+            </div>
             <button
               type="button"
               className="ap-cloud__close"

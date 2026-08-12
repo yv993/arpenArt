@@ -435,6 +435,33 @@
     color: var(--ink);
     border-color: var(--paper);
   }
+  /* the price and the buy row — a card can be bought from the cloud itself */
+  .ap-cloud__price {
+    margin-top: 4px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .ap-cloud__price strong {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 1.45rem;
+    letter-spacing: 0;
+  }
+  .ap-cloud__price span {
+    color: color-mix(in srgb, var(--paper) 66%, transparent);
+  }
+  .ap-cloud__buy {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+  .ap-cloud__buy .ap-btn[data-added] {
+    background: var(--marigold);
+    border-color: var(--marigold);
+    color: var(--ink);
+  }
   /* browse the series without closing — ‹ n/57 › under the note */
   .ap-cloud__nav {
     display: flex;
