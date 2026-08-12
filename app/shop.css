@@ -1177,15 +1177,26 @@
   display: block;
   white-space: nowrap;
   transform: translate(var(--shift, 0), var(--lift, -26px));
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 3px;
+  border: 0;
   background: color-mix(in srgb, #151b2d 78%, transparent);
   font-size: 9.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--paper);
-  pointer-events: none;
+  /* the chip is a real button now — the town's name is the map's biggest
+     target, and a label that looks pressable and is not reads as broken.
+     Its WRAPPER stays pointer-events: none in the component, so only this
+     visible box takes the pointer and the pin head underneath stays live. */
+  pointer-events: auto;
+  cursor: pointer;
   user-select: none;
+  transition: background 0.18s var(--ease), color 0.18s var(--ease);
+}
+.ap-map__tag:hover {
+  background: color-mix(in srgb, var(--marigold) 55%, #151b2d);
+  color: var(--ink);
 }
 .ap-map__tag.on {
   background: var(--marigold);

@@ -323,11 +323,17 @@ function Pin({
         {/* pointerEvents none ON THE WRAPPER, not only the chip: drei's
             centering div is an invisible ~70x20px box sitting exactly over
             the pin head, and with default pointer-events it swallowed the
-            very clicks the head exists for — the chip's own CSS `none`
-            never covered the box around it */}
+            very clicks the head exists for. The CHIP re-enables its own —
+            the town's NAME is the map's biggest, most obvious target, and a
+            label that looks like a button and does nothing reads as a broken
+            map (client 2026-08-13: "if user click in map some cities it must
+            highlighted"). Only the chip's visible box takes the pointer; the
+            wrapper around it stays inert so the head stays clickable too. */}
         <Html center distanceFactor={13} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
-          <span
+          <button
+            type="button"
             className={`ap-map__tag${on ? " on" : ""}`}
+            aria-pressed={on}
             style={
               {
                 // stacked AND fanned: a vertical stagger alone still let
@@ -336,9 +342,13 @@ function Pin({
                 "--shift": `${idx % 2 ? -26 : 26}px`,
               } as React.CSSProperties
             }
+            onClick={(e) => {
+              e.stopPropagation();
+              onPick(s.id);
+            }}
           >
             {s.town}
-          </span>
+          </button>
         </Html>
       </group>
     </group>
