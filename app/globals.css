@@ -346,10 +346,10 @@ select {
   inset: 0;
   z-index: 2;
   display: grid;
-  /* VERTICALLY CENTRED, not sitting on the floor (client 2026-08-12, from
-     their hero artwork): in the reference the line sits across the middle of
-     the picture in its right half, clear of the girl on the left. */
-  align-content: center;
+  /* BOTTOM-RIGHT CORNER (client 2026-08-12). Briefly centred to match the
+     banner artwork, then moved back down at their request — the artwork is a
+     wide crop, and in a full-height hero the line belongs in the corner. */
+  align-content: end;
   justify-items: end;
   gap: clamp(16px, 2.6vh, 28px);
   padding: clamp(70px, 12vh, 140px) var(--gutter) clamp(36px, 5vh, 56px);
@@ -369,8 +369,12 @@ select {
      left-aligned even though it sits to the right. */
   font-family: var(--font-ui);
   font-weight: 700;
-  font-size: clamp(1.5rem, 4.4vw, 3.9rem);
-  line-height: 1.16;
+  /* SMALLER AGAIN (client 2026-08-12): 4.4vw matched the banner artwork, but
+     in the corner of a full-height hero it still read large. 3.2vw — 44px at
+     1366, against the 60px it was. The lines keep their shared left edge from
+     the artwork even though the block sits right. */
+  font-size: clamp(1.15rem, 3.2vw, 2.7rem);
+  line-height: 1.18;
   letter-spacing: 0.01em;
   text-align: left;
   color: var(--paper);
