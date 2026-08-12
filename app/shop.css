@@ -580,7 +580,9 @@
    element's own box is a unit square that the transform carries into place —
    a fit or a radius would fight the mapping. */
 .ap-cv__hero .ap-cv__print--card,
-.ap-cv__hero img.ap-cv__print--card {
+.ap-cv__hero img.ap-cv__print--card,
+.ap-cv__fit .ap-cv__print--card,
+.ap-cv__fit img.ap-cv__print--card {
   mix-blend-mode: normal;
   /* `fill`, EXPLICITLY. The base rule above sets object-fit: contain on every
      .ap-cv__print, and an override that only mentions blend-mode does not
@@ -599,7 +601,8 @@
    (client 2026-08-12: "red flower leaf must stay ahead of image"). Each such
    object is cut out of its own photograph at full resolution and laid back
    on top, in the figure's own box so it lines up with the photo exactly. */
-.ap-cv__hero .ap-cv__front {
+.ap-cv__hero .ap-cv__front,
+.ap-cv__fit .ap-cv__front {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -627,6 +630,7 @@
   margin-top: 12px;
 }
 .ap-cv__thumbs button {
+  position: relative;
   width: 68px;
   height: 68px;
   border-radius: 3px;
@@ -641,6 +645,31 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* THE THUMBNAIL AS A MOCKUP OF ITS OWN. The strip is square and the roll is
+   not: mixing portrait 1280x1600 scenes with landscape 1600x1067 ones, a
+   square thumbnail has to CROP, and `object-fit: cover` crops by moving the
+   photo inside the button — which moves every corner the print was measured
+   against. So the photo is given a box of its own shape instead, sized to
+   cover the square and centred, and the homography is solved in THAT box.
+   The button's overflow does the cropping, and the print rides along.
+   `min-width`/`min-height` with an aspect ratio is cover, expressed as a
+   box rather than as a fit. */
+.ap-cv__fit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  min-width: 100%;
+  min-height: 100%;
+  aspect-ratio: var(--fit-ar);
+}
+/* (0,2,1) — it has to outrank `.ap-cv__thumbs img` (0,1,1), which would
+   otherwise `cover` the photo inside the fit box and undo the whole point */
+.ap-cv__thumbs .ap-cv__fit img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
 }
 .ap-cv__await {
   display: grid;

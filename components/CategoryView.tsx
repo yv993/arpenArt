@@ -59,12 +59,17 @@ type Mock = ObjectMock | CardMock;
 type CardShot = {
   /** index into the category's product photographs */
   at: number;
-  /** the card's corners in PHOTO pixels, clockwise from the artwork's
-   *  top-left — measured on the photograph, outer edge, never guessed */
-  quad: Quad;
-  /** the photograph's own pixel size, which the quad is expressed in */
+  /** EVERY card in the photograph, BACK TO FRONT, each as four corners in
+   *  PHOTO pixels clockwise from the artwork's top-left — measured on the
+   *  photograph, outer edge, never guessed.
+   *
+   *  Back to front matters: five of these scenes were styled with a second
+   *  card beside or behind the first, and where they overlap the nearer
+   *  card's print has to land last or it would be painted over. */
+  quads: Quad[];
+  /** the photograph's own pixel size, which the quads are expressed in */
   photo: [number, number];
-  /** an RGBA cut-out of whatever lies in FRONT of the card in that
+  /** an RGBA cut-out of whatever lies in FRONT of the cards in that
    *  photograph — a petal, a leaf, the lip of a pocket — laid back over the
    *  print so the scene keeps its depth */
   front?: string;
@@ -80,11 +85,13 @@ const CARD_SHOTS: CardShot[] = [
   // 1.414, which is a good sign the corners are honest.
   {
     at: 0,
-    quad: [
-      [533.5, 814.6],
-      [914.8, 817],
-      [914.8, 1355],
-      [532, 1355],
+    quads: [
+      [
+        [533.5, 814.6],
+        [914.8, 817],
+        [914.8, 1355],
+        [532, 1355],
+      ],
     ],
     photo: [1280, 1600],
     front: "/products/postcards-01-front.png",
@@ -93,11 +100,13 @@ const CARD_SHOTS: CardShot[] = [
   // bordered by its own cast shadow: the quad stops short of it deliberately.
   {
     at: 1,
-    quad: [
-      [431.5, 536],
-      [764, 540],
-      [757, 1032],
-      [428.5, 1028],
+    quads: [
+      [
+        [431.5, 536],
+        [764, 540],
+        [757, 1032],
+        [428.5, 1028],
+      ],
     ],
     photo: [1280, 1600],
   },
@@ -105,11 +114,13 @@ const CARD_SHOTS: CardShot[] = [
   // rides over the bottom-right corner and is cut out to stay in front.
   {
     at: 2,
-    quad: [
-      [681.7, 940.1],
-      [964.1, 942.7],
-      [960.9, 1367.4],
-      [676.3, 1365],
+    quads: [
+      [
+        [681.7, 940.1],
+        [964.1, 942.7],
+        [960.9, 1367.4],
+        [676.3, 1365],
+      ],
     ],
     photo: [1280, 1600],
     front: "/products/postcards-03-front.png",
@@ -117,33 +128,54 @@ const CARD_SHOTS: CardShot[] = [
   // 3 — lying flat and rotated, scattered petals. Real perspective.
   {
     at: 3,
-    quad: [
-      [477.5, 362.8],
-      [933.4, 467.6],
-      [786.9, 1109.8],
-      [332.5, 1009.2],
+    quads: [
+      [
+        [477.5, 362.8],
+        [933.4, 467.6],
+        [786.9, 1109.8],
+        [332.5, 1009.2],
+      ],
     ],
     photo: [1280, 1600],
   },
-  // 4 — on grass, tilted away from the camera
+  // 4 — TWO cards on grass, tilted away from the camera. The right one is
+  // listed first because it lies BEHIND: its left edge runs under the front
+  // card, so the front card's print has to land after it.
   {
     at: 4,
-    quad: [
-      [361.3, 140.8],
-      [849.2, 211.9],
-      [746.6, 899.6],
-      [258.2, 828.5],
+    quads: [
+      [
+        [763.6, 240.6],
+        [1256.1, 181],
+        [1333, 865],
+        [861.2, 920.8],
+      ],
+      [
+        [361.3, 140.8],
+        [849.2, 211.9],
+        [746.6, 899.6],
+        [258.2, 828.5],
+      ],
     ],
     photo: [1600, 1067],
   },
-  // 5 — leaning on the cloth, the strongest perspective in the roll
+  // 5 — leaning on the cloth, the strongest perspective in the roll, with a
+  // smaller card propped against the bowl beside it
   {
     at: 5,
-    quad: [
-      [326, 506],
-      [763, 594],
-      [577, 1149],
-      [83, 1030],
+    quads: [
+      [
+        [675.1, 928.4],
+        [944.4, 991.8],
+        [851.4, 1351.7],
+        [558.7, 1279.6],
+      ],
+      [
+        [326, 506],
+        [763, 594],
+        [577, 1149],
+        [83, 1030],
+      ],
     ],
     photo: [1067, 1600],
   },
@@ -155,23 +187,30 @@ const CARD_SHOTS: CardShot[] = [
   // silhouette — the plate is load-bearing here, not decoration.
   {
     at: 6,
-    quad: [
-      [349.5, 226],
-      [885, 159.75],
-      [1013, 899.25],
-      [458, 982.75],
+    quads: [
+      [
+        [349.5, 226],
+        [885, 159.75],
+        [1013, 899.25],
+        [458, 982.75],
+      ],
     ],
     photo: [1600, 1067],
     front: "/products/postcards-07-front.png",
   },
-  // 7 — angled on the blue ground beside the envelope
+  // 7 — angled on the blue ground beside the envelope. THE CARD LIES
+  // LANDSCAPE here and the illustrations are portrait, so this is one of the
+  // two scenes where the print is a centred crop rather than the whole
+  // picture — see CardPrint on why stretching it instead was wrong.
   {
     at: 7,
-    quad: [
-      [768.1, 564],
-      [1247.4, 722.7],
-      [1133.4, 1048.1],
-      [638.8, 876.3],
+    quads: [
+      [
+        [768.1, 564],
+        [1247.4, 722.7],
+        [1133.4, 1048.1],
+        [638.8, 876.3],
+      ],
     ],
     photo: [1600, 1275],
   },
@@ -183,35 +222,51 @@ const CARD_SHOTS: CardShot[] = [
   // the measured sides at A6's own ratio rather than invented.
   {
     at: 8,
-    quad: [
-      [953.1, 238.6],
-      [1403.2, 499.2],
-      [1038.9, 1137.9],
-      [588.7, 877.3],
+    quads: [
+      [
+        [953.1, 238.6],
+        [1403.2, 499.2],
+        [1038.9, 1137.9],
+        [588.7, 877.3],
+      ],
     ],
     photo: [1600, 1067],
     front: "/products/postcards-09-front.png",
   },
-  // 9 — the painting scene; the brush and paint pot cross the card
+  // 9 — the painting scene; the brush and paint pot cross the card, and a
+  // second card lies behind it to the right. That one's bottom-left corner is
+  // hidden under the front card, so it is carried down from the two edges
+  // that ARE visible rather than invented.
   {
     at: 9,
-    quad: [
-      [362.4, 313.1],
-      [832.5, 305.1],
-      [842, 964.9],
-      [376, 971.9],
+    quads: [
+      [
+        [769, 87],
+        [1236.8, 104.2],
+        [1214.3, 744.1],
+        [746.5, 727],
+      ],
+      [
+        [362.4, 313.1],
+        [832.5, 305.1],
+        [842, 964.9],
+        [376, 971.9],
+      ],
     ],
     photo: [1600, 1067],
     front: "/products/postcards-10-front.png",
   },
-  // 10 — the pair, front card angled to the right
+  // 10 — the pair: an addressed card back and, over it, a card lying
+  // LANDSCAPE. The back carries no illustration, so there is one print here.
   {
     at: 10,
-    quad: [
-      [865.1, 258.7],
-      [1413.7, 452.6],
-      [1283.5, 845.8],
-      [729.8, 653.9],
+    quads: [
+      [
+        [865.1, 258.7],
+        [1413.7, 452.6],
+        [1283.5, 845.8],
+        [729.8, 653.9],
+      ],
     ],
     photo: [1600, 1067],
   },
@@ -460,8 +515,9 @@ export default function CategoryView({
                     // is laid back on top so the scene keeps its depth.
                     <CardPrint
                       src={chosenArt.src}
-                      quad={cardShot.quad}
+                      quads={cardShot.quads}
                       photo={cardShot.photo}
+                      art={[chosenArt.w, chosenArt.h]}
                       occluder={cardShot.front}
                     />
                   ) : mock.kind === "cylinder" ? (
@@ -514,20 +570,48 @@ export default function CategoryView({
               </figure>
               {shots.length > 1 && (
                 <ul className="ap-cv__thumbs">
-                  {shots.map((s, i) => (
-                    <li key={s.id}>
-                      <button
-                        type="button"
-                        aria-label={`View ${i + 1} of ${shots.length}`}
-                        aria-pressed={i === shot}
-                        className={i === shot ? "on" : ""}
-                        onClick={() => setShot(i)}
-                        style={{ background: s.avg }}
-                      >
-                        <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
-                      </button>
-                    </li>
-                  ))}
+                  {shots.map((s, i) => {
+                    // THE SMALL PICTURES CARRY THE CHOICE TOO (client
+                    // 2026-08-12). A strip of thumbnails still showing the
+                    // photographed design, under a big frame showing the
+                    // chosen one, reads as ten scenes that did not get the
+                    // message. Each is the same mockup at 68px: the photo is
+                    // laid in a box of its OWN shape (the strip is square and
+                    // the roll mixes portrait with landscape, and a cropped
+                    // photo would put every measured corner somewhere else),
+                    // and that box is what the homography is solved in.
+                    const ts = mock?.kind === "card" ? mock.cards.find((c) => c.at === i) : undefined;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          aria-label={`View ${i + 1} of ${shots.length}`}
+                          aria-pressed={i === shot}
+                          className={i === shot ? "on" : ""}
+                          onClick={() => setShot(i)}
+                          style={{ background: s.avg }}
+                        >
+                          {ts && chosenArt ? (
+                            <span
+                              className="ap-cv__fit"
+                              style={{ "--fit-ar": `${ts.photo[0]} / ${ts.photo[1]}` } as React.CSSProperties}
+                            >
+                              <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
+                              <CardPrint
+                                src={chosenArt.thumb}
+                                quads={ts.quads}
+                                photo={ts.photo}
+                                art={[chosenArt.w, chosenArt.h]}
+                                occluder={ts.front}
+                              />
+                            </span>
+                          ) : (
+                            <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </>
