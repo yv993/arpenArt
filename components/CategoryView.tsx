@@ -93,11 +93,18 @@ const MOCKUPS: Record<string, Mock> = {
     // stands a single card square to the camera.
     blank: "/products/postcards-03.webp",
     at: 2,
-    // The card's rectangle, found by gradient rather than by eye: the two
-    // strongest vertical edges across the card's height are x=682 and x=963,
-    // and the strongest horizontals across its width are y=944 and y=1367.
-    // 281 x 423 of 1280 x 1600.
-    box: [682 / 1280, 944 / 1600, 281 / 1280, 423 / 1600],
+    // THE CARD'S OUTER RECTANGLE, and outer is the word that matters. The
+    // first cut took the gradient PEAK on each side — 682/944/963/1367 — but
+    // a peak sits in the MIDDLE of a soft transition, so two pixels of the
+    // photographed card were left showing along the left and top, which read
+    // as a dirty border (client 2026-08-12: "improve border, now it looks
+    // bad"). Re-measured by walking each ramp pixel by pixel until the
+    // neighbouring material is reached — rock at x=679, wall at x=964, rock
+    // and wall at y=941, floor at y=1368 — the card truly spans x 680-963,
+    // y 942-1367. Half a pixel of margin is added all round: the edge is soft
+    // enough in the photograph that the spill is invisible, where a shortfall
+    // is not.
+    box: [679.5 / 1280, 941.5 / 1600, 284.5 / 1280, 426.5 / 1600],
     photo: [1280, 1600],
     kind: "card",
   },
