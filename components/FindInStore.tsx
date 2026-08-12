@@ -178,25 +178,62 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
 
   const onPick = useCallback((id: string) => setSel((p) => (p === id ? null : id)), []);
   /** Always selects, never un-selects. `onPick` is a TOGGLE, which is right for
-   *  the town heading and the map pin — press the chosen one again to let go.
-   *  It is wrong for the street-map button: the usual way to want a town's
-   *  street is to have chosen the town first, so routing that press through
-   *  onPick de-selected the very town whose map was opening. */
+   *  the town heading — press the chosen one again to let go. It is wrong for
+   *  the street-map button: the usual way to want a town's street is to have
+   *  chosen the town first, so routing that press through onPick de-selected
+   *  the very town whose map was opening. */
   const select = useCallback((id: string) => setSel(id), []);
   const nameOf = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? slug;
+
+  /** open THIS town's street map, closing whichever was open */
+  const openMap = useCallback((id: string) => {
+    setMapFailed(false);
+    // the levers belong to the map that is going away
+    setApi(null);
+    setFlags({ canIn: false, canOut: false, moved: false });
+    setMapOpen(id);
+  }, []);
 
   /** Keyed on what is SHOWN, not on what was asked for. After a failure the
    *  card is collapsed and the button reads "Show the street map" — but
    *  mapOpen is still this id, so a toggle keyed on that would have closed
    *  something already closed and made the label a lie. Passing the visible
    *  state makes the retry the button offers actually retry. */
-  const toggleMap = useCallback((id: string, isShown: boolean) => {
-    setMapFailed(false);
-    // the levers belong to the map that is going away
-    setApi(null);
-    setFlags({ canIn: false, canOut: false, moved: false });
-    setMapOpen(isShown ? null : id);
-  }, []);
+  const toggleMap = useCallback(
+    (id: string, isShown: boolean) => {
+      if (isShown) {
+        setMapFailed(false);
+        setApi(null);
+        setFlags({ canIn: false, canOut: false, moved: false });
+        setMapOpen(null);
+      } else openMap(id);
+    },
+    [openMap],
+  );
+
+  /** A PIN PRESS IS AN ARRIVAL, NOT A TOGGLE (client 2026-08-13: clicking a
+   *  town on the country map must light the same town in the list AND open
+   *  its street map there). So it always selects, brings the town's card into
+   *  view, and opens its street map — pressing the same pin twice stays
+   *  arrived rather than packing everything away again. The heading's toggle
+   *  behaviour is untouched; letting go still lives there.
+   *  Smooth is safe unguarded: pins only exist on the motion-allowed layer. */
+  const pickFromMap = useCallback(
+    (id: string) => {
+      setSel(id);
+      if (canMap) openMap(id);
+      // AFTER the commit, not in the handler: scrolling now measures the list
+      // as it still is, and the street map about to expand inside the chosen
+      // card grows it past what "nearest" just brought into view. Instant on
+      // purpose, same as locate(): a smooth scrollIntoView is cancelled by
+      // any competing scroll work and then looks like nothing happened —
+      // measured doing exactly that here — while a jump cannot be interrupted.
+      window.setTimeout(() => {
+        document.getElementById(`town-${id}`)?.scrollIntoView({ block: "nearest" });
+      }, 90);
+    },
+    [canMap, openMap],
+  );
 
   const nearest = nearestId ? list.find((t) => t.id === nearestId) : undefined;
   const nearSay =
@@ -281,7 +318,7 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
       <div className="ap-map__grid">
         {live && (
           <div className="ap-map__hold">
-            <ArmeniaMap towns={list} sel={sel} cue={stockistPage.cue} onPick={onPick} />
+            <ArmeniaMap towns={list} sel={sel} cue={stockistPage.cue} onPick={pickFromMap} />
             <p className="ap-map__credit">{stockistPage.credit}</p>
           </div>
         )}

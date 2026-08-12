@@ -320,7 +320,12 @@ function Pin({
             wireframe={!confirmed}
           />
         </mesh>
-        <Html center distanceFactor={13} zIndexRange={[20, 0]}>
+        {/* pointerEvents none ON THE WRAPPER, not only the chip: drei's
+            centering div is an invisible ~70x20px box sitting exactly over
+            the pin head, and with default pointer-events it swallowed the
+            very clicks the head exists for — the chip's own CSS `none`
+            never covered the box around it */}
+        <Html center distanceFactor={13} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
           <span
             className={`ap-map__tag${on ? " on" : ""}`}
             style={
@@ -412,30 +417,58 @@ export default function ArmeniaMap({
   onPick: (id: string) => void;
 }) {
   const spin = useRef<Spin>({ yaw: 0, v: 0, dragging: false });
-  const last = useRef({ x: 0, sens: 0.006 });
+  const last = useRef<{
+    x: number;
+    start: number;
+    sens: number;
+    id: number;
+    captured: boolean;
+    el: HTMLDivElement | null;
+  }>({ x: 0, start: 0, sens: 0.006, id: 0, captured: false, el: null });
   // decoded outside the Canvas: the rasters are plain <img> work, and the
   // shadow renders immediately while they arrive
   const hf = useHeightField();
 
+  // POINTER CAPTURE IS DEFERRED UNTIL THE HAND ACTUALLY MOVES. Capturing on
+  // pointerdown — the obvious way to keep a drag alive outside the stage —
+  // RETARGETS the following pointerup to this div, so the three.js canvas
+  // underneath never hears it, and a click is a down THE CANVAS GOT plus an
+  // up IT DID NOT: every pin on the map was unclickable, silently, while the
+  // drag felt fine. Capture now starts only after 4px of real movement —
+  // a still press stays a click for the pin, a moving one becomes the drag
+  // it always was (and keeps working outside the stage, which is what the
+  // capture is for).
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    try {
-      el.setPointerCapture(e.pointerId);
-    } catch {}
-    last.current = { x: e.clientX, sens: (Math.PI * 1.2) / Math.max(1, el.clientWidth) };
+    last.current = {
+      x: e.clientX,
+      start: e.clientX,
+      sens: (Math.PI * 1.2) / Math.max(1, el.clientWidth),
+      id: e.pointerId,
+      captured: false,
+      el,
+    };
     spin.current.dragging = true;
     spin.current.v = 0;
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const s = spin.current;
     if (!s.dragging) return;
-    const d = (e.clientX - last.current.x) * last.current.sens;
+    const L = last.current;
+    if (!L.captured && Math.abs(e.clientX - L.start) > 4) {
+      try {
+        L.el?.setPointerCapture(L.id);
+      } catch {}
+      L.captured = true;
+    }
+    const d = (e.clientX - L.x) * L.sens;
     s.yaw += d;
     s.v = s.v * 0.7 + d * 0.3;
-    last.current.x = e.clientX;
+    L.x = e.clientX;
   };
   const onUp = () => {
     spin.current.dragging = false;
+    last.current.captured = false;
   };
 
   return (

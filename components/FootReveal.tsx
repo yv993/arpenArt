@@ -48,10 +48,26 @@ export default function FootReveal() {
     // pin-spacer alone adds ~1.6 viewports) finish mounting AFTER this
     // effect, and a trigger measured against the shorter document parks the
     // whole reveal range ~1400px too high — everything past it reads as
-    // "revealed". Any growth re-measures everything.
+    // "revealed". Any REAL growth re-measures everything.
+    //
+    // THRESHOLDED, and this is load-bearing: refresh() is GSAP's scroll-to-
+    // top-and-restore dance, and firing it on every observer tick turned any
+    // page whose absolutely-positioned overlays move (the swaying country
+    // map's town chips nudge main's size by a pixel every frame) into a
+    // refresh STORM — one dance every debounce interval, forever. Each dance
+    // restores the scroll position it read at its own start, so it silently
+    // swallowed every programmatic scroll on /find-in-store: scrollIntoView
+    // ran, the next dance put the page back, and the click looked like it
+    // never scrolled. A pixel of jiggle re-measures nothing; 1400px of
+    // pin-spacer still does.
+    let lastH = main.scrollHeight + foot.offsetHeight;
     const ro = new ResizeObserver(() => {
       setH();
-      ScrollTrigger.refresh();
+      const h = main.scrollHeight + foot.offsetHeight;
+      if (Math.abs(h - lastH) > 24) {
+        lastH = h;
+        ScrollTrigger.refresh();
+      }
     });
     ro.observe(foot);
     ro.observe(main);
