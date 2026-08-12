@@ -570,48 +570,27 @@ export default function CategoryView({
               </figure>
               {shots.length > 1 && (
                 <ul className="ap-cv__thumbs">
-                  {shots.map((s, i) => {
-                    // THE SMALL PICTURES CARRY THE CHOICE TOO (client
-                    // 2026-08-12). A strip of thumbnails still showing the
-                    // photographed design, under a big frame showing the
-                    // chosen one, reads as ten scenes that did not get the
-                    // message. Each is the same mockup at 68px: the photo is
-                    // laid in a box of its OWN shape (the strip is square and
-                    // the roll mixes portrait with landscape, and a cropped
-                    // photo would put every measured corner somewhere else),
-                    // and that box is what the homography is solved in.
-                    const ts = mock?.kind === "card" ? mock.cards.find((c) => c.at === i) : undefined;
-                    return (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          aria-label={`View ${i + 1} of ${shots.length}`}
-                          aria-pressed={i === shot}
-                          className={i === shot ? "on" : ""}
-                          onClick={() => setShot(i)}
-                          style={{ background: s.avg }}
-                        >
-                          {ts && chosenArt ? (
-                            <span
-                              className="ap-cv__fit"
-                              style={{ "--fit-ar": `${ts.photo[0]} / ${ts.photo[1]}` } as React.CSSProperties}
-                            >
-                              <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
-                              <CardPrint
-                                src={chosenArt.thumb}
-                                quads={ts.quads}
-                                photo={ts.photo}
-                                art={[chosenArt.w, chosenArt.h]}
-                                occluder={ts.front}
-                              />
-                            </span>
-                          ) : (
-                            <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {/* THE STRIP STAYS THE PHOTOGRAPHS (client 2026-08-12:
+                      "it must change only central big one"). Printing the
+                      chosen illustration into all eleven thumbnails as well
+                      was tried and rejected: it made the row read as eleven
+                      copies of one picture rather than eleven scenes to pick
+                      between, and the point of the strip is choosing the
+                      SCENE. The choice belongs in the big frame. */}
+                  {shots.map((s, i) => (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        aria-label={`View ${i + 1} of ${shots.length}`}
+                        aria-pressed={i === shot}
+                        className={i === shot ? "on" : ""}
+                        onClick={() => setShot(i)}
+                        style={{ background: s.avg }}
+                      >
+                        <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" />
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               )}
             </>
