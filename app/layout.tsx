@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Karla } from "next/font/google";
+import { Fraunces, Karla, Montserrat } from "next/font/google";
 import { brand } from "@/lib/content";
 import Foot from "@/components/Foot";
 import "./globals.css";
@@ -25,6 +25,15 @@ const display = Fraunces({
 const body = Karla({
   subsets: ["latin"],
   variable: "--f-body",
+  display: "swap",
+});
+// The client's reference sets section titles in a GEOMETRIC sans — round
+// bowls, even strokes — which neither Fraunces (the display serif) nor Karla
+// (a grotesque with narrow, quirky bowls) can stand in for. next/font
+// self-hosts it, so this adds a file to the build, not a request to Google.
+const ui = Montserrat({
+  subsets: ["latin"],
+  variable: "--f-ui",
   display: "swap",
 });
 
@@ -66,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // sections on `@media (scripting: enabled)` instead, which costs nothing and
   // fails in the safe direction — no scripting, no pin, plain vertical page.
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${ui.variable}`}>
       <body>
         <a className="ap-skip" href="#main">
           Skip to content

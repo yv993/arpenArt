@@ -53,6 +53,8 @@
 
   --font-display: var(--f-display), Georgia, "Times New Roman", serif;
   --font-body: var(--f-body), "Segoe UI", system-ui, sans-serif;
+  /* geometric sans for section titles — the client's reference register */
+  --font-ui: var(--f-ui), "Segoe UI", system-ui, sans-serif;
 }
 
 *,
