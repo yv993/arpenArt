@@ -49,6 +49,20 @@ const csp = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // A BUILD MUST NOT KILL THE RUNNING DEV SERVER. `next build` and `next dev`
+  // both own `.next`, so building just to check a change while the dev server
+  // is up replaces the chunks that server is mid-flight serving, and the next
+  // click dies on "Cannot find module ./vendor-chunks/gsap.js" — a broken site
+  // with nothing wrong in the source, and only `rm -rf .next` plus a restart
+  // brings it back.
+  //
+  // `npm run build:check` lands in its own folder instead, so the check can be
+  // run at any time. It reads the npm script name rather than an env var
+  // because `DIST=x next build` is a shell-ism cmd.exe does not understand,
+  // and this project is not adding cross-env to its three dependencies.
+  // `npm run build` is unchanged and still writes `.next`, which is what a
+  // deploy expects.
+  distDir: process.env.npm_lifecycle_event === "build:check" ? ".next-check" : ".next",
   images: {
     // everything is self-hosted; no remote patterns on purpose
     formats: ["image/avif", "image/webp"],

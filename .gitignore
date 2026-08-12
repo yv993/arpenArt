@@ -14,3 +14,5 @@ out*.html
 # stray probe screenshots must never land in the repo
 /cloud-w*.png
 /hero-now.png
+
+.next-check
