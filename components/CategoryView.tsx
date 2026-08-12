@@ -8,6 +8,7 @@ import { ordering, type Category } from "@/lib/content";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 import MugPrint from "./MugPrint";
+import CardPrint, { type Quad } from "./CardPrint";
 
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
@@ -20,7 +21,8 @@ const P = products as Record<string, Shot[]>;
  *  scratchpad/blankmug.mjs: mask the print, dilate, diffuse the ceramic in).
  *  `box` is the print area as fractions of the photo, and the artwork is
  *  fitted INSIDE it preserving its own aspect. */
-type Mock = {
+/** An object photographed BLANK, with one printable area on it. */
+type ObjectMock = {
   blank: string;
   /** the printable area as fractions of the photo: x, y, w, h */
   box: [number, number, number, number];
@@ -30,17 +32,190 @@ type Mock = {
    *  cylinder warp on a disc would squeeze the sides of a picture that is not
    *  curving away at all. Measured, not assumed: the plate object's bounding
    *  box is 1171x1154, a 1.5% ellipse, i.e. shot essentially head on. */
-  kind: "cylinder" | "disc" | "puzzle" | "card";
+  kind: "cylinder" | "disc" | "puzzle";
   /** a transparent overlay laid over the print — the puzzle's cut */
   seams?: string;
   /** how much the disc is squashed vertically by the camera's angle */
   squash?: number;
-  /** WHICH SHOT carries the mockup. The mug, plate and puzzle were each
-   *  photographed blank as the first shot; the postcard has no blank — the
-   *  card in the styled scene is simply covered — so its mockup lives on the
-   *  shot that shows one card square to the camera. */
-  at?: number;
 };
+
+/** EVERY PHOTOGRAPH THAT CAN CARRY THE PRINT, not just one.
+ *
+ *  The mug, the plate and the puzzle each have a single blank photograph, so
+ *  one box was enough. The postcards are a whole roll of styled scenes, and
+ *  the buyer expects the picture they chose to appear in WHICHEVER of them
+ *  they are looking at (client 2026-08-12), with the photograph staying put.
+ *  So the print is described per shot — and by four corners rather than a
+ *  rectangle, because a card may be square on, rotated on a table, or
+ *  receding with real perspective. */
+type CardMock = {
+  kind: "card";
+  photo: [number, number];
+  cards: CardShot[];
+};
+
+type Mock = ObjectMock | CardMock;
+
+type CardShot = {
+  /** index into the category's product photographs */
+  at: number;
+  /** the card's corners in PHOTO pixels, clockwise from the artwork's
+   *  top-left — measured on the photograph, outer edge, never guessed */
+  quad: Quad;
+  /** the photograph's own pixel size, which the quad is expressed in */
+  photo: [number, number];
+  /** an RGBA cut-out of whatever lies in FRONT of the card in that
+   *  photograph — a petal, a leaf, the lip of a pocket — laid back over the
+   *  print so the scene keeps its depth */
+  front?: string;
+};
+
+/** Every postcard photograph the print can be laid into, with the card's four
+ *  corners measured on that photograph. Filled from a per-photo measuring
+ *  pass — each quad was confirmed by painting it over the photo and looking
+ *  at it, never by arithmetic alone. */
+const CARD_SHOTS: CardShot[] = [
+  // 0 — upright against the wall, a torn-edge ceramic vessel leaning over the
+  // card's lower-left corner. Quad's own ratio came out 1.415 against A6's
+  // 1.414, which is a good sign the corners are honest.
+  {
+    at: 0,
+    quad: [
+      [533.5, 814.6],
+      [914.8, 817],
+      [914.8, 1355],
+      [532, 1355],
+    ],
+    photo: [1280, 1600],
+    front: "/products/postcards-01-front.png",
+  },
+  // 1 — on the white podium, very slight keystone. The card's right side is
+  // bordered by its own cast shadow: the quad stops short of it deliberately.
+  {
+    at: 1,
+    quad: [
+      [431.5, 536],
+      [764, 540],
+      [757, 1032],
+      [428.5, 1028],
+    ],
+    photo: [1280, 1600],
+  },
+  // 2 — the stone and tulip scene, ~0.5deg of in-plane rotation. A red petal
+  // rides over the bottom-right corner and is cut out to stay in front.
+  {
+    at: 2,
+    quad: [
+      [681.7, 940.1],
+      [964.1, 942.7],
+      [960.9, 1367.4],
+      [676.3, 1365],
+    ],
+    photo: [1280, 1600],
+    front: "/products/postcards-03-front.png",
+  },
+  // 3 — lying flat and rotated, scattered petals. Real perspective.
+  {
+    at: 3,
+    quad: [
+      [477.5, 362.8],
+      [933.4, 467.6],
+      [786.9, 1109.8],
+      [332.5, 1009.2],
+    ],
+    photo: [1280, 1600],
+  },
+  // 4 — on grass, tilted away from the camera
+  {
+    at: 4,
+    quad: [
+      [361.3, 140.8],
+      [849.2, 211.9],
+      [746.6, 899.6],
+      [258.2, 828.5],
+    ],
+    photo: [1600, 1067],
+  },
+  // 5 — leaning on the cloth, the strongest perspective in the roll
+  {
+    at: 5,
+    quad: [
+      [326, 506],
+      [763, 594],
+      [577, 1149],
+      [83, 1030],
+    ],
+    photo: [1067, 1600],
+  },
+  // 6 — beside the kraft envelope, rotated ~7deg. THE CARD IS PHYSICALLY
+  // BOWED: its right edge curves inward ~12px at mid-height and its left
+  // bulges ~10px, so no straight-edged quad can trace it. The quad below is
+  // therefore the smallest one that CONTAINS the card (original artwork
+  // exposed nowhere), and the front plate clips the overhang back to the real
+  // silhouette — the plate is load-bearing here, not decoration.
+  {
+    at: 6,
+    quad: [
+      [349.5, 226],
+      [885, 159.75],
+      [1013, 899.25],
+      [458, 982.75],
+    ],
+    photo: [1600, 1067],
+    front: "/products/postcards-07-front.png",
+  },
+  // 7 — angled on the blue ground beside the envelope
+  {
+    at: 7,
+    quad: [
+      [768.1, 564],
+      [1247.4, 722.7],
+      [1133.4, 1048.1],
+      [638.8, 876.3],
+    ],
+    photo: [1600, 1275],
+  },
+  // 8 — tucked into the dungaree pocket: the pocket lip and the denim in
+  // front of it are cut out, and the hidden corners are extrapolated from the
+  // visible edges so the artwork sits INSIDE the pocket rather than over it
+  // The card is a rotated rectangle (~30deg, no real perspective); its lower
+  // half is inside the pocket, so the hidden corners are carried down from
+  // the measured sides at A6's own ratio rather than invented.
+  {
+    at: 8,
+    quad: [
+      [953.1, 238.6],
+      [1403.2, 499.2],
+      [1038.9, 1137.9],
+      [588.7, 877.3],
+    ],
+    photo: [1600, 1067],
+    front: "/products/postcards-09-front.png",
+  },
+  // 9 — the painting scene; the brush and paint pot cross the card
+  {
+    at: 9,
+    quad: [
+      [362.4, 313.1],
+      [832.5, 305.1],
+      [842, 964.9],
+      [376, 971.9],
+    ],
+    photo: [1600, 1067],
+    front: "/products/postcards-10-front.png",
+  },
+  // 10 — the pair, front card angled to the right
+  {
+    at: 10,
+    quad: [
+      [865.1, 258.7],
+      [1413.7, 452.6],
+      [1283.5, 845.8],
+      [729.8, 653.9],
+    ],
+    photo: [1600, 1067],
+  },
+];
 
 const MOCKUPS: Record<string, Mock> = {
   cups: {
@@ -88,25 +263,18 @@ const MOCKUPS: Record<string, Mock> = {
     seams: "/products/puzzle-seams.webp",
   },
   postcards: {
-    // NO BLANK EXISTS, and none is needed: the card in this scene is covered
-    // edge to edge, exactly like the puzzle board. Shot 2 is the one that
-    // stands a single card square to the camera.
-    blank: "/products/postcards-03.webp",
-    at: 2,
-    // THE CARD'S OUTER RECTANGLE, and outer is the word that matters. The
-    // first cut took the gradient PEAK on each side — 682/944/963/1367 — but
-    // a peak sits in the MIDDLE of a soft transition, so two pixels of the
-    // photographed card were left showing along the left and top, which read
-    // as a dirty border (client 2026-08-12: "improve border, now it looks
-    // bad"). Re-measured by walking each ramp pixel by pixel until the
-    // neighbouring material is reached — rock at x=679, wall at x=964, rock
-    // and wall at y=941, floor at y=1368 — the card truly spans x 680-963,
-    // y 942-1367. Half a pixel of margin is added all round: the edge is soft
-    // enough in the photograph that the spill is invisible, where a shortfall
-    // is not.
-    box: [679.5 / 1280, 941.5 / 1600, 284.5 / 1280, 426.5 / 1600],
+    // NO BLANK EXISTS, and none is needed: each card is covered edge to edge,
+    // exactly like the puzzle board, and the photograph on screen is
+    // whichever shot the buyer is already looking at.
     photo: [1280, 1600],
     kind: "card",
+    // OUTER corners, and outer is the word that matters: the first cut took
+    // the gradient PEAK on each side, but a peak sits in the MIDDLE of a soft
+    // transition, so two pixels of the photographed card stayed visible and
+    // read as a dirty border. Every quad below is walked out to the
+    // neighbouring material instead, then confirmed by painting it over the
+    // photograph and looking at it.
+    cards: CARD_SHOTS,
   },
 };
 
@@ -172,8 +340,12 @@ export default function CategoryView({
   /** Which product shot carries the mockup. Mugs, plates and puzzles are
    *  photographed blank as shot 0; the postcard mockup is a styled scene
    *  further along the roll, so the index is part of the table. */
-  const mockAt = mock?.at ?? 0;
-  const onMock = !!mock && shot === mockAt;
+  /** The photograph on screen, when it is one the print can be laid into.
+   *  Looked up per shot rather than pinned to one, so the buyer's choice
+   *  follows them through the whole roll instead of yanking them to a fixed
+   *  photograph (client 2026-08-12: "it must stay"). */
+  const cardShot = mock?.kind === "card" ? mock.cards.find((c) => c.at === shot) : undefined;
+  const onMock = !!mock && (mock.kind === "card" ? !!cardShot : shot === 0);
   // Every product shot's `thumb` is its -sm.webp sibling, resized to fit a
   // 700px box (verified against all 61 files in the manifest), so the width
   // descriptor below is derived from real pixels, not guessed.
@@ -226,7 +398,18 @@ export default function CategoryView({
                 style={
                   {
                     background: hero.avg,
-                    ...(onMock ? { "--mock-ar": `${mock.photo[0]} / ${mock.photo[1]}` } : null),
+                    // PER SHOT, not per category: this roll mixes portrait
+                    // 1280x1600 scenes with landscape 1600x1067 ones, and a
+                    // single ratio letterboxes the odd ones — which silently
+                    // moves every measured corner, so the prints came out
+                    // oversized and mis-angled until this was per shot.
+                    ...(onMock
+                      ? {
+                          "--mock-ar": cardShot
+                            ? `${cardShot.photo[0]} / ${cardShot.photo[1]}`
+                            : `${mock.photo[0]} / ${mock.photo[1]}`,
+                        }
+                      : null),
                   } as React.CSSProperties
                 }
                 data-mock={onMock ? "" : undefined}
@@ -241,8 +424,16 @@ export default function CategoryView({
                   // design, and laying a second illustration over it would just
                   // stack two pictures. The other shots are left alone: they are
                   // photographs of real pieces, not previews.
-                  src={onMock ? mock.blank : hero.src}
-                  srcSet={onMock ? undefined : `${hero.thumb} ${heroSmW}w, ${hero.src} ${hero.w}w`}
+                  // THE CARD KIND KEEPS THE PHOTOGRAPH IT IS LOOKING AT. Only
+                  // the blank-object kinds swap the shot for their unprinted
+                  // photograph; a postcard scene IS the photograph, and the
+                  // print goes into it.
+                  src={onMock && mock.kind !== "card" ? mock.blank : hero.src}
+                  srcSet={
+                    onMock && mock.kind !== "card"
+                      ? undefined
+                      : `${hero.thumb} ${heroSmW}w, ${hero.src} ${hero.w}w`
+                  }
                   sizes="(max-width: 860px) 92vw, 50vw"
                   alt={
                     onMock && chosenArt
@@ -260,20 +451,18 @@ export default function CategoryView({
                     `multiply` seats it into the ceramic's own shading instead
                     of floating a rectangle on top of it. */}
                 {onMock && chosenArt &&
-                  (mock.kind === "card" ? (
-                    // A CARD IS FLAT AND SQUARE TO THE CAMERA — nothing to
-                    // project. The scan simply covers the card in the scene,
-                    // `cover` because the photographed card is a touch
-                    // narrower than the true A6 (it leans back by a degree or
-                    // two), so a contain fit would leave slivers of the old
-                    // design showing at the sides.
-                    <img
-                      className="ap-cv__print ap-cv__print--card"
+                  (mock.kind === "card" && cardShot ? (
+                    // THE CARD'S FOUR MEASURED CORNERS, not a rectangle: in
+                    // this roll a card may stand square on, lie rotated on a
+                    // table, or recede with real perspective, and CardPrint
+                    // maps the artwork onto whichever it is. Anything nearer
+                    // the camera than the card — a petal across a corner —
+                    // is laid back on top so the scene keeps its depth.
+                    <CardPrint
                       src={chosenArt.src}
-                      alt=""
-                      aria-hidden="true"
-                      decoding="async"
-                      style={boxVars(mock.box)}
+                      quad={cardShot.quad}
+                      photo={cardShot.photo}
+                      occluder={cardShot.front}
                     />
                   ) : mock.kind === "cylinder" ? (
                     <MugPrint src={chosenArt.thumb} box={mock.box} photo={mock.photo} />
@@ -299,7 +488,7 @@ export default function CategoryView({
                         style={boxVars(mock.box)}
                       />
                     </>
-                  ) : (
+                  ) : mock.kind === "disc" ? (
                     // A DISC NEEDS NO CANVAS. The plate faces the camera, so
                     // there is nothing to project — the work is a round crop
                     // (`cover`, so a portrait illustration FILLS the well
@@ -321,7 +510,7 @@ export default function CategoryView({
                         } as React.CSSProperties
                       }
                     />
-                  ))}
+                  ) : null)}
               </figure>
               {shots.length > 1 && (
                 <ul className="ap-cv__thumbs">
@@ -388,13 +577,13 @@ export default function CategoryView({
                       aria-pressed={art === a.id}
                       aria-label={`Illustration number ${a.id}`}
                       className={art === a.id ? "on" : ""}
-                      onClick={() => {
-                        setArt(a.id);
-                        // and SHOW it: the preview only exists on the mockup
-                        // shot, so a pick made while looking at another
-                        // photograph would otherwise change nothing visible
-                        if (mock) setShot(mockAt);
-                      }}
+                      // THE PHOTOGRAPH STAYS PUT (client 2026-08-12: "it must
+                      // stay"). An earlier cut jumped to the one shot that
+                      // carried the mockup, which yanked the frame out from
+                      // under whoever was looking at another scene. Every
+                      // usable photograph now carries the print instead, so
+                      // the choice simply appears wherever the buyer already is.
+                      onClick={() => setArt(a.id)}
                       style={{ background: a.avg }}
                     >
                       <img src={a.thumb} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />

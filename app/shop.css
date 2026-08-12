@@ -574,13 +574,38 @@
 /* THE CARD IN THE SCENE. Covers the photographed postcard edge to edge, so
    the design underneath never shows. `normal` rather than the mug's
    `multiply`: the card is lit flat and square, and multiplying would drag
-   the scene's shadow across a picture that is standing in the light. The
-   1px radius is the printed card's own corner. */
+   the scene's shadow across a picture that is standing in the light.
+   NO object-fit and NO border-radius here: CardPrint maps the artwork onto
+   the card's four measured corners with a matrix3d homography, so the
+   element's own box is a unit square that the transform carries into place —
+   a fit or a radius would fight the mapping. */
 .ap-cv__hero .ap-cv__print--card,
 .ap-cv__hero img.ap-cv__print--card {
-  object-fit: cover;
   mix-blend-mode: normal;
-  border-radius: 1px;
+  /* `fill`, EXPLICITLY. The base rule above sets object-fit: contain on every
+     .ap-cv__print, and an override that only mentions blend-mode does not
+     undo it — the comment that used to sit here claimed "no object-fit" while
+     `contain` was quietly still in force. The consequence was invisible in
+     code and obvious on screen: CardPrint's <img> spans the whole figure, so
+     `contain` letterboxed a 621x878 artwork inside a 1600x1067 box, leaving
+     ~26% empty on each side BEFORE the homography ran. Mapped onto the card
+     that became a wide band of the ORIGINAL design surviving down each edge.
+     The element must be filled edge to edge; the transform does the shaping. */
+  object-fit: fill;
+}
+/* WHAT STANDS IN FRONT OF THE CARD. A petal lying across a corner, a leaf,
+   the edge of a pocket: in the photograph these are nearer the camera than
+   the card, so a print laid flat over the whole card wrongly buries them
+   (client 2026-08-12: "red flower leaf must stay ahead of image"). Each such
+   object is cut out of its own photograph at full resolution and laid back
+   on top, in the figure's own box so it lines up with the photo exactly. */
+.ap-cv__hero .ap-cv__front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
 }
 /* the cut, over the picture — see MOCKUPS for why it is drawn rather than
    lifted out of the photograph */
