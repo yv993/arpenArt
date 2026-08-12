@@ -51,7 +51,11 @@ export type Category = {
   blurb: string;
   /** key in lib/products.json */
   media: string;
-  /** PLACEHOLDER pricing, in Armenian dram. Replace with real figures. */
+  /** Price in Armenian dram. Postcards carry Arpine's REAL price (1,000 —
+   *  client 2026-08-12); every other category is still a PLACEHOLDER waiting
+   *  on her figures. The cart and the order endpoint both read this field,
+   *  and the endpoint re-prices from it so the browser can never name a
+   *  price of its own. */
   from: number;
   status: "open" | "soon";
   /** Artwork ids to tile on the card while the line is unphotographed. The
@@ -85,7 +89,8 @@ export const categories: Category[] = [
     name: "Postcards",
     blurb: "The full Armenia series, printed on heavy uncoated card. Sold singly or as a set.",
     media: "postcards",
-    from: 900,
+    // Arpine's real price, 2026-08-12: every card is 1,000 dram.
+    from: 1000,
     status: "open",
     // "Sold singly or as a set" is already the blurb's promise — the picker
     // only lets the buyer say which of the two they meant.
