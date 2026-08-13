@@ -1141,7 +1141,13 @@
   height: clamp(420px, 62vh, 640px);
   border-radius: 8px;
   overflow: hidden;
+  /* atmosphere behind the relief: a high sky glow the country sits under,
+     falling to night at the stage's foot — the canvas above is transparent,
+     so this IS the map's sea */
   background: var(--ink-indigo);
+  background-image:
+    radial-gradient(85% 60% at 50% 8%, rgba(86, 143, 195, 0.28), transparent 60%),
+    linear-gradient(180deg, #223257 0%, #1a2647 55%, #121b33 100%);
   /* the map takes horizontal drags; the page keeps vertical ones, or a phone
      could not scroll past a section that fills the screen */
   touch-action: pan-y;
@@ -2203,6 +2209,9 @@ a.ap-soc__box:focus-visible {
 
 .ap-foot {
   background: var(--ink-indigo);
+  /* the same night air as the gallery band, so the two dark rooms of the
+     site agree on their light */
+  background-image: var(--night-wash);
   color: var(--paper);
   padding: clamp(60px, 9vh, 110px) var(--gutter) 34px;
 }
@@ -2223,6 +2232,10 @@ html[data-footfx] main {
   position: relative;
   z-index: 1;
   background: var(--paper);
+  /* the shorthand above just wiped main's page wash — restate it, or the
+     moved layer loses the warm top the plain layer keeps */
+  background-image: var(--page-wash);
+  background-repeat: no-repeat;
   margin-bottom: var(--foot-h, 0px);
   /* the curtain's lower edge needs a whisper of depth over the footer */
   box-shadow: 0 30px 60px -30px rgba(27, 43, 76, 0.55);
@@ -2254,6 +2267,17 @@ html[data-footfx] .ap-foot {
   font-family: var(--font-display);
   font-size: clamp(1.6rem, 4vw, 3rem);
   letter-spacing: -0.02em;
+}
+/* the footer's big line takes the paper run — display size on the dark
+   ground, ending in her marigold. Same guard as the titles: outside it the
+   line simply stays paper. */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .ap-foot__big {
+    background: var(--grad-paper);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 @media (max-width: 860px) {

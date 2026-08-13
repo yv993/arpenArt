@@ -266,6 +266,35 @@ export default function TextFX() {
     // hydrated. So every page mounts <TextFX /> as its LAST child, and this
     // effect starts strictly after the headings it will split are React's.
     // Remounting per route also replaces the old pathname rescan.
+    /** THE GRADIENT TRAVELS IN SLICES. A heading whose fill is a clipped
+     *  gradient goes INVISIBLE the moment this runner splits it: GSAP leaves
+     *  a transform on every character span, a transformed element escapes
+     *  its ancestor's background-clip, and a glyph with a transparent fill
+     *  and no background behind it is nothing at all (verified in isolation:
+     *  the escape happens wherever the clip lives, holder or heading).
+     *  So each character carries ITS OWN piece: the heading declares its
+     *  gradient in --tfx-grad, and every char gets that image sized to the
+     *  whole heading and offset to the char's place in it — the transform
+     *  then moves glyph and slice together, and the line reads as one
+     *  gradient whatever the entrance is doing. Re-measured when the display
+     *  font lands: Fraunces reflows the line, and slices cut against the
+     *  fallback metrics would leave every colour a half-glyph off. */
+    const paintSlices = (el: HTMLElement, chars: HTMLElement[]) => {
+      const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
+      if (!grad) return;
+      const er = el.getBoundingClientRect();
+      if (!er.width) return;
+      for (const c of chars) {
+        const cr = c.getBoundingClientRect();
+        c.style.backgroundImage = grad;
+        c.style.backgroundSize = `${er.width}px ${er.height}px`;
+        c.style.backgroundPosition = `${er.left - cr.left}px ${er.top - cr.top}px`;
+        c.style.webkitBackgroundClip = "text";
+        c.style.backgroundClip = "text";
+        c.style.webkitTextFillColor = "transparent";
+      }
+    };
+
     let a = 0;
     let b = 0;
     const scan = () => {
@@ -280,6 +309,9 @@ export default function TextFX() {
           delete el.dataset.tfxDone;
           return;
         }
+        // BEFORE build(): the builders set transforms on these spans in the
+        // same tick, and the slices must be cut from the untransformed line
+        paintSlices(el, chars);
         const build = BUILD[el.dataset.tfx ?? ""] ?? BUILD.rise;
         const tl = build(
           chars,
@@ -298,6 +330,34 @@ export default function TextFX() {
           settle(chars);
           unsplit(el, original);
           delete el.dataset.tfxDone;
+        });
+        // the webfont usually lands after this scan; re-cut once it has.
+        // getBoundingClientRect reads the UNtransformed... no — it reads the
+        // transformed box, so re-cutting mid-entrance would smear the slices.
+        // gsap.set transforms are applied inside build() synchronously, so
+        // the re-cut waits for the entrance to finish before measuring.
+        document.fonts?.ready.then(() => {
+          if (!el.isConnected || !el.dataset.tfxDone) return;
+          if (tl.progress() > 0 && tl.progress() < 1) {
+            tl.eventCallback("onComplete", () => paintSlices(el, chars));
+          } else if (tl.progress() === 0) {
+            // not yet played: chars sit at their set() offsets — inside
+            // masks, translated. Measure the MASKS instead? The mask box is
+            // the char's resting box, so cut against each char's mask.
+            for (let i = 0; i < chars.length; i++) {
+              const m = chars[i].parentElement;
+              if (!m) continue;
+              const er = el.getBoundingClientRect();
+              const mr = m.getBoundingClientRect();
+              const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
+              if (!grad || !er.width) break;
+              chars[i].style.backgroundImage = grad;
+              chars[i].style.backgroundSize = `${er.width}px ${er.height}px`;
+              chars[i].style.backgroundPosition = `${er.left - mr.left}px ${er.top - mr.top}px`;
+            }
+          } else {
+            paintSlices(el, chars);
+          }
         });
       });
     };

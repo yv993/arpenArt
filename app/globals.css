@@ -51,6 +51,37 @@
   --gutter: clamp(18px, 4.6vw, 76px);
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
+  /* --- gradients, from the same measured palette ------------------------
+     Ink runs: for DISPLAY TYPE on paper. Every stop clears 4.5:1 on --paper
+     (ink-indigo, indigo 7.4:1, terracotta-ink 4.6:1), so the contrast rule
+     above survives the decoration — the warmth only kisses the tail of a
+     line, the way terracotta already accents her paintings.
+     Paper runs: for display type on the DARK surfaces (marigold on
+     ink-indigo is 6.4:1, and these are 2rem+ faces).
+     Washes: air for the flat bands — paper warmed toward marigold at the
+     top of a page, indigo deepened toward night at the foot of the dark
+     ones. Backgrounds only; text never sits on the accent stops. */
+  --grad-ink: linear-gradient(
+    100deg,
+    var(--ink-indigo) 0%,
+    var(--indigo) 58%,
+    var(--terracotta-ink) 108%
+  );
+  --grad-paper: linear-gradient(
+    100deg,
+    var(--paper) 12%,
+    #fbd98a 68%,
+    var(--marigold) 105%
+  );
+  --page-wash: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--marigold) 10%, var(--paper)) 0%,
+    var(--paper) 360px
+  );
+  --night-wash:
+    radial-gradient(120% 90% at 18% -12%, rgba(86, 143, 195, 0.2), transparent 55%),
+    linear-gradient(180deg, #22345d 0%, var(--ink-indigo) 46%, #141d35 100%);
+
   --font-display: var(--f-display), Georgia, "Times New Roman", serif;
   --font-body: var(--f-body), "Segoe UI", system-ui, sans-serif;
   /* geometric sans for section titles — the client's reference register */
@@ -74,6 +105,15 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+main {
+  /* morning light under the glass bar: the top of every page warmed a step
+     toward marigold, settled back to plain paper within a screen's third.
+     On the moved layer the footer-reveal rule restates this — its curtain
+     shorthand would otherwise wipe the image */
+  background: var(--paper);
+  background-image: var(--page-wash);
+  background-repeat: no-repeat;
 }
 h1,
 h2,
@@ -167,6 +207,35 @@ select {
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+/* THE SECTION TITLES CARRY THE INK RUN. Guarded, because clipped-gradient
+   text is invisible where the trick is unsupported — inside the guard the
+   fill goes transparent, outside it nothing changes and the titles stay
+   solid ink. The gradient is painted per title box, so the terracotta lands
+   on the tail of the line, not on a fixed screen position. The text-FX
+   runner's per-character spans are fine under this: the clip follows the
+   glyphs wherever their entrance moves them. */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .ap-h2 {
+    /* --tfx-grad is how the text-FX runner learns the run: its split
+       wraps every character in a transformed span, a transformed span
+       escapes this element-level clip, so the runner re-cuts the same
+       gradient into per-character slices — see paintSlices in TextFX */
+    --tfx-grad: var(--grad-ink);
+    background: var(--grad-ink);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  /* the same title on a DARK band flips to the paper run — a dark run on
+     ink-indigo would simply vanish */
+  .ap-sec--gal .ap-h2,
+  .ap-dark .ap-h2 {
+    --tfx-grad: var(--grad-paper);
+    background: var(--grad-paper);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
 .ap-lede {
   font-size: 1.08em;
   max-width: 56ch;
@@ -180,7 +249,10 @@ select {
   min-height: 48px;
   padding: 13px 26px;
   border-radius: 999px;
-  background: var(--indigo);
+  /* an indigo with light in it: every stop is the indigo family, so the
+     paper text passes on all of them. The colour beneath stays as the
+     fallback for engines that drop the image. */
+  background: var(--indigo) linear-gradient(135deg, #4356b0 0%, var(--indigo) 52%, var(--ink-indigo) 125%);
   color: var(--paper);
   font-size: 12.5px;
   letter-spacing: 0.16em;
@@ -188,7 +260,7 @@ select {
   transition: background 240ms var(--ease), transform 240ms var(--ease);
 }
 .ap-btn:hover {
-  background: var(--ink-indigo);
+  background: var(--ink-indigo) linear-gradient(135deg, var(--indigo) 0%, var(--ink-indigo) 60%, #131c33 125%);
   transform: translateY(-2px);
 }
 .ap-btn.is-ghost {
@@ -528,7 +600,10 @@ select {
   margin-bottom: clamp(38px, 6vh, 76px);
 }
 .ap-sec--gal {
+  /* night air instead of a flat plate: a whisper of sky glow high on the
+     left, and the band settling darker toward its foot */
   background: var(--ink-indigo);
+  background-image: var(--night-wash);
   color: var(--paper);
 }
 .ap-sec--gal .ap-kicker {
