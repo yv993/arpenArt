@@ -103,6 +103,9 @@ body {
   font-family: var(--font-body);
   font-size: clamp(15.5px, 1.02vw, 17.5px);
   line-height: 1.6;
+  /* every price, coordinate and count sits in columns somewhere — digits of
+     one width keep them from wobbling as they change */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -114,6 +117,39 @@ main {
   background: var(--paper);
   background-image: var(--page-wash);
   background-repeat: no-repeat;
+}
+/* PAPER GRAIN. Her work is gouache on paper and the site's ground is flat
+   sRGB — a whisper of noise over everything gives the screen back a tooth.
+   soft-light, so it textures the cream and the night rooms alike instead of
+   only darkening; fixed, so it does not swim against the page while
+   scrolling. Decorative and inert: no pointer, no reader, no layout. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  opacity: 0.34;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+/* her marigold takes the highlight — selecting text on this site should
+   look like a brush of her own paint, not the browser's blue */
+::selection {
+  background: color-mix(in srgb, var(--marigold) 70%, var(--paper));
+  color: var(--ink);
+}
+html {
+  /* the scrollbar in the site's own ink, thin and quiet */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 32%, transparent) transparent;
+}
+p,
+li,
+dd {
+  /* no widowed last words in running copy */
+  text-wrap: pretty;
 }
 h1,
 h2,
@@ -239,6 +275,55 @@ select {
 .ap-lede {
   font-size: 1.08em;
   max-width: 56ch;
+}
+
+/* --- the ribbon ---------------------------------------------------------
+   A slow marquee between the series and the gallery: the site's true facts
+   — her tagline, the count of illustrations, the lines that carry them —
+   walking past like a shop awning. Two identical runs make the loop; the
+   whole strip is decorative (aria-hidden in the markup: everything it says
+   is said properly elsewhere). Without motion it stands still as a plain
+   captioned rule, which is honest on its own. */
+.ap-ribbon {
+  overflow: hidden;
+  border-block: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  padding: 13px 0;
+}
+.ap-ribbon__track {
+  display: flex;
+  width: max-content;
+}
+.ap-ribbon__run {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.ap-ribbon__run > span {
+  padding-right: 18px;
+}
+.ap-ribbon__run > span::after {
+  content: "·";
+  color: var(--terracotta);
+  padding-left: 18px;
+}
+@media (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+  .ap-ribbon__track {
+    animation: ap-ribbon 38s linear infinite;
+  }
+  .ap-ribbon:hover .ap-ribbon__track {
+    animation-play-state: paused;
+  }
+  @keyframes ap-ribbon {
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 /* --- the one button ----------------------------------------------------- */
@@ -748,11 +833,31 @@ select {
   gap: 12px;
 }
 .ap-cat__fig {
+  position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: 4px;
   display: grid;
   place-items: center;
+}
+/* THE SECOND PHOTOGRAPH UNDER THE HAND. Lines shot more than once carry
+   their next photograph on the card, crossfaded in on hover — the shop-grid
+   grammar every good store speaks: the card itself answers "what else does
+   it look like". Hover-capable, motion-allowed pointers only; a phone tap
+   goes straight to the page and never meets the swap. */
+.ap-cat__alt {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ap-cat__alt {
+    transition: opacity 460ms var(--ease);
+  }
+  .ap-cat a:hover .ap-cat__fig .ap-cat__alt,
+  .ap-cat a:focus-visible .ap-cat__fig .ap-cat__alt {
+    opacity: 1;
+  }
 }
 .ap-cat__fig img {
   width: 100%;

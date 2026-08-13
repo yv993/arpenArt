@@ -130,8 +130,32 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+.ap-nav__links a {
+  position: relative;
+}
 .ap-nav__links a:hover {
   color: var(--indigo);
+}
+/* the underline DRAWS, left to right, instead of appearing — and stays for
+   keyboard focus, where it doubles as the ring's baseline */
+.ap-nav__links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -5px;
+  height: 1.5px;
+  background: var(--indigo);
+  transition: right 300ms var(--ease);
+}
+.ap-nav__links a:hover::after,
+.ap-nav__links a:focus-visible::after {
+  right: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-nav__links a::after {
+    transition: none;
+  }
 }
 .ap-nav__cart {
   display: inline-flex;

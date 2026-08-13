@@ -267,6 +267,26 @@ export default function HomeView() {
         pick={{ line: home.strip.pickLine, body: home.strip.pickBody, cta: home.strip.pickCta }}
       />
 
+      {/* ═══ RIBBON — the awning between the series and the gallery ════════
+          Every word on it is a fact the page already states: her tagline,
+          the real count of illustrations, the lines that are actually open.
+          aria-hidden because it repeats, never informs. ══════════════════ */}
+      <div className="ap-ribbon" aria-hidden="true">
+        <div className="ap-ribbon__track">
+          {[0, 1].map((run) => (
+            <span className="ap-ribbon__run" key={run}>
+              <span>{brand.tagline}</span>
+              <span>{ART.length} illustrations</span>
+              {categories
+                .filter((c) => c.status === "open")
+                .map((c) => (
+                  <span key={c.slug}>{c.name}</span>
+                ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ GALLERY ═══════════════════════════════════════════════════════ */}
       <section className="ap-sec ap-sec--gal ap-dark" id="gallery">
         <div className="ap-sec__head">

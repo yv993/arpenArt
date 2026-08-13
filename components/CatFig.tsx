@@ -25,11 +25,27 @@ const P = products as Record<string, Shot[]>;
 
 export default function CatFig({ cat }: { cat: Category }) {
   const shot = P[cat.media]?.[0];
+  // the NEXT photograph of the line, crossfaded in on hover — the card
+  // itself answering "what else does it look like". Lines shot once simply
+  // have no second layer; nothing is borrowed to fake one.
+  const next = P[cat.media]?.[1];
 
   if (shot) {
     return (
       <figure className="ap-cat__fig" style={{ background: shot.avg }}>
         <img src={shot.thumb} alt="" width={shot.w} height={shot.h} loading="lazy" decoding="async" />
+        {next && (
+          <img
+            className="ap-cat__alt"
+            src={next.thumb}
+            alt=""
+            aria-hidden="true"
+            width={next.w}
+            height={next.h}
+            loading="lazy"
+            decoding="async"
+          />
+        )}
       </figure>
     );
   }
