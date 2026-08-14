@@ -263,8 +263,16 @@ select {
     -webkit-text-fill-color: transparent;
   }
   /* the same title on a DARK band flips to the paper run — a dark run on
-     ink-indigo would simply vanish */
+     ink-indigo would simply vanish.
+     THE CART'S PLATE COUNTS AS A DARK BAND. It is not .ap-dark (the class
+     would repaint the whole page section, and the plate is a fixed layer
+     behind it), so its title kept the ink run while the plate rule set
+     `color: #f4ece0` — and a clipped gradient makes `color` dead paint.
+     The result was indigo-on-Botticelli: the exact "crashed text" in the
+     client's first screenshot (2026-08-13). The colour was never the fix;
+     the RUN is. */
   .ap-sec--gal .ap-h2,
+  .ap-cart[data-plate] .ap-h2,
   .ap-dark .ap-h2 {
     --tfx-grad: var(--grad-paper);
     background: var(--grad-paper);
@@ -541,15 +549,31 @@ select {
      contrast.
      The job it was doing is real and does not go away with it: this title
      crosses BOTH the bright yellow hills and the dark band, and the hero has
-     no 4.5:1 zone anywhere. So the ground still travels with the glyphs — as
-     a shadow rather than an edge. Three layered blurs: a tight one that
+     no 4.5:1 zone anywhere. So the ground still travels with the glyphs —
+     as shade rather than an edge. Three layered blurs: a tight one that
      separates the letterform, a mid one that carries over busy paint, and a
-     wide soft one that darkens the field behind the whole line. None of them
-     has a visible boundary, which is the whole difference. */
-  text-shadow:
-    0 1px 2px rgba(23, 26, 44, 0.62),
-    0 3px 12px rgba(23, 26, 44, 0.5),
-    0 8px 34px rgba(23, 26, 44, 0.42);
+     wide soft one that darkens the field behind the whole line.
+     drop-shadow() FILTERS, not text-shadow (client 2026-08-13: the title
+     joined the gradient pass): a text-shadow is painted behind the glyph
+     box, and with the fill clipped transparent for the gradient it bleeds
+     THROUGH the letters as murk. A filter shades the pixels actually
+     painted, gradient and all, so the contrast mechanism survives the
+     decoration. */
+  filter: drop-shadow(0 1px 2px rgba(23, 26, 44, 0.62)) drop-shadow(0 3px 12px rgba(23, 26, 44, 0.5))
+    drop-shadow(0 8px 34px rgba(23, 26, 44, 0.42));
+}
+/* SUNLIGHT IN THE LETTERS. Each line runs white into her marigold at its
+   foot — the same light the hills behind it are painted in. Per line, not
+   across the block, so both lines carry the full run; the FX runner re-cuts
+   it into per-character slices exactly as it does for the section titles. */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .ap-hero__title > span {
+    --tfx-grad: linear-gradient(172deg, #fffef8 10%, #fdedc4 58%, #f2bc55 106%);
+    background: linear-gradient(172deg, #fffef8 10%, #fdedc4 58%, #f2bc55 106%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 /* direct children ONLY: these are the two title lines. A bare descendant
    `span` here would also hit every letter span the text-FX runner nests

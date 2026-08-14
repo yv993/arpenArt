@@ -1,12 +1,17 @@
 node_modules
 .next
+.next-check
 out
-.env*.local
+.env*
+!.env.example
 *.tsbuildinfo
 next-env.d.ts.bak
 
 # the raw source drop — huge originals, not part of the build
 imgss/
+
+# working notes for the client — screenshots and screen recordings, not source
+change/
 
 # stray debug dumps from local harnesses
 out*.html
@@ -14,5 +19,3 @@ out*.html
 # stray probe screenshots must never land in the repo
 /cloud-w*.png
 /hero-now.png
-
-.next-check

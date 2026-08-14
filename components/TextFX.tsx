@@ -318,6 +318,24 @@ export default function TextFX() {
           parseFloat(el.dataset.tfxDelay ?? "0") || 0,
           el,
         );
+        /** THE LANDING. Once the entrance ends, the chars stop being
+         *  composited: GSAP's leftover identity transform and the
+         *  stylesheet's will-change each kept every span on its own GPU
+         *  layer, and Chromium's clipped-text rasterization is flaky on
+         *  composited spans — on two pages the FIRST character of a
+         *  gradient title painted as its unclipped slice, a torn cream slab
+         *  where the letter should be, with styles byte-identical to its
+         *  healthy neighbours. Plain spans clip flawlessly (isolated and
+         *  verified), so at rest that is what these become. It is also
+         *  simply the rule: will-change only while animating. Re-cutting
+         *  the slices here doubles as the webfont fix — by the time an
+         *  entrance has finished, Fraunces has long landed. */
+        const finish = () => {
+          gsap.set(chars, { clearProps: "transform" });
+          for (const c of chars) c.style.willChange = "auto";
+          paintSlices(el, chars);
+        };
+        tl.eventCallback("onComplete", finish);
         const st = ScrollTrigger.create({
           trigger: el,
           start: "top 88%",
@@ -331,32 +349,26 @@ export default function TextFX() {
           unsplit(el, original);
           delete el.dataset.tfxDone;
         });
-        // the webfont usually lands after this scan; re-cut once it has.
-        // getBoundingClientRect reads the UNtransformed... no — it reads the
-        // transformed box, so re-cutting mid-entrance would smear the slices.
-        // gsap.set transforms are applied inside build() synchronously, so
-        // the re-cut waits for the entrance to finish before measuring.
+        // The webfont usually lands after this scan, and slices cut against
+        // fallback metrics sit a half-glyph off. In flight, finish() will
+        // re-cut at the end anyway; already finished, re-cut now; not yet
+        // played, the chars sit translated at their set() offsets, so cut
+        // against their MASKS — the mask box is the char's resting box.
         document.fonts?.ready.then(() => {
           if (!el.isConnected || !el.dataset.tfxDone) return;
-          if (tl.progress() > 0 && tl.progress() < 1) {
-            tl.eventCallback("onComplete", () => paintSlices(el, chars));
-          } else if (tl.progress() === 0) {
-            // not yet played: chars sit at their set() offsets — inside
-            // masks, translated. Measure the MASKS instead? The mask box is
-            // the char's resting box, so cut against each char's mask.
-            for (let i = 0; i < chars.length; i++) {
-              const m = chars[i].parentElement;
+          if (tl.progress() >= 1) finish();
+          else if (tl.progress() === 0 && !tl.isActive()) {
+            const er = el.getBoundingClientRect();
+            const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
+            if (!grad || !er.width) return;
+            for (const c of chars) {
+              const m = c.parentElement;
               if (!m) continue;
-              const er = el.getBoundingClientRect();
               const mr = m.getBoundingClientRect();
-              const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
-              if (!grad || !er.width) break;
-              chars[i].style.backgroundImage = grad;
-              chars[i].style.backgroundSize = `${er.width}px ${er.height}px`;
-              chars[i].style.backgroundPosition = `${er.left - mr.left}px ${er.top - mr.top}px`;
+              c.style.backgroundImage = grad;
+              c.style.backgroundSize = `${er.width}px ${er.height}px`;
+              c.style.backgroundPosition = `${er.left - mr.left}px ${er.top - mr.top}px`;
             }
-          } else {
-            paintSlices(el, chars);
           }
         });
       });
