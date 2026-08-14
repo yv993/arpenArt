@@ -1,0 +1,261 @@
+/* ==========================================================================
+   SIGN IN / CREATE ACCOUNT (components/AuthUI.tsx)
+
+   The supplied component's anatomy in this site's own CSS: a form column
+   beside a full-bleed picture, the picture's foot fading into the page so
+   the quote can stand on it, and one panel swapping to the other in place.
+
+   Two columns only where there is room for two. Below 861px the picture is
+   dropped rather than stacked: a decorative half-screen above a form is a
+   phone scrolling past art to reach the one field it came for.
+   ========================================================================== */
+.ap-auth {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100svh;
+}
+@media (min-width: 861px) {
+  .ap-auth {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ---- the form column --------------------------------------------------- */
+.ap-auth__form {
+  display: grid;
+  place-items: center;
+  padding: calc(var(--nav-h, 84px) + 32px) var(--gutter) 64px;
+}
+.ap-auth__box {
+  width: min(390px, 100%);
+}
+.ap-auth__head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 26px;
+  text-align: center;
+}
+.ap-auth__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+.ap-auth__sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+.ap-auth__fields {
+  display: grid;
+  gap: 14px;
+}
+.ap-auth__go {
+  margin-top: 4px;
+  width: 100%;
+  justify-content: center;
+}
+/* the row is always present so a message arriving cannot shift the button
+   out from under the pointer that is about to press it */
+.ap-auth__err {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 12.5px;
+  line-height: 1.2;
+  color: var(--danger, #b3391a);
+}
+.ap-auth__notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--paper-3);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.ap-auth__swap {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+}
+.ap-auth__swap button,
+.ap-auth__ghost {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--indigo);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ap-auth__swap button:hover,
+.ap-auth__ghost:hover {
+  color: var(--ink);
+}
+
+/* the "or" rule: a centred caption sitting on a hairline */
+.ap-auth__rule {
+  position: relative;
+  margin: 26px 0 12px;
+  text-align: center;
+}
+.ap-auth__rule::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ap-auth__rule span {
+  position: relative;
+  padding: 0 10px;
+  background: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-auth__small {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+.ap-auth__done {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+/* ---- the picture column ------------------------------------------------- */
+.ap-auth__art {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-3);
+}
+@media (min-width: 861px) {
+  .ap-auth__art {
+    display: block;
+  }
+}
+.ap-auth__art figure {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+.ap-auth__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+/* the picture's foot dissolves into the page, which is what lets the quote
+   sit ON the artwork instead of in a box laid over it */
+.ap-auth__art::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 46%;
+  background: linear-gradient(to top, var(--paper) 4%, color-mix(in srgb, var(--paper) 62%, transparent) 46%, transparent);
+  pointer-events: none;
+}
+.ap-auth__quote {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0 clamp(24px, 4vw, 56px) clamp(28px, 5vh, 54px);
+  text-align: center;
+}
+.ap-auth__quote p {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.ap-auth__quote cite {
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+/* the typewriter's cursor — a caret rather than a text glyph, so it cannot
+   be selected or read out as punctuation */
+.ap-auth__caret {
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 2px;
+  translate: 0 0.12em;
+  background: currentColor;
+  animation: ap-auth-blink 1s steps(1, end) infinite;
+}
+@keyframes ap-auth-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-auth__caret {
+    animation: none;
+  }
+}
+
+/* ---- the signed-in panel ------------------------------------------------ */
+.ap-acct {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(var(--nav-h, 84px) + 48px) var(--gutter) 96px;
+}
+.ap-acct__who {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 26px;
+}
+.ap-acct__who strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.ap-acct__who span {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.ap-acct__facts {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 28px;
+  padding: 18px 20px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.ap-acct__facts p {
+  margin: 0;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+.ap-acct__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}

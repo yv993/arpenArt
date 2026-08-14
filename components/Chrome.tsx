@@ -73,6 +73,15 @@ export default function Chrome() {
             {l.label}
           </Link>
         ))}
+        {/* ICON, NOT A WORD. The bar's link row is already at its width on a
+            1024px laptop, and a fifth label pushed the cart badge into the
+            wordmark. The accessible name carries the meaning. */}
+        <Link className="ap-nav__acct" href="/account" aria-label="Your account" title="Your account">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M4.6 20a7.4 7.4 0 0 1 14.8 0" strokeLinecap="round" />
+          </svg>
+        </Link>
         <Link className="ap-nav__cart" href="/cart">
           Cart
           <span className="ap-nav__n" data-has={n > 0 || undefined}>

@@ -171,6 +171,20 @@
   align-items: center;
   gap: 8px;
 }
+/* the account icon: a 44px target with a 15px mark inside it, so the touch
+   floor is met without the bar growing around it */
+.ap-nav__acct {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  color: inherit;
+  transition: color 0.2s var(--ease);
+}
+.ap-nav__acct:hover {
+  color: var(--indigo);
+}
 .ap-nav__n {
   min-width: 22px;
   height: 22px;
