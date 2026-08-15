@@ -610,15 +610,61 @@ select {
    cover as you scroll. Everything else (phones, reduced motion, no-JS)
    never sees these rules: they keep the contained painting.
    -------------------------------------------------------------------------- */
+/* THE PAINTING OPENS WHOLE (client 2026-08-14: "I want it to start at its
+   original proportions, the overall image showed").
+
+   It used to be `object-fit: cover` here — full-bleed, which on a 16:9 film
+   in a tall frame means the top and bottom of Arpine's composition are
+   simply cut off, and the first thing the site showed of her work was a
+   crop of it. `contain` shows the frame she painted.
+   `contain` needs somewhere to sit, and that is what the aurora below is
+   for: the letterbox is not empty, it is the 57 paintings' own averages
+   blurred into light behind this one. */
 .ap-hero[data-x] .ap-hero__img {
-  top: 0;
-  height: 100%;
-  object-fit: cover;
+  top: clamp(74px, 10vh, 96px);
+  height: calc(100% - clamp(74px, 10vh, 96px) - clamp(96px, 14vh, 150px));
+  object-fit: contain;
+  /* the push-in works from the middle of the picture now that the whole
+     picture is on screen — the old 42%/55% origin was chosen against a
+     crop that no longer exists */
+  transform-origin: 50% 50%;
 }
-/* the aurora is invisible behind a cover image — stop paying its blur */
+/* THE GROUND UNDER A CONTAINED PICTURE. With `cover` the aurora was behind
+   an opaque image and only cost blur; with `contain` it IS the room the
+   painting hangs in, so it comes back — wider and dimmer than the plain-
+   layer version, reaching the full height instead of stopping short, since
+   there is no longer a bottom strip of flat indigo for type to stand on. */
 .ap-hero[data-x] .ap-hero__stage::before {
-  display: none;
+  inset: -10% -8%;
+  opacity: 0.72;
+  /* HEAVIER BLUR THAN THE PLAIN LAYER'S 64px. The field is a ribbon of 57
+     flat averages: behind a full-bleed painting nobody saw it, but as the
+     room around a contained one it reached the frame edge still banded, and
+     read as stripes rather than as light. 108px dissolves the bands. */
+  filter: blur(108px) saturate(1.35);
+  /* fades at every extremity instead of only the foot, so the ground has no
+     edge of its own anywhere — a rectangle of colour behind a rectangle of
+     painting would just be a second frame */
+  mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
+  -webkit-mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
+  /* THE FURTHEST PLANE. --hero-drift is scrubbed on .ap-hero__stage by the
+     hero timeline; the ground travels a few per cent while the painting
+     moves further and the type furthest, which is the whole trick behind
+     the client's parallax reference — three speeds, one scroll. Registered
+     with @property below so it can be tweened as a LENGTH rather than
+     re-parsed as a string on every frame. */
+  translate: 0 var(--hero-drift, 0%);
 }
+@property --hero-drift {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+/* NO drop-shadow ON THE PICTURE, deliberately: the scrub tweens `filter`
+   (brightness/saturate) on this same element, and GSAP writes the whole
+   property — a shadow declared here would be wiped the moment the timeline
+   took over, so it would appear at rest and vanish on the first scroll.
+   The aurora is the separation instead, which is what it is for. */
 /* The centred film reel lived here — a 46svh portrait card that scaled up to
    take the frame — and it is gone with its markup. The sentence and CTA that
    used to land on its gradient now sit on the dimmed painting instead, which

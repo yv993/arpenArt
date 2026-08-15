@@ -82,12 +82,38 @@ export default function HomeView() {
             invalidateOnRefresh: true,
           },
         });
+        // THE PAINTING OPENS WHOLE AND THEN PUSHES IN. It used to open
+        // already cropped — full-bleed cover — so the first thing the site
+        // showed of Arpine's work was a piece of it. It is `contain` now
+        // (see the [data-x] block in globals.css) and the scrub still ends
+        // at the same 1.12 push, only from her real frame rather than from
+        // a crop of it.
+        //
+        // PARALLAX, in the layered sense the client's reference uses: the
+        // ground, the painting and the type are three planes travelling at
+        // three speeds against the same scrub, which is what gives depth —
+        // one element scaling alone reads as a zoom, not as a room. The
+        // ground drifts SLOWEST (it is furthest away), the painting sits
+        // mid-depth, the type is nearest and leaves first. All `ease:
+        // "none"`, so the motion belongs to the scroll and not to a curve.
         tl.fromTo(
           ".ap-hero__img",
-          { scale: 1 },
-          { scale: 1.12, filter: "brightness(0.55) saturate(0.92)", ease: "none", duration: 0.72 },
+          { scale: 1, yPercent: 0 },
+          {
+            scale: 1.12,
+            yPercent: -4,
+            filter: "brightness(0.55) saturate(0.92)",
+            ease: "none",
+            duration: 0.72,
+          },
           0,
         )
+          .fromTo(
+            ".ap-hero__stage",
+            { "--hero-drift": "0%" },
+            { "--hero-drift": "9%", ease: "none", duration: 0.72 },
+            0,
+          )
           .to(".ap-hero__title", { yPercent: -46, autoAlpha: 0, ease: "none", duration: 0.6 }, 0)
           .to(".ap-hero__hint", { autoAlpha: 0, duration: 0.12, ease: "none" }, 0)
           .to(".ap-hero__card", { autoAlpha: 1, y: 0, ease: "none", duration: 0.22 }, 0.78);
