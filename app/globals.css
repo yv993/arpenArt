@@ -620,8 +620,18 @@ select {
    for: the letterbox is not empty, it is the 57 paintings' own averages
    blurred into light behind this one. */
 .ap-hero[data-x] .ap-hero__img {
-  top: clamp(74px, 10vh, 96px);
-  height: calc(100% - clamp(74px, 10vh, 96px) - clamp(96px, 14vh, 150px));
+  /* AS BIG AS IT CAN BE WITHOUT LOSING ANY OF IT (client 2026-08-14: "use
+     all size of illustration, not cut it"). The box is the WHOLE stage now
+     — it used to reserve a strip at the top for the nav and a deeper one at
+     the foot for type, and `contain` then fitted the picture inside what
+     was left, which shrank her painting to about half the frame it could
+     have had. With the full stage to fit into, `contain` gives the largest
+     size that still shows every edge: on a 16:9 screen it meets all four,
+     on a taller one it meets left and right and the ground shows above and
+     below. Nothing is cropped at any ratio — that is what `contain` means,
+     and it is the difference from the `cover` this replaced. */
+  top: 0;
+  height: 100%;
   object-fit: contain;
   /* the push-in works from the middle of the picture now that the whole
      picture is on screen — the old 42%/55% origin was chosen against a
