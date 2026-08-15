@@ -1,17 +1,38 @@
+"use client";
+
+import { useCallback, useEffect, useRef } from "react";
 import { socials } from "@/lib/content";
 
 // ============================================================================
-// SOCIALS — the card the client supplied, ported to this project's rules:
-// plain `ap-` CSS instead of Tailwind (see app/shop.css), the site's measured
-// palette instead of the demo's greys, and no dead links.
+// SOCIALS — the DOCK from the reusable collection (feturesss21), ported.
 //
-// The tiles are stacked off the card's bottom-left corner and slide in on
-// hover, each a beat behind the last. Two things the original could not do:
-// a keyboard can open it (:focus-within), and a touch screen — which has no
-// hover at all — gets the tiles already out.
+// TWO PIECES, BOTH FROM THAT FOLDER:
+//   by-function/navigation/magicui--dock.tsx  the magnification: each icon's
+//     size is a function of its distance from the pointer along the row, so
+//     the whole strip swells around wherever the hand is, macOS-style.
+//   best/motion/Magnetic.tsx                  the magnetic pull: the icon
+//     eases TOWARD the cursor while it is near and springs back on leave.
+//
+// PORTED, NOT INSTALLED. Both originals are framer-motion + Tailwind + a
+// `cn()` helper + class-variance-authority + lucide — five packages this
+// project does not have and will not add for one row of three links (the
+// collection's own README says the same: these are source references, fix
+// the imports). The maths is the interesting part and it is thirty lines:
+// the distance transform is the dock's, the spring is a critically-damped
+// lerp on rAF instead of framer's `useSpring`, and the sizes are written to
+// CSS custom properties so the paint is pure CSS.
+//
+// ONE rAF FOR THE WHOLE ROW, not one per icon: three springs each with their
+// own loop is three times the work to settle the same frame, and they can
+// disagree about when they are done.
+//
+// THE MOTION LAYER ONLY. Under reduced motion, on a touch screen and with no
+// JS the row is a plain, evenly-sized set of links that already works — the
+// pointer maths never runs, and nothing about reaching her profiles depends
+// on it.
 //
 // Every tile is a real link. While one still points at the platform rather
-// than at Arpine's own profile (`pending` in content.ts), the card says so
+// than at Arpine's own profile (`pending` in content.ts), the row says so
 // underneath — the link works, and nobody is told it is her account before
 // it is.
 // ============================================================================
@@ -34,21 +55,97 @@ const ICON: Record<string, React.ReactNode> = {
   ),
 };
 
+/** the dock's own numbers, in this row's proportions */
+const SIZE = 44; // at rest — also the 44px touch floor, so it never shrinks below it
+const MAX = 62; // directly under the pointer
+const REACH = 132; // how far along the row the swell is felt (the dock's `distance`)
+const PULL = 0.3; // Magnetic.tsx's `strength`, toward the cursor
+const MAX_PULL = 9; // px — the row must not come apart under the hand
+
 export default function Socials() {
+  const row = useRef<HTMLDivElement | null>(null);
+  /** [current, target] per icon, for size and for x-offset */
+  const state = useRef<Array<{ s: number; ts: number; x: number; tx: number }>>([]);
+  const raf = useRef(0);
+  const live = useRef(false);
+
+  const settle = useCallback(() => {
+    raf.current = 0;
+    const el = row.current;
+    if (!el) return;
+    const icons = el.querySelectorAll<HTMLElement>(".ap-soc__link");
+    let moving = false;
+    icons.forEach((icon, i) => {
+      const st = state.current[i];
+      if (!st) return;
+      // a critically-damped lerp: framer's useSpring without framer
+      st.s += (st.ts - st.s) * 0.22;
+      st.x += (st.tx - st.x) * 0.22;
+      if (Math.abs(st.ts - st.s) > 0.2 || Math.abs(st.tx - st.x) > 0.2) moving = true;
+      icon.style.setProperty("--s", `${st.s.toFixed(2)}px`);
+      icon.style.setProperty("--x", `${st.x.toFixed(2)}px`);
+    });
+    if (moving) raf.current = requestAnimationFrame(settle);
+  }, []);
+
+  const aim = useCallback(
+    (clientX: number | null) => {
+      const el = row.current;
+      if (!el) return;
+      const icons = el.querySelectorAll<HTMLElement>(".ap-soc__link");
+      icons.forEach((icon, i) => {
+        state.current[i] ??= { s: SIZE, ts: SIZE, x: 0, tx: 0 };
+        const st = state.current[i];
+        if (clientX === null) {
+          st.ts = SIZE;
+          st.tx = 0;
+          return;
+        }
+        const r = icon.getBoundingClientRect();
+        // THE DOCK'S TRANSFORM: distance from the pointer to this icon's
+        // centre, mapped [-REACH, 0, REACH] -> [SIZE, MAX, SIZE]
+        const d = clientX - (r.left + r.width / 2);
+        const t = Math.max(0, 1 - Math.abs(d) / REACH);
+        st.ts = SIZE + (MAX - SIZE) * t;
+        // MAGNETIC.TSX: lean toward the cursor, hardest when nearest
+        st.tx = Math.max(-MAX_PULL, Math.min(MAX_PULL, d * PULL * t));
+      });
+      if (!raf.current) raf.current = requestAnimationFrame(settle);
+    },
+    [settle],
+  );
+
+  useEffect(() => {
+    // FINE POINTERS WITH MOTION ALLOWED, and nothing else. A touch screen has
+    // no hover to drive this and would only get icons that jump on tap.
+    live.current =
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+      window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+    const el = row.current;
+    if (!el || !live.current) return;
+    el.dataset.dock = "";
+    const move = (e: PointerEvent) => aim(e.clientX);
+    const leave = () => aim(null);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerleave", leave);
+    return () => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerleave", leave);
+      if (raf.current) cancelAnimationFrame(raf.current);
+      raf.current = 0;
+      delete el.dataset.dock;
+    };
+  }, [aim]);
+
   const pending = socials.some((s) => s.pending);
+
   return (
     <div className="ap-soc__wrap">
-      <div className="ap-soc">
-        <span className="ap-soc__bg" aria-hidden="true" />
-        <span className="ap-soc__name" aria-hidden="true">
-          Socials
-        </span>
-
-        {socials.slice(0, 3).map((s, i) => (
+      <div className="ap-soc" ref={row}>
+        {socials.map((s) => (
           <a
             key={s.label}
-            className={`ap-soc__box ap-soc__box--${i + 1}`}
-            style={{ transitionDelay: `${i * 0.14}s` }}
+            className="ap-soc__link"
             href={s.href}
             target="_blank"
             rel="noopener noreferrer"
@@ -59,11 +156,14 @@ export default function Socials() {
             }
           >
             {ICON[s.icon]}
+            {/* the dock's label, shown on hover and on keyboard focus —
+                the icons alone are a guessing game for anyone who does not
+                recognise a glyph */}
+            <span className="ap-soc__tip" aria-hidden="true">
+              {s.label}
+            </span>
           </a>
         ))}
-
-        {/* the last panel is scenery: it completes the stack, carries nothing */}
-        <span className="ap-soc__box ap-soc__box--4" style={{ transitionDelay: "0.42s" }} aria-hidden="true" />
       </div>
 
       {/* said once, plainly: the tiles open the platforms until her own

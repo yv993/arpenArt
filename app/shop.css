@@ -2104,10 +2104,14 @@
 }
 
 /* ==========================================================================
-   SOCIALS CARD (/contact) — the tiles are stacked off the bottom-left corner
-   and slide in together, each a beat behind the last. Ported from the card
-   the client supplied: Tailwind out, `ap-` classes and the measured palette
-   in, plus keyboard and touch openings the original had no answer for.
+   SOCIALS DOCK (/contact) — the dock and the magnetic pull from the reusable
+   collection (feturesss21), ported to this project's stack.
+
+   The JS in components/Socials.tsx writes two custom properties per icon and
+   nothing else: --s, the size the dock's distance transform asked for, and
+   --x, how far Magnetic.tsx wants it to lean toward the cursor. Everything
+   below is ordinary CSS reading those two numbers, so the row is a plain,
+   evenly-sized set of links wherever the script does not run.
    ========================================================================== */
 .ap-soc__wrap {
   display: grid;
@@ -2116,131 +2120,86 @@
   margin-top: 26px;
 }
 .ap-soc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  /* the dock's own glass, in this site's palette rather than the demo's grey */
+  background: color-mix(in srgb, var(--paper-3) 62%, transparent);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 70%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent),
+    0 14px 30px -18px rgba(27, 43, 76, 0.5);
+}
+.ap-soc__link {
   position: relative;
-  width: 190px;
-  height: 190px;
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: 0 18px 40px -22px rgba(27, 43, 76, 0.55);
-}
-.ap-soc__bg {
-  position: absolute;
-  inset: 2px;
-  border-radius: 20px;
-  background: linear-gradient(43deg, var(--indigo) 0%, var(--terracotta) 62%, var(--marigold) 100%);
-  pointer-events: none;
-}
-/* pointer-events: none is load-bearing. This label covers the WHOLE card at
-   z-index 5 — above the tiles — and fading it to opacity 0 on hover does not
-   stop it hit-testing, so it swallowed every click meant for a link and the
-   cursor showed a text caret over the icons. */
-.ap-soc__name {
-  position: absolute;
-  inset: 0;
   display: grid;
   place-items: center;
-  z-index: 5;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  letter-spacing: -0.01em;
-  color: var(--paper);
-  transition: opacity 0.5s var(--ease);
-  pointer-events: none;
+  /* AT REST THIS IS A 44px TARGET and the fallback is the same number, so a
+     browser that never runs the script still meets the touch floor. */
+  width: var(--s, 44px);
+  height: var(--s, 44px);
+  translate: var(--x, 0px) 0;
+  border-radius: 50%;
+  background: linear-gradient(43deg, var(--indigo) 0%, var(--terracotta) 78%, var(--marigold) 130%);
+  box-shadow: 0 6px 14px -8px rgba(27, 43, 76, 0.7);
+  /* NO transition on width/height/translate: the rAF spring in Socials.tsx
+     owns those, and a transition on top of a per-frame write is two easings
+     fighting over one number. Colour is not animated by the script, so it
+     may have one. */
+  transition: filter 0.22s var(--ease);
 }
-.ap-soc__box {
-  position: absolute;
-  display: grid;
-  place-items: start end;
-  padding: 12px;
-  background: color-mix(in srgb, var(--paper) 34%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-top: 2px solid color-mix(in srgb, var(--paper) 72%, transparent);
-  border-right: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
-  border-radius: 10% 13% 42% 0% / 10% 12% 75% 0%;
-  box-shadow: -7px 7px 29px 0 rgba(27, 43, 76, 0.36);
-  transform-origin: bottom left;
-  transition:
-    bottom 0.8s var(--ease),
-    left 0.8s var(--ease),
-    background 0.3s var(--ease);
+.ap-soc__link:hover {
+  filter: brightness(1.08);
 }
-.ap-soc__box svg {
-  width: 22px;
-  height: 22px;
+.ap-soc__link svg {
+  width: 46%;
+  height: 46%;
   fill: var(--paper);
 }
-/* smallest tile on top, so the stack reads as a staircase */
-.ap-soc__box--1 {
-  width: 70%;
-  height: 70%;
-  bottom: -70%;
-  left: -70%;
-  z-index: 2;
-}
-.ap-soc__box--2 {
-  width: 50%;
-  height: 50%;
-  bottom: -50%;
-  left: -50%;
-  z-index: 3;
-}
-.ap-soc__box--3 {
-  width: 30%;
-  height: 30%;
-  bottom: -30%;
-  left: -30%;
-  z-index: 4;
-}
-/* scenery only — it must never take a click meant for the tile above it */
-.ap-soc__box--4 {
-  width: 100%;
-  height: 100%;
-  bottom: -100%;
-  left: -100%;
-  z-index: 1;
-  pointer-events: none;
-}
-.ap-soc:hover .ap-soc__box,
-.ap-soc:focus-within .ap-soc__box {
-  bottom: -1px;
-  left: -1px;
-}
-.ap-soc:hover .ap-soc__name,
-.ap-soc:focus-within .ap-soc__name {
+/* the dock's label. Hidden until the icon is hovered or focused, and never
+   in the way: it sits above the row and takes no pointer. */
+.ap-soc__tip {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
   opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
 }
-a.ap-soc__box:hover {
-  background: color-mix(in srgb, var(--paper) 58%, transparent);
+.ap-soc__link:hover .ap-soc__tip,
+.ap-soc__link:focus-visible .ap-soc__tip {
+  opacity: 1;
 }
-/* the tiles are links, so they must take a visible focus ring like every
-   other link on the site */
-a.ap-soc__box:focus-visible {
-  outline: 2px solid var(--paper);
-  outline-offset: -4px;
+.ap-soc__link:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
 }
 .ap-soc__soon {
   font-size: 12.5px;
   color: var(--ink-muted);
   max-width: 32ch;
 }
-/* No hover on a touch screen — the card would never open, so it starts open.
-   Same for reduced motion, where a 0.8s slide is the thing being avoided. */
-@media (hover: none) {
-  .ap-soc .ap-soc__box {
-    bottom: -1px;
-    left: -1px;
-  }
-  .ap-soc .ap-soc__name {
-    opacity: 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .ap-soc__box,
-  .ap-soc__name {
+  .ap-soc__link,
+  .ap-soc__tip {
     transition: none;
   }
 }
+
 
 /* the parcel in flight: a clone on its own fixed layer, above everything
    including the nav, so nothing in the real layout shifts while it travels */
