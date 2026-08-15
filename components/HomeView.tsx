@@ -89,31 +89,43 @@ export default function HomeView() {
         // at the same 1.12 push, only from her real frame rather than from
         // a crop of it.
         //
-        // PARALLAX, in the layered sense the client's reference uses: the
-        // ground, the painting and the type are three planes travelling at
-        // three speeds against the same scrub, which is what gives depth —
-        // one element scaling alone reads as a zoom, not as a room. The
-        // ground drifts SLOWEST (it is furthest away), the painting sits
-        // mid-depth, the type is nearest and leaves first. All `ease:
-        // "none"`, so the motion belongs to the scroll and not to a curve.
+        // PARALLAX, built the way the client's reference builds it: read the
+        // planes off `[data-parallax-layer]`, give each its own yPercent,
+        // start them together with `"<"`, ease "none" throughout so the
+        // motion belongs to the scroll and not to a curve.
+        //
+        // THE ORDER OF THE SPEEDS IS THE WHOLE TRICK, and it is the
+        // reference's: the FURTHEST plane travels MOST (its layer 1 goes to
+        // 70, its nearest to 10). Distant things sliding further than near
+        // ones is what a moving camera does, and reversing it makes a scene
+        // that feels like a sticker sliding on glass. Scaled down here
+        // because this frame is one screen rather than the reference's tall
+        // scroll, and because a painting is the subject: 26/14/8/4, so the
+        // room moves around her work instead of the work moving in a room.
+        const LAYERS: Array<[string, number]> = [
+          ["1", 26], // the ground — furthest, travels most
+          ["2", 14], // her painting
+          ["3", 8], // the type
+          ["4", 4], // the haze in front of it — nearest, travels least
+        ];
+        const stage = hero.querySelector("[data-parallax-layers]");
+        LAYERS.forEach(([layer, yPercent], i) => {
+          const nodes = stage?.querySelectorAll(`[data-parallax-layer="${layer}"]`);
+          if (!nodes?.length) return;
+          tl.to(nodes, { yPercent, ease: "none", duration: 0.72 }, i === 0 ? 0 : "<");
+        });
+
+        // …and on top of the drift, the beats this hero already had: the
+        // painting pushes in and dims, the title leaves, the sentence and
+        // CTA return over it. `scale` and `yPercent` are separate transform
+        // components, so this tween and the layer drift above compose on the
+        // same element instead of fighting for one property.
         tl.fromTo(
           ".ap-hero__img",
-          { scale: 1, yPercent: 0 },
-          {
-            scale: 1.12,
-            yPercent: -4,
-            filter: "brightness(0.55) saturate(0.92)",
-            ease: "none",
-            duration: 0.72,
-          },
+          { scale: 1 },
+          { scale: 1.12, filter: "brightness(0.55) saturate(0.92)", ease: "none", duration: 0.72 },
           0,
         )
-          .fromTo(
-            ".ap-hero__stage",
-            { "--hero-drift": "0%" },
-            { "--hero-drift": "9%", ease: "none", duration: 0.72 },
-            0,
-          )
           .to(".ap-hero__title", { yPercent: -46, autoAlpha: 0, ease: "none", duration: 0.6 }, 0)
           .to(".ap-hero__hint", { autoAlpha: 0, duration: 0.12, ease: "none" }, 0)
           .to(".ap-hero__card", { autoAlpha: 1, y: 0, ease: "none", duration: 0.22 }, 0.78);
@@ -206,7 +218,15 @@ export default function HomeView() {
         aria-label={brand.name}
         style={{ "--hero-field": heroField } as React.CSSProperties}
       >
-        <div className="ap-hero__stage">
+        {/* THE LAYER STACK, in the client's reference's own contract:
+            `data-parallax-layers` on the trigger, `data-parallax-layer="n"`
+            on each plane, one scrubbed timeline moving them at n speeds.
+            1 = the ground (furthest, travels most), 2 = her painting,
+            3 = the type, 4 = the haze in front of it. The type sitting
+            BETWEEN two moving planes is the whole reason the reference
+            reads as depth rather than as a zoom. */}
+        <div className="ap-hero__stage" data-parallax-layers>
+          <div className="ap-hero__field" data-parallax-layer="1" aria-hidden="true" />
           {/* TWO PLATES, and the browser picks ONE. `hero-nosun` has the sun
               inpainted out because components/Sun.tsx flies a cutout of it
               down the page; every other visitor needs the sun that was
@@ -234,6 +254,7 @@ export default function HomeView() {
               offered a scrubber for. */}
           <video
             className="ap-hero__img"
+            data-parallax-layer="2"
             poster="/hero/intro.webp"
             autoPlay
             muted
@@ -261,7 +282,7 @@ export default function HomeView() {
               left in public/ — nothing references them now, so they cost
               nothing to serve, and putting the reel back is a markup change
               rather than a re-encode. */}
-          <div className="ap-hero__type">
+          <div className="ap-hero__type" data-parallax-layer="3">
             {/* the top-right sky is the only calm zone on this illustration —
                 measured 3.15–3.73:1, so display size only, never body copy */}
             <h1 className="ap-hero__title">
@@ -281,6 +302,10 @@ export default function HomeView() {
           <span className="ap-hero__hint" aria-hidden="true">
             {home.hero.hint}
           </span>
+          {/* LAST IN THE SOURCE so it paints over the type — this is the
+              plane the title passes behind, which is the reference's whole
+              depth cue. Light, not artwork: see the note in globals.css. */}
+          <div className="ap-hero__haze" data-parallax-layer="4" aria-hidden="true" />
         </div>
       </section>
 

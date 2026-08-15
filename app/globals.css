@@ -412,8 +412,7 @@ select {
    blurred into an aurora, with a warm marigold backlight behind the
    painting. Masked out before the bottom strip — the sentence and button
    read on flat indigo, and the field must never creep under them. */
-.ap-hero__stage::before {
-  content: "";
+.ap-hero__field {
   position: absolute;
   inset: -8% -4% 14% -4%;
   background:
@@ -634,7 +633,7 @@ select {
    painting hangs in, so it comes back — wider and dimmer than the plain-
    layer version, reaching the full height instead of stopping short, since
    there is no longer a bottom strip of flat indigo for type to stand on. */
-.ap-hero[data-x] .ap-hero__stage::before {
+.ap-hero[data-x] .ap-hero__field {
   inset: -10% -8%;
   opacity: 0.72;
   /* HEAVIER BLUR THAN THE PLAIN LAYER'S 64px. The field is a ribbon of 57
@@ -647,24 +646,42 @@ select {
      painting would just be a second frame */
   mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
   -webkit-mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
-  /* THE FURTHEST PLANE. --hero-drift is scrubbed on .ap-hero__stage by the
-     hero timeline; the ground travels a few per cent while the painting
-     moves further and the type furthest, which is the whole trick behind
-     the client's parallax reference — three speeds, one scroll. Registered
-     with @property below so it can be tweened as a LENGTH rather than
-     re-parsed as a string on every frame. */
-  translate: 0 var(--hero-drift, 0%);
-}
-@property --hero-drift {
-  syntax: "<percentage>";
-  inherits: true;
-  initial-value: 0%;
 }
 /* NO drop-shadow ON THE PICTURE, deliberately: the scrub tweens `filter`
    (brightness/saturate) on this same element, and GSAP writes the whole
    property — a shadow declared here would be wiped the moment the timeline
    took over, so it would appear at rest and vanish on the first scroll.
    The aurora is the separation instead, which is what it is for. */
+
+/* THE NEAREST PLANE — the haze at the foot of the frame.
+   The client's parallax reference works because its TITLE is sandwiched:
+   a foreground layer travels over the type, and that overlap is what the
+   eye reads as depth rather than as a zoom. This site had nothing in front
+   of the title to do that job — the sun cutout that could have belongs to
+   a different illustration and is correctly dormant — so the front plane
+   is atmosphere rather than a pasted object: her own palette, warmed and
+   heavily blurred, rising off the bottom edge like light in the air of the
+   room the painting hangs in. It is invented as light, not as artwork; no
+   shape of hers is faked. */
+.ap-hero__haze {
+  display: none;
+}
+.ap-hero[data-x] .ap-hero__haze {
+  display: block;
+  position: absolute;
+  inset: auto -10% -22% -10%;
+  height: 58%;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 100% at 50% 100%, color-mix(in srgb, var(--marigold) 34%, transparent), transparent 70%),
+    radial-gradient(90% 82% at 22% 108%, color-mix(in srgb, var(--terracotta) 22%, transparent), transparent 72%),
+    radial-gradient(80% 78% at 82% 112%, color-mix(in srgb, var(--sky) 20%, transparent), transparent 74%);
+  filter: blur(46px);
+  opacity: 0.62;
+  mask-image: linear-gradient(to top, #000 26%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to top, #000 26%, transparent 92%);
+}
 /* The centred film reel lived here — a 46svh portrait card that scaled up to
    take the frame — and it is gone with its markup. The sentence and CTA that
    used to land on its gradient now sit on the dimmed painting instead, which
@@ -1125,7 +1142,8 @@ select {
   }
   /* no aurora on phones: the stage wraps the in-flow type here, so the
      field would glow behind the TEXT — and a 70px blur is battery anyway */
-  .ap-hero__stage::before {
+  .ap-hero__field,
+  .ap-hero__haze {
     display: none;
   }
   .ap-hero__title {
