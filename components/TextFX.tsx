@@ -22,6 +22,44 @@ import { FX_MEDIA, POOL, settle, splitChars, unsplit } from "@/lib/textfx";
 // spans). This runner owns static headings only.
 // ============================================================================
 
+/** One colour stop of a resolved CSS gradient: rgb triple + its position. */
+type Stop = { c: [number, number, number]; p: number };
+
+/** Read `linear-gradient(100deg, rgb(27,43,76) 0%, …)` — the COMPUTED form,
+ *  where every colour is already an rgb()/rgba() triple and every stop
+ *  carries an explicit percentage. Anything that does not match that shape
+ *  (a conic run, a bare `var()`, an image) returns nothing and the caller
+ *  falls back to the clipped path it replaced. */
+function readStops(grad: string): Stop[] {
+  const out: Stop[] = [];
+  const re = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)[^)]*\)\s*(-?[\d.]+)%/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(grad))) {
+    out.push({ c: [+m[1], +m[2], +m[3]], p: +m[4] / 100 });
+  }
+  // stops may be written past 0..1 on purpose (the ink run ends at 108%, so
+  // its terracotta only kisses the tail of a line) — keep them as declared
+  return out.length >= 2 ? out : [];
+}
+
+/** The colour of `stops` at position `t` (0..1 across the line), linear in
+ *  sRGB — the same space the browser interpolates a plain gradient in. */
+function sampleRun(stops: Stop[], t: number): string {
+  const x = Math.min(1, Math.max(0, t));
+  if (x <= stops[0].p) return `rgb(${stops[0].c.join(",")})`;
+  const last = stops[stops.length - 1];
+  if (x >= last.p) return `rgb(${last.c.join(",")})`;
+  for (let i = 1; i < stops.length; i++) {
+    const a = stops[i - 1], b = stops[i];
+    if (x > b.p) continue;
+    const span = b.p - a.p;
+    const f = span > 0 ? (x - a.p) / span : 0;
+    const mix = a.c.map((v, k) => Math.round(v + (b.c[k] - v) * f));
+    return `rgb(${mix.join(",")})`;
+  }
+  return `rgb(${last.c.join(",")})`;
+}
+
 type Build = (
   chars: HTMLElement[],
   at: number,
@@ -266,32 +304,79 @@ export default function TextFX() {
     // hydrated. So every page mounts <TextFX /> as its LAST child, and this
     // effect starts strictly after the headings it will split are React's.
     // Remounting per route also replaces the old pathname rescan.
-    /** THE GRADIENT TRAVELS IN SLICES. A heading whose fill is a clipped
-     *  gradient goes INVISIBLE the moment this runner splits it: GSAP leaves
-     *  a transform on every character span, a transformed element escapes
-     *  its ancestor's background-clip, and a glyph with a transparent fill
-     *  and no background behind it is nothing at all (verified in isolation:
-     *  the escape happens wherever the clip lives, holder or heading).
-     *  So each character carries ITS OWN piece: the heading declares its
-     *  gradient in --tfx-grad, and every char gets that image sized to the
-     *  whole heading and offset to the char's place in it — the transform
-     *  then moves glyph and slice together, and the line reads as one
-     *  gradient whatever the entrance is doing. Re-measured when the display
-     *  font lands: Fraunces reflows the line, and slices cut against the
-     *  fallback metrics would leave every colour a half-glyph off. */
+    /** THE RUN TRAVELS AS FLAT COLOUR PER CHARACTER.
+     *
+     *  A heading whose fill is a clipped gradient goes INVISIBLE the moment
+     *  this runner splits it: GSAP leaves a transform on every character
+     *  span, a transformed element escapes its ancestor's background-clip,
+     *  and a glyph with a transparent fill and no background behind it is
+     *  nothing at all. The first fix gave every character its own COPY of
+     *  the gradient, sized to the heading and offset to that character's
+     *  place in it.
+     *
+     *  THAT FIX HAD A TAIL, and this is the second attempt at it. Chromium
+     *  rasterizes `background-clip: text` unreliably on a span that is
+     *  composited — and these spans are: GSAP leaves at minimum a
+     *  `perspective()` on them and the stylesheet asks for
+     *  `will-change: transform`. The symptom was the FIRST character of a
+     *  title painting as its unclipped slice — a torn cream slab where the
+     *  letter should be — with styles byte-identical to its healthy
+     *  neighbours. Measured across many loads it was intermittent, survived
+     *  clearing the transform after the entrance, and did NOT move when the
+     *  offset was nudged off zero. Chasing the race is the wrong shape of
+     *  fix: the failure lives in the clip itself.
+     *
+     *  So there is no clip any more. Each character is given the run's
+     *  colour AT ITS OWN POSITION as a plain `color`, sampled from the
+     *  heading's declared gradient. The line still walks from one end of
+     *  the run to the other; what it loses is the variation WITHIN a single
+     *  glyph, which at these sizes is a few per cent of one letter and
+     *  which nobody can see — against a torn letter, which everybody can.
+     *  Re-measured when the display font lands: Fraunces reflows the line,
+     *  and colours sampled against fallback metrics would sit a half-glyph
+     *  off. */
     const paintSlices = (el: HTMLElement, chars: HTMLElement[]) => {
-      const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
-      if (!grad) return;
+      // Resolved, not the raw token: a custom property comes back as the
+      // literal `var(--grad-ink)` it was written as, while backgroundImage
+      // has already been computed down to rgb() stops we can read.
+      const cs = getComputedStyle(el);
+      const grad = cs.backgroundImage && cs.backgroundImage !== "none"
+        ? cs.backgroundImage
+        : cs.getPropertyValue("--tfx-grad").trim();
+      if (!grad || grad === "none") return;
       const er = el.getBoundingClientRect();
       if (!er.width) return;
+
+      const stops = readStops(grad);
       for (const c of chars) {
         const cr = c.getBoundingClientRect();
-        c.style.backgroundImage = grad;
-        c.style.backgroundSize = `${er.width}px ${er.height}px`;
-        c.style.backgroundPosition = `${er.left - cr.left}px ${er.top - cr.top}px`;
-        c.style.webkitBackgroundClip = "text";
-        c.style.backgroundClip = "text";
-        c.style.webkitTextFillColor = "transparent";
+        if (stops.length >= 2) {
+          // FLAT COLOUR, SAMPLED — see the note above on why this is not a
+          // clipped gradient. The sample point is the glyph's own centre
+          // along the line, so consecutive letters step through the same
+          // run the heading declares.
+          const t = er.width > 0 ? (cr.left + cr.width / 2 - er.left) / er.width : 0;
+          c.style.color = sampleRun(stops, t);
+          // EXPLICIT, not cleared. `-webkit-text-fill-color` INHERITS, and
+          // the heading itself is still `transparent` (it declares the run
+          // for the plain, unsplit layer). Clearing these to "" let that
+          // transparent cascade in: every glyph vanished and the heading's
+          // own unclipped background showed through as a row of filled
+          // blocks — measured, on the first pass of this change.
+          c.style.backgroundImage = "none";
+          c.style.webkitBackgroundClip = "border-box";
+          c.style.backgroundClip = "border-box";
+          c.style.webkitTextFillColor = "currentColor";
+        } else {
+          // an unreadable run keeps the old behaviour rather than losing the
+          // heading's colour entirely
+          c.style.backgroundImage = grad;
+          c.style.backgroundSize = `${er.width}px ${er.height}px`;
+          c.style.backgroundPosition = `${er.left - cr.left}px ${er.top - cr.top}px`;
+          c.style.webkitBackgroundClip = "text";
+          c.style.backgroundClip = "text";
+          c.style.webkitTextFillColor = "transparent";
+        }
       }
     };
 
@@ -330,9 +415,34 @@ export default function TextFX() {
          *  simply the rule: will-change only while animating. Re-cutting
          *  the slices here doubles as the webfont fix — by the time an
          *  entrance has finished, Fraunces has long landed. */
+        let landed = false;
+        let land = 0;
         const finish = () => {
-          gsap.set(chars, { clearProps: "transform" });
-          for (const c of chars) c.style.willChange = "auto";
+          if (landed) return;
+          landed = true;
+          // KILL FIRST. `onComplete` is not a guarantee: measured on the
+          // shop and gallery headings, characters were still being written
+          // every frame long after the entrance should have ended — the
+          // first letter left foreshortened by its rotation, 42x46 where
+          // its neighbours were 38x63, with the second letter sitting on
+          // top of it. That is the "letters running into each other", and
+          // it is also why the clipped fill kept tearing: a span that never
+          // stops animating never stops being composited. Killing the
+          // tweens makes the resting state final rather than hoped for.
+          // EVERY SPAN THE EFFECT MADE, not just `chars`. `cut` clones each
+          // character into a second, absolutely-positioned half and animates
+          // both; `write` adds a caret. Those clones are not in `chars`, so
+          // settling only `chars` left the bottom halves stranded mid-slide
+          // — the ghost "OURN" lying across A JOURNEY THROUGH ARMENIA.
+          const spans = [
+            ...chars,
+            ...Array.from(el.querySelectorAll<HTMLElement>(".tfx-cut, .tfx-caret")),
+          ];
+          gsap.killTweensOf(spans);
+          gsap.set(spans, { clearProps: "transform,opacity,visibility,clipPath" });
+          // the caret is scaffolding: once the writing has landed it goes
+          el.querySelectorAll(".tfx-caret").forEach((n) => n.remove());
+          for (const c of spans) c.style.willChange = "auto";
           paintSlices(el, chars);
         };
         tl.eventCallback("onComplete", finish);
@@ -340,9 +450,16 @@ export default function TextFX() {
           trigger: el,
           start: "top 88%",
           once: true,
-          onEnter: () => tl.play(),
+          onEnter: () => {
+            tl.play();
+            // BELT AND BRACES, on the timeline's own clock: its full length
+            // plus a beat. If onComplete fires first this is a no-op; if it
+            // never fires, the heading still lands.
+            land = window.setTimeout(finish, (tl.duration() + 0.45) * 1000);
+          },
         });
         cleanups.push(() => {
+          if (land) window.clearTimeout(land);
           st.kill();
           tl.kill();
           settle(chars);
@@ -354,22 +471,18 @@ export default function TextFX() {
         // re-cut at the end anyway; already finished, re-cut now; not yet
         // played, the chars sit translated at their set() offsets, so cut
         // against their MASKS — the mask box is the char's resting box.
+        // ONE PAINTER, NOT TWO. This used to re-cut the slices by hand here,
+        // with its own copy of the offset maths — and when paintSlices moved
+        // off clipped gradients that copy stayed behind, quietly writing the
+        // old background back over every character the moment the font
+        // landed. The result was a heading of filled blocks: colour from the
+        // new path, background from the dead one. It calls paintSlices now,
+        // like everything else, so there is exactly one place that decides
+        // how a character is painted.
         document.fonts?.ready.then(() => {
           if (!el.isConnected || !el.dataset.tfxDone) return;
           if (tl.progress() >= 1) finish();
-          else if (tl.progress() === 0 && !tl.isActive()) {
-            const er = el.getBoundingClientRect();
-            const grad = getComputedStyle(el).getPropertyValue("--tfx-grad").trim();
-            if (!grad || !er.width) return;
-            for (const c of chars) {
-              const m = c.parentElement;
-              if (!m) continue;
-              const mr = m.getBoundingClientRect();
-              c.style.backgroundImage = grad;
-              c.style.backgroundSize = `${er.width}px ${er.height}px`;
-              c.style.backgroundPosition = `${er.left - mr.left}px ${er.top - mr.top}px`;
-            }
-          }
+          else paintSlices(el, chars);
         });
       });
     };
