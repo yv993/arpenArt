@@ -31,13 +31,14 @@
    =========================================================================== */
 
 :root {
-  --paper: #fcf2e6;
-  --paper-2: #fbecd9;
-  --paper-3: #f3e0c8;
+  color-scheme: light dark;
 
-  --ink: #232834;
-  --ink-indigo: #1b2b4c;
-  --ink-muted: #5e6371;
+  /* --- PIGMENTS -----------------------------------------------------------
+     Her measured colours, plus the cream that sets type on any dark band.
+     These NEVER change between themes — paint does not become a different
+     colour after sunset. (--cream holds exactly what --paper used to, which
+     is why splitting it off left the light site pixel-identical.) */
+  --cream: #fcf2e6;
 
   --marigold: #efab23;
   --terracotta: #d1622d;
@@ -45,9 +46,30 @@
   --sky: #568fc3;
   --olive: #91a33a;
 
-  /* darkened so they clear 4.5:1 on --paper — do not use on tinted surfaces */
+  /* --- DARK BANDS ---------------------------------------------------------
+     Sections that are dark by design in BOTH themes — the hero's ground, the
+     gallery, the cart's plate. They still lift a step at night, because a
+     band the same value as the page it sits on stops being a band. */
+  --ink-solid: #232834;
+  --ink-indigo: #1b2b4c;
+
+  /* --- ROLES --------------------------------------------------------------
+     Which pigment is doing which JOB on the current ground. Everything below
+     flips in the night block at the foot of this file. */
+  --paper: #fcf2e6;
+  --paper-2: #fbecd9;
+  --paper-3: #f3e0c8;
+
+  --ink: #232834;
+  --ink-muted: #5e6371;
+
+  /* An accent that has to carry TEXT. Darkened here so they clear 4.5:1 on
+     --paper — do not use on tinted surfaces. At night these invert: the
+     accents that fail on paper are the ones that pass on a dark ground, and
+     marigold ends up carrying text as painted. */
   --marigold-ink: #9b6400;
   --terracotta-ink: #b84d19;
+  --indigo-ink: #374897;
 
   --gutter: clamp(18px, 4.6vw, 76px);
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -68,9 +90,12 @@
     var(--indigo) 58%,
     var(--terracotta-ink) 108%
   );
+  /* --cream, NOT --paper: this run exists to set display type on a dark band,
+     and --paper is a role that goes dark at night — which would have made the
+     run start dark-on-dark exactly where it is needed most. */
   --grad-paper: linear-gradient(
     100deg,
-    var(--paper) 12%,
+    var(--cream) 12%,
     #fbd98a 68%,
     var(--marigold) 105%
   );
@@ -87,6 +112,95 @@
   --font-body: var(--f-body), "Segoe UI", system-ui, sans-serif;
   /* geometric sans for section titles — the client's reference register */
   --font-ui: var(--f-ui), "Segoe UI", system-ui, sans-serif;
+
+  /* --- THE NIGHT VALUES ---------------------------------------------------
+     Defined once here, assigned in the two blocks below (a media query cannot
+     be shared with an attribute selector, but the VALUES can be).
+
+     DERIVED, NOT PICKED — scratchpad/darkpalette.mjs holds the working. Each
+     one is her own colour taken to Lab, held at its hue angle and re-lit,
+     exactly how --paper was derived; the grounds also pull their chroma back
+     a little, because at full chroma a whole page of her indigo reads as a
+     blue wash rather than as a ground. Then every pair was measured:
+
+       body        #f1e7db   13.40:1 on the page, 9.50:1 on the lightest card
+       muted       #8da4bf    6.39:1 / 4.53:1
+       indigo-ink  #949af4    6.38:1 / 4.52:1   (her indigo, re-lit to L*66.5)
+       terracotta  #f6814a    6.36:1 / 4.51:1
+       marigold    #efab23    8.20:1 / 5.81:1   — RAW, and that is the point:
+     the accent that has to be darkened to #9b6400 to carry a label on paper
+     carries one at night exactly as she painted it. Sky stays large-type only
+     (3.38:1 on a card), same as it is on paper. */
+  --n-paper: #131f39;
+  --n-paper-2: #1e2a47;
+  --n-paper-3: #2c3857;
+  --n-ink: #f1e7db;
+  --n-ink-muted: #8da4bf;
+  --n-marigold-ink: #efab23;
+  --n-terracotta-ink: #f6814a;
+  --n-indigo-ink: #949af4;
+  /* the always-dark bands, lifted clear of the night page */
+  --n-ink-solid: #2b3141;
+  --n-ink-indigo: #26365b;
+  /* Display type on the night page. This is the whole reason the light run
+     did not simply get inverted: --grad-ink is also what the text-FX runner
+     reads (--tfx-grad), so re-pointing this one token re-cuts every
+     per-character slice too, and the titles keep their run through the
+     animation instead of falling back to a flat fill. */
+  --n-grad-ink: linear-gradient(100deg, var(--cream) 6%, #fbd98a 62%, var(--marigold) 104%);
+  --n-page-wash: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--sky) 13%, var(--n-paper)) 0%,
+    var(--n-paper) 420px
+  );
+}
+
+/* ===========================================================================
+   NIGHT
+   The same palette after dark. Nothing is inverted — the arithmetic is: on
+   paper no accent of hers can carry body text, and on a dark ground the
+   accents are the ones that pass. So the *-ink tokens (an accent that must
+   read as TEXT) swap from darkened to lit, and everything already written
+   against them follows without a single component knowing about the theme.
+
+   Two blocks, one set of values: the media query answers the operating
+   system, the attribute answers the toggle in the nav, and `:not([data-theme])`
+   keeps an explicit "light" choice winning over a dark OS.
+   =========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: var(--n-paper);
+    --paper-2: var(--n-paper-2);
+    --paper-3: var(--n-paper-3);
+    --ink: var(--n-ink);
+    --ink-muted: var(--n-ink-muted);
+    --marigold-ink: var(--n-marigold-ink);
+    --terracotta-ink: var(--n-terracotta-ink);
+    --indigo-ink: var(--n-indigo-ink);
+    --ink-solid: var(--n-ink-solid);
+    --ink-indigo: var(--n-ink-indigo);
+    --grad-ink: var(--n-grad-ink);
+    --page-wash: var(--n-page-wash);
+  }
+}
+/* so the browser's own furniture — scrollbars, form controls, the flash
+   between paint and stylesheet — follows the CHOICE, not just the OS */
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+:root[data-theme="dark"] {
+  --paper: var(--n-paper);
+  --paper-2: var(--n-paper-2);
+  --paper-3: var(--n-paper-3);
+  --ink: var(--n-ink);
+  --ink-muted: var(--n-ink-muted);
+  --marigold-ink: var(--n-marigold-ink);
+  --terracotta-ink: var(--n-terracotta-ink);
+  --indigo-ink: var(--n-indigo-ink);
+  --ink-solid: var(--n-ink-solid);
+  --ink-indigo: var(--n-ink-indigo);
+  --grad-ink: var(--n-grad-ink);
+  --page-wash: var(--n-page-wash);
 }
 
 *,
@@ -202,7 +316,7 @@ select {
   border-radius: 3px;
 }
 :where(.ap-dark) :where(a, button, [tabindex]):focus-visible {
-  outline-color: var(--paper);
+  outline-color: var(--cream);
 }
 
 .ap-sr {
@@ -220,8 +334,8 @@ select {
   left: -9999px;
   top: 0;
   z-index: 999;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
   padding: 12px 18px;
 }
 .ap-skip:focus {
@@ -347,7 +461,7 @@ select {
      paper text passes on all of them. The colour beneath stays as the
      fallback for engines that drop the image. */
   background: var(--indigo) linear-gradient(135deg, #4356b0 0%, var(--indigo) 52%, var(--ink-indigo) 125%);
-  color: var(--paper);
+  color: var(--cream);
   font-size: 12.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -363,7 +477,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
 .ap-btn.is-ghost:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 8%, transparent);
 }
 .ap-btn[disabled] {
   opacity: 0.5;
@@ -542,7 +656,7 @@ select {
   line-height: 1.18;
   letter-spacing: 0.01em;
   text-align: left;
-  color: var(--paper);
+  color: var(--cream);
   /* THE RIM IS GONE (client 2026-08-11: "remove border from text its not
      nice"). It was a 0.05em ink stroke painted behind the fill, and at that
      weight it read as an outline drawn round the letters rather than as
@@ -582,7 +696,7 @@ select {
   display: block;
 }
 .ap-hero__card {
-  color: var(--paper);
+  color: var(--cream);
   max-width: 42ch;
   display: grid;
   gap: 16px;
@@ -593,7 +707,7 @@ select {
   position: absolute;
   left: var(--gutter);
   bottom: clamp(22px, 4vh, 44px);
-  color: var(--paper);
+  color: var(--cream);
   font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
@@ -787,10 +901,10 @@ select {
      left, and the band settling darker toward its foot */
   background: var(--ink-indigo);
   background-image: var(--night-wash);
-  color: var(--paper);
+  color: var(--cream);
 }
 .ap-sec--gal .ap-kicker {
-  color: color-mix(in srgb, var(--paper) 70%, transparent);
+  color: color-mix(in srgb, var(--cream) 70%, transparent);
 }
 
 /* --- gallery ------------------------------------------------------------ */
@@ -819,21 +933,21 @@ select {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(1.3rem, 2.2vw, 1.9rem);
-  color: var(--paper);
+  color: var(--cream);
 }
 .ap-gal__line {
   margin: 0;
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--paper) 84%, transparent);
+  color: color-mix(in srgb, var(--cream) 84%, transparent);
 }
 .ap-gal__blurb {
   margin: 0;
   max-width: 30ch;
   font-size: 13.5px;
   line-height: 1.55;
-  color: color-mix(in srgb, var(--paper) 78%, transparent);
+  color: color-mix(in srgb, var(--cream) 78%, transparent);
 }
 .ap-gal__buy {
   margin-top: 6px;
@@ -846,7 +960,7 @@ select {
   margin: 8px 0 0;
   font-size: 11.5px;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--paper) 62%, transparent);
+  color: color-mix(in srgb, var(--cream) 62%, transparent);
 }
 /* wide screens: the picked picture stands ~70% of the view tall, left of
    centre, and this panel reads BESIDE it like a museum label */
@@ -878,13 +992,13 @@ select {
   height: 42px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
-  color: var(--paper);
+  color: var(--cream);
   font-size: 15px;
   line-height: 1;
-  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 30%, transparent);
 }
 .ap-gal__close:hover {
-  border-color: var(--paper);
+  border-color: var(--cream);
 }
 .ap-gal__canvas {
   height: clamp(420px, 74vh, 780px);
@@ -1103,7 +1217,7 @@ select {
   font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--indigo);
+  color: var(--indigo-ink);
   border-bottom: 1px solid currentColor;
   padding-bottom: 2px;
 }
@@ -1210,13 +1324,13 @@ select {
   width: min(210px, 42vw);
   height: 1px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 12%, transparent);
 }
 .ap-load__track i {
   display: block;
   width: 42%;
   height: 1px;
-  background: var(--ink);
+  background: var(--ink-solid);
   /* INDETERMINATE — see the note in app/loading.tsx. It sweeps because there
      is no progress number to draw; a width tied to a percentage would be a
      number this component cannot know. */

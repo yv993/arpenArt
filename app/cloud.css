@@ -23,8 +23,8 @@
    ========================================================================== */
 
 .ap-cloud {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
 }
 
 /* --------------------------------------------------------------------------
@@ -164,8 +164,8 @@
   max-width: calc(100% - 16px);
   padding: 6px 10px;
   border-radius: 3px;
-  background: color-mix(in srgb, var(--ink) 88%, transparent);
-  color: var(--paper);
+  background: color-mix(in srgb, var(--ink-solid) 88%, transparent);
+  color: var(--cream);
   font-size: 11.5px;
   letter-spacing: 0.08em;
   line-height: 1.4;
@@ -242,7 +242,7 @@
     background:
       linear-gradient(
         to right,
-        color-mix(in srgb, var(--ink) 76%, transparent) 0%,
+        color-mix(in srgb, var(--ink-solid) 76%, transparent) 0%,
         color-mix(in srgb, var(--ink) 40%, transparent) 22%,
         transparent 46%
       ),
@@ -265,10 +265,10 @@
   /* .ap-dark only fixes focus rings — every dark band sets its own type
      colours, and --ink-muted on --ink is 1.5:1. */
   .ap-cloud .ap-kicker {
-    color: color-mix(in srgb, var(--paper) 74%, transparent);
+    color: color-mix(in srgb, var(--cream) 74%, transparent);
   }
   .ap-cloud .ap-lede {
-    color: color-mix(in srgb, var(--paper) 88%, transparent);
+    color: color-mix(in srgb, var(--cream) 88%, transparent);
   }
 
   /* THE element that travels — and only a DRAG travels it now; the section
@@ -365,7 +365,7 @@
     width: min(340px, 34vw);
     display: grid;
     gap: 7px;
-    color: var(--paper);
+    color: var(--cream);
     animation: ap-cloud-say 0.4s var(--ease) both;
   }
   .ap-cloud__no {
@@ -380,13 +380,13 @@
     font-size: 11px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--paper) 72%, transparent);
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
   }
   .ap-cloud__body {
     margin: 4px 0 0;
     font-size: 13.5px;
     line-height: 1.55;
-    color: color-mix(in srgb, var(--paper) 80%, transparent);
+    color: color-mix(in srgb, var(--cream) 80%, transparent);
   }
   .ap-cloud__go {
     margin-top: 10px;
@@ -400,14 +400,14 @@
     height: 38px;
     border-radius: 50%;
     border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
-    background: color-mix(in srgb, var(--ink) 55%, transparent);
+    background: color-mix(in srgb, var(--ink-solid) 55%, transparent);
     backdrop-filter: blur(6px);
-    color: var(--paper);
+    color: var(--cream);
     font-size: 15px;
     cursor: pointer;
   }
   .ap-cloud__close:hover {
-    background: color-mix(in srgb, var(--ink) 78%, transparent);
+    background: color-mix(in srgb, var(--ink-solid) 78%, transparent);
   }
   /* Front · Back · Printed — the faces of the chosen picture */
   .ap-cloud__views {
@@ -420,7 +420,7 @@
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
     background: none;
-    color: color-mix(in srgb, var(--paper) 78%, transparent);
+    color: color-mix(in srgb, var(--cream) 78%, transparent);
     font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -428,12 +428,12 @@
     transition: background 0.25s ease, color 0.25s ease;
   }
   .ap-cloud__views button:hover {
-    color: var(--paper);
+    color: var(--cream);
   }
   .ap-cloud__views button[aria-pressed="true"] {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--paper);
+    border-color: var(--cream);
   }
   /* the price and the buy row — a card can be bought from the cloud itself */
   .ap-cloud__price {
@@ -448,7 +448,7 @@
     letter-spacing: 0;
   }
   .ap-cloud__price span {
-    color: color-mix(in srgb, var(--paper) 66%, transparent);
+    color: color-mix(in srgb, var(--cream) 66%, transparent);
   }
   .ap-cloud__buy {
     display: flex;
@@ -470,7 +470,7 @@
     margin-top: 2px;
     font-size: 12px;
     letter-spacing: 0.14em;
-    color: color-mix(in srgb, var(--paper) 72%, transparent);
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
   }
   .ap-cloud__nav button {
     width: 34px;
@@ -478,13 +478,13 @@
     border-radius: 50%;
     border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
     background: none;
-    color: var(--paper);
+    color: var(--cream);
     font-size: 14px;
     cursor: pointer;
     transition: background 0.25s ease;
   }
   .ap-cloud__nav button:hover {
-    background: color-mix(in srgb, var(--ink) 60%, transparent);
+    background: color-mix(in srgb, var(--ink-solid) 60%, transparent);
   }
   /* Arpine's notes run to three sentences — never let a long one push the
      CTA off screen */

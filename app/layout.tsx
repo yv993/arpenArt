@@ -74,9 +74,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // between the server render and hydration. The stylesheet gates its pinned
   // sections on `@media (scripting: enabled)` instead, which costs nothing and
   // fails in the safe direction — no scripting, no pin, plain vertical page.
+  //
+  // THE THEME SCRIPT IS THE ONE EXCEPTION, and it is a different shape. It
+  // writes an ATTRIBUTE (data-theme) that React never renders, rather than
+  // mutating the className React owns — which is exactly what made the `js`
+  // class a hydration mismatch. It runs before the first paint, so a visitor
+  // who chose the night theme never sees a cream flash on the way in, and it
+  // is a no-op for everyone else: with nothing stored, the OS answers through
+  // `prefers-color-scheme` in CSS alone. suppressHydrationWarning covers the
+  // attribute the server could not have known about.
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${ui.variable}`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable} ${ui.variable}`}
+      suppressHydrationWarning
+    >
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('ap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}",
+          }}
+        />
         <a className="ap-skip" href="#main">
           Skip to content
         </a>

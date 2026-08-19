@@ -101,7 +101,7 @@
     display: block;
     height: 100vh;
     overflow: hidden;
-    background: var(--ink);
+    background: var(--ink-solid);
   }
   /* Every layer is the whole frame. Scaling the LAYER (not the photograph)
      is what sends all seven tiles outward from one shared centre. */
@@ -136,7 +136,7 @@
     bottom: clamp(28px, 5vh, 62px);
     margin: 0;
     text-align: center;
-    color: var(--paper);
+    color: var(--cream);
     font-size: 12px;
     letter-spacing: 0.24em;
     text-transform: uppercase;

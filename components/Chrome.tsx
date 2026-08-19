@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { brand, nav } from "@/lib/content";
 import { count, read, subscribe } from "@/lib/cart";
+import ThemeToggle from "./ThemeToggle";
 
 // Fixed chrome: wordmark left, sections right, cart count. The count is read
 // only after mount so the server HTML and the hydrated tree agree.
@@ -76,6 +77,7 @@ export default function Chrome() {
         {/* ICON, NOT A WORD. The bar's link row is already at its width on a
             1024px laptop, and a fifth label pushed the cart badge into the
             wordmark. The accessible name carries the meaning. */}
+        <ThemeToggle />
         <Link className="ap-nav__acct" href="/account" aria-label="Your account" title="Your account">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
             <circle cx="12" cy="8" r="3.6" />

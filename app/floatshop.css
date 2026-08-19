@@ -257,8 +257,8 @@
   min-height: 34px;
 }
 .ap-fs[data-live] .ap-fs__pill button[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
 }
 
 /* --------------------------------------------------------------------------

@@ -13,8 +13,8 @@
    ========================================================================== */
 
 .ap-mh {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
 }
 
 /* --------------------------------------------------------------------------
@@ -94,7 +94,7 @@
 .ap-mh__copy {
   margin: 0;
   max-width: 46ch;
-  color: color-mix(in srgb, var(--paper) 86%, transparent);
+  color: color-mix(in srgb, var(--cream) 86%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -160,7 +160,7 @@
     font-size: 7.5px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--paper) 66%, transparent);
+    color: color-mix(in srgb, var(--cream) 66%, transparent);
   }
 
   /* intro line inside the ring — GSAP fades it in and the morph fades it out */
@@ -187,7 +187,7 @@
     font-size: 11px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--paper) 62%, transparent);
+    color: color-mix(in srgb, var(--cream) 62%, transparent);
   }
 
   /* the content that arrives with the arc — top of frame, like the original */

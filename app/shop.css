@@ -125,6 +125,60 @@
   height: 34px;
   width: auto;
 }
+/* The light/night switch. Sized and coloured like the account icon beside it
+   so the bar reads as one row of controls rather than a nav with a widget
+   bolted on; `currentColor` means it inherits whatever the bar's type is
+   doing, in either theme, with no rule of its own. */
+.ap-nav__theme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  /* a 15px icon is not a tap target */
+  min-width: 34px;
+  min-height: 34px;
+  margin-block: -8px;
+  opacity: 0.82;
+  transition: opacity 0.2s var(--ease);
+}
+.ap-nav__theme:hover,
+.ap-nav__theme:focus-visible {
+  opacity: 1;
+}
+.ap-nav__theme svg circle,
+.ap-nav__theme svg g {
+  transition:
+    r 0.3s var(--ease),
+    cx 0.3s var(--ease),
+    cy 0.3s var(--ease),
+    opacity 0.25s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-nav__theme svg circle,
+  .ap-nav__theme svg g {
+    transition: none;
+  }
+}
+
+/* HER MARK AT NIGHT. The lockup is monochrome ink (measured: rgb 18,19,18) on
+   transparent, so on the night bar it went to near-invisible — a dark drawing
+   on a dark pane. `content:` swaps the replaced image itself, which keeps the
+   single <img>, its alt text and its dimensions exactly as they are; the night
+   file is the same artwork with only its INK recoloured to --n-ink, alpha
+   untouched, so every curve keeps its own edge. Recolouring is fair here in a
+   way it never is for the stockists' logos: this mark is hers. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ap-nav__mark img {
+    content: url("/brand/arpenart-lockup-night.png");
+  }
+}
+:root[data-theme="dark"] .ap-nav__mark img {
+  content: url("/brand/arpenart-lockup-night.png");
+}
 @media (max-width: 860px) {
   /* phones may go larger for free: the 44px burger already sets the floor */
   .ap-nav__mark img {
@@ -143,7 +197,7 @@
   position: relative;
 }
 .ap-nav__links a:hover {
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 /* the underline DRAWS, left to right, instead of appearing — and stays for
    keyboard focus, where it doubles as the ring's baseline */
@@ -183,7 +237,7 @@
   transition: color 0.2s var(--ease);
 }
 .ap-nav__acct:hover {
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 .ap-nav__n {
   min-width: 22px;
@@ -192,13 +246,13 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 12%, transparent);
   font-size: 11px;
   letter-spacing: 0;
 }
 .ap-nav__n[data-has] {
   background: var(--terracotta-ink);
-  color: var(--paper);
+  color: var(--cream);
 }
 .ap-nav__burger {
   display: none;
@@ -502,7 +556,7 @@
   padding-bottom: clamp(24px, 5vh, 54px);
 }
 .ap-cart[data-plate] .ap-sec__head .ap-kicker {
-  color: color-mix(in srgb, var(--paper) 78%, transparent);
+  color: color-mix(in srgb, var(--cream) 78%, transparent);
 }
 .ap-cart[data-plate] .ap-sec__head .ap-h2 {
   /* cream, not white — the live page's word is warm against a night sky, and
@@ -548,7 +602,7 @@
   margin-bottom: clamp(20px, 4vh, 42px);
 }
 .ap-crumb a:hover {
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 .ap-cv {
   padding-left: 0;
@@ -682,7 +736,7 @@
   outline-offset: 2px;
 }
 .ap-cv__thumbs button.on {
-  outline-color: var(--indigo);
+  outline-color: var(--indigo-ink);
 }
 .ap-cv__thumbs img {
   width: 100%;
@@ -798,9 +852,9 @@
 /* filled, not outlined: an outline ring reads as focus on a text chip,
    while ink-on-paper inversion is unmistakably "chosen" */
 .ap-var__row button.on {
-  background: var(--ink);
+  background: var(--ink-solid);
   border-color: var(--ink);
-  color: var(--paper);
+  color: var(--cream);
 }
 
 /* the three-step "how ordering works" strip — one pattern shared between the
@@ -1148,7 +1202,7 @@
 }
 .ap-contact__ok {
   font-size: 0.95em;
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 .ap-contact__warn {
   font-size: 0.95em;
@@ -1219,7 +1273,7 @@
   font-size: 10.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--paper) 72%, transparent);
+  color: color-mix(in srgb, var(--cream) 72%, transparent);
   pointer-events: none;
 }
 /* The town label that rides with each pin. It sits on a chip because the
@@ -1237,7 +1291,7 @@
   font-size: 9.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--paper);
+  color: var(--cream);
   /* the chip is a real button now — the town's name is the map's biggest
      target, and a label that looks pressable and is not reads as broken.
      Its WRAPPER stays pointer-events: none in the component, so only this
@@ -1274,7 +1328,7 @@
   border-color: color-mix(in srgb, var(--ink) 34%, transparent);
 }
 .ap-map__town[data-on] {
-  border-color: var(--indigo);
+  border-color: var(--indigo-ink);
   box-shadow: inset 3px 0 0 var(--indigo);
 }
 /* DIRECT child only. The street-map toggle is a <button> nested deeper in
@@ -1372,7 +1426,7 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--indigo);
+  color: var(--indigo-ink);
   border: 1px solid color-mix(in srgb, var(--indigo) 34%, transparent);
   border-radius: 999px;
   padding: 2px 8px;
@@ -1428,7 +1482,7 @@
 /* Two of these marks are DRAWN FOR A DARK GROUND. They are not recoloured —
    that would be editing somebody else's brand — so the chip changes instead. */
 .ap-stk__logo[data-dark] {
-  background: var(--ink);
+  background: var(--ink-solid);
   border-color: color-mix(in srgb, var(--ink) 40%, transparent);
 }
 /* THE FALLBACK IS A DESIGN, NOT A BROKEN IMAGE. Until a logo file lands the
@@ -1438,7 +1492,7 @@
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 .ap-stk__name {
   margin: 0;
@@ -1552,7 +1606,7 @@
   font-variant-numeric: tabular-nums;
 }
 .ap-map__km[data-near] {
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 .ap-map__km i {
   font-style: normal;
@@ -1656,7 +1710,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--ink) 45%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 45%, transparent);
   animation: ap-mlm-pulse 1.1s ease-in-out infinite;
 }
 .ap-mlm__dots i:nth-child(2) {
@@ -1728,8 +1782,8 @@
 .ap-mlm__tip {
   pointer-events: none;
   border-radius: 5px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
   padding: 5px 9px;
   font-size: 11.5px;
   line-height: 1.35;
@@ -1743,7 +1797,7 @@
   font-weight: 600;
 }
 .ap-mlm__tip span {
-  color: color-mix(in srgb, var(--paper) 68%, transparent);
+  color: color-mix(in srgb, var(--cream) 68%, transparent);
   font-size: 10.5px;
 }
 
@@ -1882,7 +1936,7 @@
 }
 .ap-loc__btn--home {
   margin-top: 3px;
-  color: var(--indigo);
+  color: var(--indigo-ink);
 }
 
 .ap-loc[data-open] .ap-loc__grid {
@@ -1912,7 +1966,7 @@
   gap: 10px;
 }
 .ap-loc__icon {
-  color: var(--indigo);
+  color: var(--indigo-ink);
   transition: opacity 0.3s var(--ease);
 }
 .ap-loc[data-open] .ap-loc__icon {
@@ -1924,7 +1978,7 @@
   gap: 5px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 6%, transparent);
   color: var(--ink-muted);
   font-size: 9.5px;
   letter-spacing: 0.14em;
@@ -1932,7 +1986,7 @@
   transition: background 0.24s var(--ease);
 }
 .ap-loc:hover .ap-loc__chip {
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 10%, transparent);
 }
 .ap-loc__chip i {
   width: 5px;
@@ -2071,7 +2125,7 @@
 .ap-xg__veil {
   position: absolute;
   inset: 0;
-  background: var(--ink);
+  background: var(--ink-solid);
   pointer-events: none;
 }
 /* the name sits on its own gradient so it never depends on the photograph
@@ -2082,7 +2136,7 @@
   display: grid;
   gap: 4px;
   padding: 14px 14px 16px;
-  color: var(--paper);
+  color: var(--cream);
   background: linear-gradient(to top, rgba(21, 27, 45, 0.82), rgba(21, 27, 45, 0.45) 55%, transparent);
 }
 .ap-xg__say strong {
@@ -2096,7 +2150,7 @@
   font-size: 11.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--paper) 86%, transparent);
+  color: color-mix(in srgb, var(--cream) 86%, transparent);
 }
 /* the sentence is the reward for expanding a panel — a collapsed one is far
    too narrow to read it in */
@@ -2132,10 +2186,10 @@
   place-items: center;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
-  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 42%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  color: var(--paper);
+  color: var(--cream);
   opacity: 0;
   transition: opacity 0.3s var(--ease);
 }
@@ -2148,7 +2202,7 @@
   opacity: 1;
 }
 .ap-xg__zoom:hover {
-  background: color-mix(in srgb, var(--ink) 68%, transparent);
+  background: color-mix(in srgb, var(--ink-solid) 68%, transparent);
 }
 
 /* ---- the photograph viewer -------------------------------------------- */
@@ -2195,7 +2249,7 @@
   position: absolute;
   display: grid;
   place-items: center;
-  color: var(--paper);
+  color: var(--cream);
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
   width: 46px;
@@ -2204,7 +2258,7 @@
 }
 .ap-xg__x:hover,
 .ap-xg__nav:hover {
-  border-color: var(--paper);
+  border-color: var(--cream);
 }
 .ap-xg__x {
   top: clamp(14px, 3vh, 30px);
@@ -2230,7 +2284,7 @@
   font-size: 12px;
   letter-spacing: 0.18em;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--paper) 80%, transparent);
+  color: color-mix(in srgb, var(--cream) 80%, transparent);
 }
 /* the strip carries every category name, price and link, so the grid beneath
    is a duplicate while it runs */
@@ -2310,8 +2364,8 @@
   translate: -50% 0;
   padding: 3px 9px;
   border-radius: 6px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--ink-solid);
+  color: var(--cream);
   font-family: var(--font-ui);
   font-size: 10.5px;
   letter-spacing: 0.1em;
@@ -2359,7 +2413,7 @@
   /* the same night air as the gallery band, so the two dark rooms of the
      site agree on their light */
   background-image: var(--night-wash);
-  color: var(--paper);
+  color: var(--cream);
   padding: clamp(60px, 9vh, 110px) var(--gutter) 34px;
 }
 /* the grid moved onto the inner wrapper so the reveal can parallax the

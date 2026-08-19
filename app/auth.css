@@ -89,7 +89,7 @@
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--indigo);
+  color: var(--indigo-ink);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
