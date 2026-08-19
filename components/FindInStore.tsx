@@ -9,33 +9,36 @@ import MapBoundary from "./MapBoundary";
 // pull maplibre-gl and its stylesheet out of the dynamic chunk and into the
 // bundle every visitor downloads.
 import type { StreetApi, StreetState } from "./TownStreet";
-import { categories, stockistPage, type Stockist } from "@/lib/content";
+import { categories, stockistPage, type Stockist, type Town } from "@/lib/content";
 
 // ============================================================================
 // FIND IN STORE — the map is in ArmeniaMap.tsx; this holds the selection and
-// the list, which is the page's real content: a town, the shop that carries
-// the work there, its street address, and the way to it.
+// the directory, which is the page's real content: a town, the shops that
+// carry the work there, their addresses, and the way to each door.
 //
-// A town with no confirmed shop says so and offers nothing to travel to.
+// IT IS A DIRECTORY NOW, not a row per town. Arpine's real list (2026-08-18)
+// put three shops on one street in Yerevan and three more in Dilijan, so the
+// town became a HEADING over its own list and the shop became the leaf. Every
+// entry is confirmed — the stand-in addresses, and all the machinery that
+// warned people off travelling to them, are gone.
 //
 // TWO MAPS, at two scales, answering two questions:
-//   ArmeniaMap   the country. Which six towns, and where they sit.
-//   TownStreet   a REAL street map, shown inside the town's LocationCard.
+//   ArmeniaMap   the country. Which towns, and where they sit.
+//   TownStreet   a REAL street map, shown inside a SHOP's LocationCard.
 // There was briefly a third — LocationCard drew its own invented street grid
 // when it opened — and it is gone. A true map and a made-up one at the same
 // scale, told apart only by 10px of caption, is the sort of thing this site
 // does not do. LocationCard is now the frame the real map arrives in, so
-// there is ONE card and ONE control per town.
+// there is ONE card and ONE control per shop.
 //
 // The outbound OSM link is the plain layer's whole answer, and it is not
-// gated on the engine. Where it POINTS is gated on confirmation, though —
-// see the note at the link itself.
+// gated on the engine.
 // ============================================================================
 
 // maplibre-gl and its 70 KB stylesheet exist in this chunk and nowhere else.
 // It is only rendered once someone presses "Show the street map", so the
 // engine is never fetched — and no packet ever reaches the tile host — for a
-// visitor who came to read six addresses.
+// visitor who came to read seven addresses.
 const TownStreet = dynamic(() => import("./TownStreet"), { ssr: false });
 
 /** The 3D country map is MOTION: it turns, sways and takes drags, so someone
@@ -69,13 +72,31 @@ const far = (d: number) => (d < 1 ? "under 1 km" : d < 10 ? `${d.toFixed(1)} km`
  *  from the map's state, and stored coarsely on purpose (see `onState`) */
 type Flags = { canIn: boolean; canOut: boolean; moved: boolean };
 
-export default function FindInStore({ list }: { list: Stockist[] }) {
+/** The monogram a shop wears until its logo file lands. Two letters, because
+ *  three is a wordmark and one is an ambiguity — and "Dilijan Tourist
+ *  Information Center" has to come out as something a person can tell apart
+ *  from its neighbours at 52px. */
+function initials(name: string) {
+  const w = name.split(/\s+/).filter(Boolean);
+  // A one-word shop takes its first two LETTERS rather than a lone capital:
+  // "Nrani" as a bare "N" reads as a bullet, not a mark.
+  const s = w.length > 1 ? (w[0][0] ?? "") + (w[1][0] ?? "") : name.slice(0, 2);
+  return s.toUpperCase();
+}
+
+export default function FindInStore({ list, logos }: { list: Town[]; logos: string[] }) {
+  /** the marks that have actually arrived — see availableLogos() in page.tsx.
+   *  A shop whose file is not here wears its monogram, which is a designed
+   *  state and not a missing image. */
+  const hasLogo = (slug?: string) => !!slug && logos.includes(slug);
   const [live, setLive] = useState(false);
   const [canMap, setCanMap] = useState(false);
+  /** the chosen TOWN — this is what the country map's pins select */
   const [sel, setSel] = useState<string | null>(null);
-  /** exactly one street map may exist. ArmeniaMap already holds a WebGL
-   *  context on this page; six more is how Safari starts dropping the oldest,
-   *  and the oldest is Armenia. */
+  /** exactly one street map may exist, and it is keyed by SHOP: a town now
+   *  holds up to three doors, each with its own map. ArmeniaMap already holds
+   *  a WebGL context on this page; seven more is how Safari starts dropping
+   *  the oldest, and the oldest is Armenia. */
   const [mapOpen, setMapOpen] = useState<string | null>(null);
   const [mapFailed, setMapFailed] = useState(false);
   /** the open map's levers, handed up by TownStreet — see the note there for
@@ -95,7 +116,9 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
    *  failure sentence under all six */
   const [copyBad, setCopyBad] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
-  const pending = list.some((s) => !s.shop.trim());
+  /** Computed, never typed. A hand-written "seven shops" is a number that goes
+   *  stale the first time she is stocked somewhere new. */
+  const shopCount = list.reduce((n, t) => n + t.shops.length, 0);
 
   useEffect(() => {
     let webgl = false;
@@ -151,13 +174,13 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
     );
   }, [list]);
 
-  const copy = useCallback((s: Stockist) => {
-    // THE CAVEAT TRAVELS WITH THE TEXT. Someone pasting this into a taxi app
-    // has left the page and its warnings behind, so an unconfirmed address
-    // carries its own.
-    const text =
-      [s.address, s.town].filter(Boolean).join(", ") +
-      (s.placeholder ? ` (${stockistPage.addressPlaceholder})` : "");
+  const copy = useCallback((s: Stockist, town: string) => {
+    // BOTH SCRIPTS, and the Armenian FIRST. Someone pasting this into a taxi
+    // app has left the page behind, and the line she sent is the one a driver
+    // in Yerevan can actually read; the transliteration follows for everyone
+    // else. The shop's name leads, because "Note Mote, Northern Avenue 6/2"
+    // is findable in a way a bare house number is not.
+    const text = `${s.shop}, ${s.addressAm}, ${town} (${s.address})`;
     navigator.clipboard
       .writeText(text)
       .then(() => {
@@ -221,7 +244,11 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
   const pickFromMap = useCallback(
     (id: string) => {
       setSel(id);
-      if (canMap) openMap(id);
+      // A town now holds up to three doors, so "open its street map" means the
+      // FIRST shop's — the arrival still lands on something specific rather
+      // than on a heading, and the other two are one press away underneath.
+      const first = list.find((t) => t.id === id)?.shops[0];
+      if (canMap && first) openMap(first.id);
       // AFTER the commit, not in the handler: scrolling now measures the list
       // as it still is, and the street map about to expand inside the chosen
       // card grows it past what "nearest" just brought into view. Instant on
@@ -232,7 +259,7 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
         document.getElementById(`town-${id}`)?.scrollIntoView({ block: "nearest" });
       }, 90);
     },
-    [canMap, openMap],
+    [canMap, openMap, list],
   );
 
   const nearest = nearestId ? list.find((t) => t.id === nearestId) : undefined;
@@ -294,7 +321,9 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
 
   return (
     <div className="ap-map">
-      {pending && <p className="ap-map__pending">{stockistPage.pending}</p>}
+      <p className="ap-map__count">
+        <b>{stockistPage.count(shopCount, list.length)}</b>
+      </p>
 
       {/* WHICH ONE IS NEAREST — the question the page is really asked. The
           coordinates never leave this browser: they sort six numbers here and
@@ -324,223 +353,240 @@ export default function FindInStore({ list }: { list: Stockist[] }) {
         )}
 
         <ul className="ap-map__list">
-          {list.map((s) => {
-            const has = s.shop.trim().length > 0;
-            const addressed = s.address.trim().length > 0;
-            const open = mapOpen === s.id;
-            /** what is actually ON SCREEN. A failure collapses the card rather
-             *  than leaving a blank 244px plate under a real address — and it
-             *  takes the tile attribution with it, since crediting tiles that
-             *  were never drawn is a licence line for nothing. */
-            const shown = open && !mapFailed;
-            return (
-              <li
-                key={s.id}
-                id={`town-${s.id}`}
-                className="ap-map__town"
-                data-on={sel === s.id || undefined}
-              >
-                <button type="button" onClick={() => onPick(s.id)} aria-pressed={sel === s.id}>
-                  <strong>{s.town}</strong>
-                  {/* only after the visitor asked to be found, and always
-                      labelled straight-line — the note under the button says
-                      it once for the whole list */}
-                  {me && (
-                    <span className="ap-map__km" data-near={s.id === nearestId || undefined}>
-                      {far(km(me, s))}
-                      {s.id === nearestId && <i> · {stockistPage.nearestTag}</i>}
-                    </span>
-                  )}
-                  {has ? (
-                    <span className="ap-map__shop">{s.shop}</span>
-                  ) : (
-                    <span className="ap-map__soon">{stockistPage.empty}</span>
-                  )}
-                </button>
+          {list.map((t) => (
+            <li
+              key={t.id}
+              id={`town-${t.id}`}
+              className="ap-map__town"
+              data-on={sel === t.id || undefined}
+            >
+              {/* THE TOWN IS A HEADING NOW, not a leaf. It still toggles the
+                  selection the country map drives — press the chosen one again
+                  to let go — but what it introduces is a list of shops rather
+                  than a single address. */}
+              <button type="button" onClick={() => onPick(t.id)} aria-pressed={sel === t.id}>
+                <strong>{t.town}</strong>
+                <span className="ap-map__region">{t.region}</span>
+                {/* only after the visitor asked to be found, and always
+                    labelled straight-line — the note under the button says
+                    it once for the whole list */}
+                {me && (
+                  <span className="ap-map__km" data-near={t.id === nearestId || undefined}>
+                    {far(km(me, t))}
+                    {t.id === nearestId && <i> · {stockistPage.nearestTag}</i>}
+                  </span>
+                )}
+                <span className="ap-map__n">
+                  {t.shops.length} {t.shops.length === 1 ? "shop" : "shops"}
+                </span>
+              </button>
 
-                {/* the address block, under the town — every line only ever
-                    prints something she has confirmed */}
-                <div className="ap-map__addr">
-                  <dl>
-                    <div>
-                      <dt>Address</dt>
-                      <dd>
-                        {addressed ? s.address : <em>{stockistPage.noAddress}</em>}
-                        {/* an address that is only a stand-in must say so ON
-                            the line, not in a banner someone scrolled past */}
-                        {addressed && s.placeholder && (
-                          <em className="ap-map__prov"> — {stockistPage.addressPlaceholder}</em>
-                        )}
-                      </dd>
-                    </div>
-                    {s.phone?.trim() && (
-                      <div>
-                        <dt>Phone</dt>
-                        <dd>
-                          <a href={`tel:${s.phone.replace(/\s+/g, "")}`}>{s.phone}</a>
-                        </dd>
-                      </div>
-                    )}
-                    {s.hours?.trim() && (
-                      <div>
-                        <dt>Open</dt>
-                        <dd>{s.hours}</dd>
-                      </div>
-                    )}
-                    {s.lines.length > 0 && (
-                      <div>
-                        <dt>Carries</dt>
-                        <dd>{s.lines.map(nameOf).join(" · ")}</dd>
-                      </div>
-                    )}
-                  </dl>
-
-                  {/* ONE card, ONE control. The card used to open onto a
-                      drawn street grid and a separate link opened the real
-                      map; the drawing is gone and the card is now the frame
-                      the real map arrives in. */}
-                  {(() => {
-                    // the DOOR — the country map marks the town centre, this
-                    // marks the address, and the two must not be confused
-                    const dlat = s.addressLat ?? s.lat;
-                    const dlng = s.addressLng ?? s.lng;
-                    return (
-                      <>
-                        <LocationCard
-                          id={`smap-${s.id}`}
-                          town={s.town}
-                          lat={dlat}
-                          lng={dlng}
-                          confirmed={has}
-                          open={shown}
-                          // Only ever rendered when open, so it is only ever
-                          // the attribution the tile licence requires — and
-                          // empty when nothing was drawn, since a credit for
-                          // tiles that never arrived is a licence line for
-                          // nothing.
-                          caption={shown ? stockistPage.mapCredit : ""}
-                          controls={shown ? controls : undefined}
+              <ul className="ap-map__shops">
+                {t.shops.map((s) => {
+                  const open = mapOpen === s.id;
+                  /** what is actually ON SCREEN. A failure collapses the card
+                   *  rather than leaving a blank 244px plate under a real
+                   *  address — and it takes the tile attribution with it,
+                   *  since crediting tiles that were never drawn is a licence
+                   *  line for nothing. */
+                  const shown = open && !mapFailed;
+                  return (
+                    <li key={s.id} className="ap-stk">
+                      <div className="ap-stk__head">
+                        {/* THE LOGO, or the shop's initials. A mark that has
+                            not arrived yet is a designed monogram rather than
+                            a hole — see public/stockists/README.md. */}
+                        <span
+                          className="ap-stk__logo"
+                          data-dark={(hasLogo(s.logo) && s.logoDark) || undefined}
                         >
-                          {shown && (
-                            // the chunk itself can fail, and next/dynamic will
-                            // not catch that — see MapBoundary
-                            <MapBoundary onError={() => setMapFailed(true)}>
-                              <TownStreet
-                                town={s}
-                                onFail={() => setMapFailed(true)}
-                                onReady={setApi}
-                                onState={onState}
-                              />
-                            </MapBoundary>
+                          {hasLogo(s.logo) ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={`/stockists/${s.logo}.webp`}
+                              alt=""
+                              width={52}
+                              height={52}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className="ap-stk__mono" aria-hidden>
+                              {initials(s.shop)}
+                            </span>
                           )}
-                        </LocationCard>
-
-                        <div className="ap-map__acts">
-                          {addressed && canMap && (
-                            <button
-                              type="button"
-                              className="ap-smap__toggle"
-                              // reports what is on screen, not what was asked
-                              // for — after a failure nothing is expanded, and
-                              // the label offers the retry that pressing it does
-                              aria-expanded={shown}
-                              aria-controls={`smap-${s.id}`}
-                              onClick={() => {
-                                select(s.id);
-                                toggleMap(s.id, shown);
-                              }}
-                            >
-                              {shown ? stockistPage.mapHide : stockistPage.mapShow}
-                              <span aria-hidden>{shown ? "▾" : "▸"}</span>
-                            </button>
-                          )}
-
-                          {/* HOW TO GET THERE. Same gate as the link below and
-                              for the same reason — routing a stranger to an
-                              unconfirmed doorstep is the one thing this page
-                              must not do — so an unconfirmed town gets
-                              directions to the TOWN, which is all the country
-                              map ever claimed.
-
-                              `from` is left EMPTY on purpose even when the
-                              visitor has just located themselves: filling it
-                              would put their coordinates in a URL bound for a
-                              third party. OSM asks for the start itself. */}
-                          <a
-                            className="ap-map__dir"
-                            href={`https://www.openstreetmap.org/directions?from=&to=${
-                              has && addressed ? `${dlat},${dlng}` : `${s.lat},${s.lng}`
-                            }`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {has && addressed ? stockistPage.directions : stockistPage.directionsTown}{" "}
-                            <span aria-hidden>↗</span>
-                          </a>
-
-                          {addressed && canCopy && (
-                            <button
-                              type="button"
-                              className="ap-smap__toggle"
-                              onClick={() => copy(s)}
-                            >
-                              {copied === s.id ? stockistPage.copied : stockistPage.copyAddress}
-                              <span aria-hidden>{copied === s.id ? "✓" : "⧉"}</span>
-                            </button>
-                          )}
-
-                          {/* WHERE IT IS, and where this points depends on what
-                              she has confirmed.
-
-                              This link opens a NEW TAB on openstreetmap.org,
-                              where none of this page's labelling travels with
-                              it. A visitor who lands on a stranger's doorstep
-                              at zoom 18 has no way to know the address was
-                              only a stand-in — so an unconfirmed town gets the
-                              TOWN at zoom 13, which is exactly the claim the
-                              country map already makes, and nothing more. The
-                              card's own street map may still show the door,
-                              because there the "not confirmed" warning is
-                              attached to it.
-
-                              It is deliberately NOT gated on the engine: a
-                              phone, a no-JS visitor and anyone without WebGL
-                              never get the toggle, and this row is the whole
-                              of their answer. */}
-                          <a
-                            className="ap-map__dir"
-                            href={
-                              has && addressed
-                                ? `https://www.openstreetmap.org/?mlat=${dlat}&mlon=${dlng}#map=18/${dlat}/${dlng}`
-                                : `https://www.openstreetmap.org/#map=13/${s.lat}/${s.lng}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {has && addressed ? stockistPage.mapLarger : stockistPage.townMap}{" "}
-                            <span aria-hidden>↗</span>
-                          </a>
+                        </span>
+                        <div>
+                          <h3 className="ap-stk__name">{s.shop}</h3>
+                          {/* HER LINE FIRST. `lang` is not decoration: it tells
+                              a screen reader to switch voice, and without it
+                              Armenian is read out as mangled Latin. */}
+                          <p className="ap-stk__am" lang="hy">
+                            {s.addressAm}
+                          </p>
+                          <p className="ap-stk__lat">
+                            {s.address} · {t.town}
+                          </p>
                         </div>
+                      </div>
 
-                        {open && (
-                          // outside the aria-hidden map, or no screen reader
-                          // would ever hear the failure
-                          <p className="ap-smap__state" role="status">
-                            {mapFailed ? stockistPage.mapFail : ""}
-                          </p>
+                      {(s.phone?.trim() || s.hours?.trim() || s.lines.length > 0) && (
+                        <div className="ap-map__addr">
+                          <dl>
+                            {s.phone?.trim() && (
+                              <div>
+                                <dt>Phone</dt>
+                                <dd>
+                                  <a href={`tel:${s.phone.replace(/\s+/g, "")}`}>{s.phone}</a>
+                                </dd>
+                              </div>
+                            )}
+                            {s.hours?.trim() && (
+                              <div>
+                                <dt>Open</dt>
+                                <dd>{s.hours}</dd>
+                              </div>
+                            )}
+                            {s.lines.length > 0 && (
+                              <div>
+                                <dt>Carries</dt>
+                                <dd>{s.lines.map(nameOf).join(" · ")}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </div>
+                      )}
+
+                      {/* ONE card, ONE control — the card is the frame the real
+                          street map arrives in.
+
+                          MOUNTED ONLY WHEN OPEN, which is a change the new list
+                          forced. The closed card is a 92px plate captioned with
+                          the shop's name, and that was a fair invitation when
+                          there was one per town. Seven of them, each repeating
+                          a name printed 20px above it, turned the directory
+                          into a column of near-empty boxes — the thing you are
+                          scanning became the thing you had to scan past. The
+                          invitation is the button below instead. */}
+                      {shown && (
+                      <LocationCard
+                        id={`smap-${s.id}`}
+                        town={s.shop}
+                        lat={s.addressLat}
+                        lng={s.addressLng}
+                        confirmed
+                        open={shown}
+                        // Only ever rendered when open, so it is only ever the
+                        // attribution the tile licence requires — and empty
+                        // when nothing was drawn, since a credit for tiles that
+                        // never arrived is a licence line for nothing.
+                        caption={shown ? stockistPage.mapCredit : ""}
+                        controls={shown ? controls : undefined}
+                      >
+                        {shown && (
+                          // the chunk itself can fail, and next/dynamic will
+                          // not catch that — see MapBoundary
+                          <MapBoundary onError={() => setMapFailed(true)}>
+                            <TownStreet
+                              shop={s}
+                              onFail={() => setMapFailed(true)}
+                              onReady={setApi}
+                              onState={onState}
+                            />
+                          </MapBoundary>
                         )}
-                        {copyBad === s.id && (
-                          <p className="ap-smap__state" role="status">
-                            {stockistPage.copyFail}
-                          </p>
+                      </LocationCard>
+                      )}
+
+                      {/* THE PIN CAN BE APPROXIMATE WHILE THE ADDRESS IS EXACT.
+                          One came from the shop, the other from a geocoder, and
+                          the difference belongs beside the map — not in a
+                          footnote somebody reads after getting off the bus. */}
+                      {shown && s.approx && (
+                        <p className="ap-stk__approx">{stockistPage.approx}</p>
+                      )}
+
+                      <div className="ap-map__acts">
+                        {canMap && (
+                          <button
+                            type="button"
+                            className="ap-smap__toggle"
+                            // reports what is on screen, not what was asked
+                            // for — after a failure nothing is expanded, and
+                            // the label offers the retry that pressing it does
+                            aria-expanded={shown}
+                            aria-controls={`smap-${s.id}`}
+                            onClick={() => {
+                              select(t.id);
+                              toggleMap(s.id, shown);
+                            }}
+                          >
+                            {shown ? stockistPage.mapHide : stockistPage.mapShow}
+                            <span aria-hidden>{shown ? "▾" : "▸"}</span>
+                          </button>
                         )}
-                      </>
-                    );
-                  })()}
-                </div>
-              </li>
-            );
-          })}
+
+                        {/* HOW TO GET THERE. Every shop here is confirmed, so
+                            these point at the door — the old "directions to
+                            the town" fallback went with the stand-in
+                            addresses that needed it.
+
+                            `from` is left EMPTY on purpose even when the
+                            visitor has just located themselves: filling it
+                            would put their coordinates in a URL bound for a
+                            third party. OSM asks for the start itself. */}
+                        <a
+                          className="ap-map__dir"
+                          href={`https://www.openstreetmap.org/directions?from=&to=${s.addressLat},${s.addressLng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {stockistPage.directions} <span aria-hidden>↗</span>
+                        </a>
+
+                        {canCopy && (
+                          <button
+                            type="button"
+                            className="ap-smap__toggle"
+                            onClick={() => copy(s, t.town)}
+                          >
+                            {copied === s.id ? stockistPage.copied : stockistPage.copyAddress}
+                            <span aria-hidden>{copied === s.id ? "✓" : "⧉"}</span>
+                          </button>
+                        )}
+
+                        {/* It is deliberately NOT gated on the engine: a phone,
+                            a no-JS visitor and anyone without WebGL never get
+                            the toggle above, and this link is the whole of
+                            their answer. */}
+                        <a
+                          className="ap-map__dir"
+                          href={`https://www.openstreetmap.org/?mlat=${s.addressLat}&mlon=${s.addressLng}#map=18/${s.addressLat}/${s.addressLng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {stockistPage.mapLarger} <span aria-hidden>↗</span>
+                        </a>
+                      </div>
+
+                      {open && (
+                        // outside the aria-hidden map, or no screen reader
+                        // would ever hear the failure
+                        <p className="ap-smap__state" role="status">
+                          {mapFailed ? stockistPage.mapFail : ""}
+                        </p>
+                      )}
+                      {copyBad === s.id && (
+                        <p className="ap-smap__state" role="status">
+                          {stockistPage.copyFail}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

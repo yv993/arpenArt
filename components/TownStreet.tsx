@@ -111,12 +111,13 @@ function Levers({
 }
 
 export default function TownStreet({
-  town,
+  shop,
   onFail,
   onReady,
   onState,
 }: {
-  town: Stockist;
+  /** A SHOP, not a town: each door has its own map now. */
+  shop: Stockist;
   /** reported UP rather than rendered here: this component lives inside an
    *  aria-hidden host, so a failure sentence printed in place is one no screen
    *  reader would ever read out. FindInStore prints it outside. */
@@ -124,11 +125,10 @@ export default function TownStreet({
   onReady: (api: StreetApi | null) => void;
   onState: (s: StreetState) => void;
 }) {
-  const confirmed = town.shop.trim().length > 0;
   // the DOOR, not the town centre — the country map marks the centre, and this
   // map exists precisely to answer the question the centre cannot
-  const lng = town.addressLng ?? town.lng;
-  const lat = town.addressLat ?? town.lat;
+  const lng = shop.addressLng;
+  const lat = shop.addressLat;
 
   return (
     <Map
@@ -154,19 +154,15 @@ export default function TownStreet({
       <Levers home={[lng, lat]} onReady={onReady} onState={onState} />
       <MapMarker longitude={lng} latitude={lat}>
         <MarkerContent>
-          <span className="ap-mlm__dot" data-soon={!confirmed || undefined} />
+          <span className="ap-mlm__dot" data-soon={shop.approx || undefined} />
         </MarkerContent>
         {/* Pinned open: there is one pin and it is the point of the card.
-            It does NOT repeat the town — the card names that 60px below, and
-            in a 244px frame the tooltip was the loudest thing on screen. What
-            it carries is what the card cannot: which shop is at the pin, or
-            that nothing is confirmed there yet. */}
+            It carries the shop's name — and, where the pin was placed from the
+            street rather than the doorway, says so, because that is exactly
+            the moment somebody is about to trust a dot over an address. */}
         <MarkerTooltip open>
-          {confirmed ? (
-            <b>{town.shop}</b>
-          ) : (
-            <span>{town.placeholder ? stockistPage.pinPlaceholder : stockistPage.empty}</span>
-          )}
+          <b>{shop.shop}</b>
+          {shop.approx && <span>{stockistPage.pinApprox}</span>}
         </MarkerTooltip>
       </MapMarker>
     </Map>

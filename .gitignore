@@ -19,3 +19,7 @@ out*.html
 # stray probe screenshots must never land in the repo
 /cloud-w*.png
 /hero-now.png
+
+# harness screenshots — the .mjs probes in scratchpad/ are worth keeping,
+# the pictures they produce are not
+scratchpad/*.png

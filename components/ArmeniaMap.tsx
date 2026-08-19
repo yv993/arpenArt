@@ -6,7 +6,7 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import geo from "@/lib/armenia.json";
 import terrain from "@/lib/terrain-meta.json";
-import type { Stockist } from "@/lib/content";
+import type { Town } from "@/lib/content";
 
 // ============================================================================
 // THE MAP — Armenia as it actually is, now in RELIEF (client 2026-08-12,
@@ -265,7 +265,7 @@ function Pin({
   ground,
   onPick,
 }: {
-  s: Stockist;
+  s: Town;
   on: boolean;
   /** used only to stagger the labels: Vanadzor, Dilijan and Sevan are ~40km
    *  apart and their names collided at this zoom */
@@ -277,7 +277,9 @@ function Pin({
 }) {
   const head = useRef<THREE.Group>(null);
   const [x, z] = useMemo(() => project(s.lng, s.lat), [s.lng, s.lat]);
-  const confirmed = s.shop.trim().length > 0;
+  // every town in this list has at least one confirmed shop — the derived
+  // `towns` drops any that does not, so there is no hollow state left to draw
+  const confirmed = s.shops.length > 0;
   const phase = useMemo(() => (s.lat * 7 + s.lng * 3) % (Math.PI * 2), [s.lat, s.lng]);
 
   useFrame((state) => {
@@ -364,7 +366,7 @@ function Scene({
   onPick,
   spin,
 }: {
-  towns: Stockist[];
+  towns: Town[];
   sel: string | null;
   hf: HeightField | null;
   onPick: (id: string) => void;
@@ -419,7 +421,7 @@ export default function ArmeniaMap({
   cue,
   onPick,
 }: {
-  towns: Stockist[];
+  towns: Town[];
   sel: string | null;
   /** rendered INSIDE the stage — as a sibling it was clipped by the stage's
    *  own bottom edge */

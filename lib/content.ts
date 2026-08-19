@@ -306,161 +306,213 @@ export type DeliveryOption = (typeof delivery.options)[number];
 // ---------------------------------------------------------------------------
 // STOCKISTS — where the work can be found in person.
 //
-// WHAT IS REAL HERE: the coordinates. Those are the actual positions of the
-// towns, which is public geography and safe to draw.
+// THESE ARE REAL AND CONFIRMED. Arpine sent this list on 2026-08-18: seven
+// shops in three towns, with the addresses as she writes them, in Armenian.
+// The long stand-in period is over — the `placeholder` machinery that used to
+// warn people off travelling is gone with it, because there is nothing left to
+// warn about.
 //
-// WHAT IS NOT: `shop` and `address` are EMPTY, on purpose. A stockist list is
-// the one place on a site where an invention costs a real person a real
-// journey, so nothing is named until Arpine confirms it. A town with no shop
-// yet renders as "being arranged" and its pin is hollow.
+// ONE THING IS STILL NOT HERS, and it is flagged rather than hidden: the
+// COORDINATES. She gave addresses, not pins. Every lat/lng below was geocoded
+// afterwards against OpenStreetMap (Nominatim + Overpass, cross-checked
+// against the shops' own listings), and `approx: true` marks a pin the survey
+// could not put on the doorway. The address is always the thing to trust;
+// where a pin is approximate the card says so, beside the map, rather than
+// quietly drawing a false precision.
 //
-// TO FINISH: fill `shop`, `address` and `lines` for each confirmed stockist,
-// and delete any town she is not in. The notice at the top of the page
-// disappears by itself once every listed town has a shop name.
+// THREE ARE FLAGGED, and each for its own reason — worth keeping, because the
+// obvious "fix" for each is to ask her rather than to search harder:
+//   note-mote-northern-6  6/2 is the registered address of the Tashir Street
+//                         underground gallery, which runs ~400 m under
+//                         Northern Avenue with seven entrances. The shop is
+//                         inside it; neither Note Mote nor Tashir is mapped.
+//                         ±40 m. ASK WHICH ENTRANCE.
+//   nrani                 the building tagged 7/8 is mapped as a different
+//                         business, but it is 14 m from the Mimino statue,
+//                         which is exactly where Nrani is described as being.
+//                         Same commercial cluster, ±30 m.
+//   crafts-of-armenia     Marzpetuni 10 is a multi-unit tourist compound and
+//                         two mapped features 49 m apart both claim the
+//                         number. This is the northern one (the Noyan Aygi
+//                         courtyard). NEEDS HER CONFIRMATION.
+// The other four are exact building matches and are not flagged.
+//
+// SHAPE: this list is SHOPS, not towns. It used to be one row per town, which
+// stopped being true the moment Yerevan came back with three. Towns are
+// derived from it below (`towns`), so adding a shop to a town that already
+// exists needs nothing but a new entry here.
+//
+// TO FINISH: `lines` (which pieces each shop actually carries), phone and
+// opening hours — none of which she has sent, so none of which are invented.
+// Each renders only when filled.
 // ---------------------------------------------------------------------------
 export type Stockist = {
+  /** unique per SHOP — two Note Motes share a name and a logo, not an id */
   id: string;
-  town: string;
-  /** empty until she confirms who carries it there */
   shop: string;
-  /** street address, printed under the town on /find-in-store */
+  /** which town group this sits under; matches a `Town.id` */
+  townId: string;
+  /** the address AS SHE SENT IT. This is the authoritative one: it is what a
+   *  taxi driver in Yerevan reads. */
+  addressAm: string;
+  /** transliteration, for everyone who cannot read the line above */
   address: string;
-  /** TRUE while `address` is only a stand-in. It drives a warning on the
-   *  address line itself and in the street map's pin label. Delete the field
-   *  when the real address lands and every warning removes itself. */
-  placeholder?: boolean;
-  /** where the DOOR is — the street map centres and pins this. Separate from
-   *  lat/lng on purpose: those are the TOWN CENTRE, which is what the country
-   *  map's pins mark and what the outbound link falls back to while no shop
-   *  is confirmed. */
-  addressLat?: number;
-  addressLng?: number;
+  /** where the DOOR is. Separate from the town centre on purpose: the country
+   *  map marks the town, this marks the shop. */
+  addressLat: number;
+  addressLng: number;
+  /** TRUE when the geocoder could only reach the STREET, not the building.
+   *  The address is still exact — this is about the pin, and it is printed
+   *  beside the map rather than left for someone to discover on the pavement. */
+  approx?: boolean;
+  /** file in public/stockists/ (see the README there). Absent → the card sets
+   *  the shop's initials as a monogram, which is a designed state and not a
+   *  missing image. */
+  logo?: string;
+  /** the mark is drawn for a DARK ground, so the chip goes dark rather than
+   *  the mark being recoloured — that would be editing someone else's brand */
+  logoDark?: boolean;
   phone?: string;
   hours?: string;
-  /** category slugs the shop carries */
+  /** category slugs the shop carries. EMPTY until she says; the row hides. */
   lines: string[];
-  lat: number;
-  lng: number;
 };
 
-// PLACEHOLDER ADDRESSES, at the client's request (2026-08-06: "next i give
-// real locations, now find random street address for all cities").
-//
-// They are NOT random. Every street below is a real, central, commercial
-// street in that town, researched and then independently re-checked against
-// OpenStreetMap by a second pass that was told to try to disprove it —
-// because a made-up street name on a stockist page costs someone a real bus
-// ride. The building numbers sit inside each street's real range. What is
-// invented is only the pairing: no shop at any of these addresses has agreed
-// to carry her work, and `placeholder: true` says so everywhere it shows.
-//
-// `shop` stays EMPTY. A street can be checked; a business that has not agreed
-// to stock her cannot be invented at all.
-//
-// TO FINISH: replace `address` + `addressLat/Lng`, fill `shop`, and delete
-// `placeholder`. Nothing else needs touching.
+export type Town = {
+  id: string;
+  town: string;
+  /** the province, printed under the town name — "Dilijan" means more with
+   *  "Tavush" beside it to anyone placing it on a map */
+  region: string;
+  /** the TOWN CENTRE. This is what the 3D country map pins. */
+  lat: number;
+  lng: number;
+  shops: Stockist[];
+};
+
 export const stockists: Stockist[] = [
+  // --- YEREVAN -------------------------------------------------------------
   {
-    id: "yerevan",
-    town: "Yerevan",
-    shop: "",
-    address: "10 Abovyan Street, Kentron",
-    placeholder: true,
-    // the BUILDING centroid, not the street centreline 15 m away — the pin is
-    // supposed to be the door
-    addressLat: 40.18082,
-    addressLng: 44.51573,
-    phone: "",
-    hours: "",
+    id: "note-mote-northern-6",
+    shop: "Note Mote",
+    townId: "yerevan",
+    addressAm: "Հյուսիսային պողոտա 6/2",
+    address: "6/2 Northern Avenue",
+    addressLat: 40.183498,
+    addressLng: 44.514526,
+    approx: true,
+    logo: "note-mote",
     lines: [],
-    lat: 40.1792,
-    lng: 44.4991,
   },
   {
-    id: "gyumri",
-    town: "Gyumri",
-    shop: "",
-    address: "240 Abovyan Street",
-    placeholder: true,
-    addressLat: 40.7864,
-    addressLng: 43.8403,
-    phone: "",
-    hours: "",
+    id: "note-mote-northern-10",
+    shop: "Note Mote",
+    townId: "yerevan",
+    addressAm: "Հյուսիսային պողոտա 10, 3/1 տարածք",
+    address: "10 Northern Avenue, unit 3/1",
+    addressLat: 40.182033,
+    addressLng: 44.514485,
+    logo: "note-mote",
     lines: [],
-    lat: 40.7894,
-    lng: 43.8475,
   },
   {
-    id: "vanadzor",
-    town: "Vanadzor",
-    shop: "",
-    address: "30 Tigran Mets Avenue",
-    placeholder: true,
-    addressLat: 40.8099,
-    addressLng: 44.4888,
-    phone: "",
-    hours: "",
+    id: "made-by-armenia",
+    shop: "Made by Armenia",
+    townId: "yerevan",
+    addressAm: "Արամի փողոց 42/1",
+    address: "42/1 Arami Street, 0002",
+    addressLat: 40.180748,
+    addressLng: 44.512319,
+    logo: "made-by-armenia",
     lines: [],
-    lat: 40.8128,
-    lng: 44.4883,
+  },
+
+  // --- DILIJAN (Tavush) ----------------------------------------------------
+  {
+    id: "anyutis",
+    shop: "Anyut Is",
+    townId: "dilijan",
+    addressAm: "Մյասնիկյան 30/3",
+    address: "30/3 Myasnikyan Street",
+    addressLat: 40.738609,
+    addressLng: 44.867841,
+    // NOT logoDark: the Anyutis mark is black line-work on white. It was
+    // flagged dark from the name alone, before the file arrived — which would
+    // have painted black on black. Look at a mark before deciding its ground.
+    logo: "anyutis",
+    lines: [],
   },
   {
-    id: "dilijan",
-    town: "Dilijan",
-    shop: "",
-    address: "12 Sharambeyan Street",
-    placeholder: true,
-    addressLat: 40.7397,
-    addressLng: 44.8688,
-    phone: "",
-    hours: "",
+    id: "tic-dilijan",
+    shop: "Dilijan Tourist Information Center",
+    townId: "dilijan",
+    addressAm: "Մաքսիմ Գորկու փող. 15/2",
+    address: "15/2 Maxim Gorky Street",
+    addressLat: 40.739310,
+    addressLng: 44.862473,
+    logo: "tic-dilijan",
     lines: [],
-    lat: 40.7408,
-    lng: 44.8636,
   },
   {
-    id: "sevan",
-    town: "Sevan",
-    shop: "",
-    address: "161 Nairyan Street",
-    placeholder: true,
-    addressLat: 40.54848,
-    addressLng: 44.95898,
-    phone: "",
-    hours: "",
+    id: "nrani",
+    shop: "Nrani",
+    townId: "dilijan",
+    addressAm: "Մ. Գորկի փողոց 7/8",
+    address: "7/8 M. Gorky Street",
+    addressLat: 40.740403,
+    addressLng: 44.865264,
+    approx: true,
+    logo: "nrani",
     lines: [],
-    lat: 40.5486,
-    lng: 44.9422,
   },
+
+  // --- GARNI (Kotayk) ------------------------------------------------------
   {
-    id: "ejmiatsin",
-    town: "Vagharshapat",
-    shop: "",
-    address: "6 Mesrop Mashtots Street",
-    placeholder: true,
-    addressLat: 40.16405,
-    addressLng: 44.29533,
-    phone: "",
-    hours: "",
+    id: "crafts-of-armenia",
+    shop: "Crafts of Armenia",
+    townId: "garni",
+    addressAm: "Գ. Մարզպետունի 10",
+    address: "10 G. Marzpetuni Street",
+    addressLat: 40.115046,
+    addressLng: 44.730148,
+    approx: true,
+    logo: "crafts-of-armenia",
+    logoDark: true,
     lines: [],
-    lat: 40.1667,
-    lng: 44.2919,
   },
 ];
+
+/** The towns, in the order they are listed. Coordinates are the town CENTRE —
+ *  public geography, and what the 3D map pins. */
+const TOWN_META: Omit<Town, "shops">[] = [
+  { id: "yerevan", town: "Yerevan", region: "Yerevan", lat: 40.177711, lng: 44.512623 },
+  { id: "dilijan", town: "Dilijan", region: "Tavush", lat: 40.741713, lng: 44.872221 },
+  { id: "garni", town: "Garni", region: "Kotayk", lat: 40.117484, lng: 44.734059 },
+];
+
+/** Towns WITH shops, derived. A town nobody stocks simply does not appear —
+ *  there is no "coming soon" state any more, because there is nothing to
+ *  promise: she is in seven shops and the page can just say so. */
+export const towns: Town[] = TOWN_META.map((t) => ({
+  ...t,
+  shops: stockists.filter((s) => s.townId === t.id),
+})).filter((t) => t.shops.length > 0);
 
 export const stockistPage = {
   kicker: "(In person)",
   title: "FIND IT IN A SHOP",
   copy:
-    "The series travels beyond this site: printed, painted and glazed pieces sit on shelves around Armenia. Confirmed shops are listed here with their address — the map marks the town.",
-  /** shown while any town has no confirmed shop, so nobody sets off to look */
-  pending:
-    "Arpine is placing the work with shops now. The addresses below are examples on real streets, standing in until each shop is confirmed — please do not travel to one yet. The shop here posts anywhere in the meantime.",
-  empty: "No shop confirmed in this town yet.",
-  /** printed on the address line itself, in the accent that means "not yet" */
-  addressPlaceholder: "example address, not confirmed",
-  /** the same warning, short enough for a map pin */
-  pinPlaceholder: "Example address — not confirmed",
+    "The series travels beyond this site: printed, painted and glazed pieces sit on shelves around Armenia. Every shop below carries the work — the addresses are theirs, and the map marks the town.",
+  /** The one-line summary above the list. Counts are computed, never typed:
+   *  a hand-written "seven shops" is a number that goes stale the first time
+   *  she is stocked somewhere new. */
+  count: (shops: number, towns: number) =>
+    `Stocked in ${shops} shop${shops === 1 ? "" : "s"} across ${towns} town${towns === 1 ? "" : "s"}.`,
+  /** printed beside the map when the PIN — not the address — is a street-level
+   *  estimate. The address above it is exactly what the shop gave us. */
+  approx: "Pin placed from the street, not the doorway — check the address above on arrival.",
+  /** the same caveat, short enough for a map pin */
+  pinApprox: "Approximate — see the address",
 
   // --- the street map (components/TownStreet.tsx) -------------------------
   mapShow: "Show the street map",
@@ -482,14 +534,10 @@ export const stockistPage = {
   zoomIn: "Zoom in",
   zoomOut: "Zoom out",
   recentre: "Back to the pin",
-  /** Where the door is, once she has confirmed one. Same rule as the outbound
-   *  link: routing a stranger to an unconfirmed doorstep is the one thing this
-   *  page must never do, so an unconfirmed town gets directions to the TOWN,
-   *  which is all the country map ever claimed. */
+  /** Every shop in this list is confirmed, so the door is always what the
+   *  outbound links point at. The old "directions to the TOWN" fallback is
+   *  gone with the stand-in addresses that needed it. */
   directions: "Directions to the door",
-  directionsTown: "Directions to the town",
-  /** The caveat travels WITH the text — someone pasting a stand-in address
-   *  into a taxi app has left this page and its warnings behind. */
   copyAddress: "Copy the address",
   copied: "Copied",
   copyFail: "Could not copy — select the address above instead.",
@@ -504,13 +552,6 @@ export const stockistPage = {
   nearDenied: "The browser did not share a location. Pick the town you know instead.",
   nearNone: "This browser cannot share a location here. Pick the town you know instead.",
   nearestTag: "nearest to you",
-  /** Where the outbound link goes while nothing is confirmed. It opens on
-   *  openstreetmap.org, where this page's "not confirmed" warning does not
-   *  follow — so it may only ever offer what the country map already claims:
-   *  the town. */
-  townMap: "Open the town in a map",
-  /** the address line's own pending state, so the row is never blank */
-  noAddress: "To follow, once the shop is confirmed",
   cue: "Drag to turn the map · choose a town",
   /** There is no closed-card caption. The card's caption slot collapses to
    *  max-height 0 when shut, so anything put there is invisible but still in

@@ -1347,6 +1347,147 @@
 }
 
 /* --------------------------------------------------------------------------
+   THE DIRECTORY — a town holds SHOPS, plural.
+   Yerevan has three and Dilijan has three, so the town is no longer the leaf
+   of this list: it is a heading over its own small list of shops. The town
+   card keeps its old class (and so its selection ring, which the country map
+   drives), and the shops sit inside it.
+   -------------------------------------------------------------------------- */
+/* the one-line answer to "is this worth reading" — printed above the list so
+   it is the first thing under the lede */
+.ap-map__count {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+.ap-map__count b {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* how many shops are in this town, on the heading itself: the group is
+   collapsed to a line of type until you read down into it, and "3 shops" is
+   the fact that makes someone read on */
+.ap-map__n {
+  justify-self: start;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--indigo);
+  border: 1px solid color-mix(in srgb, var(--indigo) 34%, transparent);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.ap-map__region {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+.ap-map__shops {
+  display: grid;
+  gap: 8px;
+  padding: 0 15px 13px;
+}
+
+/* ONE SHOP. Logo (or monogram) beside its name and address, then its own
+   actions — every shop has its own door, so the street map, the directions
+   and the copy button all belong here rather than to the town. */
+.ap-stk {
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: var(--paper);
+  padding: 12px 13px 13px;
+}
+.ap-stk__head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+}
+/* CONTAIN, never cover — a retailer's mark cropped is a mark damaged. The
+   chip is a fixed square so a wordmark and a roundel line up down the column
+   instead of each setting its own rhythm. */
+.ap-stk__logo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 5px;
+  overflow: hidden;
+  /* WHITE, not paper. These are other people's marks and almost all of them
+     are drawn for a white ground — several arrived as screenshots with the
+     white still attached. On cream the leftover white read as a pale box
+     floating inside the chip; on white it is simply the mark. */
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.ap-stk__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 5px;
+}
+/* Two of these marks are DRAWN FOR A DARK GROUND. They are not recoloured —
+   that would be editing somebody else's brand — so the chip changes instead. */
+.ap-stk__logo[data-dark] {
+  background: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+/* THE FALLBACK IS A DESIGN, NOT A BROKEN IMAGE. Until a logo file lands the
+   chip sets the shop's initials, so the column never shows a hole. */
+.ap-stk__mono {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--indigo);
+}
+.ap-stk__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+/* The address SHE SENT, in Armenian, is the authoritative one — it is what a
+   taxi driver reads. The transliteration sits under it for everyone else. */
+.ap-stk__am {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ap-stk__lat {
+  margin: 1px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+/* Coordinates can be approximate even when the address is exact — one comes
+   from her, the other from a geocoder — and the difference is worth stating
+   where the map is, not in a footnote. */
+.ap-stk__approx {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-style: normal;
+  color: var(--marigold-ink);
+}
+.ap-stk .ap-map__acts {
+  margin-top: 9px;
+}
+.ap-stk .ap-loc {
+  margin-top: 10px;
+}
+
+@media (max-width: 520px) {
+  .ap-stk__head {
+    gap: 10px;
+  }
+  .ap-stk__logo {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* --------------------------------------------------------------------------
    GETTING THERE — the row of actions under each town's card, and the
    "which one is nearest" control above the whole list.
    -------------------------------------------------------------------------- */
