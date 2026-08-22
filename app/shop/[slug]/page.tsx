@@ -16,6 +16,7 @@ import Lookbook from "@/components/Lookbook";
 import Overture from "@/components/Overture";
 import MorphHero from "@/components/MorphHero";
 import StickerFolders from "@/components/StickerFolders";
+import StickerSurfer from "@/components/StickerSurfer";
 import { brand, categories, lookbooks, morphs, overtures } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
@@ -149,6 +150,28 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               already named by the breadcrumb, the tab title and the JSON-LD,
               so the page says it once, in the words that carry the most. */}
           <StickerFolders shots={P.stickers ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+              <CategorySpec cat={cat} />
+            </div>
+          </div>
+        </>
+      ) : cat.slug === "3d-stickers" ? (
+        /* Same shape as the sheets: the lane IS the product presentation, so
+           CategoryView's hero and picker would only ask the question the lane
+           already answers. The scaffolding that is not about choosing stays. */
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <StickerSurfer shots={P.sticker3d ?? []} slug={cat.slug} price={cat.from} />
 
           <div className="ap-cv">
             <div className="ap-sheets__foot">

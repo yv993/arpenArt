@@ -186,6 +186,23 @@ export const categories: Category[] = [
     ],
   },
   {
+    slug: "3d-stickers",
+    name: "3D stickers",
+    blurb:
+      "Domed stickers with real depth, each one carded and stamped like a letter from Yerevan.",
+    media: "sticker3d",
+    // PLACEHOLDER, like every price here except the postcards'. Set a little
+    // above the flat sticker because a domed sticker is a different make — but
+    // it is still a figure to CONFIRM, not one to trust; nothing on this site
+    // guesses a price and then hides that it guessed.
+    from: 900,
+    status: "open",
+    spec: [
+      { k: "Finish", v: "Domed resin over print, on a carded backing" },
+      ...processSpec,
+    ],
+  },
+  {
     slug: "totes",
     name: "Tote bags",
     blurb: "Cotton totes carrying the stamp grid of the whole Armenia series.",
@@ -838,6 +855,28 @@ export const stickerSheets = {
     { id: "5", name: "Sheet 05", shots: ["13", "14", "15"] },
     { id: "6", name: "Sheet 06", shots: ["16", "17", "18"] },
   ],
+};
+
+// ---------------------------------------------------------------------------
+// 3D STICKERS — the lane on /shop/3d-stickers.
+//
+// 48 designs, flown past on a receding diagonal as the page is scrolled, and
+// the lane NEVER ENDS: after the forty-eighth comes the first again (client
+// 2026-08-22, "scroll must not finish but start circle from first after
+// reached last"). Click one and it comes to the middle, big, with its price
+// and a way to buy it.
+//
+// No titles again: the designs arrived numbered and nothing else, so a card
+// says "No. 07" and the series, exactly as the artworks do.
+// ---------------------------------------------------------------------------
+export const stickers3d = {
+  kicker: "(Domed)",
+  title: "FORTY-EIGHT, ON A LOOP",
+  copy:
+    "Every design in the series, domed in resin and carded. Scroll to send them past — the lane comes round again — then click one to bring it to the middle.",
+  cue: "Scroll to surf · click to open",
+  /** shown on the opened card */
+  open: { series: "The Armenia series", add: "Add to cart", close: "Close", added: "Added to your cart." },
 };
 
 export const lookbooks: Record<string, Lookbook> = {
