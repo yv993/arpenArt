@@ -2761,3 +2761,66 @@ html[data-footfx] .ap-foot {
   object-fit: cover;
   display: block;
 }
+
+/* ---- the sheets page: heading, buy rows, and the trust block ------------
+   /shop/stickers stopped using .ap-cv__grid on 2026-08-19 — it sells six
+   fixed sheets now, not one object with a chosen illustration — so the
+   heading and the ordering/spec block stand on their own here instead of
+   riding in the buy panel's column. */
+/* the same measure the buy panel keeps, so the ordering steps and the spec
+   rows read at the width they were designed for rather than stretching the
+   full page */
+/* .ap-cv itself carries NO horizontal padding — the gutter lives on
+   .ap-cv__grid, which this page does not use — so these blocks bring their
+   own or they sit flush against the window edge. */
+.ap-sheets__foot {
+  max-width: 62ch;
+  padding: 0 var(--gutter) clamp(40px, 7vh, 90px);
+}
+.ap-sf__from {
+  margin-top: 16px;
+}
+
+/* price + buy under each folder. In BOTH layers: a phone gets the plain
+   picture grid, and it must still be able to buy the sheet. */
+.ap-sf__buy {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ap-sf__price {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+}
+.ap-sf__pname {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-sf__price strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+.ap-sf__add {
+  font-size: 12.5px;
+  padding: 9px 20px;
+}
+/* Reserves its line whether or not it has said anything — a role=status that
+   appears from nothing shifts the whole row of folders as it speaks. */
+.ap-sf__added {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 12px;
+  color: var(--marigold-ink);
+}
+/* the plain layer stacks its own name row, so the buy row does not repeat it */
+.ap-sf[data-live] .ap-sf__buy .ap-sf__pname {
+  display: none;
+}

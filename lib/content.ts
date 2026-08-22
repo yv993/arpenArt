@@ -164,11 +164,26 @@ export const categories: Category[] = [
   {
     slug: "stickers",
     name: "Stickers",
-    blurb: "Sticker sheets and single die-cuts, matte and weatherproof.",
+    // SHEETS ONLY (2026-08-19). The line used to also offer a single die-cut
+    // of any one of the 57 illustrations, chosen from the picker — that path
+    // is gone, so the blurb cannot keep promising it. What she actually
+    // delivered is six fixed sheets; the page sells those.
+    blurb: "Six sticker sheets, twenty stickers to a sheet — matte and weatherproof.",
     media: "stickers",
+    // PLACEHOLDER, and its MEANING changed with the line: 600 was written when
+    // this category still sold single die-cuts, and it now prices ONE SHEET OF
+    // TWENTY. The figure was NOT invented upward to suit — no price on this
+    // site is ever guessed — so it is very probably too low and is the first
+    // thing to ask Arpine for. Every sheet is the same size and count, so one
+    // number covers all six, which is also what keeps /api/order able to
+    // re-price a sheet from its own copy of this table.
     from: 600,
     status: "open",
-    spec: [{ k: "Finish", v: "Matte and weatherproof" }, ...processSpec],
+    spec: [
+      { k: "Sheet", v: "158 × 200 mm · 20 stickers" },
+      { k: "Finish", v: "Matte and weatherproof" },
+      ...processSpec,
+    ],
   },
   {
     slug: "totes",
@@ -808,8 +823,11 @@ export const stickerSheets = {
   kicker: "(The sheets)",
   title: "SIX SHEETS OF TWENTY",
   copy:
-    "Every sheet is 158 × 200 mm — twenty stickers, cut and ready to peel. Open a folder to look through its sheet and the photographs of it printed.",
+    "Every sheet is 158 × 200 mm — twenty stickers, cut and ready to peel. Open a folder to look through its sheet and the photographs of it printed, then add the one you want.",
   spec: "158 × 200 mm · 20 stickers",
+  /** the label on each folder's own buy button */
+  add: "Add this sheet",
+  added: "Added to your cart.",
   /** shown once a folder is open, on the live layer only */
   hint: "Drag a picture down, press Escape, or press the folder again to close it.",
   sheets: [

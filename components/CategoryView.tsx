@@ -356,8 +356,43 @@ const boxVars = (b: [number, number, number, number]) =>
   }) as React.CSSProperties;
 
 /** Categories where the buyer picks which illustration goes on the thing. */
-const CHOOSES_DESIGN = new Set(["postcards", "stickers", "cups", "plates", "puzzles", "totes"]);
+// STICKERS LEFT THIS SET on 2026-08-19. The line stopped being "any one of
+// the 57, die-cut" and became six fixed SHEETS, so there is no illustration
+// left to choose — /shop/stickers renders StickerFolders instead of this view
+// and each folder carries its own buy button.
+const CHOOSES_DESIGN = new Set(["postcards", "cups", "plates", "puzzles", "totes"]);
 
+
+/** The product's trust rows. Exported for the same reason OrderingSteps is:
+ *  /shop/stickers no longer renders this view (it sells six sheets from
+ *  StickerFolders instead), and a second hand-written copy of these lines is
+ *  exactly how a returns policy starts saying two different things. */
+export function CategorySpec({ cat }: { cat: Category }) {
+  return (
+    <dl className="ap-cv__spec">
+      <div>
+        <dt>Made by</dt>
+        <dd>Arpine Baroyan, in Yerevan</dd>
+      </div>
+      <div>
+        <dt>Artwork</dt>
+        <dd>Original illustration from the Armenia series</dd>
+      </div>
+      {/* the per-category facts from content.ts — each one either already
+          stated elsewhere on the site or a process truth */}
+      {cat.spec?.map((s) => (
+        <div key={s.k}>
+          <dt>{s.k}</dt>
+          <dd>{s.v}</dd>
+        </div>
+      ))}
+      <div>
+        <dt>Prices</dt>
+        <dd>Shown before shipping. Final figures confirmed on the order.</dd>
+      </div>
+    </dl>
+  );
+}
 
 /** The "how ordering works" strip. It lives here but renders on the cart page
  *  too — one component, so the two tellings of the flow can never drift. */
@@ -714,28 +749,7 @@ export default function CategoryView({
 
           {cat.status === "open" && <OrderingSteps />}
 
-          <dl className="ap-cv__spec">
-            <div>
-              <dt>Made by</dt>
-              <dd>Arpine Baroyan, in Yerevan</dd>
-            </div>
-            <div>
-              <dt>Artwork</dt>
-              <dd>Original illustration from the Armenia series</dd>
-            </div>
-            {/* the per-category facts from content.ts — each one either
-                already stated elsewhere on the site or a process truth */}
-            {cat.spec?.map((s) => (
-              <div key={s.k}>
-                <dt>{s.k}</dt>
-                <dd>{s.v}</dd>
-              </div>
-            ))}
-            <div>
-              <dt>Prices</dt>
-              <dd>Shown before shipping. Final figures confirmed on the order.</dd>
-            </div>
-          </dl>
+          <CategorySpec cat={cat} />
         </div>
       </div>
     </div>

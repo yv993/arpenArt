@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
 import { stickerSheets } from "@/lib/content";
+import { add, dram } from "@/lib/cart";
+import { flyToCart } from "@/lib/fly";
 
 // ============================================================================
 // STICKER FOLDERS — six folders side by side, one per sheet, three pictures
@@ -56,9 +58,30 @@ const zOf = (i: number) => (i === 1 ? 3 : i === 0 ? 1 : 2);
 const rest = (o: number) => ({ x: o * 3, y: o * -5, r: o * 3, s: 1 - Math.abs(o) * 0.03 });
 const fan = (o: number) => ({ x: o * 34, y: o * -12 - 44, r: o * 8, s: 1 - Math.abs(o) * 0.03 });
 
-export default function StickerFolders({ shots }: { shots: Shot[] }) {
+export default function StickerFolders({
+  shots,
+  slug,
+  price,
+  heading = "h2",
+}: {
+  shots: Shot[];
+  /** "h1" when this section IS the page — /shop/stickers has no other title */
+  heading?: "h1" | "h2";
+  /** the category slug the cart line is filed under — "stickers" */
+  slug: string;
+  /** ONE price for all six, from `categories[stickers].from`. It is deliberately
+   *  not a per-sheet number: /api/order re-prices every line from its own copy
+   *  of that table and never trusts the browser, and a per-sheet price the
+   *  server did not also hold would be a figure the server would silently
+   *  under-charge. The sheets are all one size and count, so one number is
+   *  also simply true. */
+  price: number;
+}) {
   const [live, setLive] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  /** which sheet just went in, so the confirmation sits on its own folder */
+  const [added, setAdded] = useState<string | null>(null);
+  const addTimer = useRef<number | null>(null);
   const root = useRef<HTMLElement>(null);
   /** card elements per sheet id, in DOM order */
   const decks = useRef<Map<string, HTMLElement[]>>(new Map());
@@ -180,6 +203,24 @@ export default function StickerFolders({ shots }: { shots: Shot[] }) {
   }, [open, close]);
 
   useEffect(() => () => drags.current.forEach((d) => d.kill()), []);
+  useEffect(() => () => { if (addTimer.current) window.clearTimeout(addTimer.current); }, []);
+
+  /** WHICH SHEET travels as the line's `variant`. The cart already keys lines
+   *  by cat+art+variant, so six sheets are six lines rather than one line of
+   *  six, and /api/order echoes the variant into the order mail — she reads
+   *  "Sheet 03", not "Stickers ×1" with no way to know which. */
+  const buy = useCallback(
+    (sheetId: string, name: string) => {
+      add(slug, undefined, 1, name);
+      // the picture the buyer is looking at is the one that flies
+      const card = decks.current.get(sheetId)?.[1] ?? decks.current.get(sheetId)?.[0];
+      flyToCart(card?.querySelector("img") ?? null);
+      setAdded(sheetId);
+      if (addTimer.current) window.clearTimeout(addTimer.current);
+      addTimer.current = window.setTimeout(() => setAdded(null), 2600);
+    },
+    [slug],
+  );
 
   return (
     <section
@@ -190,10 +231,19 @@ export default function StickerFolders({ shots }: { shots: Shot[] }) {
     >
       <div className="ap-sec__head">
         <p className="ap-kicker">{stickerSheets.kicker}</p>
-        <h2 className="ap-h2" data-tfx="rise">
-          {stickerSheets.title}
-        </h2>
+        {heading === "h1" ? (
+          <h1 className="ap-h2" data-tfx="rise">
+            {stickerSheets.title}
+          </h1>
+        ) : (
+          <h2 className="ap-h2" data-tfx="rise">
+            {stickerSheets.title}
+          </h2>
+        )}
         <p className="ap-lede">{stickerSheets.copy}</p>
+        <p className="ap-cv__price ap-sf__from">
+          <strong>{dram(price)}</strong> a sheet
+        </p>
       </div>
 
       <ul className="ap-sf__row">
@@ -245,6 +295,25 @@ export default function StickerFolders({ shots }: { shots: Shot[] }) {
                   <span className="ap-sf__chip">{sheet.name}</span>
                   <span className="ap-sf__spec">{stickerSheets.spec}</span>
                 </button>
+              </div>
+
+              {/* ---- price and buy, under every folder ------------------
+                  OUTSIDE the stage on purpose: the stage is aria-hidden on
+                  the plain layer and its cards are dragged about, and a
+                  purchase control must never live somewhere a gesture can
+                  throw it. This row renders in BOTH layers, so a phone can
+                  buy a sheet exactly as a desktop can. */}
+              <div className="ap-sf__buy">
+                <p className="ap-sf__price">
+                  <span className="ap-sf__pname">{sheet.name}</span>
+                  <strong>{dram(price)}</strong>
+                </p>
+                <button type="button" className="ap-btn ap-sf__add" onClick={() => buy(sheet.id, sheet.name)}>
+                  {stickerSheets.add}
+                </button>
+                <p className="ap-sf__added" role="status">
+                  {added === sheet.id ? stickerSheets.added : ""}
+                </p>
               </div>
 
               {/* ---- the plain layer: the same three pictures as a row ----

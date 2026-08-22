@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Chrome from "@/components/Chrome";
-import CategoryView from "@/components/CategoryView";
+import Link from "next/link";
+import CategoryView, { CategorySpec, OrderingSteps } from "@/components/CategoryView";
 // One route serves eight product pages, so GSAP + ScrollTrigger ride along on
 // all of them even though only the photographed ones render a lookbook —
 // /shop/[slug] went from 110 kB to 159 kB First Load. next/dynamic was tried
@@ -121,10 +122,44 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {morph && (
         <MorphHero items={morphDeck} intro={morph.intro} cue={morph.cue} title={morph.title} copy={morph.copy} />
       )}
-      <CategoryView cat={cat} demoted={opens || !!morph} />
-      {/* the six sticker sheets as folders — stickers only, data-driven from
-          stickerSheets in content.ts + the stickers roll of the manifest */}
-      {cat.slug === "stickers" && <StickerFolders shots={P.stickers ?? []} />}
+      {/* STICKERS DO NOT USE THE CATEGORY VIEW ANY MORE (client 2026-08-19:
+          "remove this part, only … 3 sticker in folder must stay, also add
+          price and user must can buy them"). That view is built to sell ONE
+          object with any one of the 57 illustrations printed on it, and this
+          line is now six fixed sheets — so its big hero, its shot strip and
+          its 57-illustration picker were all asking a question that no longer
+          has an answer here. The folders are the product; the buying moved
+          into them. What is deliberately KEPT is the scaffolding that is not
+          about choosing: the breadcrumb, the heading, the price floor, how
+          ordering works, and the spec rows that carry the returns wording. */}
+      {cat.slug === "stickers" ? (
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          {/* THE FOLDERS CARRY THE PAGE'S H1. An earlier cut put "Stickers"
+              above them and left "Six sheets of twenty" as an h2 underneath —
+              two headings, twenty pixels apart, saying the same thing, and
+              the blurb repeating the section copy under both. The category is
+              already named by the breadcrumb, the tab title and the JSON-LD,
+              so the page says it once, in the words that carry the most. */}
+          <StickerFolders shots={P.stickers ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+              <CategorySpec cat={cat} />
+            </div>
+          </div>
+        </>
+      ) : (
+        <CategoryView cat={cat} demoted={opens || !!morph} />
+      )}
       {book && shots.length >= 7 && (
         <Lookbook
           shots={shots}
