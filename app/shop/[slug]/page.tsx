@@ -14,6 +14,7 @@ import CategoryView from "@/components/CategoryView";
 import Lookbook from "@/components/Lookbook";
 import Overture from "@/components/Overture";
 import MorphHero from "@/components/MorphHero";
+import StickerFolders from "@/components/StickerFolders";
 import { brand, categories, lookbooks, morphs, overtures } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
@@ -121,6 +122,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <MorphHero items={morphDeck} intro={morph.intro} cue={morph.cue} title={morph.title} copy={morph.copy} />
       )}
       <CategoryView cat={cat} demoted={opens || !!morph} />
+      {/* the six sticker sheets as folders — stickers only, data-driven from
+          stickerSheets in content.ts + the stickers roll of the manifest */}
+      {cat.slug === "stickers" && <StickerFolders shots={P.stickers ?? []} />}
       {book && shots.length >= 7 && (
         <Lookbook
           shots={shots}

@@ -1,0 +1,282 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { Draggable } from "gsap/Draggable";
+import { stickerSheets } from "@/lib/content";
+
+// ============================================================================
+// STICKER FOLDERS — six folders side by side, one per sheet, three pictures
+// in each (the print and its two mockups).
+//
+// Ported from a supplied framer-motion + Tailwind "InteractiveFolderGallery":
+// the anatomy is kept — a folder whose photographs fan on hover, spread when
+// opened, and are dragged down to put away — and the implementation is not,
+// because framer-motion and Tailwind are both outside this project's budget
+// (the same trade Selector, LocationCard and the morph hero already made).
+// The springs became GSAP tweens; the drag became gsap/Draggable, which ships
+// inside the gsap package this route already loads.
+//
+// CHANGES FROM THE SUPPLIED DESIGN, each for a reason:
+//   · SIX folders in a row, not one centred stage — that is the ask ("all
+//     sticker folder must placed side by side"), so the geometry is measured
+//     from each cell at open time instead of hardcoded to a 400px stage.
+//   · The folder is a real <button> with aria-expanded, and Escape / a second
+//     press / a press on the page ground all close it — a control that can
+//     only be closed by dragging is unusable from a keyboard.
+//   · Only ONE folder may be open: the spread rides over the neighbouring
+//     cells, and two spreads at once print through each other.
+//   · The hardcoded #1e1e1e blacks became the site's tokens, so the folders
+//     sit on paper in the day and on the night ground after dark without a
+//     single colour named here.
+//
+// TWO-LAYER CONTRACT, as everywhere on this site: this component renders the
+// PLAIN layer (a grid of the eighteen pictures, grouped by sheet) for
+// everyone; the folder stage is layered on only when the gate passes —
+// desktop, fine pointer, motion allowed, scripting on. Phones get the grid,
+// not a toy that needs hover.
+// ============================================================================
+
+export type Shot = {
+  id: string;
+  src: string;
+  thumb: string;
+  w: number;
+  h: number;
+  avg: string;
+};
+
+const GATE = "(min-width: 861px) and (hover: hover) and (prefers-reduced-motion: no-preference)";
+
+/** resting z of card i — the CENTRE card (the print) on top of the stack */
+const zOf = (i: number) => (i === 1 ? 3 : i === 0 ? 1 : 2);
+
+/** rest / hover / open offsets for card i of 3 (offset o = i − 1), as
+ *  fractions of the CARD's width so the fan survives any cell size */
+const rest = (o: number) => ({ x: o * 3, y: o * -5, r: o * 3, s: 1 - Math.abs(o) * 0.03 });
+const fan = (o: number) => ({ x: o * 34, y: o * -12 - 44, r: o * 8, s: 1 - Math.abs(o) * 0.03 });
+
+export default function StickerFolders({ shots }: { shots: Shot[] }) {
+  const [live, setLive] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const root = useRef<HTMLElement>(null);
+  /** card elements per sheet id, in DOM order */
+  const decks = useRef<Map<string, HTMLElement[]>>(new Map());
+  const drags = useRef<Draggable[]>([]);
+  const openRef = useRef<string | null>(null);
+  openRef.current = open;
+
+  const byId = (id: string) => shots.find((s) => s.id === id);
+
+  useEffect(() => {
+    if (!window.matchMedia("(scripting: enabled)").matches) return;
+    if (!window.matchMedia(GATE).matches) return;
+    gsap.registerPlugin(Draggable);
+    setLive(true);
+  }, []);
+
+  /** every card of a sheet back to its resting stack */
+  const settle = useCallback((id: string, state: "rest" | "fan") => {
+    const els = decks.current.get(id);
+    if (!els) return;
+    els.forEach((el, i) => {
+      const o = i - 1;
+      const p = state === "fan" ? fan(o) : rest(o);
+      // back below the flap the moment the fold-away starts, or the cards
+      // slide down IN FRONT of the folder they are meant to drop into
+      gsap.set(el, { zIndex: zOf(i) });
+      gsap.to(el, {
+        x: p.x,
+        y: p.y,
+        rotation: p.r,
+        scale: p.s,
+        duration: 0.5,
+        ease: "back.out(1.4)",
+        overwrite: "auto",
+      });
+    });
+  }, []);
+
+  const close = useCallback(() => {
+    const id = openRef.current;
+    if (!id) return;
+    drags.current.forEach((d) => d.kill());
+    drags.current = [];
+    settle(id, "rest");
+    setOpen(null);
+  }, [settle]);
+
+  const openSheet = useCallback(
+    (id: string) => {
+      // one folder at a time — a second spread would print through the first
+      if (openRef.current && openRef.current !== id) close();
+      const els = decks.current.get(id);
+      if (!els) return;
+      setOpen(id);
+
+      // measured, not hardcoded: the spread is proportional to the card the
+      // cell actually laid out, so it survives every grid breakpoint
+      const w = els[0]?.offsetWidth || 190;
+      const spreadX = w * 0.82;
+      const riseY = -(els[0]?.offsetHeight || 240) * 0.5;
+
+      els.forEach((el, i) => {
+        const o = i - 1;
+        // over the flap (z 4) while spread — the flap stays pressable
+        // underneath as the keyboard's close control
+        gsap.set(el, { zIndex: 10 + i });
+        gsap.to(el, {
+          x: o * spreadX,
+          y: riseY,
+          rotation: 0,
+          scale: 1.05,
+          duration: 0.55,
+          ease: "back.out(1.2)",
+          overwrite: "auto",
+        });
+        // draggable AFTER the tween owns the transform: Draggable reads the
+        // current x/y when it is created, so making it first would freeze the
+        // card mid-flight
+        drags.current.push(
+          Draggable.create(el, {
+            type: "x,y",
+            zIndexBoost: true,
+            onDragEnd() {
+              // the supplied gesture: a decent pull DOWN puts the sheet away
+              if (this.y > riseY + 96) close();
+              else
+                gsap.to(el, {
+                  x: o * spreadX,
+                  y: riseY,
+                  duration: 0.45,
+                  ease: "back.out(1.4)",
+                });
+            },
+          })[0],
+        );
+      });
+    },
+    [close],
+  );
+
+  /** Escape and the page ground both put the folder away */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    const onDown = (e: PointerEvent) => {
+      const cell = (e.target as HTMLElement).closest?.("[data-sheet]");
+      if (!cell || cell.getAttribute("data-sheet") !== open) close();
+    };
+    window.addEventListener("keydown", onKey);
+    // pointerdown, not click: a drag that ends outside the cell must not
+    // ALSO count as a press on the ground and close what it just tidied
+    window.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onDown);
+    };
+  }, [open, close]);
+
+  useEffect(() => () => drags.current.forEach((d) => d.kill()), []);
+
+  return (
+    <section
+      ref={root}
+      className="ap-sf"
+      data-live={live || undefined}
+      aria-label={`${stickerSheets.title} — sticker sheets`}
+    >
+      <div className="ap-sec__head">
+        <p className="ap-kicker">{stickerSheets.kicker}</p>
+        <h2 className="ap-h2" data-tfx="rise">
+          {stickerSheets.title}
+        </h2>
+        <p className="ap-lede">{stickerSheets.copy}</p>
+      </div>
+
+      <ul className="ap-sf__row">
+        {stickerSheets.sheets.map((sheet) => {
+          const ordered = sheet.shots.map(byId).filter((s): s is Shot => !!s);
+          // THE PRINT RIDES IN THE MIDDLE, ON TOP. content.ts lists it first
+          // (it is the sheet's identity), but at rest only the top card shows
+          // — and the mockups are grey product photographs, so leading with
+          // them made six folders of grey cards out of her most colourful
+          // work. Centre position + top z gives the fan mockups either side.
+          const three = ordered.length === 3 ? [ordered[1], ordered[0], ordered[2]] : ordered;
+          const isOpen = open === sheet.id;
+          return (
+            <li
+              key={sheet.id}
+              className="ap-sf__cell"
+              data-sheet={sheet.id}
+              data-open={isOpen || undefined}
+              data-dim={(open !== null && !isOpen) || undefined}
+              onPointerEnter={live && !openRef.current ? () => settle(sheet.id, "fan") : undefined}
+              onPointerLeave={live && !openRef.current ? () => settle(sheet.id, "rest") : undefined}
+            >
+              {/* ---- the folder stage: live layer only (CSS hides it plain) */}
+              <div className="ap-sf__stage" aria-hidden={!live || undefined}>
+                <div className="ap-sf__back" />
+                <div className="ap-sf__deck">
+                  {three.map((s, i) => (
+                    <figure
+                      key={s.id}
+                      className="ap-sf__card"
+                      style={{ zIndex: zOf(i), background: s.avg }}
+                      ref={(el) => {
+                        const list = decks.current.get(sheet.id) ?? [];
+                        list[i] = el as HTMLElement;
+                        decks.current.set(sheet.id, list);
+                      }}
+                    >
+                      {/* thumbs are 700px files — plenty for a ~200px card */}
+                      <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" draggable={false} />
+                    </figure>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="ap-sf__flap"
+                  aria-expanded={isOpen}
+                  onClick={() => (isOpen ? close() : openSheet(sheet.id))}
+                >
+                  <span className="ap-sf__chip">{sheet.name}</span>
+                  <span className="ap-sf__spec">{stickerSheets.spec}</span>
+                </button>
+              </div>
+
+              {/* ---- the plain layer: the same three pictures as a row ----
+                   This is the whole content for phones, reduced motion and
+                   no-JS — real images, not an empty stage. */}
+              <div className="ap-sf__plain">
+                <h3 className="ap-sf__plainname">
+                  {sheet.name} <span>{stickerSheets.spec}</span>
+                </h3>
+                <ul>
+                  {three.map((s) => (
+                    <li key={s.id} style={{ background: s.avg }}>
+                      <img
+                        src={s.thumb}
+                        alt={`${sheet.name} — sticker sheet by Arpine Baroyan`}
+                        width={s.w}
+                        height={s.h}
+                        loading="lazy"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* the way out, said once for the whole row — live layer only */}
+      <p className="ap-sf__hint" data-on={open !== null || undefined} aria-hidden={!live || undefined}>
+        {stickerSheets.hint}
+      </p>
+    </section>
+  );
+}

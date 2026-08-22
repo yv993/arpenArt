@@ -790,6 +790,38 @@ export const morphs: Record<string, { intro: string; cue: string; title: string;
   },
 };
 
+// ---------------------------------------------------------------------------
+// STICKER SHEETS — the folders on /shop/stickers.
+//
+// Arpine's 2026-08-19 drop is six SHEETS, each delivered as three pictures:
+// the flat print file and two mockup photographs. The page shows them as six
+// folders side by side — hover fans a folder's three pictures, opening it
+// spreads them out to look through (StickerFolders.tsx).
+//
+// The names are ORDINALS, not titles: the sheets arrived numbered 1–6 and
+// nothing else, and this site does not invent titles the artist has not
+// given (same rule as the artworks). The spec line is read off her own print
+// filenames — "158x200 x 20" — so it is a fact, not a guess.
+// `shots` are ids in products.json's stickers roll, print first.
+// ---------------------------------------------------------------------------
+export const stickerSheets = {
+  kicker: "(The sheets)",
+  title: "SIX SHEETS OF TWENTY",
+  copy:
+    "Every sheet is 158 × 200 mm — twenty stickers, cut and ready to peel. Open a folder to look through its sheet and the photographs of it printed.",
+  spec: "158 × 200 mm · 20 stickers",
+  /** shown once a folder is open, on the live layer only */
+  hint: "Drag a picture down, press Escape, or press the folder again to close it.",
+  sheets: [
+    { id: "1", name: "Sheet 01", shots: ["01", "02", "03"] },
+    { id: "2", name: "Sheet 02", shots: ["04", "05", "06"] },
+    { id: "3", name: "Sheet 03", shots: ["07", "08", "09"] },
+    { id: "4", name: "Sheet 04", shots: ["10", "11", "12"] },
+    { id: "5", name: "Sheet 05", shots: ["13", "14", "15"] },
+    { id: "6", name: "Sheet 06", shots: ["16", "17", "18"] },
+  ],
+};
+
 export const lookbooks: Record<string, Lookbook> = {
   totes: {
     kicker: "(Carried)",
