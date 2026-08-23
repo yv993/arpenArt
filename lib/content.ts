@@ -191,11 +191,11 @@ export const categories: Category[] = [
     blurb:
       "Domed stickers with real depth, each one carded and stamped like a letter from Yerevan.",
     media: "sticker3d",
-    // PLACEHOLDER, like every price here except the postcards'. Set a little
-    // above the flat sticker because a domed sticker is a different make — but
-    // it is still a figure to CONFIRM, not one to trust; nothing on this site
-    // guesses a price and then hides that it guessed.
-    from: 900,
+    // ARPINE'S REAL PRICE, 2026-08-22: 500 dram each. Not a placeholder — the
+    // second confirmed figure on the site after the postcards'. It is LOWER
+    // than the guess it replaced (900), which is the whole argument for never
+    // inventing one: a plausible number would have overcharged for a week.
+    from: 500,
     status: "open",
     spec: [
       { k: "Finish", v: "Domed resin over print, on a carded backing" },
