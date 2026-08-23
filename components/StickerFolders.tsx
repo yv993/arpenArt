@@ -6,6 +6,7 @@ import { Draggable } from "gsap/Draggable";
 import { stickerSheets } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
+import PhotoLightbox from "./PhotoLightbox";
 
 // ============================================================================
 // STICKER FOLDERS — six folders side by side, one per sheet, three pictures
@@ -81,6 +82,9 @@ export default function StickerFolders({
   const [open, setOpen] = useState<string | null>(null);
   /** which sheet just went in, so the confirmation sits on its own folder */
   const [added, setAdded] = useState<string | null>(null);
+  /** the sheet whose pictures are open big, and which of its three */
+  const [big, setBig] = useState<{ sheet: string; i: number } | null>(null);
+  const bigOpener = useRef<HTMLElement | null>(null);
   const addTimer = useRef<number | null>(null);
   const root = useRef<HTMLElement>(null);
   /** card elements per sheet id, in DOM order */
@@ -222,6 +226,18 @@ export default function StickerFolders({
     [slug],
   );
 
+  /** the opened sheet and its three pictures, at FULL size. Resolved here so
+   *  the dialog below stays a single block rather than three lookups inline. */
+  const bigSheet = big ? stickerSheets.sheets.find((s) => s.id === big.sheet) : undefined;
+  const bigShots = bigSheet
+    ? (() => {
+        const ordered = bigSheet.shots.map(byId).filter((s): s is Shot => !!s);
+        // the same reordering the folder uses (print in the middle), so the
+        // picture that opens is the one that was pressed
+        return ordered.length === 3 ? [ordered[1], ordered[0], ordered[2]] : ordered;
+      })()
+    : [];
+
   return (
     <section
       ref={root}
@@ -275,10 +291,20 @@ export default function StickerFolders({
                 <div className="ap-sf__back" />
                 <div className="ap-sf__deck">
                   {three.map((s, i) => (
-                    <figure
+                    <button
+                      type="button"
                       key={s.id}
                       className="ap-sf__card"
                       style={{ zIndex: zOf(i), background: s.avg }}
+                      aria-label={`${sheet.name}, picture ${i + 1} of ${three.length} — see it bigger`}
+                      // A CLOSED folder belongs to the flap: the cards are
+                      // stacked behind it and a press there should open the
+                      // folder, not a picture nobody can see yet.
+                      onClick={(e) => {
+                        if (openRef.current !== sheet.id) return;
+                        bigOpener.current = e.currentTarget;
+                        setBig({ sheet: sheet.id, i });
+                      }}
                       ref={(el) => {
                         const list = decks.current.get(sheet.id) ?? [];
                         list[i] = el as HTMLElement;
@@ -287,7 +313,7 @@ export default function StickerFolders({
                     >
                       {/* thumbs are 700px files — plenty for a ~200px card */}
                       <img src={s.thumb} alt="" width={s.w} height={s.h} loading="lazy" draggable={false} />
-                    </figure>
+                    </button>
                   ))}
                 </div>
                 <button
@@ -328,15 +354,27 @@ export default function StickerFolders({
                   {sheet.name} <span>{stickerSheets.spec}</span>
                 </h3>
                 <ul>
-                  {three.map((s) => (
+                  {three.map((s, i) => (
                     <li key={s.id} style={{ background: s.avg }}>
-                      <img
-                        src={s.thumb}
-                        alt={`${sheet.name} — sticker sheet by Arpine Baroyan`}
-                        width={s.w}
-                        height={s.h}
-                        loading="lazy"
-                      />
+                      {/* the same "make it bigger" the folder gives — a phone
+                          has no folder to open, so the picture itself is the
+                          control */}
+                      <button
+                        type="button"
+                        aria-label={`${sheet.name}, picture ${i + 1} of ${three.length} — see it bigger`}
+                        onClick={(e) => {
+                          bigOpener.current = e.currentTarget;
+                          setBig({ sheet: sheet.id, i });
+                        }}
+                      >
+                        <img
+                          src={s.thumb}
+                          alt={`${sheet.name} — sticker sheet by Arpine Baroyan`}
+                          width={s.w}
+                          height={s.h}
+                          loading="lazy"
+                        />
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -350,6 +388,33 @@ export default function StickerFolders({
       <p className="ap-sf__hint" data-on={open !== null || undefined} aria-hidden={!live || undefined}>
         {stickerSheets.hint}
       </p>
+
+      {/* A PICTURE, BIG (client 2026-08-23: "images must become bigger when
+          user click in images"). The FULL file, not the 700px thumb the folder
+          shows — the sheet is twenty stickers and the point of opening it is
+          to see them. The arrows walk the sheet's other two pictures, and the
+          sheet stays buyable from in here rather than making anyone close the
+          picture to find the button again. */}
+      {bigSheet && (
+        <PhotoLightbox
+          shots={bigShots}
+          i={big!.i}
+          onIndex={(n) => setBig((p) => (p ? { ...p, i: n } : p))}
+          onClose={() => setBig(null)}
+          opener={bigOpener.current}
+          label={`${bigSheet.name} — ${stickerSheets.spec}`}
+          alt={(n) => `${bigSheet.name}, picture ${n + 1} of ${bigShots.length}, by Arpine Baroyan`}
+          footer={
+            <button
+              type="button"
+              className="ap-btn"
+              onClick={() => buy(bigSheet.id, bigSheet.name)}
+            >
+              {stickerSheets.add} — {dram(price)}
+            </button>
+          }
+        />
+      )}
     </section>
   );
 }

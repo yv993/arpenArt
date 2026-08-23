@@ -3076,3 +3076,34 @@ html[data-footfx] .ap-foot {
     max-height: 48svh;
   }
 }
+
+/* The folder's three pictures are BUTTONS now (they open the picture big), so
+   they need a button's defaults undone. `cursor: zoom-in` only once the folder
+   is open — while it is shut the flap owns the press and the cards are behind
+   it, so a magnifier there would promise something that does not happen. */
+.ap-sf__card {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  appearance: none;
+}
+.ap-sf__cell[data-open] .ap-sf__card {
+  cursor: zoom-in;
+}
+/* the plain layer's pictures do the same job with no folder around them */
+.ap-sf__plain li button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  appearance: none;
+}
+.ap-sf__plain li button img {
+  display: block;
+  width: 100%;
+  height: auto;
+}

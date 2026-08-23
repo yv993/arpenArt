@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import PhotoLightbox from "./PhotoLightbox";
 import Link from "next/link";
 import gsap from "gsap";
 import { dram } from "@/lib/cart";
@@ -86,7 +87,6 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
 
   // ---- the lightbox ------------------------------------------------------
   const shots = lb === null ? [] : cats[lb].shots;
-  const closeRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
   const open = (idx: number, from: HTMLElement) => {
@@ -94,28 +94,10 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
     setI(0);
     setLb(idx);
   };
-  const close = useCallback(() => {
-    setLb(null);
-    // the keyboard goes back where it came from, not to the top of the page
-    openerRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (lb === null) return;
-    closeRef.current?.focus();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") setI((n) => (n + 1) % Math.max(1, shots.length));
-      if (e.key === "ArrowLeft") setI((n) => (n - 1 + shots.length) % Math.max(1, shots.length));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [lb, shots.length, close]);
+  // Escape, the arrow keys, the scroll lock and the focus round-trip all moved
+  // INTO PhotoLightbox when it was extracted. Leaving copies here would have
+  // meant two listeners racing to close the same dialog and two writes to
+  // body.overflow, the second of which restores the wrong value.
 
   return (
     <div className="ap-xg" ref={root} data-live={live || undefined}>
@@ -175,70 +157,20 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
       </div>
 
       {lb !== null && (
-        <div
-          className="ap-xg__lb"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Photographs of ${cats[lb].name}`}
-          onClick={close}
-        >
-          <button ref={closeRef} type="button" className="ap-xg__x" onClick={close} aria-label="Close">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 18L18 6M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-
-          {shots.length > 1 && (
-            <button
-              type="button"
-              className="ap-xg__nav ap-xg__nav--prev"
-              aria-label="Previous photograph"
-              onClick={(e) => {
-                e.stopPropagation();
-                setI((n) => (n - 1 + shots.length) % shots.length);
-              }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 19l-7-7 7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          )}
-
-          <figure className="ap-xg__stage" onClick={(e) => e.stopPropagation()}>
-            <img
-              key={i}
-              src={shots[i].src}
-              alt={`${cats[lb].name}, photograph ${i + 1} of ${shots.length}`}
-              width={shots[i].w}
-              height={shots[i].h}
-            />
-            <figcaption>
-              <Link className="ap-btn" href={`/shop/${cats[lb].slug}`}>
-                Open {cats[lb].name} <span aria-hidden>→</span>
-              </Link>
-            </figcaption>
-          </figure>
-
-          {shots.length > 1 && (
-            <button
-              type="button"
-              className="ap-xg__nav ap-xg__nav--next"
-              aria-label="Next photograph"
-              onClick={(e) => {
-                e.stopPropagation();
-                setI((n) => (n + 1) % shots.length);
-              }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          )}
-
-          <p className="ap-xg__count" role="status">
-            {i + 1} / {shots.length}
-          </p>
-        </div>
+        <PhotoLightbox
+          shots={shots}
+          i={i}
+          onIndex={setI}
+          onClose={() => setLb(null)}
+          opener={openerRef.current}
+          label={`Photographs of ${cats[lb].name}`}
+          alt={(n) => `${cats[lb].name}, photograph ${n + 1} of ${shots.length}`}
+          footer={
+            <Link className="ap-btn" href={`/shop/${cats[lb].slug}`}>
+              Open {cats[lb].name} <span aria-hidden>→</span>
+            </Link>
+          }
+        />
       )}
     </div>
   );
