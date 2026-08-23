@@ -168,7 +168,8 @@ export const categories: Category[] = [
     // of any one of the 57 illustrations, chosen from the picker — that path
     // is gone, so the blurb cannot keep promising it. What she actually
     // delivered is six fixed sheets; the page sells those.
-    blurb: "Six sticker sheets, twenty stickers to a sheet — matte and weatherproof.",
+    // her lead sentence — a grid card wants one line, and it should be hers
+    blurb: "A collection of stories, one sticker at a time.",
     media: "stickers",
     // PLACEHOLDER, and its MEANING changed with the line: 600 was written when
     // this category still sold single die-cuts, and it now prices ONE SHEET OF
@@ -188,8 +189,7 @@ export const categories: Category[] = [
   {
     slug: "3d-stickers",
     name: "3D stickers",
-    blurb:
-      "Domed stickers with real depth, each one carded and stamped like a letter from Yerevan.",
+    blurb: "Bring a little piece of Armenia to life.",
     media: "sticker3d",
     // ARPINE'S REAL PRICE, 2026-08-22: 500 dram each. Not a placeholder — the
     // second confirmed figure on the site after the postcards'. It is LOWER
@@ -838,9 +838,17 @@ export const morphs: Record<string, { intro: string; cue: string; title: string;
 // ---------------------------------------------------------------------------
 export const stickerSheets = {
   kicker: "(The sheets)",
-  title: "SIX SHEETS OF TWENTY",
-  copy:
-    "Every sheet is 158 × 200 mm — twenty stickers, cut and ready to peel. Open a folder to look through its sheet and the photographs of it printed, then add the one you want.",
+  // HER WORDS, 2026-08-23. She also named what the six sheets ARE, which
+  // nothing here had said: a set is "a group of illustrations connected by a
+  // common story, place, feeling or idea" — they are themed, not six
+  // arbitrary twenties. The size and count she left out are not lost; they
+  // are the spec row on every folder and in the category's spec table.
+  title: "STICKER COLLECTION",
+  copy: [
+    "A collection of stories, one sticker at a time.",
+    "Each sticker set brings together a group of illustrations connected by a common story, place, feeling or idea. Inspired by Armenia, its culture, landscapes and everyday moments, every set is designed to tell a little story wherever you take it.",
+    "Use them to personalize your notebooks, laptops, phones, water bottles, travel gear, packaging and more — or simply collect your favorite pieces of Armenia.",
+  ],
   spec: "158 × 200 mm · 20 stickers",
   /** the label on each folder's own buy button */
   add: "Add this sheet",
@@ -871,9 +879,14 @@ export const stickerSheets = {
 // ---------------------------------------------------------------------------
 export const stickers3d = {
   kicker: "(Domed)",
-  title: "FORTY-EIGHT, ON A LOOP",
-  copy:
-    "Every design in the series, domed in resin and carded. Scroll to send them past — the lane comes round again — then click one to bring it to the middle.",
+  // HER WORDS, 2026-08-23 — heading and body both. What was here before was
+  // mine ("Forty-eight, on a loop") and it described the LANE; hers describes
+  // the product, which is what a shop page is for. The instruction the old
+  // lede carried lives in `cue`, bottom-right, where it belongs.
+  title: "3D STICKERS",
+  copy: [
+    "Bring a little piece of Armenia to life. Playful 3D illustrations inspired by Armenia, its places, culture and everyday moments — made to add a little personality wherever you stick them.",
+  ],
   cue: "Scroll to surf · click to open",
   /** shown on the opened card */
   open: { series: "The Armenia series", add: "Add to cart", close: "Close", added: "Added to your cart." },

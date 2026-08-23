@@ -240,7 +240,11 @@ export default function StickerFolders({
             {stickerSheets.title}
           </h2>
         )}
-        <p className="ap-lede">{stickerSheets.copy}</p>
+        {stickerSheets.copy.map((t) => (
+          <p className="ap-lede" key={t}>
+            {t}
+          </p>
+        ))}
         <p className="ap-cv__price ap-sf__from">
           <strong>{dram(price)}</strong> a sheet
         </p>

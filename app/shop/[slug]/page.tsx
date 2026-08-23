@@ -171,7 +171,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             </nav>
           </div>
 
-          <StickerSurfer shots={P.sticker3d ?? []} slug={cat.slug} price={cat.from} />
+          <StickerSurfer shots={P.sticker3d ?? []} slug={cat.slug} price={cat.from} heading="h1" />
 
           <div className="ap-cv">
             <div className="ap-sheets__foot">

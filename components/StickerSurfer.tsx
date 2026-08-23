@@ -78,11 +78,17 @@ export default function StickerSurfer({
   shots,
   slug,
   price,
+  heading = "h2",
 }: {
   shots: Shot[];
   slug: string;
   price: number;
+  /** "h1" when this section IS the page. It was missing when the lane first
+   *  shipped — /shop/3d-stickers had no h1 at all, because the lane was
+   *  written as a section and then made into the whole page. */
+  heading?: "h1" | "h2";
 }) {
+  const H = heading;
   const [live, setLive] = useState(false);
   const [open, setOpen] = useState<Shot | null>(null);
   const [added, setAdded] = useState(false);
@@ -233,10 +239,14 @@ export default function StickerSurfer({
       <div className="ap-s3__scene" ref={scene} onPointerMove={onMove} onPointerLeave={onLeave}>
         <div className="ap-s3__head">
           <p className="ap-kicker">{stickers3d.kicker}</p>
-          <h2 className="ap-h2" data-tfx="rise">
+          <H className="ap-h2" data-tfx="rise">
             {stickers3d.title}
-          </h2>
-          <p className="ap-lede">{stickers3d.copy}</p>
+          </H>
+          {stickers3d.copy.map((t) => (
+            <p className="ap-lede" key={t}>
+              {t}
+            </p>
+          ))}
           <p className="ap-s3__price">
             <strong>{dram(price)}</strong> each
           </p>
@@ -274,7 +284,11 @@ export default function StickerSurfer({
         <div className="ap-sec__head">
           <p className="ap-kicker">{stickers3d.kicker}</p>
           <h2 className="ap-h2">{stickers3d.title}</h2>
-          <p className="ap-lede">{stickers3d.copy}</p>
+          {stickers3d.copy.map((t) => (
+            <p className="ap-lede" key={t}>
+              {t}
+            </p>
+          ))}
           <p className="ap-s3__price">
             <strong>{dram(price)}</strong> each
           </p>
