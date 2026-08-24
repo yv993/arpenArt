@@ -51,11 +51,19 @@ export type Category = {
   blurb: string;
   /** key in lib/products.json */
   media: string;
-  /** Price in Armenian dram. Postcards carry Arpine's REAL price (1,000 —
-   *  client 2026-08-12); every other category is still a PLACEHOLDER waiting
-   *  on her figures. The cart and the order endpoint both read this field,
-   *  and the endpoint re-prices from it so the browser can never name a
-   *  price of its own. */
+  /** Price in Armenian dram.
+   *
+   *  REAL, confirmed by Arpine: postcards 1,000 (2026-08-12, re-confirmed
+   *  2026-08-24), 3D stickers 500 (2026-08-22), and sticker sheets 1,600,
+   *  scarves 8,000 and totes 8,000 (all 2026-08-24).
+   *
+   *  STILL PLACEHOLDERS, waiting on her figures: hoodies, cups, plates,
+   *  puzzles. Every one she has corrected so far moved by a lot and in both
+   *  directions — scarves down from 14,000, sticker sheets up from 600 — which
+   *  is the standing argument for never inventing one that merely looks right.
+   *
+   *  The cart and the order endpoint both read this field, and the endpoint
+   *  re-prices from it so the browser can never name a price of its own. */
   from: number;
   status: "open" | "soon";
   /** Artwork ids to tile on the card while the line is unphotographed. The
@@ -89,7 +97,8 @@ export const categories: Category[] = [
     name: "Postcards",
     blurb: "The full Armenia series, printed on heavy uncoated card. Sold singly or as a set.",
     media: "postcards",
-    // Arpine's real price, 2026-08-12: every card is 1,000 dram.
+    // Arpine's real price, 2026-08-12, RE-CONFIRMED 2026-08-24: every card
+    // is 1,000 dram. Unchanged — it was right the first time.
     from: 1000,
     status: "open",
     // "Sold singly or as a set" is already the blurb's promise — the picker
@@ -106,7 +115,9 @@ export const categories: Category[] = [
     name: "Scarves",
     blurb: "Silk squares and bandanas, the illustrations redrawn to wrap and fold.",
     media: "scarves",
-    from: 14000,
+    // ARPINE'S REAL PRICE, 2026-08-24 — it replaces a 14,000 placeholder,
+    // which was nearly twice what she actually charges.
+    from: 8000,
     status: "open",
     // the blurb already names the two cuts; the picker repeats them, no more
     variants: { label: "Style", options: ["Silk square", "Bandana"] },
@@ -171,14 +182,13 @@ export const categories: Category[] = [
     // her lead sentence — a grid card wants one line, and it should be hers
     blurb: "A collection of stories, one sticker at a time.",
     media: "stickers",
-    // PLACEHOLDER, and its MEANING changed with the line: 600 was written when
-    // this category still sold single die-cuts, and it now prices ONE SHEET OF
-    // TWENTY. The figure was NOT invented upward to suit — no price on this
-    // site is ever guessed — so it is very probably too low and is the first
-    // thing to ask Arpine for. Every sheet is the same size and count, so one
-    // number covers all six, which is also what keeps /api/order able to
-    // re-price a sheet from its own copy of this table.
-    from: 600,
+    // ARPINE'S REAL PRICE, 2026-08-24: 1,600 dram a sheet. It replaces the 600
+    // that was left standing when this line stopped selling single die-cuts —
+    // flagged at the time as "very probably too low", and it was, by nearly
+    // three times. Every sheet is the same size and count, so one number covers
+    // all six, which is also what keeps /api/order able to re-price a sheet
+    // from its own copy of this table.
+    from: 1600,
     status: "open",
     spec: [
       { k: "Sheet", v: "158 × 200 mm · 20 stickers" },
@@ -207,7 +217,8 @@ export const categories: Category[] = [
     name: "Tote bags",
     blurb: "Cotton totes carrying the stamp grid of the whole Armenia series.",
     media: "totes",
-    from: 6500,
+    // ARPINE'S REAL PRICE, 2026-08-24 (it replaces a 6,500 placeholder).
+    from: 8000,
     status: "open",
     // both rows repeat the tote lookbook's caption, word for word
     spec: [
