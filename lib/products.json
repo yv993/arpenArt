@@ -634,433 +634,433 @@
    "id": "01",
    "src": "/products/sticker3d-01.webp",
    "thumb": "/products/sticker3d-01-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d6d7d3"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c9c9c5"
   },
   {
    "id": "02",
    "src": "/products/sticker3d-02.webp",
    "thumb": "/products/sticker3d-02-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcd3d7"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cfc6ca"
   },
   {
    "id": "03",
    "src": "/products/sticker3d-03.webp",
    "thumb": "/products/sticker3d-03-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e5e2e0"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d8d5d3"
   },
   {
    "id": "04",
    "src": "/products/sticker3d-04.webp",
    "thumb": "/products/sticker3d-04-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e3dad5"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d6ccc8"
   },
   {
    "id": "05",
    "src": "/products/sticker3d-05.webp",
    "thumb": "/products/sticker3d-05-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcd7d6"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cfc9c9"
   },
   {
    "id": "06",
    "src": "/products/sticker3d-06.webp",
    "thumb": "/products/sticker3d-06-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d6d6d8"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c9c9ca"
   },
   {
    "id": "07",
    "src": "/products/sticker3d-07.webp",
    "thumb": "/products/sticker3d-07-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dadbdd"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cccdd0"
   },
   {
    "id": "08",
    "src": "/products/sticker3d-08.webp",
    "thumb": "/products/sticker3d-08-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d9d8d8"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cccacb"
   },
   {
    "id": "09",
    "src": "/products/sticker3d-09.webp",
    "thumb": "/products/sticker3d-09-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e0dad6"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d3cdc9"
   },
   {
    "id": "10",
    "src": "/products/sticker3d-10.webp",
    "thumb": "/products/sticker3d-10-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcdce0"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cfced3"
   },
   {
    "id": "11",
    "src": "/products/sticker3d-11.webp",
    "thumb": "/products/sticker3d-11-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d4d5dd"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c7c7d0"
   },
   {
    "id": "12",
    "src": "/products/sticker3d-12.webp",
    "thumb": "/products/sticker3d-12-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dbd9d7"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#ceccca"
   },
   {
    "id": "13",
    "src": "/products/sticker3d-13.webp",
    "thumb": "/products/sticker3d-13-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dbd9e0"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#ceccd3"
   },
   {
    "id": "14",
    "src": "/products/sticker3d-14.webp",
    "thumb": "/products/sticker3d-14-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#ddd8d2"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d0cac5"
   },
   {
    "id": "15",
    "src": "/products/sticker3d-15.webp",
    "thumb": "/products/sticker3d-15-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcd8ce"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cecbc0"
   },
   {
    "id": "16",
    "src": "/products/sticker3d-16.webp",
    "thumb": "/products/sticker3d-16-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e3ddde"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d6d0d0"
   },
   {
    "id": "17",
    "src": "/products/sticker3d-17.webp",
    "thumb": "/products/sticker3d-17-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e3d7d6"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d6c9c9"
   },
   {
    "id": "18",
    "src": "/products/sticker3d-18.webp",
    "thumb": "/products/sticker3d-18-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d6d8dc"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c9cbcf"
   },
   {
    "id": "19",
    "src": "/products/sticker3d-19.webp",
    "thumb": "/products/sticker3d-19-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dadbe0"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cdcdd2"
   },
   {
    "id": "20",
    "src": "/products/sticker3d-20.webp",
    "thumb": "/products/sticker3d-20-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dfdad9"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d2cccb"
   },
   {
    "id": "21",
    "src": "/products/sticker3d-21.webp",
    "thumb": "/products/sticker3d-21-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e1dbd8"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d3cdcb"
   },
   {
    "id": "22",
    "src": "/products/sticker3d-22.webp",
    "thumb": "/products/sticker3d-22-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#ddd7d6"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d0cac9"
   },
   {
    "id": "23",
    "src": "/products/sticker3d-23.webp",
    "thumb": "/products/sticker3d-23-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e2d7d3"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d5c9c6"
   },
   {
    "id": "24",
    "src": "/products/sticker3d-24.webp",
    "thumb": "/products/sticker3d-24-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e1d9d6"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d4cbc9"
   },
   {
    "id": "25",
    "src": "/products/sticker3d-25.webp",
    "thumb": "/products/sticker3d-25-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d5d8da"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c8cacd"
   },
   {
    "id": "26",
    "src": "/products/sticker3d-26.webp",
    "thumb": "/products/sticker3d-26-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d9d8e4"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cccbd6"
   },
   {
    "id": "27",
    "src": "/products/sticker3d-27.webp",
    "thumb": "/products/sticker3d-27-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d3d2d4"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c6c4c7"
   },
   {
    "id": "28",
    "src": "/products/sticker3d-28.webp",
    "thumb": "/products/sticker3d-28-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d9d8dd"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cccacf"
   },
   {
    "id": "29",
    "src": "/products/sticker3d-29.webp",
    "thumb": "/products/sticker3d-29-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d2d2d9"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c5c4cb"
   },
   {
    "id": "30",
    "src": "/products/sticker3d-30.webp",
    "thumb": "/products/sticker3d-30-sm.webp",
-   "w": 637,
-   "h": 872,
-   "alpha": false,
-   "avg": "#dbd6d4"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cec9c7"
   },
   {
    "id": "31",
    "src": "/products/sticker3d-31.webp",
    "thumb": "/products/sticker3d-31-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#dfdbd9"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d2cdcc"
   },
   {
    "id": "32",
    "src": "/products/sticker3d-32.webp",
    "thumb": "/products/sticker3d-32-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#d8d7d8"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cac9cb"
   },
   {
    "id": "33",
    "src": "/products/sticker3d-33.webp",
    "thumb": "/products/sticker3d-33-sm.webp",
-   "w": 637,
-   "h": 872,
-   "alpha": false,
-   "avg": "#d8d2d9"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cbc5cc"
   },
   {
    "id": "34",
    "src": "/products/sticker3d-34.webp",
    "thumb": "/products/sticker3d-34-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#ddd9d6"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d0ccc9"
   },
   {
    "id": "35",
    "src": "/products/sticker3d-35.webp",
    "thumb": "/products/sticker3d-35-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcd5d2"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cfc8c5"
   },
   {
    "id": "36",
    "src": "/products/sticker3d-36.webp",
    "thumb": "/products/sticker3d-36-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e8e1da"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#dbd4cc"
   },
   {
    "id": "37",
    "src": "/products/sticker3d-37.webp",
    "thumb": "/products/sticker3d-37-sm.webp",
-   "w": 637,
-   "h": 872,
-   "alpha": false,
-   "avg": "#ded3d1"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d1c6c4"
   },
   {
    "id": "38",
    "src": "/products/sticker3d-38.webp",
    "thumb": "/products/sticker3d-38-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#d6ced2"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c9c1c5"
   },
   {
    "id": "39",
    "src": "/products/sticker3d-39.webp",
    "thumb": "/products/sticker3d-39-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#d3d0d9"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c6c2cc"
   },
   {
    "id": "40",
    "src": "/products/sticker3d-40.webp",
    "thumb": "/products/sticker3d-40-sm.webp",
-   "w": 637,
-   "h": 872,
-   "alpha": false,
-   "avg": "#ccd7df"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#becad1"
   },
   {
    "id": "41",
    "src": "/products/sticker3d-41.webp",
    "thumb": "/products/sticker3d-41-sm.webp",
-   "w": 636,
-   "h": 872,
-   "alpha": false,
-   "avg": "#d6d7da"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c9cacd"
   },
   {
    "id": "42",
    "src": "/products/sticker3d-42.webp",
    "thumb": "/products/sticker3d-42-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dfd9d8"
+   "w": 660,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d2cbcb"
   },
   {
    "id": "43",
    "src": "/products/sticker3d-43.webp",
    "thumb": "/products/sticker3d-43-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e1e4e2"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d3d6d4"
   },
   {
    "id": "44",
    "src": "/products/sticker3d-44.webp",
    "thumb": "/products/sticker3d-44-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e4ddd3"
+   "w": 658,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d7d0c6"
   },
   {
    "id": "45",
    "src": "/products/sticker3d-45.webp",
    "thumb": "/products/sticker3d-45-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#e2dbd7"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d5cdca"
   },
   {
    "id": "46",
    "src": "/products/sticker3d-46.webp",
    "thumb": "/products/sticker3d-46-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#d2cdd5"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#c5bfc8"
   },
   {
    "id": "47",
    "src": "/products/sticker3d-47.webp",
    "thumb": "/products/sticker3d-47-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#ded9db"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#d0ccce"
   },
   {
    "id": "48",
    "src": "/products/sticker3d-48.webp",
    "thumb": "/products/sticker3d-48-sm.webp",
-   "w": 636,
-   "h": 871,
-   "alpha": false,
-   "avg": "#dcd5d9"
+   "w": 659,
+   "h": 900,
+   "alpha": true,
+   "avg": "#cec8cc"
   }
  ]
 }

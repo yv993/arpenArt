@@ -19,7 +19,11 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = join(ROOT, "imgss", "mockup-20260822T221006Z-1-001", "mockup");
+// REPLACED 2026-08-24 with her cut-out set: same 48 designs, but on
+// TRANSPARENT ground at 3334² instead of white-boxed JPEGs at 1667². The
+// alpha is the whole point — the cards float in the lane now instead of
+// sitting in little white rectangles — so it is preserved, not flattened.
+const SRC = join(ROOT, "imgss", "drive-download-20260824T084600Z-1-001");
 const OUT = join(ROOT, "public", "products");
 const MANIFEST = join(ROOT, "lib", "products.json");
 
@@ -29,16 +33,23 @@ const BIG = 900;
 const SM = 460;
 
 const files = (await readdir(SRC))
-  .filter((f) => /\.jpe?g$/i.test(f))
-  // "…Mockup-01.jpg" … "…Mockup-48.jpg" — numeric, not lexical, so 10 does
-  // not land between 1 and 2
-  .sort((a, b) => Number(a.match(/(\d+)\.jpe?g$/i)?.[1]) - Number(b.match(/(\d+)\.jpe?g$/i)?.[1]));
+  .filter((f) => /\.(png|jpe?g)$/i.test(f))
+  // "3d -01.png" … "3d -48.png" — sorted NUMERICALLY, not lexically, or 10
+  // lands between 1 and 2 and the whole series is shuffled. The extension is
+  // matched loosely because the drops have arrived as both jpg and png.
+  .sort((a, b) => Number(a.match(/(\d+)\.\w+$/)?.[1]) - Number(b.match(/(\d+)\.\w+$/)?.[1]));
 
 async function trimmed(buf) {
-  const corner = await sharp(buf).extract({ left: 0, top: 0, width: 2, height: 2 }).raw().toBuffer();
-  const [r, g, b] = corner;
+  const corner = await sharp(buf).ensureAlpha().extract({ left: 0, top: 0, width: 2, height: 2 }).raw().toBuffer();
+  const [r, g, b, a] = corner;
+  // A TRANSPARENT corner is packaging whatever its RGB happens to be — a fully
+  // clear pixel is often stored as white, sometimes as black, and neither is a
+  // colour anybody chose. Only an OPAQUE corner has to argue its case, and
+  // then the test is neutrality: grey/white/black is padding, a hue is a
+  // decision (Made by Armenia's orange tile, see the logo pipeline).
   const neutral = Math.max(r, g, b) - Math.min(r, g, b) <= 12;
-  if (!(neutral && (Math.min(r, g, b) > 200 || Math.max(r, g, b) < 40))) return buf;
+  const packaging = a < 8 || (neutral && (Math.min(r, g, b) > 200 || Math.max(r, g, b) < 40));
+  if (!packaging) return buf;
   let cur = buf;
   for (let pass = 0; pass < 4; pass++) {
     try {
@@ -72,7 +83,7 @@ for (const f of files) {
     thumb: `/products/sticker3d-${id}-sm.webp`,
     w: meta.width,
     h: meta.height,
-    alpha: false,
+    alpha: true,
     avg: "#" + channels.slice(0, 3).map((c) => Math.round(c.mean).toString(16).padStart(2, "0")).join(""),
   });
   if (roll.length % 12 === 0) console.log(`  …${roll.length}/${files.length}`);
