@@ -459,6 +459,26 @@ export default function CategoryView({
    *  original: 223,536 758x767 of 1578x1600), so it holds at any size. */
   const mock = MOCKUPS[cat.slug];
   const chosenArt = art ? ART.find((a) => a.id === art) : undefined;
+
+  /** The chosen card's faces, in the order a buyer wants them: the picture
+   *  first, then what is on the back, then the thing itself printed. Built
+   *  from what EXISTS — 23, 25 and 34 came with no print folder — so the row
+   *  never offers a face that would open nothing. Postcards only: these scans
+   *  are postcards, and "Back" under Cups would be a postcard's reverse shown
+   *  as if it were a mug's. */
+  const faceShots =
+    cat.slug === "postcards" && chosenArt
+      ? ([
+          { key: "front" as const, src: chosenArt.src, label: `Illustration no. ${chosenArt.id}` },
+          ...(chosenArt.back
+            ? [{ key: "back" as const, src: chosenArt.back, label: "The back of the card" }]
+            : []),
+          ...(chosenArt.mock
+            ? [{ key: "mock" as const, src: chosenArt.mock, label: "The card printed, with its envelope" }]
+            : []),
+        ])
+      : [];
+  const shownFace = faceShots.find((f) => f.key === face) ?? faceShots[0];
   const hero = shots[shot];
   /** Which product shot carries the mockup. Mugs, plates and puzzles are
    *  photographed blank as shot 0; the postcard mockup is a styled scene
@@ -516,6 +536,20 @@ export default function CategoryView({
         <div className="ap-cv__media">
           {hero ? (
             <>
+              {/* THE BIG FRAME SHOWS THE CHOSEN FACE. Until a card is picked
+                  it is the styled photograph with the illustration printed
+                  into it; once one is, the frame becomes that card and the
+                  three thumbnails below turn it over. */}
+              {shownFace && chosenArt ? (
+                <figure className="ap-cv__hero ap-cv__hero--face" style={{ background: chosenArt.avg }}>
+                  <img
+                    key={shownFace.key}
+                    src={shownFace.src}
+                    alt={`${shownFace.label} by Arpine Baroyan`}
+                    decoding="async"
+                  />
+                </figure>
+              ) : (
               <figure
                 className="ap-cv__hero"
                 style={
@@ -636,15 +670,40 @@ export default function CategoryView({
                     />
                   ) : null)}
               </figure>
-              {/* NO STRIP ON POSTCARDS (client 2026-08-24). The page had grown
-                  two image switchers stacked on each other — this row of
-                  eleven scenes, and the Front/Back/Printed viewer added under
-                  the picker the same day — and of the two it is the faces that
-                  a postcard buyer actually needs: the back, and the card as it
-                  prints. The first photograph stays as the main image.
+              )}
+              {/* THE THREE FACES ARE THE POSTCARD'S CHOOSER (client
+                  2026-08-24: this frame "must be available to choose 3 images
+                  that i mention"). The eleven-scene strip came out the day
+                  before, which left the big frame with nothing to switch it —
+                  so the strip's place now holds the three faces of the card
+                  the buyer has actually chosen, and pressing one changes the
+                  BIG picture rather than a second small one lower down.
 
-                  Only postcards. Every other category still gets its strip,
-                  because none of them has anything else to switch between. */}
+                  Before an illustration is picked there is no card to show a
+                  face of, so the frame keeps the styled photograph and no
+                  chooser appears. */}
+              {faceShots.length > 1 && (
+                <ul className="ap-cv__thumbs">
+                  {faceShots.map((f) => (
+                    <li key={f.key}>
+                      <button
+                        type="button"
+                        aria-label={f.label}
+                        aria-pressed={face === f.key}
+                        className={face === f.key ? "on" : ""}
+                        onClick={() => setFace(f.key)}
+                        style={{ background: chosenArt?.avg }}
+                      >
+                        <img src={f.src} alt="" loading="lazy" decoding="async" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Only postcards lose the scene strip. Every other category
+                  still gets it, because none of them has anything else to
+                  switch between. */}
               {shots.length > 1 && cat.slug !== "postcards" && (
                 <ul className="ap-cv__thumbs">
                   {/* THE STRIP STAYS THE PHOTOGRAPHS (client 2026-08-12:
@@ -735,68 +794,6 @@ export default function CategoryView({
                 ))}
               </ul>
 
-              {/* THE CHOSEN CARD, FRONT / BACK / PRINTED — the same three faces
-                  the cloud viewer shows on the home page (client 2026-08-24:
-                  "must be images that we used in second screenshot").
-                  Someone buying a postcard wants the back and wants to see it
-                  printed, and until now the only place either existed was a
-                  section of the home page they may never have opened.
-
-                  POSTCARDS ONLY, and that is not caution — the scans ARE
-                  postcards: an A6 print pair and a photograph of the card with
-                  its envelope. Offering "Back" under Cups would be showing a
-                  postcard's reverse as if it were a mug's.
-
-                  It sits UNDER the picker rather than replacing the
-                  photograph, because the photograph must stay put — the same
-                  rule that stopped the shot strip jumping to the mockup when a
-                  choice was made. */}
-              {cat.slug === "postcards" && chosenArt && (
-                <figure className="ap-faces">
-                  <div className="ap-faces__plate" style={{ background: chosenArt.avg }}>
-                    <img
-                      key={`${chosenArt.id}-${face}`}
-                      src={
-                        face === "back"
-                          ? chosenArt.back
-                          : face === "mock"
-                            ? chosenArt.mock
-                            : chosenArt.src
-                      }
-                      alt={
-                        face === "back"
-                          ? `The back of postcard no. ${chosenArt.id}`
-                          : face === "mock"
-                            ? `Postcard no. ${chosenArt.id} printed, with its envelope`
-                            : `Illustration no. ${chosenArt.id} by Arpine Baroyan`
-                      }
-                      width={face === "mock" ? chosenArt.mockW : chosenArt.w}
-                      height={face === "mock" ? chosenArt.mockH : chosenArt.h}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  {/* Three of the fifty-seven arrived with no print folder, so
-                      a face is offered only where the file exists — the row
-                      shrinks to a single "Front" rather than to a button that
-                      leads nowhere. */}
-                  <figcaption className="ap-faces__row" role="group" aria-label="Faces of this card">
-                    <button type="button" aria-pressed={face === "front"} onClick={() => setFace("front")}>
-                      Front
-                    </button>
-                    {chosenArt.back && (
-                      <button type="button" aria-pressed={face === "back"} onClick={() => setFace("back")}>
-                        Back
-                      </button>
-                    )}
-                    {chosenArt.mock && (
-                      <button type="button" aria-pressed={face === "mock"} onClick={() => setFace("mock")}>
-                        Printed
-                      </button>
-                    )}
-                  </figcaption>
-                </figure>
-              )}
             </div>
           )}
 

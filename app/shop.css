@@ -3374,3 +3374,21 @@ html[data-footfx] .ap-foot {
   border-color: var(--indigo);
   color: var(--cream);
 }
+
+/* THE CHOSEN CARD IN THE BIG FRAME. This one is free of the mockup's
+   constraint — no print is being placed in percentages of it — so it can do
+   what the photograph frame cannot: hold ONE shape while the three faces
+   disagree about theirs (the scans are portrait 621×878, the printed
+   photograph landscape 1400×1115). Square, `contain`, on the artwork's own
+   average colour, so switching face never moves anything below it. */
+.ap-cv__hero--face {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.ap-cv__hero--face img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: ap-face-in 0.32s var(--ease) both;
+}
