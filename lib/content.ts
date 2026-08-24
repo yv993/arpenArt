@@ -216,16 +216,14 @@ export const categories: Category[] = [
       ...processSpec,
     ],
   },
-  {
-    slug: "skirts",
-    name: "Skirts",
-    blurb:
-      "Painted skirts — the newest line. The designs are finished; the garments are being photographed.",
-    media: "skirts",
-    from: 0,
-    status: "soon",
-    swatch: ["05", "25", "13", "42", "54", "50"],
-  },
+  // SKIRTS REMOVED 2026-08-24 (client: "remove skirts section in shop"). It was
+  // the only `status: "soon"` line — a card promising a garment that has never
+  // been photographed, standing in with a swatch of the artworks. Its whole
+  // apparatus goes with it: it was also the only user of `Category.swatch` and
+  // of CatFig's substitution branch, both of which stay in the code because
+  // they are the honest answer to "a line whose designs are done and whose
+  // photographs are not", and the next line to arrive will need them again.
+  // To bring it back: restore this entry. Nothing else was skirts-specific.
 ];
 
 // Every entry here is a PAGE. "Gallery" was removed (client 2026-08-06): it

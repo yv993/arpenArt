@@ -122,7 +122,16 @@ export default function HomeView() {
         // same element instead of fighting for one property.
         tl.fromTo(
           ".ap-hero__img",
-          { scale: 1 },
+          // THE FILTER NEEDS AN EXPLICIT START, and leaving it out was a real
+          // bug (client 2026-08-24: "hero section with some scroll appear
+          // black and gone"). At rest the computed filter is `none`, and GSAP
+          // cannot interpolate `none` → `brightness(.55) saturate(.92)`: it
+          // reads every function it is missing as ZERO, so the painting tweened
+          // UP from black to 0.55 instead of DOWN from 1. Measured before the
+          // fix: brightness 0.148 at 90px of scroll, 0.214 at 130px, 0.428 at
+          // 260px, reaching 0.55 only at 400px — a black flash on the first
+          // touch of the wheel that then "recovered" as you kept going.
+          { scale: 1, filter: "brightness(1) saturate(1)" },
           { scale: 1.12, filter: "brightness(0.55) saturate(0.92)", ease: "none", duration: 0.72 },
           0,
         )
