@@ -447,7 +447,7 @@ export default function CategoryView({
    *  them (client 2026-08-24). Reset per illustration below, because "Back"
    *  left selected while the picture changes underneath is a face nobody
    *  asked for. */
-  const [face, setFace] = useState<"front" | "back" | "mock">("front");
+  const [face, setFace] = useState<"scene" | "front" | "back" | "mock">("scene");
   /** set when Add was pressed before an illustration was chosen */
   const [need, setNeed] = useState(false);
 
@@ -466,9 +466,19 @@ export default function CategoryView({
    *  never offers a face that would open nothing. Postcards only: these scans
    *  are postcards, and "Back" under Cups would be a postcard's reverse shown
    *  as if it were a mug's. */
+  const hero = shots[shot];
   const faceShots =
     cat.slug === "postcards" && chosenArt
       ? ([
+          // THE STYLED PHOTOGRAPH IS THE FIRST OF THEM (client 2026-08-24:
+          // "also change first image now it havnot 3 varieties to user can
+          // change"). It used to vanish the moment an illustration was picked,
+          // with no way back to it — and it is the one view that shows the
+          // card in a room rather than on a scanner, so it belongs in the row
+          // rather than being replaced by it. It is also the DEFAULT, which
+          // keeps the older rule intact: the photograph stays put when a
+          // choice is made, and the buyer turns the card over deliberately.
+          ...(hero ? [{ key: "scene" as const, src: hero.thumb, label: "The card in the scene" }] : []),
           { key: "front" as const, src: chosenArt.src, label: `Illustration no. ${chosenArt.id}` },
           ...(chosenArt.back
             ? [{ key: "back" as const, src: chosenArt.back, label: "The back of the card" }]
@@ -479,7 +489,6 @@ export default function CategoryView({
         ])
       : [];
   const shownFace = faceShots.find((f) => f.key === face) ?? faceShots[0];
-  const hero = shots[shot];
   /** Which product shot carries the mockup. Mugs, plates and puzzles are
    *  photographed blank as shot 0; the postcard mockup is a styled scene
    *  further along the roll, so the index is part of the table. */
@@ -540,7 +549,7 @@ export default function CategoryView({
                   it is the styled photograph with the illustration printed
                   into it; once one is, the frame becomes that card and the
                   three thumbnails below turn it over. */}
-              {shownFace && chosenArt ? (
+              {shownFace && shownFace.key !== "scene" && chosenArt ? (
                 <figure className="ap-cv__hero ap-cv__hero--face" style={{ background: chosenArt.avg }}>
                   <img
                     key={shownFace.key}
@@ -784,7 +793,7 @@ export default function CategoryView({
                       // the choice simply appears wherever the buyer already is.
                       onClick={() => {
                         setArt(a.id);
-                        setFace("front");
+                        setFace("scene");
                       }}
                       style={{ background: a.avg }}
                     >
