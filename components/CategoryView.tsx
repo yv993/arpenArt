@@ -636,7 +636,16 @@ export default function CategoryView({
                     />
                   ) : null)}
               </figure>
-              {shots.length > 1 && (
+              {/* NO STRIP ON POSTCARDS (client 2026-08-24). The page had grown
+                  two image switchers stacked on each other — this row of
+                  eleven scenes, and the Front/Back/Printed viewer added under
+                  the picker the same day — and of the two it is the faces that
+                  a postcard buyer actually needs: the back, and the card as it
+                  prints. The first photograph stays as the main image.
+
+                  Only postcards. Every other category still gets its strip,
+                  because none of them has anything else to switch between. */}
+              {shots.length > 1 && cat.slug !== "postcards" && (
                 <ul className="ap-cv__thumbs">
                   {/* THE STRIP STAYS THE PHOTOGRAPHS (client 2026-08-12:
                       "it must change only central big one"). Printing the
