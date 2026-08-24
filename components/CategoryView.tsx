@@ -10,7 +10,21 @@ import products from "@/lib/products.json";
 import MugPrint from "./MugPrint";
 import CardPrint, { type Quad } from "./CardPrint";
 
-type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
+type Art = {
+  id: string;
+  src: string;
+  thumb: string;
+  w: number;
+  h: number;
+  avg: string;
+  /** the A6 print scans and the photograph of the printed card. 54 of the 57
+   *  have them — 23, 25 and 34 came with no folder in her delivery — so every
+   *  consumer has to treat them as optional rather than assume the set. */
+  back?: string;
+  mock?: string;
+  mockW?: number;
+  mockH?: number;
+};
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 const ART = artworks as Art[];
 const P = products as Record<string, Shot[]>;
@@ -428,6 +442,12 @@ export default function CategoryView({
   // without one — the buyer changes it, they never have to find it
   const [variant, setVariant] = useState<string | undefined>(cat.variants?.options[0]);
   const [added, setAdded] = useState(false);
+  /** which face of the CHOSEN illustration is showing — the same three the
+   *  cloud viewer offers, so a buyer sees exactly what the home page showed
+   *  them (client 2026-08-24). Reset per illustration below, because "Back"
+   *  left selected while the picture changes underneath is a face nobody
+   *  asked for. */
+  const [face, setFace] = useState<"front" | "back" | "mock">("front");
   /** set when Add was pressed before an illustration was chosen */
   const [need, setNeed] = useState(false);
 
@@ -694,7 +714,10 @@ export default function CategoryView({
                       // under whoever was looking at another scene. Every
                       // usable photograph now carries the print instead, so
                       // the choice simply appears wherever the buyer already is.
-                      onClick={() => setArt(a.id)}
+                      onClick={() => {
+                        setArt(a.id);
+                        setFace("front");
+                      }}
                       style={{ background: a.avg }}
                     >
                       <img src={a.thumb} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />
@@ -702,6 +725,69 @@ export default function CategoryView({
                   </li>
                 ))}
               </ul>
+
+              {/* THE CHOSEN CARD, FRONT / BACK / PRINTED — the same three faces
+                  the cloud viewer shows on the home page (client 2026-08-24:
+                  "must be images that we used in second screenshot").
+                  Someone buying a postcard wants the back and wants to see it
+                  printed, and until now the only place either existed was a
+                  section of the home page they may never have opened.
+
+                  POSTCARDS ONLY, and that is not caution — the scans ARE
+                  postcards: an A6 print pair and a photograph of the card with
+                  its envelope. Offering "Back" under Cups would be showing a
+                  postcard's reverse as if it were a mug's.
+
+                  It sits UNDER the picker rather than replacing the
+                  photograph, because the photograph must stay put — the same
+                  rule that stopped the shot strip jumping to the mockup when a
+                  choice was made. */}
+              {cat.slug === "postcards" && chosenArt && (
+                <figure className="ap-faces">
+                  <div className="ap-faces__plate" style={{ background: chosenArt.avg }}>
+                    <img
+                      key={`${chosenArt.id}-${face}`}
+                      src={
+                        face === "back"
+                          ? chosenArt.back
+                          : face === "mock"
+                            ? chosenArt.mock
+                            : chosenArt.src
+                      }
+                      alt={
+                        face === "back"
+                          ? `The back of postcard no. ${chosenArt.id}`
+                          : face === "mock"
+                            ? `Postcard no. ${chosenArt.id} printed, with its envelope`
+                            : `Illustration no. ${chosenArt.id} by Arpine Baroyan`
+                      }
+                      width={face === "mock" ? chosenArt.mockW : chosenArt.w}
+                      height={face === "mock" ? chosenArt.mockH : chosenArt.h}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                  {/* Three of the fifty-seven arrived with no print folder, so
+                      a face is offered only where the file exists — the row
+                      shrinks to a single "Front" rather than to a button that
+                      leads nowhere. */}
+                  <figcaption className="ap-faces__row" role="group" aria-label="Faces of this card">
+                    <button type="button" aria-pressed={face === "front"} onClick={() => setFace("front")}>
+                      Front
+                    </button>
+                    {chosenArt.back && (
+                      <button type="button" aria-pressed={face === "back"} onClick={() => setFace("back")}>
+                        Back
+                      </button>
+                    )}
+                    {chosenArt.mock && (
+                      <button type="button" aria-pressed={face === "mock"} onClick={() => setFace("mock")}>
+                        Printed
+                      </button>
+                    )}
+                  </figcaption>
+                </figure>
+              )}
             </div>
           )}
 

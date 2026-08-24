@@ -3305,3 +3305,72 @@ html[data-footfx] .ap-foot {
     transition: none;
   }
 }
+
+/* ---- the chosen card's three faces, under the picker --------------------
+   Front / Back / Printed, the same set the cloud viewer offers, so a buyer
+   sees on the product page what the home page showed them. Postcards only:
+   the scans are postcard scans. */
+.ap-faces {
+  margin: 16px 0 0;
+}
+/* ONE SQUARE PLATE for all three, letterboxed on the artwork's own average
+   colour. The faces disagree about shape — the card scans are portrait
+   (621×878) and the printed photograph is landscape (1400×1115) — so a box
+   that fitted one would crop the other, and a box that resized per face would
+   make the panel jump every time the buyer pressed a button. `contain` on a
+   square keeps every face whole and the layout still. */
+.ap-faces__plate {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.ap-faces__plate img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  animation: ap-face-in 0.32s var(--ease) both;
+}
+@keyframes ap-face-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-faces__plate img {
+    animation: none;
+  }
+}
+.ap-faces__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap-faces__row button {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 26%, transparent);
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+.ap-faces__row button:hover {
+  border-color: var(--ink);
+}
+.ap-faces__row button[aria-pressed="true"] {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: var(--cream);
+}
