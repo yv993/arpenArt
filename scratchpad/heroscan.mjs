@@ -33,7 +33,7 @@ const ev = async (e) => (await send("Runtime.evaluate", { expression: e, returnB
 
 await send("Page.enable"); await send("Runtime.enable");
 await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: THEME }] });
-await send("Page.navigate", { url: "http://localhost:4000/" });
+await send("Page.navigate", { url: process.env.HERO_URL ?? "http://localhost:4000/" });
 await sleep(18000);
 
 console.log(`theme=${THEME}  docHeight=${await ev("document.documentElement.scrollHeight")}`);

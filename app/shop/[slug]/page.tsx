@@ -17,6 +17,7 @@ import Overture from "@/components/Overture";
 import MorphHero from "@/components/MorphHero";
 import StickerFolders from "@/components/StickerFolders";
 import StickerSurfer from "@/components/StickerSurfer";
+import ToteGallery, { type ToteShot } from "@/components/ToteGallery";
 import { brand, categories, lookbooks, morphs, overtures } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
@@ -181,7 +182,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
         </>
       ) : (
-        <CategoryView cat={cat} demoted={opens || !!morph} />
+        <>
+          {/* HER FOUR TOTE DESIGNS, above the buy panel (client 2026-08-24,
+              pointing at shadcnblocks' gallery1). It is the page's entrance,
+              which is why it sits before CategoryView rather than after: the
+              photographs are what make somebody want the thing the panel
+              sells. */}
+          {cat.slug === "totes" && (
+            <ToteGallery shots={(products as unknown as { toteBags?: ToteShot[] }).toteBags ?? []} />
+          )}
+          <CategoryView cat={cat} demoted={opens || !!morph} />
+        </>
       )}
       {book && shots.length >= 7 && (
         <Lookbook

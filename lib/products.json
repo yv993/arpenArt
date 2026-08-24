@@ -1062,5 +1062,51 @@
    "alpha": true,
    "avg": "#cec8cc"
   }
+ ],
+ "toteBags": [
+  {
+   "id": "01",
+   "src": "/products/tote-01-hold.webp",
+   "thumb": "/products/tote-01-hold-sm.webp",
+   "worn": "/products/tote-01-worn.webp",
+   "wornThumb": "/products/tote-01-worn-sm.webp",
+   "w": 1400,
+   "h": 934,
+   "alpha": false,
+   "avg": "#3a4543"
+  },
+  {
+   "id": "02",
+   "src": "/products/tote-02-hold.webp",
+   "thumb": "/products/tote-02-hold-sm.webp",
+   "worn": "/products/tote-02-worn.webp",
+   "wornThumb": "/products/tote-02-worn-sm.webp",
+   "w": 1400,
+   "h": 934,
+   "alpha": false,
+   "avg": "#3a4544"
+  },
+  {
+   "id": "03",
+   "src": "/products/tote-03-hold.webp",
+   "thumb": "/products/tote-03-hold-sm.webp",
+   "worn": "/products/tote-03-worn.webp",
+   "wornThumb": "/products/tote-03-worn-sm.webp",
+   "w": 1400,
+   "h": 934,
+   "alpha": false,
+   "avg": "#3a4544"
+  },
+  {
+   "id": "04",
+   "src": "/products/tote-04-hold.webp",
+   "thumb": "/products/tote-04-hold-sm.webp",
+   "worn": "/products/tote-04-worn.webp",
+   "wornThumb": "/products/tote-04-worn-sm.webp",
+   "w": 1400,
+   "h": 934,
+   "alpha": false,
+   "avg": "#3a4644"
+  }
  ]
 }

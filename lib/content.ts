@@ -890,6 +890,32 @@ export const stickers3d = {
   open: { series: "The Armenia series", add: "Add to cart", close: "Close", added: "Added to your cart." },
 };
 
+// ---------------------------------------------------------------------------
+// TOTE BAGS — the four designs, shown the way the client asked for
+// (2026-08-24, pointing at shadcnblocks' "gallery1"): a row of cards where
+// hovering one expands it and shrinks the rest.
+//
+// Heading and copy are HERS, from tote bag.txt, verbatim.
+//
+// No invented names again: the bags arrived as four numbered folders, so a
+// card says "No. 01" and the series, exactly as the artworks and the 3D
+// stickers do. The badges are not decoration either — both are lifted from
+// the category's own spec rows, so they cannot start claiming something the
+// product page does not.
+// ---------------------------------------------------------------------------
+export const toteBags = {
+  kicker: "(Tote bags)",
+  title: "A LITTLE ARMENIA, WHEREVER YOU GO",
+  copy: [
+    "Inspired by Armenia’s cities, landscapes and stories, these illustrated tote bags turn everyday essentials into wearable memories.",
+    "Carry the colors and spirit of Armenia with you.",
+  ],
+  badges: ["Natural cotton", "Printed in Yerevan"],
+  /** said once under the row, and only where a pointer can act on it */
+  cue: "Hover a bag to see it carried",
+  series: "The Armenia series",
+};
+
 export const lookbooks: Record<string, Lookbook> = {
   totes: {
     kicker: "(Carried)",
