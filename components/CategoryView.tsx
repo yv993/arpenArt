@@ -447,7 +447,7 @@ export default function CategoryView({
    *  them (client 2026-08-24). Reset per illustration below, because "Back"
    *  left selected while the picture changes underneath is a face nobody
    *  asked for. */
-  const [face, setFace] = useState<"scene" | "front" | "back" | "mock">("scene");
+  const [face, setFace] = useState<"front" | "back" | "mock">("front");
   /** set when Add was pressed before an illustration was chosen */
   const [need, setNeed] = useState(false);
 
@@ -467,27 +467,29 @@ export default function CategoryView({
    *  are postcards, and "Back" under Cups would be a postcard's reverse shown
    *  as if it were a mug's. */
   const hero = shots[shot];
-  const faceShots =
-    cat.slug === "postcards" && chosenArt
-      ? ([
-          // THE STYLED PHOTOGRAPH IS THE FIRST OF THEM (client 2026-08-24:
-          // "also change first image now it havnot 3 varieties to user can
-          // change"). It used to vanish the moment an illustration was picked,
-          // with no way back to it — and it is the one view that shows the
-          // card in a room rather than on a scanner, so it belongs in the row
-          // rather than being replaced by it. It is also the DEFAULT, which
-          // keeps the older rule intact: the photograph stays put when a
-          // choice is made, and the buyer turns the card over deliberately.
-          ...(hero ? [{ key: "scene" as const, src: hero.thumb, label: "The card in the scene" }] : []),
-          { key: "front" as const, src: chosenArt.src, label: `Illustration no. ${chosenArt.id}` },
-          ...(chosenArt.back
-            ? [{ key: "back" as const, src: chosenArt.back, label: "The back of the card" }]
-            : []),
-          ...(chosenArt.mock
-            ? [{ key: "mock" as const, src: chosenArt.mock, label: "The card printed, with its envelope" }]
-            : []),
-        ])
-      : [];
+  /** THE FRAME IS ALWAYS A POSTCARD (client 2026-08-24: "it must start with
+   *  postcard and 3 possible images in below"). The styled scene — the card
+   *  propped against a wall with a plant and a stone — is gone from this page
+   *  entirely: not the default, not a fourth thumbnail. What a buyer looks at
+   *  here is the card itself, three ways.
+   *
+   *  BEFORE ANYTHING IS PICKED it previews the first illustration, so the page
+   *  opens on a postcard rather than on a room. That is a display default and
+   *  nothing more — the picker still shows nothing as pressed and Add to cart
+   *  still asks for a real choice, which is the rule that has always applied
+   *  here: the artwork IS the product, so it is never chosen silently. */
+  const faceArt = cat.slug === "postcards" ? (chosenArt ?? ART[0]) : undefined;
+  const faceShots = faceArt
+    ? ([
+        { key: "front" as const, src: faceArt.src, label: `Illustration no. ${faceArt.id}` },
+        ...(faceArt.back
+          ? [{ key: "back" as const, src: faceArt.back, label: "The back of the card" }]
+          : []),
+        ...(faceArt.mock
+          ? [{ key: "mock" as const, src: faceArt.mock, label: "The card printed, with its envelope" }]
+          : []),
+      ])
+    : [];
   const shownFace = faceShots.find((f) => f.key === face) ?? faceShots[0];
   /** Which product shot carries the mockup. Mugs, plates and puzzles are
    *  photographed blank as shot 0; the postcard mockup is a styled scene
@@ -549,8 +551,8 @@ export default function CategoryView({
                   it is the styled photograph with the illustration printed
                   into it; once one is, the frame becomes that card and the
                   three thumbnails below turn it over. */}
-              {shownFace && shownFace.key !== "scene" && chosenArt ? (
-                <figure className="ap-cv__hero ap-cv__hero--face" style={{ background: chosenArt.avg }}>
+              {shownFace && faceArt ? (
+                <figure className="ap-cv__hero ap-cv__hero--face" style={{ background: faceArt.avg }}>
                   <img
                     key={shownFace.key}
                     src={shownFace.src}
@@ -701,7 +703,7 @@ export default function CategoryView({
                         aria-pressed={face === f.key}
                         className={face === f.key ? "on" : ""}
                         onClick={() => setFace(f.key)}
-                        style={{ background: chosenArt?.avg }}
+                        style={{ background: faceArt?.avg }}
                       >
                         <img src={f.src} alt="" loading="lazy" decoding="async" />
                       </button>
@@ -793,7 +795,7 @@ export default function CategoryView({
                       // the choice simply appears wherever the buyer already is.
                       onClick={() => {
                         setArt(a.id);
-                        setFace("scene");
+                        setFace("front");
                       }}
                       style={{ background: a.avg }}
                     >
