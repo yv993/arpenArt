@@ -82,23 +82,39 @@ const BUILD: Record<string, Build> = {
   // letters turn over — hinged at their baseline, arriving from behind
   flip: (chars, at) => {
     const tl = gsap.timeline({ paused: true });
+    // TAMED, 2026-08-24 — the client read the gallery title as "letters is
+    // mixing then its become correct". Measured mid-reveal: the glyphs sat on
+    // FIVE distinct vertical positions instead of two, and 12 of 19 boxes
+    // overlapped a neighbour. Three causes, all fixed here rather than by
+    // swapping the logic out (the cart heading uses it too):
+    //
+    //  · −92° is past edge-on, and with a 620px perspective the near edge of
+    //    a 62px glyph magnifies ~13% — measured 42.8px drawn against a 38px
+    //    layout box, so every letter grew into its neighbour. A shallower
+    //    turn through a flatter perspective keeps the 3D read and stops the
+    //    glyph escaping its own box.
+    //  · `back.out` OVERSHOOTS: the letters swung past flat and wobbled back,
+    //    which is what made a settled line look like it was still moving.
+    //  · The letters were fully opaque through the whole turn, so the messiest
+    //    part of it was also the most visible. They now arrive over the first
+    //    third and are legible by the time they are big enough to notice.
     gsap.set(chars, {
       autoAlpha: 0,
-      rotationX: -92,
-      transformPerspective: 620,
+      rotationX: -46,
+      transformPerspective: 1400,
       transformOrigin: "50% 100%",
     });
-    tl.to(
-      chars,
-      {
-        autoAlpha: 1,
-        rotationX: 0,
-        duration: 0.8,
-        ease: "back.out(1.6)",
-        stagger: 0.04,
-      },
-      at,
-    );
+    tl.to(chars, { autoAlpha: 1, duration: 0.22, ease: "none", stagger: 0.022 }, at)
+      .to(
+        chars,
+        {
+          rotationX: 0,
+          duration: 0.62,
+          ease: "power3.out",
+          stagger: 0.022,
+        },
+        at,
+      );
     return tl;
   },
 

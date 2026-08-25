@@ -37,7 +37,10 @@
 /* FLIP turns letters over a baseline hinge — give the word a little depth
    of field so the turn reads as 3D, not a squash */
 [data-tfx="flip"] {
-  perspective: 640px;
+  /* Flattened to match the turn in TextFX (was 640px). A short throw
+     magnifies the edge of a 62px glyph enough to push it into the letter
+     beside it, which is half of why this heading read as scrambled. */
+  perspective: 1400px;
 }
 
 /* CUT slices every glyph at the waist: the original span carries the top
