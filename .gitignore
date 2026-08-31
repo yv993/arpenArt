@@ -23,3 +23,11 @@ out*.html
 # harness screenshots — the .mjs probes in scratchpad/ are worth keeping,
 # the pictures they produce are not
 scratchpad/*.png
+# …and the same for the other shapes a probe emits: crops, previews, server
+# logs, and the intermediate row/match manifests whose contents are merged
+# into lib/products.json (the pipeline that writes them is the .mjs beside
+# them, which IS kept)
+scratchpad/*.jpg
+scratchpad/*.log
+scratchpad/*-rows.json
+scratchpad/*-match.json
