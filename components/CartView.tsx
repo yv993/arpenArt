@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { brand, categories, delivery, home } from "@/lib/content";
+import { brand, categories, delivery, home, ownItemWord } from "@/lib/content";
 import { clear, dram, read, remove, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
 import { OrderingSteps } from "@/components/CategoryView";
 import artworks from "@/lib/artworks.json";
@@ -41,9 +41,16 @@ export default function CartView() {
   /** the goods alone; delivery is added on top of this, never hidden in it */
   const goods = total(lines);
   const nameOf = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? slug;
-  const thumbOf = (l: Line) =>
-    (l.art ? ART.find((a) => a.id === l.art)?.thumb : undefined) ??
-    P[categories.find((c) => c.slug === l.cat)?.media ?? ""]?.[0]?.thumb;
+  // `art` is TWO different id spaces — see ownItemWord in content.ts. For a
+  // fixed-item line (magnet, keychain, 3D sticker) it names the category's own
+  // product photo; only for the choose-an-illustration lines does it name one
+  // of the 57 artworks. Resolving artworks first showed a buyer illustration
+  // no. 05 — a different picture — for magnet no. 05.
+  const thumbOf = (l: Line) => {
+    const media = categories.find((c) => c.slug === l.cat)?.media ?? "";
+    if (ownItemWord[l.cat]) return (l.art && P[media]?.find((s) => s.id === l.art)?.thumb) || P[media]?.[0]?.thumb;
+    return (l.art ? ART.find((a) => a.id === l.art)?.thumb : undefined) ?? P[media]?.[0]?.thumb;
+  };
 
   // put the keyboard where the fix is — the first field the server rejected,
   // in the order they appear in the form
@@ -196,7 +203,7 @@ export default function CartView() {
                   </figure>
                   <div className="ap-cart__what">
                     <h2>{nameOf(l.cat)}</h2>
-                    {l.art && <p>Illustration no. {l.art}</p>}
+                    {l.art && <p>{ownItemWord[l.cat] ?? "Illustration"} no. {l.art}</p>}
                     {l.variant && <p>{l.variant}</p>}
                     <p className="ap-cart__unit">{dram(unit(l.cat))} each</p>
                   </div>

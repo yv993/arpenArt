@@ -2145,10 +2145,18 @@
   font-weight: 600;
   line-height: 1.05;
 }
+/* "FROM 1,000 ֏" — and it must stay on ONE line. A tenth category (keychains,
+   2026-08-31) took each panel from a ninth of the row to a tenth, and at that
+   width the tracking below pushed the dram sign onto a line of its own on most
+   of the tiles: "FROM 1,000" over a lone "֏", which reads as a broken price
+   rather than a tight one. The size and tracking now scale with the viewport
+   and the line is not allowed to break, so the row can take another category
+   without the prices coming apart again. */
 .ap-xg__say em {
   font-style: normal;
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
+  font-size: clamp(10px, 0.78vw, 11.5px);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--cream) 86%, transparent);
 }
@@ -3383,10 +3391,19 @@ html[data-footfx] .ap-foot {
    average colour, so switching face never moves anything below it. */
 .ap-cv__hero--face {
   aspect-ratio: 1;
-  display: grid;
-  place-items: center;
 }
+/* ABSOLUTE, and that is the whole fix (client 2026-08-24: "images like cropped
+   but it must showed all measures"). The card WAS being cut: the frame
+   measured 651×651 while the image box measured 651×921, and the figure's
+   `overflow: hidden` took the bottom 270px of the postcard off.
+   `height: 100%` on an in-flow child resolves against a row that is itself
+   sized by its content, so it fell back to the image's intrinsic height —
+   the same indefinite-percentage trap that stops `aspect-ratio` applying on
+   `.ap-cv__hero`. Out of flow it cannot size anything, the box comes from the
+   aspect-ratio alone, and `contain` then shows the whole card. */
 .ap-cv__hero--face img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;

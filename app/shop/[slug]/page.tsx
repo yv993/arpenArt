@@ -18,7 +18,10 @@ import MorphHero from "@/components/MorphHero";
 import StickerFolders from "@/components/StickerFolders";
 import StickerSurfer from "@/components/StickerSurfer";
 import ToteGallery, { type ToteShot } from "@/components/ToteGallery";
-import { brand, categories, lookbooks, morphs, overtures } from "@/lib/content";
+import KeychainSection from "@/components/keychains/KeychainSection";
+import MagnetFridge from "@/components/MagnetFridge";
+import type { Keychain } from "@/types/keychain";
+import { brand, categories, keychainWall, lookbooks, morphs, overtures } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
@@ -28,6 +31,27 @@ const ART = artworks as Art[];
 
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 const P = products as Record<string, Shot[]>;
+
+// The rest angles repeat on a cycle rather than being random: this array is
+// built on the server and again in the browser, and Math.random() would give
+// the two runs different numbers and hydrate a mismatch. Eight values are
+// enough that twenty-four keychains do not visibly repeat, and being derived
+// from the index they are identical on both sides every time.
+const LEANS = [-2.4, 1.6, -1.1, 2.8, -3.2, 0.9, 2.1, -1.8];
+const keychains: Keychain[] = (P.keychain ?? []).map((s, i) => ({
+  id: s.id,
+  // NUMBERED, not named — the same rule the 57 illustrations follow. See the
+  // note in types/keychain.ts: place names were tried and could not be
+  // verified for 22 of the 24, and a wrong story on her product is worse
+  // than no story.
+  title: `Keychain no. ${s.id}`,
+  src: s.src,
+  thumb: s.thumb,
+  w: s.w,
+  h: s.h,
+  avg: s.avg,
+  lean: LEANS[i % LEANS.length],
+}));
 
 export const dynamicParams = false; // unknown slugs are a real 404, not a soft one
 
@@ -173,6 +197,52 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
 
           <StickerSurfer shots={P.sticker3d ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+              <CategorySpec cat={cat} />
+            </div>
+          </div>
+        </>
+      ) : cat.slug === "magnets" ? (
+        /* The fourth bespoke line: thirty-five fixed magnets, staged on the
+           client's own fridge render, every one opening big in the shared
+           lightbox. Same scaffolding as the sheets, the lane and the wall. */
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <MagnetFridge shots={P.magnet ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+              <CategorySpec cat={cat} />
+            </div>
+          </div>
+        </>
+      ) : cat.slug === "keychains" ? (
+        /* The third line whose presentation IS the product: twenty-four fixed
+           objects, each a finished thing, so there is nothing for the 57-
+           illustration picker to ask. Same scaffolding as the sheets and the
+           lane — breadcrumb, then the wall carrying the h1, then how ordering
+           works and the spec rows. */
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <KeychainSection items={keychains} wall={keychainWall} heading="h1" />
 
           <div className="ap-cv">
             <div className="ap-sheets__foot">

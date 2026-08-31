@@ -1,0 +1,289 @@
+/* ==========================================================================
+   THE MAGNET FRIDGE
+   Her 35 magnets on a refrigerator door (the client's own reference render),
+   each opening big in the shared lightbox. See MagnetFridge.tsx for why the
+   door stages twelve and the grid below carries the whole set.
+
+   The door layer's perspective was TUNED AGAINST SCREENSHOTS of the real
+   render, not derived: the photo looks at the fridge from its right, so the
+   door face recedes left. The numbers below (rotateY, the inset percentages)
+   were adjusted until the magnets' verticals ran parallel to the door's own
+   edge and the handle stayed clear. If the fridge image is ever replaced,
+   re-tune these four numbers; nothing else depends on them.
+   ========================================================================== */
+
+.ap-mf {
+  padding: clamp(56px, 8vh, 104px) var(--gutter) clamp(64px, 9vh, 120px);
+}
+
+.ap-mf__head {
+  max-width: 58ch;
+  margin: 0 auto clamp(36px, 5vh, 64px);
+  text-align: center;
+}
+.ap-mf__from {
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.ap-mf__from strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+
+/* ---- the fridge scene: live layer only --------------------------------- */
+.ap-mf__scene {
+  display: none;
+}
+.ap-mf[data-live] .ap-mf__scene {
+  display: block;
+  position: relative;
+  max-width: 880px;
+  margin: 0 auto clamp(56px, 8vh, 96px);
+  /* the room the render was shot in is bright; the inset ring seats it on the
+     page instead of letting its white kitchen bleed into --paper */
+  border-radius: 10px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+/* the ring rides an overlay: an inset box-shadow on the scene itself would
+   paint UNDER the full-bleed photograph and never be seen */
+.ap-mf[data-live] .ap-mf__scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 16%, transparent);
+  pointer-events: none;
+}
+.ap-mf__fridge {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* THE DOOR. An absolutely-placed layer over the door's face, leaned back to
+   the door's own plane. The inset percentages ARE the door: measured against
+   the render — the face spans roughly the left 55% of the frame, from under
+   the top edge down to the freezer drawer seam, right of the handle. */
+.ap-mf__door {
+  list-style: none;
+  margin: 0;
+  position: absolute;
+  /* THE DOOR AREA, re-measured for the STRAIGHT-ON render (fridge-front.webp,
+     client 2026-08-31 third pass — the angled kitchen shot is retired). Ruler
+     overlay (scratchpad/fridge-ruler.png): steel x 8.5→91.5%, freezer seam at
+     ~94.5%. The grid is narrower than the steel ON PURPOSE: five columns of
+     673×1000 magnets over seven rows only fit the door's height at ~62% of
+     its width — wider columns made the rows sum past the freezer seam and
+     the bottom row printed on the drawer. Centred, per the brief. */
+  top: 5%;
+  bottom: 9.5%;
+  left: 19%;
+  width: 62%;
+  display: grid;
+  /* THE PRECISE GRID (client's reference): five equal columns — the li needs
+     min-width:0 or the 673px-intrinsic images blow the 1fr tracks apart (the
+     trap this layout fell into on its first render) — rows content-sized,
+     the block centred; no per-magnet lean or drift. Fixed-px gaps: a
+     percentage row-gap resolves against the area's height and quietly grew
+     the column total past the door on tall screens. */
+  grid-template-columns: repeat(5, 1fr);
+  align-content: center;
+  justify-items: stretch;
+  gap: 12px 14px;
+  padding: 0;
+}
+.ap-mf__door li {
+  margin: 0;
+  min-width: 0;
+}
+/* GSAP OWNS TRANSFORM on these buttons — the tilt, the wobble and the peel
+   all write it per frame (MagnetFridge.tsx), so there is deliberately NO
+   `transition: transform` and NO :hover scale here any more: a CSS transition
+   re-easing every scripted write turns the motion to soup (the trap
+   KeychainCard.tsx documents). CSS keeps the one channel GSAP never touches —
+   `filter` — for the shadow deepening as the magnet lifts off the steel. */
+.ap-mf__door button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 8px;
+  will-change: transform;
+  transition: filter 0.3s var(--ease);
+}
+/* :hover and :focus-visible stated separately, never comma-joined: Safari
+   before 15.4 does not know :focus-visible, and one unknown pseudo-class
+   invalidates the WHOLE selector list — taking the hover feedback with it */
+.ap-mf__door button:hover {
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.34));
+}
+.ap-mf__door button:focus-visible {
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.34));
+}
+/* the lifted magnet rides over its neighbours (grid items take z-index) */
+.ap-mf__door li:hover {
+  z-index: 4;
+}
+
+/* THE FLIGHT CLONE — the magnet's own pixels travelling from the door to
+   where the detail window opens. Fixed so the journey is in viewport space;
+   z 510 sits it OVER the lightbox (z 500), which opens underneath at landing
+   and receives the clone's crossfade. Pointer-events off: it is scenery for
+   0.7s, and a click mid-flight should reach nothing through it. */
+.ap-mf__fly {
+  position: fixed;
+  z-index: 510;
+  pointer-events: none;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.45));
+  will-change: transform, left, top, width, height;
+}
+.ap-mf__door img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* the render's shadows are baked into the PNG; nothing added here */
+  pointer-events: none;
+  -webkit-user-select: none; /* Safari only reads the prefixed form */
+  user-select: none;
+}
+
+/* A RESERVED SLOT: the acrylic frame is there, the artwork is not — the
+   design was named by the client and its file has not arrived ("next i will
+   give remaining images"), and this shop does not paint stand-in art in her
+   name. Drawn to the same vertical proportions as a real magnet (673×1000),
+   with the glassy edge the photographs have, so the door reads as one wall
+   with a few frames still waiting. Not a button; nothing to open or buy. */
+.ap-mf__soonslot {
+  aspect-ratio: 673 / 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8%;
+  border-radius: 9px;
+  text-align: center;
+  /* the acrylic: a bright edge, a whisper of fill, a soft seat on the door */
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.28),
+    inset 0 0 14px rgba(255, 255, 255, 0.22),
+    2px 6px 10px rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+}
+.ap-mf__soonslot span {
+  font-family: var(--font-ui);
+  /* fixed and small: the frame is ~70px wide, and "POMEGRANATES" at 10px
+     was already printing past the acrylic */
+  font-size: 8.5px;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  color: #4a5060;
+}
+.ap-mf__soonslot em {
+  font-style: normal;
+  font-family: var(--font-ui);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a8f9c;
+}
+
+.ap-mf__cue {
+  position: absolute;
+  right: 3%;
+  bottom: 2.5%;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2b3040;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+/* ---- the whole set ------------------------------------------------------ */
+.ap-mf__allhead {
+  margin: 0 0 22px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+}
+.ap-mf__all {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 1240px;
+  display: grid;
+  gap: clamp(26px, 3.4vw, 44px) clamp(14px, 2vw, 28px);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.ap-mf__all > li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ap-mf__cell {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform 0.25s var(--ease);
+}
+.ap-mf__cell:hover {
+  transform: translateY(-4px);
+}
+.ap-mf__cell:focus-visible {
+  transform: translateY(-4px);
+}
+.ap-mf__cell img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ap-mf__buy {
+  margin-top: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ap-mf__name {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+.ap-mf__add.ap-btn {
+  padding: 8px 18px;
+  font-size: 12px;
+}
+.ap-mf__added {
+  margin: 0;
+  min-height: 1.1em;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 640px) {
+  .ap-mf__all {
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 22px 12px;
+  }
+}

@@ -13,10 +13,14 @@ type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: 
 const P = products as Record<string, Shot[]>;
 const ART = artworks as Art[];
 
+// BUILT FROM THE CATALOGUE, not typed: a hand-written list here sat at eight
+// lines while the grid below rendered eleven — every category added after it
+// was silently missing from the shop's own search snippet.
 export const metadata: Metadata = {
   title: "Shop",
   description:
-    "Postcards, scarves, painted hoodies, cups, plates, puzzles, stickers and totes carrying Arpine Baroyan's Armenia illustrations.",
+    categories.map((c) => c.name.toLowerCase()).join(", ").replace(/, ([^,]+)$/, " and $1") +
+    " carrying Arpine Baroyan's Armenia illustrations.",
 };
 
 export default function ShopPage() {
@@ -50,13 +54,16 @@ export default function ShopPage() {
             EVERYTHING THE PICTURES LAND ON
           </h1>
           <p className="ap-lede">
-            Nine lines, all carrying the same Armenia series. Choose the object, then choose the
-            illustration that goes on it.
+            {/* the count comes from the catalogue itself — "Nine lines" sat
+                here, hand-typed, while the grid below grew to eleven */}
+            {["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen"][categories.length] ?? categories.length}{" "}
+            lines, all carrying the same Armenia series. Choose the object, then choose the piece
+            that goes on it.
           </p>
         </div>
         {/* the moved layer: hover one panel and it takes the room. The grid
-            below is the same nine categories and stays the whole page on
-            phones, under reduced motion and without JS. */}
+            below is the same categories and stays the whole page on phones,
+            under reduced motion and without JS. */}
         <ShopStrip cats={strip} />
 
         <ul className="ap-cats">

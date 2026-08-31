@@ -54,8 +54,22 @@ export default function PhotoLightbox({
     opener?.focus?.();
   }, [onClose, opener]);
 
+  // OPEN-ONCE work lives apart from the keydown wiring. Focus and the scroll
+  // lock used to sit in the same effect as the key handler, whose deps include
+  // `i` — so every arrow press re-ran the effect and yanked focus back to
+  // Close. A keyboard user who tabbed to Next and pressed Enter found their
+  // NEXT Enter closing the dialog instead of advancing it. Focus belongs to
+  // the moment the dialog opens, and to no other moment.
   useEffect(() => {
     closeRef.current?.focus();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
       if (!many) return;
@@ -63,12 +77,7 @@ export default function PhotoLightbox({
       if (e.key === "ArrowLeft") onIndex((i - 1 + shots.length) % shots.length);
     };
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [close, i, many, onIndex, shots.length]);
 
   if (!shots.length) return null;

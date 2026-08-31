@@ -1,0 +1,426 @@
+/* ==========================================================================
+   THE KEYCHAIN WALL
+   Twenty-four keychains on hooks, in a lit case. See KeychainSection.tsx for
+   why the room stays dark in both themes and why the turn is CSS rather than
+   three.js; this file is the room, the hook and the light.
+
+   The geometry is measured from the photographs, not invented: the split ring
+   is a circle from y=6 to y≈195 of an 820px frame, so 3% down the frame is
+   where a peg would actually take its weight. Every pivot below is that 3%.
+   ========================================================================== */
+
+.ap-kc {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(64px, 9vh, 120px) var(--gutter) clamp(72px, 10vh, 132px);
+  /* THE CASE'S OWN GROUND. Named here, not taken from --paper, because this
+     one block does not flip with the theme — clear acrylic photographs as a
+     lit object and needs a dark ground to read as one. WARM charcoal since
+     the 2026-08-31 showroom reference: the wall is coffee-dark with amber
+     bokeh, not the blue night the first cut used. */
+  --kc-ground: #2a2422;
+  --kc-ground-2: #1c1816;
+  --kc-metal: #c9ccd4;
+  --kc-metal-dark: #7c828f;
+  --kc-on-dark: #f5ede4;
+  --kc-on-dark-soft: rgba(245, 237, 228, 0.66);
+  background: var(--kc-ground);
+  color: var(--kc-on-dark);
+  overflow: hidden;
+}
+
+/* pools of warm light, a few soft bokeh discs, a vignette — the reference's
+   photographed room, rebuilt from gradients so it costs no download */
+.ap-kc__room {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(9% 6% at 8% 34%, rgba(255, 176, 108, 0.16) 0%, transparent 100%),
+    radial-gradient(7% 5% at 16% 58%, rgba(255, 190, 120, 0.1) 0%, transparent 100%),
+    radial-gradient(8% 5% at 93% 46%, rgba(255, 176, 108, 0.13) 0%, transparent 100%),
+    radial-gradient(6% 4% at 86% 72%, rgba(255, 190, 120, 0.09) 0%, transparent 100%),
+    radial-gradient(60% 42% at 14% 20%, rgba(255, 186, 122, 0.2) 0%, transparent 70%),
+    radial-gradient(56% 40% at 88% 30%, rgba(255, 168, 100, 0.16) 0%, transparent 72%),
+    radial-gradient(120% 90% at 50% 120%, rgba(0, 0, 0, 0.6) 0%, transparent 62%),
+    linear-gradient(180deg, var(--kc-ground) 0%, var(--kc-ground-2) 100%);
+}
+
+/* ---- the copy ---------------------------------------------------------- */
+.ap-kc__head {
+  max-width: 56ch;
+  margin: 0 auto clamp(48px, 7vh, 84px);
+  text-align: center;
+}
+.ap-kc .ap-kicker {
+  color: var(--kc-on-dark-soft);
+}
+.ap-kc__title {
+  color: var(--kc-on-dark);
+  margin: 6px 0 18px;
+}
+.ap-kc .ap-lede {
+  color: var(--kc-on-dark-soft);
+}
+.ap-kc__from {
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--kc-on-dark-soft);
+}
+.ap-kc__from strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--kc-on-dark);
+}
+
+/* ---- the endless wall --------------------------------------------------- */
+/* the rail is the WINDOW; the track inside holds the line twice and the
+   script translates it. Without the live layer the rail is an ordinary
+   thumb-scrolled strip and the wrap copy simply does not display. */
+.ap-kc__rail {
+  position: relative;
+  max-width: 1160px;
+  margin-inline: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.ap-kc[data-live] .ap-kc__rail {
+  overflow: hidden;
+  cursor: grab;
+}
+.ap-kc[data-live] .ap-kc__rail:active {
+  cursor: grabbing;
+}
+.ap-kc__track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(18px, 2.6vw, 40px);
+  width: max-content;
+  will-change: transform;
+}
+
+.ap-kc__cell {
+  position: relative; /* the peg pins to the cell, the card hangs over it */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  width: clamp(150px, 15vw, 185px);
+}
+/* the wrap copy exists only for the moving circle */
+.ap-kc__cell[data-ghost] {
+  display: none;
+}
+.ap-kc[data-live] .ap-kc__cell[data-ghost] {
+  display: flex;
+}
+
+/* the slide controls, riding the window's edges */
+.ap-kc__arrow {
+  position: absolute;
+  top: 38%;
+  z-index: 4;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  font-size: 26px;
+  line-height: 1;
+  color: #2b2320;
+  background: rgba(240, 233, 226, 0.9);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.ap-kc__arrow:hover {
+  background: #ffffff;
+  transform: scale(1.07);
+}
+.ap-kc__arrow:focus-visible {
+  background: #ffffff;
+  transform: scale(1.07);
+}
+.ap-kc__arrow--prev {
+  left: 10px;
+}
+.ap-kc__arrow--next {
+  right: 10px;
+}
+
+/* THE PEG — the photographed one (products/peg.webp, 109×600: plate, hook
+   arm, knurled collar, drop tongue). The keychain's split ring must close
+   around the TONGUE, which sits in the peg's lower quarter — hence the
+   negative margin pulling the hang frame up over it; the hang rides above
+   the peg in z so the ring reads as in front of the metal. */
+/* THE HANG, re-geometried to the client's second reference (2026-08-31):
+   the ring closes around the HOOK ARM at the peg's TOP, and the bar runs on
+   DOWN BEHIND the card. Two facts make it work without a new asset: the
+   card photographs are opaque, so the peg's lower half (collar, tongue)
+   simply disappears behind them; and the rings were cut OPEN back in the
+   asset pipeline, so the bar genuinely shows through the ring's hole — the
+   exact detail the reference render has. The peg is pinned to the cell top
+   and the card is pushed down 14px, which puts the photographed ring around
+   the hook with the nub peeking over its top arc. */
+.ap-kc__peg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: block;
+  width: 28px;
+  height: auto;
+  filter: drop-shadow(1px 3px 3px rgba(0, 0, 0, 0.55)) drop-shadow(4px 12px 16px rgba(0, 0, 0, 0.4));
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---- the keychain itself ---------------------------------------------- */
+.ap-kc__hang {
+  position: relative;
+  z-index: 2; /* the card in front of the bar; the bar shows through the ring hole */
+  margin-top: 30px; /* seats the ring's inner top arc ON the hook nub */
+  width: 100%;
+  max-width: 185px;
+  /* the camera. Long throw: these are small objects seen from across a room. */
+  perspective: 1100px;
+  perspective-origin: 50% 30%;
+  touch-action: pan-y; /* a horizontal drag turns it; a vertical one scrolls */
+}
+
+/* the pool of light this particular picture throws on the wall below it */
+.ap-kc__hang::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6%;
+  width: 128%;
+  height: 26%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--kc-avg) 55%, transparent) 0%, transparent 100%);
+  filter: blur(16px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* THE PENDULUM. A CSS animation, so twenty-four of these idle without a line
+   of JS; `--kc-lean` gives each one its own rest angle and phase so the rail
+   does not hang like a ruler. */
+.ap-kc__sway {
+  transform-origin: 50% 3%;
+  transform: rotate(var(--kc-lean, 0deg));
+  transform-style: preserve-3d;
+}
+.ap-kc[data-live] .ap-kc__sway {
+  animation: ap-kc-sway 6.5s ease-in-out infinite alternate;
+  animation-delay: calc(var(--kc-lean, 0deg) * 0.06s / 1deg);
+}
+.ap-kc__hang[data-holding] .ap-kc__sway {
+  animation-play-state: paused;
+}
+@keyframes ap-kc-sway {
+  from { transform: rotate(calc(var(--kc-lean, 0deg) - 1.1deg)); }
+  to   { transform: rotate(calc(var(--kc-lean, 0deg) + 1.1deg)); }
+}
+
+/* THE TURN. The only layer JS writes to. */
+.ap-kc__spin {
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: 50% 3%;
+  will-change: transform;
+}
+.ap-kc__spin img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* THE SHADOW TRAVELS AS IT TURNS — --kc-turn runs −1…+1 while the keychain
+     is dragged (KeychainCard writes it every frame), so the wall shadow
+     slides the opposite way from the face, which is most of what makes the
+     turn read as an object in front of a wall instead of a flat card
+     tilting. At rest (--kc-turn 0) it is the plain resting shadow. */
+  filter: drop-shadow(calc(4px - var(--kc-turn, 0) * 16px) 12px 14px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  -webkit-user-select: none; /* Safari only reads the prefixed form */
+  user-select: none;
+}
+
+/* THE SHEEN. A band of light that crosses the acrylic as the card turns:
+   --kc-turn runs −1 … +1, so the highlight sweeps the face rather than
+   sitting on it. Clipped to the card, never over the ring. */
+.ap-kc__glare {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 32%;
+  bottom: 1%;
+  border-radius: 9px;
+  pointer-events: none;
+  /* `max(t, −t)` is abs(), spelled the way every browser this site supports
+     can read. CSS abs() only reached Safari in 18.0, and an unsupported
+     function invalidates the whole declaration — which would drop opacity to
+     its default of 1 and lay a full-strength white band across all
+     twenty-four keychains. max()/min() have been safe since Safari 11.1. */
+  opacity: calc(0.16 + max(var(--kc-turn, 0), -1 * var(--kc-turn, 0)) * 0.5);
+  background: linear-gradient(
+    102deg,
+    transparent calc(28% + var(--kc-turn, 0) * 34%),
+    rgba(255, 255, 255, 0.5) calc(44% + var(--kc-turn, 0) * 34%),
+    rgba(255, 255, 255, 0.06) calc(58% + var(--kc-turn, 0) * 34%),
+    transparent calc(74% + var(--kc-turn, 0) * 34%)
+  );
+  mix-blend-mode: screen;
+  transition: opacity 0.3s var(--ease);
+}
+
+/* ---- the one pill, centred under the wall (the reference's layout) ----- */
+.ap-kc__hint {
+  width: fit-content;
+  margin: clamp(26px, 4vh, 46px) auto clamp(40px, 6vh, 64px);
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #2b2320;
+  background: rgba(240, 233, 226, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- name, price, buy — riding with each card on the moving wall ------- */
+.ap-kc__buy {
+  margin-top: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ap-kc__buy .ap-btn {
+  padding: 9px 16px;
+  font-size: 11px;
+}
+.ap-kc__add.ap-btn {
+  /* the one light control in a dark room — it should read as the way out */
+  background: #f6f1e8;
+  color: #171d2b;
+  border-color: transparent;
+}
+/* separate rules, not a comma list: Safari <15.4 drops a whole selector list
+   over an unknown :focus-visible, hover feedback included */
+.ap-kc__add.ap-btn:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+.ap-kc__add.ap-btn:focus-visible {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+.ap-kc__name {
+  margin: 12px 0 2px;
+  font-size: 14px;
+  color: var(--kc-on-dark);
+}
+.ap-kc__price {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--kc-on-dark-soft);
+}
+.ap-kc__added {
+  margin: 4px 0 0;
+  min-height: 1.2em;
+  font-size: 12px;
+  color: var(--kc-on-dark-soft);
+}
+
+/* ---- the rack: the rest of the line on light cards --------------------- */
+.ap-kc__rack {
+  list-style: none;
+  margin: clamp(18px, 3vh, 34px) auto 0;
+  padding: 0;
+  max-width: 1240px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: clamp(14px, 1.8vw, 24px);
+}
+.ap-kc__rackcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px 12px;
+  border-radius: 12px;
+  /* the reference's pale cards — fixed colours, since this room never flips */
+  background: #efe9e2;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+.ap-kc__rackcell img {
+  display: block;
+  width: 72%;
+  height: auto;
+}
+.ap-kc__rackadd {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(43, 35, 32, 0.35);
+  border-radius: 8px;
+  background: #f8f4ee;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2b2320;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.ap-kc__rackadd:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+.ap-kc__rackadd:focus-visible {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+.ap-kc__rackname {
+  margin: 0;
+  font-size: 12px;
+  color: #4a413c;
+  text-align: center;
+}
+.ap-kc__rackcell .ap-kc__added {
+  color: #6b5f58;
+}
+
+/* ---- the plain layer --------------------------------------------------- */
+/* No JS, no hover, a phone, or reduced motion: the wall is still a wall. The
+   sway and the pill are gone, the keychains simply hang straight. Nothing is
+   hidden — every photograph, name, price and buy button is in the markup for
+   everyone, which is why `live` gates behaviour here and never content. */
+@media (prefers-reduced-motion: reduce) {
+  .ap-kc__sway,
+  .ap-kc[data-live] .ap-kc__sway {
+    animation: none;
+  }
+}
+@media (max-width: 640px) {
+  /* the wall is a plain thumb-scrolled strip here (no live layer), and the
+     rack below is where a phone reads the line comfortably */
+  .ap-kc__cell {
+    width: 132px;
+  }
+  .ap-kc__track {
+    gap: 14px;
+  }
+  .ap-kc__rack {
+    grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+    gap: 12px 10px;
+  }
+}

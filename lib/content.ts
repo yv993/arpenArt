@@ -81,6 +81,22 @@ export type Category = {
   spec?: { k: string; v: string }[];
 };
 
+/** CATEGORIES WHOSE CART `art` ID NAMES THE CATEGORY'S OWN ITEM, not one of
+ *  the 57 illustrations. `art` began life as "which illustration goes on the
+ *  postcard/cup/tote", always an artworks.json id — then the 3D stickers, the
+ *  keychains and the magnets arrived as FIXED items with their own numbering,
+ *  and stored their own ids in the same field. The ids collide: magnet "05"
+ *  and illustration "05" are different pictures. Anywhere that renders a cart
+ *  line must check here first (found 2026-08-31, when the cart showed a buyer
+ *  illustration no. 05 for magnet no. 05 and the order email asked Arpine for
+ *  "(illustration 5)" — the wrong product to make). Value = the word that
+ *  labels one item of the line. */
+export const ownItemWord: Record<string, string> = {
+  "3d-stickers": "3D sticker",
+  keychains: "Keychain",
+  magnets: "Magnet",
+};
+
 // The process rows every open category shares, stated once so the story can
 // never drift between pages. These describe the REAL flow only: an order here
 // is a request, nothing is charged on the site, and Arpine confirms price and
@@ -209,6 +225,39 @@ export const categories: Category[] = [
     status: "open",
     spec: [
       { k: "Finish", v: "Domed resin over print, on a carded backing" },
+      ...processSpec,
+    ],
+  },
+  {
+    slug: "keychains",
+    name: "Keychains",
+    blurb: "Small illustrations, big memories — a little piece of Armenia on your keys.",
+    media: "keychain",
+    // ARPINE'S REAL PRICE, 2026-08-31: 1,000 dram each, from the text file
+    // that came with the twenty-four photographs ("price 1000 amd"). Not a
+    // placeholder. The brief that asked for this section priced them
+    // $20.00–$25.00, which is roughly eight times what she charges — a good
+    // illustration of why a number that merely looks plausible never ships.
+    from: 1000,
+    status: "open",
+    spec: [
+      { k: "Finish", v: "Clear acrylic case on a split ring" },
+      ...processSpec,
+    ],
+  },
+  {
+    slug: "magnets",
+    name: "Magnets",
+    // her phrase, from the text file that came with the pictures
+    blurb: "Original illustrations in acrylic magnet frames — a small keepsake to remember Armenia by.",
+    media: "magnet",
+    // ARPINE'S REAL PRICE, 2026-08-31: 1,600 dram, from the same text file
+    // ("price 1600") — the third line priced by her own note rather than a
+    // guess, after the postcards and the keychains.
+    from: 1600,
+    status: "open",
+    spec: [
+      { k: "Finish", v: "Print in a clear acrylic frame magnet" },
       ...processSpec,
     ],
   },
@@ -886,6 +935,39 @@ export const stickerSheets = {
 // No titles again: the designs arrived numbered and nothing else, so a card
 // says "No. 07" and the series, exactly as the artworks do.
 // ---------------------------------------------------------------------------
+// HER WORDS, 2026-08-31 — the heading and the paragraph are transcribed from
+// the text file that arrived with the twenty-four photographs, unedited. The
+// cue and the pill are mine: they are instructions for the pointer, not claims
+// about the product, which is the only kind of copy this file writes for her.
+export const keychainWall = {
+  kicker: "(On your keys)",
+  title: "Little Stories to Carry",
+  copy: [
+    "Small illustrations, big memories. Each Arpen Art keychain brings a little piece of Armenia with you — from familiar Yerevan scenes to colorful places and stories inspired by Armenian culture.",
+  ],
+  cue: "Drag a keychain to turn it",
+  grab: "Drag to rotate",
+  add: "Add to cart",
+  added: "Added to your cart.",
+};
+
+// HER WORDS, 2026-08-31 — title and paragraph from the text file in the magnet
+// drop, unedited. The cue is mine (an instruction, not a claim).
+export const magnetFridge = {
+  kicker: "(On the fridge)",
+  title: "Little Pieces of Armenia",
+  copy: [
+    "Bring a little piece of Armenia to your home. Each Arpen Art magnet features an original illustration inspired by Armenian places, landscapes, culture and everyday moments — a small keepsake to remember Armenia by.",
+  ],
+  cue: "Click a magnet to see it up close",
+  all: "The whole set",
+  add: "Add to cart",
+  added: "Added to your cart.",
+  /** under a reserved door slot's name — a design announced but not yet
+   *  delivered as artwork; the frame is empty on purpose */
+  soon: "coming",
+};
+
 export const stickers3d = {
   kicker: "(Domed)",
   // HER WORDS, 2026-08-23 — heading and body both. What was here before was

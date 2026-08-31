@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { categories, delivery } from "@/lib/content";
+import { categories, delivery, ownItemWord } from "@/lib/content";
 
 // Zero-dependency order intake.
 //
@@ -115,11 +115,14 @@ export async function POST(req: Request) {
   const total = goods + post;
   const ref = "AR-" + Math.random().toString(36).slice(2, 7).toUpperCase();
 
-  // one rendering of the lines, used by both the artist's and the buyer's copy
+  // one rendering of the lines, used by both the artist's and the buyer's copy.
+  // The word next to the id must match the id's OWN numbering (ownItemWord):
+  // "(illustration 12)" on a magnet order would send Arpine to a different
+  // picture than the one the buyer chose.
   const lineText = lines.map(
     (l) =>
       `  ${l.qty} x ${l.name}${l.variant ? ` [${l.variant}]` : ""}${
-        l.art ? ` (illustration ${l.art})` : ""
+        l.art ? ` (${(ownItemWord[l.slug] ?? "illustration").toLowerCase()} no. ${l.art})` : ""
       } — ${l.unit * l.qty} AMD`,
   );
 
