@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { brand, nav } from "@/lib/content";
+import { brand, categories, nav, soon } from "@/lib/content";
 import { count, read, subscribe } from "@/lib/cart";
 import ThemeToggle from "./ThemeToggle";
+import SoonModal, { SoonLink } from "./Soon";
 
 // Fixed chrome: wordmark left, sections right, cart count. The count is read
 // only after mount so the server HTML and the hydrated tree agree.
@@ -48,6 +49,9 @@ export default function Chrome() {
   useEffect(() => setOpen(false), [path]);
 
   return (
+    <>
+    {/* the one Available Soon window every page shares — see Soon.tsx */}
+    <SoonModal />
     <header className="ap-nav" data-lift={lift || undefined}>
       {/* Arpine's own lockup (client files, 2026-08-11) replaces the text
           wordmark — the moon-face mark over the Arpen Art wordmark, ink on
@@ -69,11 +73,42 @@ export default function Chrome() {
       </button>
 
       <nav className="ap-nav__links" id="ap-menu" data-open={open || undefined} aria-label="Sections">
-        {nav.map((l) => (
-          <Link key={l.href} href={l.href}>
-            {l.label}
-          </Link>
-        ))}
+        {nav.map((l) =>
+          l.href === "/shop" ? (
+            // THE SHOP LINK CARRIES A CARET (client, change.pdf p1, 2026-09-15:
+            // «add a small triangle that opens the list of shop products on
+            // hover»). The word is still the link to /shop; the list under it
+            // shows on hover and on keyboard focus (CSS :focus-within), and in
+            // the phone drawer it simply sits open under the word. A closed
+            // line lists itself too, but opens the Available Soon window.
+            <div className="ap-nav__shop" key={l.href}>
+              <Link href={l.href} aria-haspopup="true">
+                {l.label}
+                <svg className="ap-nav__caret" viewBox="0 0 10 10" aria-hidden="true">
+                  <path d="M1 3l4 4 4-4z" />
+                </svg>
+              </Link>
+              <ul className="ap-nav__menu" aria-label="Shop lines">
+                {categories.map((c) => (
+                  <li key={c.slug}>
+                    {c.status === "open" ? (
+                      <Link href={`/shop/${c.slug}`}>{c.name}</Link>
+                    ) : (
+                      <SoonLink name={c.name}>
+                        {c.name}
+                        <small>{soon.tile}</small>
+                      </SoonLink>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <Link key={l.href} href={l.href}>
+              {l.label}
+            </Link>
+          ),
+        )}
         {/* ICON, NOT A WORD. The bar's link row is already at its width on a
             1024px laptop, and a fifth label pushed the cart badge into the
             wordmark. The accessible name carries the meaning. */}
@@ -92,5 +127,6 @@ export default function Chrome() {
         </Link>
       </nav>
     </header>
+    </>
   );
 }

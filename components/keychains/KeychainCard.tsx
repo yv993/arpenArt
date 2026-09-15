@@ -54,6 +54,7 @@ export default function KeychainCard({
   wall,
   live,
   ghost = false,
+  peg = true,
 }: {
   item: Keychain;
   wall: KeychainWall;
@@ -61,6 +62,9 @@ export default function KeychainCard({
   /** the wrap copy on the carousel: visually identical, invisible to AT —
    *  a screen reader must meet each keychain once, not twice */
   ghost?: boolean;
+  /** false when the hook is part of the wall PHOTOGRAPH (the walnut board):
+   *  the card then draws no peg of its own and simply hangs at its anchor */
+  peg?: boolean;
 }) {
   const spin = useRef<HTMLDivElement>(null);
   const img = useRef<HTMLImageElement>(null);
@@ -145,7 +149,9 @@ export default function KeychainCard({
           alpha'd off its wall by scratchpad's flood cut. This section keeps
           its own dark ground in both themes, so a fixed photograph is safe
           where a theme-following drawing used to be needed. */}
-      <img className="ap-kc__peg" src="/products/peg.webp" alt="" width={109} height={600} loading="lazy" draggable={false} aria-hidden />
+      {peg && (
+        <img className="ap-kc__peg" src="/products/peg.webp" alt="" width={109} height={600} loading="lazy" draggable={false} aria-hidden />
+      )}
 
       <div
         className="ap-kc__hang"
@@ -158,13 +164,21 @@ export default function KeychainCard({
       >
         <div className="ap-kc__sway">
           <div className="ap-kc__spin" ref={spin}>
+            {/* EAGER, and offered at two sizes. These three ARE the page's
+                hero — lazy-loading them deferred the largest paint on the
+                route's own showcase. The card renders at ~193px, so the
+                560px thumb serves 1x screens and the full file only ships
+                to dense displays; the old markup sent 361×820 to everyone. */}
             <img
               ref={img}
               src={item.src}
+              srcSet={`${item.thumb} 247w, ${item.src} 361w`}
+              sizes="(min-width: 861px) 193px, 34vw"
               alt={`${item.title} — a clear acrylic keychain of an illustration by Arpine Baroyan`}
               width={item.w}
               height={item.h}
-              loading="lazy"
+              decoding="async"
+              fetchPriority="high"
               draggable={false}
             />
             {/* the light that runs across the acrylic as it turns */}

@@ -50,12 +50,31 @@ export type Spin = {
 
 export const newSpin = (): Spin => ({ yaw: 0, pitch: 0, vYaw: 0, vPitch: 0, dragging: false });
 
+/** THE GLOBE WAS BEING SLICED BY THE CAMERA, NOT BY ITS LATTICE (client,
+ *  change.pdf p3, 2026-09-15: «the globe's polar parts are cut off with a
+ *  straight line — make it a normal round»; Vardan the same evening with a
+ *  screenshot of the crown: «globe must be circle in top»). The first fix
+ *  capped the lattice at ±0.84 of the axis and changed nothing she could see,
+ *  because the straight line is the top of the FRUSTUM: the camera sat at
+ *  z 20 with a 50° fov, and a card on the NEAR side of a radius-9 ball is
+ *  only ~15 units away, where the view is 7 units tall — so its corners
+ *  projected past the frame at every viewport (worst corner measured at
+ *  110.6% of the half-height, scratchpad/plate-and-fit.cjs). The camera
+ *  now sits at CAMERA_Z, where the worst corner of a FULL lattice lands at
+ *  88.4%: the whole ball, crown and base, inside the canvas with a thin
+ *  margin. (26 was the first cut — 80.6%, safe but visibly small; Vardan:
+ *  «make it bigger». The rest of the size comes from the canvas itself,
+ *  .ap-gal__canvas in globals.css, which now takes most of the viewport.)
+ *  The lattice is back to full, on the half-step formula so no card sits
+ *  exactly on a pole (that one lies flat and reads as nothing). */
+export const CAMERA_Z = 24;
+
 /** Evenly spaced points on a sphere — avoids the clumping of naive random. */
 function fibonacciSphere(n: number, radius: number) {
   const pts: THREE.Vector3[] = [];
   const golden = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < n; i++) {
-    const y = 1 - (i / Math.max(1, n - 1)) * 2;
+    const y = 1 - ((i + 0.5) / Math.max(1, n)) * 2;
     const r = Math.sqrt(Math.max(0, 1 - y * y));
     const theta = golden * i;
     pts.push(new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r).multiplyScalar(radius));
@@ -133,7 +152,7 @@ const TMP_Q = new THREE.Quaternion();
  *  reads beside it like a museum label; on a phone it stays centred and
  *  smaller, with the info below. */
 const VIEW_Z = 12;
-const VIEW_DIST = 20 - VIEW_Z; // camera sits at z 20
+const VIEW_DIST = CAMERA_Z - VIEW_Z; // the camera sits at CAMERA_Z
 const VIS_H = 2 * VIEW_DIST * Math.tan((50 * Math.PI) / 360); // fov 50
 
 function ArtCard({

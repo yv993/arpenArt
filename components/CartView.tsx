@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { brand, categories, delivery, home, ownItemWord } from "@/lib/content";
 import { clear, dram, read, remove, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
@@ -15,6 +15,16 @@ const P = products as Record<string, Shot[]>;
 
 type State = "idle" | "sending" | "sent" | "logged" | "error";
 
+/** what was ordered, frozen at the moment of sending */
+type Receipt = {
+  lines: { label: string; qty: number; sum: number }[];
+  goods: number;
+  shipLabel: string;
+  shipPrice: number;
+  /** only for the fallback email the buyer sends themselves */
+  who: string[];
+};
+
 export default function CartView() {
   const [lines, setLines] = useState<Line[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -25,6 +35,16 @@ export default function CartView() {
   // true only when the server says the buyer's copy actually went out; the
   // done screen never claims an email that was not sent
   const [copied, setCopied] = useState(false);
+  // THE ENDING HAD FORGOTTEN THE ORDER (UX laws M4 + M7, 2026-09-15). A
+  // successful send calls clear(), so by the time "Order received" rendered
+  // the cart was empty and the screen named nothing that had been bought.
+  // Worst in the honest fallback — no email transport configured — which
+  // told the buyer to "also send it directly" to Arpine, from a page that
+  // had just wiped what they would need to write. The receipt is taken
+  // BEFORE clear(), so the ending shows what was chosen and the fallback
+  // email arrives already written.
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const doneHeading = useRef<HTMLHeadingElement>(null);
   // which delivery service — decides the charge AND whether an address is
   // asked for. Defaults to the Yerevan courier: she works there, and an
   // address is what most orders need anyway.
@@ -41,6 +61,24 @@ export default function CartView() {
   /** the goods alone; delivery is added on top of this, never hidden in it */
   const goods = total(lines);
   const nameOf = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? slug;
+  /** One line, in words. The receipt, the fallback email and the buttons'
+   *  accessible names all say it the same way — the Remove buttons used to be
+   *  named by CATEGORY alone, so two keychains in a cart read to a screen
+   *  reader as two identical "Remove Keychains". */
+  const lineLabel = (l: Line) => {
+    const own = ownItemWord[l.cat];
+    // a fixed-item line names itself ("Keychain no. 04" — the category would
+    // only repeat the noun); a choose-an-illustration line needs the category,
+    // because "Illustration no. 05" alone does not say it is a tote bag
+    const what = l.art ? (own ? `${own} no. ${l.art}` : `${nameOf(l.cat)} — Illustration no. ${l.art}`) : nameOf(l.cat);
+    return `${what}${l.variant ? ` (${l.variant})` : ""}`;
+  };
+
+  // the ending is a new screen, so put the reader on its heading — otherwise a
+  // screen reader stays on a Send button that no longer exists
+  useEffect(() => {
+    if (state === "sent" || state === "logged") doneHeading.current?.focus();
+  }, [state]);
   // `art` is TWO different id spaces — see ownItemWord in content.ts. For a
   // fixed-item line (magnet, keychain, 3D sticker) it names the category's own
   // product photo; only for the choose-an-illustration lines does it name one
@@ -123,6 +161,21 @@ export default function CartView() {
       }
       setRef(data.ref ?? "");
       setCopied(!!data.copied);
+      // frozen before clear() — see `receipt` above
+      setReceipt({
+        lines: lines.map((l) => ({ label: lineLabel(l), qty: l.qty, sum: unit(l.cat) * l.qty })),
+        goods,
+        shipLabel: ship.label,
+        shipPrice: ship.price,
+        who: [
+          get("name"),
+          get("phone") ? `Phone: ${get("phone")}` : "",
+          ship.address
+            ? [get("address"), [get("postcode"), get("city")].filter(Boolean).join(" "), get("country")].filter(Boolean).join(", ")
+            : "",
+          get("note") ? `Note: ${get("note")}` : "",
+        ].filter(Boolean),
+      });
       setState(data.delivered ? "sent" : "logged");
       clear();
       form.reset();
@@ -138,7 +191,10 @@ export default function CartView() {
   const head = (
     <div className="ap-sec__head">
       <p className="ap-kicker">(Cart)</p>
-      <h1 className="ap-h2" data-tfx="flip">
+      {/* rise, not flip — same reason as the gallery title in HomeView.tsx
+          (2026-09-15): the per-letter 3D turn tears the first glyph and
+          overlaps the rest mid-entrance; this was the only other flip */}
+      <h1 className="ap-h2" data-tfx="rise">
         YOUR SELECTION
       </h1>
     </div>
@@ -152,10 +208,25 @@ export default function CartView() {
     );
 
   if (state === "sent" || state === "logged") {
+    // the fallback email, written out: the buyer should only have to press Send
+    const mailBody = receipt
+      ? [
+          ...(ref ? [`Order reference: ${ref}`, ""] : []),
+          ...receipt.lines.map((l) => `${l.qty} × ${l.label} — ${dram(l.sum)}`),
+          `Delivery — ${receipt.shipLabel}: ${receipt.shipPrice ? dram(receipt.shipPrice) : "Free"}`,
+          `Total: ${dram(receipt.goods + receipt.shipPrice)}`,
+          "",
+          ...receipt.who,
+        ].join("\n")
+      : "";
+    const mailto = `mailto:${brand.email}?subject=${encodeURIComponent(`ArpenArt order${ref ? ` ${ref}` : ""}`)}&body=${encodeURIComponent(mailBody)}`;
+
     return (
       <div className="ap-sec ap-cart">
         <div className="ap-cart__done">
-          <h1 className="ap-h2">Order received</h1>
+          <h1 className="ap-h2" ref={doneHeading} tabIndex={-1}>
+            Order received
+          </h1>
           {ref && (
             <p className="ap-cart__ref">
               Reference <strong>{ref}</strong>
@@ -168,13 +239,52 @@ export default function CartView() {
             </p>
           ) : (
             <p>
-              Your request was recorded, but email delivery is not configured on this site yet, so
-              please also send it directly to <a href={`mailto:${brand.email}`}>{brand.email}</a>.
+              Your request was recorded, but email delivery is not configured on this site yet —
+              so please send it to Arpine as well. The button below opens the email already
+              written; you only need to press send.
             </p>
           )}
-          <Link className="ap-btn" href="/shop">
-            Back to the shop
-          </Link>
+
+          {receipt && (
+            <div className="ap-cart__receipt">
+              <ul>
+                {receipt.lines.map((l) => (
+                  <li key={l.label}>
+                    <span>
+                      {l.qty} × {l.label}
+                    </span>
+                    <span>{dram(l.sum)}</span>
+                  </li>
+                ))}
+              </ul>
+              <dl className="ap-cart__sums">
+                <div>
+                  <dt>Delivery — {receipt.shipLabel}</dt>
+                  <dd>{receipt.shipPrice ? dram(receipt.shipPrice) : "Free"}</dd>
+                </div>
+                <div className="ap-cart__sums-total">
+                  <dt>Total</dt>
+                  <dd>{dram(receipt.goods + receipt.shipPrice)}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+
+          {/* exactly one primary: in the fallback the email IS the order */}
+          {state === "logged" ? (
+            <div className="ap-cart__doneActs">
+              <a className="ap-btn" href={mailto}>
+                Email this order to Arpine
+              </a>
+              <Link className="ap-btn is-ghost" href="/shop">
+                Back to the shop
+              </Link>
+            </div>
+          ) : (
+            <Link className="ap-btn" href="/shop">
+              Back to the shop
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -210,7 +320,7 @@ export default function CartView() {
                   <div className="ap-cart__qty">
                     <button
                       type="button"
-                      aria-label="One fewer"
+                      aria-label={`One fewer: ${lineLabel(l)}`}
                       onClick={() => setQty(l.cat, l.art, l.qty - 1, l.variant)}
                     >
                       −
@@ -218,7 +328,7 @@ export default function CartView() {
                     <span aria-live="polite">{l.qty}</span>
                     <button
                       type="button"
-                      aria-label="One more"
+                      aria-label={`One more: ${lineLabel(l)}`}
                       onClick={() => setQty(l.cat, l.art, l.qty + 1, l.variant)}
                     >
                       +
@@ -229,7 +339,7 @@ export default function CartView() {
                     type="button"
                     className="ap-cart__rm"
                     onClick={() => remove(l.cat, l.art, l.variant)}
-                    aria-label={`Remove ${nameOf(l.cat)}`}
+                    aria-label={`Remove ${lineLabel(l)}`}
                   >
                     Remove
                   </button>

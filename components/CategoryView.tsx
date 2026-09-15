@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { add, dram } from "@/lib/cart";
+import { add } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { ordering, type Category } from "@/lib/content";
 import artworks from "@/lib/artworks.json";
@@ -761,13 +761,11 @@ export default function CategoryView({
           )}
           <p className="ap-lede">{cat.blurb}</p>
 
-          {cat.status === "open" ? (
-            <p className="ap-cv__price">
-              from <strong>{dram(cat.from)}</strong>
-            </p>
-          ) : (
-            <p className="ap-cv__price is-soon">Coming soon</p>
-          )}
+          {/* THE "from …" LINE IS GONE (client, change.pdf p5 + p8, 2026-09-15:
+              prices leave the catalogue). The cart still prices every line
+              from the server's own table — an order request needs its total —
+              but nothing above the buy button names a figure now. */}
+          {cat.status !== "open" && <p className="ap-cv__price is-soon">Coming soon</p>}
 
           {picks && cat.status === "open" && (
             <div className="ap-pick" ref={pickBox} data-need={need || undefined}>

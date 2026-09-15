@@ -228,138 +228,111 @@
  "scarves": [
   {
    "id": "01",
-   "src": "/products/scarves-01.webp",
-   "thumb": "/products/scarves-01-sm.webp",
+   "src": "/products/scarf-01.webp",
+   "thumb": "/products/scarf-01-sm.webp",
    "w": 1600,
-   "h": 1200,
-   "alpha": false,
-   "avg": "#b2aca6"
+   "h": 1599,
+   "avg": "#8b8879",
+   "alpha": false
   },
   {
    "id": "02",
-   "src": "/products/scarves-02.webp",
-   "thumb": "/products/scarves-02-sm.webp",
+   "src": "/products/scarf-02.webp",
+   "thumb": "/products/scarf-02-sm.webp",
    "w": 1600,
-   "h": 1600,
-   "alpha": false,
-   "avg": "#8a867e"
+   "h": 1200,
+   "avg": "#b0b0ad",
+   "alpha": false
   },
   {
    "id": "03",
-   "src": "/products/scarves-03.webp",
-   "thumb": "/products/scarves-03-sm.webp",
+   "src": "/products/scarf-03.webp",
+   "thumb": "/products/scarf-03-sm.webp",
    "w": 1525,
    "h": 1600,
-   "alpha": true,
-   "avg": "#201a13"
+   "avg": "#3f3e3e",
+   "alpha": false
   },
   {
    "id": "04",
-   "src": "/products/scarves-04.webp",
-   "thumb": "/products/scarves-04-sm.webp",
-   "w": 1525,
-   "h": 1600,
-   "alpha": true,
-   "avg": "#1c1e1b"
+   "src": "/products/scarf-04.webp",
+   "thumb": "/products/scarf-04-sm.webp",
+   "w": 1600,
+   "h": 1051,
+   "avg": "#3b344d",
+   "alpha": false
   },
   {
    "id": "05",
-   "src": "/products/scarves-05.webp",
-   "thumb": "/products/scarves-05-sm.webp",
+   "src": "/products/scarf-05.webp",
+   "thumb": "/products/scarf-05-sm.webp",
    "w": 1600,
-   "h": 1200,
-   "alpha": false,
-   "avg": "#b0b0ad"
+   "h": 1599,
+   "avg": "#b18854",
+   "alpha": false
   },
   {
    "id": "06",
-   "src": "/products/scarves-06.webp",
-   "thumb": "/products/scarves-06-sm.webp",
+   "src": "/products/scarf-06.webp",
+   "thumb": "/products/scarf-06-sm.webp",
    "w": 1600,
    "h": 1200,
-   "alpha": false,
-   "avg": "#b0b6b7"
+   "avg": "#bab0a5",
+   "alpha": false
   },
   {
    "id": "07",
-   "src": "/products/scarves-07.webp",
-   "thumb": "/products/scarves-07-sm.webp",
-   "w": 1600,
-   "h": 1066,
-   "alpha": false,
-   "avg": "#b4a79a"
+   "src": "/products/scarf-07.webp",
+   "thumb": "/products/scarf-07-sm.webp",
+   "w": 1525,
+   "h": 1600,
+   "avg": "#403c3b",
+   "alpha": false
   },
   {
    "id": "08",
-   "src": "/products/scarves-08.webp",
-   "thumb": "/products/scarves-08-sm.webp",
-   "w": 1600,
-   "h": 1029,
-   "alpha": false,
-   "avg": "#9baab4"
+   "src": "/products/scarf-08.webp",
+   "thumb": "/products/scarf-08-sm.webp",
+   "w": 1280,
+   "h": 1600,
+   "avg": "#806834",
+   "alpha": false
   },
   {
    "id": "09",
-   "src": "/products/scarves-09.webp",
-   "thumb": "/products/scarves-09-sm.webp",
+   "src": "/products/scarf-09.webp",
+   "thumb": "/products/scarf-09-sm.webp",
    "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#3f3950"
+   "h": 1600,
+   "avg": "#909fa3",
+   "alpha": false
   },
   {
    "id": "10",
-   "src": "/products/scarves-10.webp",
-   "thumb": "/products/scarves-10-sm.webp",
+   "src": "/products/scarf-10.webp",
+   "thumb": "/products/scarf-10-sm.webp",
    "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#423d54"
+   "h": 1200,
+   "avg": "#b0b6b7",
+   "alpha": false
   },
   {
    "id": "11",
-   "src": "/products/scarves-11.webp",
-   "thumb": "/products/scarves-11-sm.webp",
-   "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#3b344d"
+   "src": "/products/scarf-11.webp",
+   "thumb": "/products/scarf-11-sm.webp",
+   "w": 1525,
+   "h": 1600,
+   "avg": "#3d4042",
+   "alpha": false
   },
   {
    "id": "12",
-   "src": "/products/scarves-12.webp",
-   "thumb": "/products/scarves-12-sm.webp",
-   "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#443f54"
-  },
-  {
-   "id": "13",
-   "src": "/products/scarves-13.webp",
-   "thumb": "/products/scarves-13-sm.webp",
-   "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#37304a"
-  },
-  {
-   "id": "14",
-   "src": "/products/scarves-14.webp",
-   "thumb": "/products/scarves-14-sm.webp",
-   "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#c4c9cc"
-  },
-  {
-   "id": "15",
-   "src": "/products/scarves-15.webp",
-   "thumb": "/products/scarves-15-sm.webp",
-   "w": 1600,
-   "h": 1051,
-   "alpha": false,
-   "avg": "#d5d0cd"
+   "src": "/products/scarf-12.webp",
+   "thumb": "/products/scarf-12-sm.webp",
+   "w": 1200,
+   "h": 1600,
+   "avg": "#6f5c32",
+   "alpha": false
   }
  ],
  "apparel": [

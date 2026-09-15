@@ -238,20 +238,27 @@
        so nothing is being read off the middle any more.
        Inverted: nothing over the centre, a soft fall-off at the frame's edges
        so the scatter still ends rather than being cut, and a wash down the
-       LEFT where the title actually lives. */
+       LEFT where the title actually lives.
+       NIGHT-SAFE (Vardan 2026-09-15, screenshot of the cards drowned in a
+       pale fog): this used to mix from --ink, which the night palette flips
+       to CREAM — so in dark mode the fall-off became a 58% cream wash over
+       the cards, the section's own room lit up grey and the pictures near
+       the edges vanished into it. The room is dark in BOTH themes, so its
+       shade mixes from --ink-solid, the always-dark band token, which is
+       also the ground the cards are lying on. */
     background:
       linear-gradient(
         to right,
         color-mix(in srgb, var(--ink-solid) 76%, transparent) 0%,
-        color-mix(in srgb, var(--ink) 40%, transparent) 22%,
+        color-mix(in srgb, var(--ink-solid) 40%, transparent) 22%,
         transparent 46%
       ),
       radial-gradient(
         closest-side at 50% 50%,
         transparent 0%,
         transparent 44%,
-        color-mix(in srgb, var(--ink) 26%, transparent) 78%,
-        color-mix(in srgb, var(--ink) 58%, transparent) 100%
+        color-mix(in srgb, var(--ink-solid) 26%, transparent) 78%,
+        color-mix(in srgb, var(--ink-solid) 58%, transparent) 100%
       );
     transition: opacity 0.4s var(--ease);
   }
@@ -277,12 +284,26 @@
      slack left over for the drag. */
   .ap-cloud__plane {
     position: absolute;
-    left: 50%;
-    top: 50%;
-    translate: -50% -50%;
+    /* CENTRED BY INSET, NOT BY `translate` (Vardan 2026-09-15, twice, with
+       screenshots of the cards sitting in the bottom third of the frame).
+       This was `left/top: 50%; translate: -50% -50%`, and GSAP owns this
+       element's transform for the pan. GSAP 3.13's CSSPlugin FOLDS the
+       individual `translate` property into its own transform when it first
+       touches the element (`_parseTransform`: translate3d(<translate> 0 0),
+       then style.translate = "none") — and percentage translates come out
+       of that parse partially zeroed: measured in the Browser pane as
+       xPercent 0 / yPercent -50 (plane's left edge at the frame's centre,
+       every card off-screen right), and in his Chrome the other way round
+       (Y lost: cards shoved down by half a frame). Headless Edge happened
+       to fold both, which is why every capture here looked right.
+       Percent insets need no transform at all: -10% top/bottom of a 100svh
+       frame is the 120svh plane, -25% left/right is the 150%-wide plane,
+       both measured against the frame (which, unlike vw, excludes the
+       scrollbar). GSAP's pan then writes onto a clean transform. */
+    inset: -10% -25%;
     display: block;
-    width: 150vw;
-    height: 120svh;
+    width: auto;
+    height: auto;
     padding: 0;
     gap: 0;
     will-change: transform;

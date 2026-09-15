@@ -74,50 +74,72 @@
   color: var(--kc-on-dark);
 }
 
-/* ---- the endless wall --------------------------------------------------- */
-/* the rail is the WINDOW; the track inside holds the line twice and the
-   script translates it. Without the live layer the rail is an ordinary
-   thumb-scrolled strip and the wrap copy simply does not display. */
-.ap-kc__rail {
-  position: relative;
-  max-width: 1160px;
+/* THE 3D STAGE'S STYLES ARE GONE with the stage itself (client 2026-08-31:
+   "remove this part"). The components that used them, Keychain3D.tsx and
+   KeychainStage.tsx, are still on disk and referenced by nothing; restoring
+   the block means restoring this rule set too. */
+
+/* ---- the walnut board: three on the photographed hooks ------------------ */
+/* The stage is the client's render of the brass-hooked walnut wall, and the
+   geometry contract is: the IMAGE IS SQUARE and so is this box, so cover
+   neither crops nor letterboxes and the measured hook anchors (see
+   HangingKeychainDisplay.tsx) mean the same pixel at every width. Never give
+   this box a different aspect-ratio without re-measuring the anchors. */
+.ap-kh {
+  max-width: 1100px;
   margin-inline: auto;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
 }
-.ap-kc[data-live] .ap-kc__rail {
+.ap-kh__wall {
+  position: relative;
+  aspect-ratio: 1;
+  background-image: url("/products/wood-wall.webp");
+  background-size: cover;
+  background-position: center top;
+  border-radius: 10px;
   overflow: hidden;
-  cursor: grab;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
-.ap-kc[data-live] .ap-kc__rail:active {
-  cursor: grabbing;
+/* an anchor is a measured point on the photograph; the keychain hangs from
+   it, centred, sized as a fraction of the wall so the ring always matches
+   the photographed knob's scale */
+.ap-kh__anchor {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 17.5%;
 }
-.ap-kc__track {
+.ap-kh__mount {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(18px, 2.6vw, 40px);
-  width: max-content;
-  will-change: transform;
 }
-
-.ap-kc__cell {
-  position: relative; /* the peg pins to the cell, the card hangs over it */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: none;
-  width: clamp(150px, 15vw, 185px);
+.ap-kh__anchor .ap-kc__cell {
+  width: 100%;
 }
-/* the wrap copy exists only for the moving circle */
-.ap-kc__cell[data-ghost] {
-  display: none;
+/* NO FIXED PIXELS INSIDE THE ANCHOR SYSTEM. The card's base rule seats it
+   30px below its own drawn peg — a leftover from peg-in-card mode. On the
+   board every distance must be a % of the aspect-locked stage or the seat
+   drifts with the viewport: measured before this override, the photo top sat
+   at 18.33% of the stage at 1280px but 24.01% on a phone — the rings sagged
+   almost 6% of the wall below their knobs. The offset lives in ANCHORS.y
+   now, which scales by construction. */
+.ap-kh__anchor .ap-kc__hang {
+  margin-top: 0;
 }
-.ap-kc[data-live] .ap-kc__cell[data-ghost] {
-  display: flex;
+/* the buy block sits ON the wood, under its keychain — light text, seated
+   with a shadow so it reads at any grain */
+.ap-kh .ap-kc__name {
+  color: #f6efe6;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+.ap-kh .ap-kc__price {
+  color: rgba(246, 239, 230, 0.8);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+.ap-kh .ap-kc__added {
+  color: rgba(246, 239, 230, 0.75);
+}
+.ap-kh__hint {
+  margin-top: clamp(18px, 3vh, 30px);
 }
 
 /* the slide controls, riding the window's edges */
@@ -242,15 +264,33 @@
   display: block;
   width: 100%;
   height: auto;
-  /* THE SHADOW TRAVELS AS IT TURNS — --kc-turn runs −1…+1 while the keychain
-     is dragged (KeychainCard writes it every frame), so the wall shadow
-     slides the opposite way from the face, which is most of what makes the
-     turn read as an object in front of a wall instead of a flat card
-     tilting. At rest (--kc-turn 0) it is the plain resting shadow. */
-  filter: drop-shadow(calc(4px - var(--kc-turn, 0) * 16px) 12px 14px rgba(0, 0, 0, 0.55));
+  /* STATIC cutout shadow. This used to be the travelling one — its x-offset
+     was calc'd from --kc-turn, and a filter whose value changes is a filter
+     the browser re-rasterizes: every drag and settle frame repainted the
+     whole alpha-masked silhouette. With the offset constant the shadow is
+     painted ONCE into the layer and every later frame is pure compositing;
+     the travel moved to the ::before blob below, which costs a transform. */
+  filter: drop-shadow(4px 12px 14px rgba(0, 0, 0, 0.5));
   pointer-events: none;
   -webkit-user-select: none; /* Safari only reads the prefixed form */
   user-select: none;
+}
+/* THE TRAVELLING PART OF THE SHADOW, rebuilt as compositor work: a soft
+   gradient blob behind the card whose transform — not its paint — follows
+   the turn. A var-driven transform is style-recalc + composite, zero paint,
+   which is the whole point of splitting it out of the filter above. */
+.ap-kc__spin::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 6%;
+  right: 6%;
+  top: 30%;
+  bottom: -1%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.34) 0%, transparent 72%);
+  transform: translate3d(calc(var(--kc-turn, 0) * -18px), 0, 0);
+  pointer-events: none;
 }
 
 /* THE SHEEN. A band of light that crosses the acrylic as the card turns:
@@ -270,15 +310,33 @@
      its default of 1 and lay a full-strength white band across all
      twenty-four keychains. max()/min() have been safe since Safari 11.1. */
   opacity: calc(0.16 + max(var(--kc-turn, 0), -1 * var(--kc-turn, 0)) * 0.5);
-  background: linear-gradient(
-    102deg,
-    transparent calc(28% + var(--kc-turn, 0) * 34%),
-    rgba(255, 255, 255, 0.5) calc(44% + var(--kc-turn, 0) * 34%),
-    rgba(255, 255, 255, 0.06) calc(58% + var(--kc-turn, 0) * 34%),
-    transparent calc(74% + var(--kc-turn, 0) * 34%)
-  );
+  overflow: hidden;
   mix-blend-mode: screen;
   transition: opacity 0.3s var(--ease);
+}
+/* THE SHEEN IS A PAINTED-ONCE BAND THAT TRANSLATES. It used to be a gradient
+   whose STOPS were calc'd from --kc-turn — which is a new background image
+   every frame of a drag, and the tracer showed it: with the shadow already
+   static, this glare alone kept Paint at ~85/s. A band three containers wide
+   with a fixed gradient, moved by a var-driven transform, does the identical
+   sweep as compositor work. ±1 of turn = ±11.33% of the band = ±34% of the
+   container, the same travel the stops used to make. */
+.ap-kc__glare::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -100%;
+  width: 300%;
+  background: linear-gradient(
+    102deg,
+    transparent 42.7%,
+    rgba(255, 255, 255, 0.5) 48%,
+    rgba(255, 255, 255, 0.06) 52.7%,
+    transparent 58%
+  );
+  transform: translate3d(calc(var(--kc-turn, 0) * 11.33%), 0, 0);
+  will-change: transform;
 }
 
 /* ---- the one pill, centred under the wall (the reference's layout) ----- */
@@ -369,6 +427,9 @@
 }
 .ap-kc__rackadd {
   width: 100%;
+  /* 44px: these are the page's main buy buttons on a phone — all 24 of the
+     line — and measured 145×35 before (2026-09-15, UX laws D1) */
+  min-height: 44px;
   padding: 8px 10px;
   border: 1px solid rgba(43, 35, 32, 0.35);
   border-radius: 8px;
@@ -411,16 +472,109 @@
   }
 }
 @media (max-width: 640px) {
-  /* the wall is a plain thumb-scrolled strip here (no live layer), and the
-     rack below is where a phone reads the line comfortably */
-  .ap-kc__cell {
-    width: 132px;
+  /* THE BUY STACK IS WIDER THAN ITS KEYCHAIN (2026-09-15). The first fix for
+     a price clipped by the wall's overflow:hidden (2026-09-07) shrank the
+     stack to fit the 60px column the hanger occupies — which set "Add to
+     cart" in 8.5px type wrapped onto THREE lines, a button that cleared 44px
+     only because it wrapped. The clip was never about size: it was the name
+     wrapping in a column too narrow for it. So the stack now spans 170% of
+     its anchor (≈102px, centred under the keychain) and the type returns to
+     the rack's own 11px on one line. Measured at a 339px board: buttons
+     91×44, 11px clear between neighbours, every price bottom at ≤298px of
+     the 339px wall. The neighbours' centres sit 30.3% of the board apart,
+     so 170% is near the ceiling — widen it and the buttons touch. */
+  .ap-kh .ap-kc__buy {
+    margin-top: 6px;
+    width: 170%;
+    margin-inline: -35%;
   }
-  .ap-kc__track {
-    gap: 14px;
+  .ap-kh .ap-kc__add.ap-btn {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .ap-kh .ap-kc__name {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .ap-kh .ap-kc__price {
+    font-size: 11px;
+  }
+  .ap-kh .ap-kc__added {
+    display: none; /* the rack right below carries the confirmation */
   }
   .ap-kc__rack {
     grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
     gap: 12px 10px;
+  }
+}
+/* …and below 360px the 170% stack runs out. The board shrinks with the
+   screen but "Add to cart" does not, so at 320px the three 91px buttons
+   OVERLAPPED their neighbours by 5–6px — a tap on the seam lands on the wrong
+   keychain. Here the button fills a narrower 160% stack instead of sizing to
+   its label, and gives up its side padding and tracking (the label still
+   fits on one line). Measured at 320px: 79.5×44, 6px clear between buttons. */
+@media (max-width: 359px) {
+  .ap-kh .ap-kc__buy {
+    width: 160%;
+    margin-inline: -30%;
+  }
+  .ap-kh .ap-kc__add.ap-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0;
+    letter-spacing: 0;
+  }
+}
+
+/* ==========================================================================
+   THE DARK ROOM IS GONE (client, change.pdf p13, 2026-09-15): «remove this
+   dark ground — make it the same light ground as the other pages, or replace
+   it with the colour the title is written in, with the title light. Let's
+   see how it looks.» Both are here. The LIGHT one is the default; the TINT
+   one — the title run's own violet-to-rose as the ground, cream type on it —
+   answers to `data-ground="tint"` on .ap-kc so the two can be compared on
+   the same page. Every colour that used to be pinned to the dark room reads
+   from the page's tokens now, so the section follows the theme like the rest.
+   ========================================================================== */
+.ap-kc {
+  --kc-ground: var(--paper-2);
+  --kc-ground-2: var(--paper);
+  --kc-on-dark: var(--ink);
+  --kc-on-dark-soft: var(--ink-muted);
+  background: var(--kc-ground);
+  color: var(--kc-on-dark);
+}
+/* the amber bokeh was the dark room's light; on paper it is a stain */
+.ap-kc__room {
+  background: linear-gradient(180deg, var(--kc-ground) 0%, var(--kc-ground-2) 100%);
+}
+.ap-kc__rackcell {
+  background: var(--paper);
+  box-shadow: 0 8px 22px rgba(43, 35, 32, 0.14);
+}
+.ap-kh__wall {
+  box-shadow: 0 18px 44px rgba(43, 35, 32, 0.28);
+}
+/* the tint: the title run's own colours as the ground, the title light — the
+   low-contrast dark-run-on-dark-room title she circled cannot happen here */
+.ap-kc[data-ground="tint"] {
+  --kc-ground: #5a4d8f;
+  --kc-ground-2: #a85c7a;
+  --kc-on-dark: var(--cream);
+  --kc-on-dark-soft: color-mix(in srgb, var(--cream) 74%, transparent);
+  background: linear-gradient(160deg, var(--kc-ground) 0%, var(--kc-ground-2) 100%);
+}
+.ap-kc[data-ground="tint"] .ap-kc__room {
+  background: linear-gradient(160deg, var(--kc-ground) 0%, var(--kc-ground-2) 100%);
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .ap-kc[data-ground="tint"] .ap-h2 {
+    --tfx-grad: var(--n-grad-ink);
+    background: var(--n-grad-ink);
+    -webkit-background-clip: text;
+    background-clip: text;
   }
 }

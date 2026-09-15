@@ -97,7 +97,13 @@ function scatter(items: Art[]): Placed[] {
       z: Math.round(size * 10),
       mount: hash(i, 5) > 0.62,
     };
-  });
+  })
+    // THE MOUNTED CARDS ARE GONE (client, change.pdf p2, 2026-09-15: «too
+    // many pictures, and some have a white frame — remove the white-framed
+    // ones from this section»). Filtered AFTER the scatter, so the cards
+    // that stay keep the exact positions they always had — the frame simply
+    // has fewer, and none with a mount.
+    .filter((p) => !p.mount);
 }
 
 /** Cards rest at 63–102px, so this opens a picked one to roughly 230–370px —

@@ -8,10 +8,13 @@ export default function Foot() {
       {/* the inner wrapper is what the motion reveal parallaxes — the footer
           itself stays fixed under the page while this rises into place */}
       <div className="ap-foot__in">
-        {/* the closing line deciphers out of Armenian letters on every page */}
+        {/* the closing line deciphers out of Armenian letters on every page.
+            HER TWO LINES now (client, change.pdf p6, 2026-09-15) — the
+            tagline it used to print stays in the metadata only. */}
         <p className="ap-foot__big" data-tfx="decipher">
-          {brand.tagline}
+          {brand.footer.line}
         </p>
+        <p className="ap-foot__sub">{brand.footer.sub}</p>
         <p>
           <a href={`mailto:${brand.email}`}>{brand.email}</a>
         </p>

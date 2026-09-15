@@ -241,7 +241,8 @@ export default function AuthUI({ ready, notice }: { ready: boolean; notice?: str
           <p>
             “<Typewriter key={copy.quote} text={copy.quote} />”
           </p>
-          <cite>— Arpine Baroyan</cite>
+          {/* the "— Arpine Baroyan" cite is gone (client, change.pdf p16,
+              2026-09-15: «delete my name») — the line stands unsigned */}
         </blockquote>
       </div>
     </div>

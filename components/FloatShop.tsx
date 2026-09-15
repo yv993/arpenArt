@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { POOL, settle } from "@/lib/textfx";
+import { soon } from "@/lib/content";
+import { openSoon } from "./Soon";
 
 /** Pins must be torn down in a LAYOUT effect — see the note in MorphHero.
  *  SSR has no window and useLayoutEffect warns there, so it swaps in only
@@ -26,9 +27,14 @@ const useLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 // Kept: the fixed stage, both arrangements and the animated morph between
 // them, scroll-driven rotation, the centre title, the pill, the float.
 // Changed, deliberately:
-//   · honest scroll — the reference hijacks the wheel through Lenis on a
-//     900px document; here a pinned ScrollTrigger drives the same rotation
-//     and the page continues to the categories' real grid below
+//   · the wheel turns the room ONLY OVER THE ARRANGEMENT (client, change.pdf
+//     p5, 2026-09-15: «when the mouse is in the empty parts and scrolls, the
+//     page should go down; only over the spiral should the products turn»).
+//     The pinned ScrollTrigger that used to spend ~4.6 screens of scroll on
+//     the rotation is gone: the room is one ordinary screen in the flow, the
+//     page rolls straight past it, and a wheel over the band the cards
+//     occupy — or over a card, wherever it is — is taken and spent on the
+//     turn instead. See the wheel effect below.
 //   · the cards are CATEGORIES with names and prices — hover names them,
 //     click goes to the category. The reference's paintings are mute.
 //   · the DOM grid stays in the document as the accessible layer: sr-only
@@ -57,10 +63,25 @@ const CARD_W = 2.0;
  *  card reaches the centre position exactly once on the way down — at 1.5π
  *  the last quarter of the catalogue never came round. */
 const TURN = Math.PI * 2;
-/** Viewports of scroll the room holds, per product. Nine categories × 0.42
- *  ≈ 3.8 screens: long enough to read each name as it arrives, short enough
- *  that the page still feels like it is going somewhere. */
-const PIN_PER_CARD = 0.42;
+/** How much of a full turn one pixel of wheel travel is worth: 100px ≈ a
+ *  tenth of a turn, so one notch of a mouse wheel brings the next card round
+ *  on an eleven-card ring. */
+const WHEEL_TURN = 0.0009;
+/** WHERE THE WHEEL STEERS: on the pictures themselves. This used to be a
+ *  fixed band across the middle of the stage (8–92% × 22–86%), which also
+ *  covered the name in the centre and the empty room between the cards —
+ *  Vardan 2026-09-15, screenshot with the cursor on "T-SHIRTS": «scroll
+ *  must affect only when the cursor is in the images' circle part». So each
+ *  card now reports its own SCREEN spot every frame — centre and projected
+ *  half-height, in canvas pixels — and the wheel is claimed only within
+ *  SPOT_PAD of one. The pad covers the gaps between neighbours on the ring
+ *  (cards are 2 units wide on a 3.5-unit pitch), so the whole ring reads
+ *  as one target; the centre, the head, the pill and the counter belong to
+ *  the page. */
+type Spot = { x: number; y: number; r: number };
+const SPOT_PAD = 1.35;
+const TAN_HALF_FOV = Math.tan((50 * Math.PI) / 360); // the Canvas below is fov 50
+const SPOT_V = new THREE.Vector3();
 
 /** The warm haze from the client's ParticleSphere sketch, kept to the same
  *  three-change policy as the gallery port: their 1,500 separate <mesh>
@@ -120,6 +141,7 @@ function Card({
   index,
   total,
   view,
+  spots,
   onPick,
   onHover,
 }: {
@@ -127,6 +149,7 @@ function Card({
   index: number;
   total: number;
   view: React.RefObject<number>;
+  spots: React.RefObject<Spot[]>;
   onPick: (c: FloatCat) => void;
   onHover: (c: FloatCat | null) => void;
 }) {
@@ -172,6 +195,16 @@ function Card({
     hover.current += ((hovered.current ? 1 : 0) - hover.current) * 0.12;
     const s = 1 + hover.current * 0.14;
     g.scale.set(s, s, s);
+    // the card's screen spot for the wheel gate — centre and projected
+    // half-height in canvas pixels (a perspective camera: size falls off
+    // with distance, so a near card claims a wider circle than a far one)
+    g.getWorldPosition(SPOT_V);
+    const dist = SPOT_V.distanceTo(state.camera.position);
+    SPOT_V.project(state.camera);
+    const spot = (spots.current[index] ??= { x: 0, y: 0, r: 0 });
+    spot.x = ((SPOT_V.x + 1) / 2) * state.size.width;
+    spot.y = ((1 - SPOT_V.y) / 2) * state.size.height;
+    spot.r = ((size[1] / 2) * s * (state.size.height / 2)) / Math.max(0.01, dist * TAN_HALF_FOV);
   });
 
   return (
@@ -224,6 +257,7 @@ function Scene({
   cats,
   view,
   scrollP,
+  spots,
   onPick,
   onHover,
   onFocus,
@@ -231,6 +265,7 @@ function Scene({
   cats: FloatCat[];
   view: React.RefObject<number>;
   scrollP: React.RefObject<number>;
+  spots: React.RefObject<Spot[]>;
   onPick: (c: FloatCat) => void;
   onHover: (c: FloatCat | null) => void;
   /** which card currently holds the centre — the one nearest the camera */
@@ -279,7 +314,7 @@ function Scene({
       <group rotation={[0.3, 0, 0]}>
         <Haze />
         {cats.map((c, i) => (
-          <Card key={c.slug} cat={c} index={i} total={cats.length} view={view} onPick={onPick} onHover={onHover} />
+          <Card key={c.slug} cat={c} index={i} total={cats.length} view={view} spots={spots} onPick={onPick} onHover={onHover} />
         ))}
       </group>
     </group>
@@ -439,39 +474,54 @@ export default function FloatShop({
     }
   }, []);
 
-  // Pin after the live re-render, when the room is at its real size. The
-  // section attribute is what hides the sibling grid — a CSS `+` selector
-  // cannot do it, because the pin wraps this element in a pin-spacer and the
-  // grid's sibling becomes the spacer, not us.
-  // LAYOUT effect, not passive — a pin reparents this element into a
-  // pin-spacer, and only a layout cleanup un-pins before React removes the
-  // node. See the note at the top of MorphHero for the whole story.
+  /** true while the pointer is on a card (r3f's own raycast) — the fast path */
+  const overCard = useRef(false);
+  /** every card's screen spot, written by the frame loop, read by the wheel */
+  const spots = useRef<Spot[]>([]);
+
+  // THE WHEEL, taken only ON THE PICTURES. The section attribute still
+  // hides the sibling grid while the room runs. No pin any more: the room is
+  // one screen in ordinary flow, and unless the pointer is on a card or
+  // within a card's padded spot (see Spot above), a wheel here scrolls the
+  // page exactly as it does anywhere else — over the name in the middle,
+  // the head, the pill, the counter and the empty room alike. On the
+  // pictures, the wheel is spent on the turn — the same `scrollP` the pin
+  // used to drive, now a wrapped fraction of a turn.
   useLayout(() => {
     const el = root.current;
     if (!el || !live) return;
     const section = el.closest("#shop");
     section?.setAttribute("data-float", "");
-    gsap.registerPlugin(ScrollTrigger);
-    const st = ScrollTrigger.create({
-      trigger: el,
-      start: "top top",
-      // scaled to the CATALOGUE, not to a fixed number of screens: add a
-      // category and the room gets the scroll to show it
-      end: () => "+=" + window.innerHeight * PIN_PER_CARD * Math.max(1, cats.length),
-      pin: true,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      onUpdate: (self) => {
-        scrollP.current = self.progress;
-      },
-    });
+    const onWheel = (e: WheelEvent) => {
+      let onPictures = overCard.current;
+      if (!onPictures) {
+        const canvas = el.querySelector("canvas");
+        if (!canvas) return;
+        const r = canvas.getBoundingClientRect();
+        const px = e.clientX - r.left;
+        const py = e.clientY - r.top;
+        for (const s of spots.current) {
+          if (s && Math.hypot(px - s.x, py - s.y) <= s.r * SPOT_PAD) {
+            onPictures = true;
+            break;
+          }
+        }
+      }
+      if (!onPictures) return; // the page scrolls
+      e.preventDefault();
+      // lines and pages (Firefox's deltaModes) brought to pixels
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+      const p = (scrollP.current ?? 0) + dy * WHEEL_TURN;
+      scrollP.current = p - Math.floor(p);
+    };
+    // non-passive on purpose: this is the one listener on the site allowed
+    // to keep a wheel event, and only when the pointer is on the spiral
+    el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
-      // kill(TRUE) — revert the pin, so the pin-spacer stops wrapping a node
-      // React owns before React unmounts it. See the note in MorphHero.
-      st.kill(true);
+      el.removeEventListener("wheel", onWheel);
       section?.removeAttribute("data-float");
     };
-  }, [live, cats.length]);
+  }, [live]);
 
   // the pill's morph — chase, so it eases exactly like the reference's
   useEffect(() => {
@@ -484,11 +534,16 @@ export default function FloatShop({
 
   const onPick = useCallback(
     (c: FloatCat) => {
-      router.push(c.status === "open" ? `/shop/${c.slug}` : "/shop");
+      // a closed line opens the small Available Soon window, not a page
+      if (c.status === "open") router.push(`/shop/${c.slug}`);
+      else openSoon(c.name);
     },
     [router],
   );
-  const onHover = useCallback((c: FloatCat | null) => setHovered(c), []);
+  const onHover = useCallback((c: FloatCat | null) => {
+    overCard.current = !!c;
+    setHovered(c);
+  }, []);
   // the frame loop calls this on every change of the centre card; React
   // bails out of the re-render when the index has not actually moved
   const onFocus = useCallback((i: number) => setFocusI(i), []);
@@ -530,7 +585,7 @@ export default function FloatShop({
         {live && (
           <Canvas camera={{ position: [0, 0, 13.4], fov: 50 }} dpr={[1, 1.6]} gl={{ antialias: true, alpha: true }}>
             <Suspense fallback={null}>
-              <Scene cats={cats} view={view} scrollP={scrollP} onPick={onPick} onHover={onHover} onFocus={onFocus} />
+              <Scene cats={cats} view={view} scrollP={scrollP} spots={spots} onPick={onPick} onHover={onHover} onFocus={onFocus} />
             </Suspense>
           </Canvas>
         )}
@@ -571,8 +626,10 @@ export default function FloatShop({
                 ) : null,
               )}
           </p>
+          {/* no price here any more (client, change.pdf p5, 2026-09-15:
+              «remove the prices part») — only what a click does */}
           <p className="ap-fs__from">
-            {shown ? (shown.status === "open" ? `from ${shown.from.toLocaleString()} ֏ — click to open` : "coming soon") : ""}
+            {shown ? (shown.status === "open" ? "click to open" : soon.tile) : ""}
           </p>
         </div>
       </div>
@@ -581,9 +638,7 @@ export default function FloatShop({
           POINTED-AT card is announced: the centre also renames itself as the
           ring turns, and narrating that on a timer would be noise. */}
       <p className="ap-sr" role="status">
-        {hovered
-          ? `${hovered.name} — ${hovered.status === "open" ? `from ${hovered.from.toLocaleString()} ֏` : "soon"}`
-          : ""}
+        {hovered ? `${hovered.name}${hovered.status === "open" ? "" : ` — ${soon.tile}`}` : ""}
       </p>
 
       {/* how far through the catalogue the room has turned — it also says

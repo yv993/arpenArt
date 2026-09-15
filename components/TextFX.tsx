@@ -302,6 +302,29 @@ export default function TextFX() {
 
     const cleanups: (() => void)[] = [];
 
+    // THE THEME CAN CHANGE UNDER A PAINTED HEADING. paintSlices writes each
+    // character's colour INLINE, sampled from the run the heading declares at
+    // that moment — and the run is a theme token (--grad-ink flips to the
+    // cream run at night). A heading painted on the light page and then
+    // flipped to night by the nav toggle kept its indigo samples on the navy
+    // ground: the client's "COMMISSIONS & WHOLESALE" screenshot (change.pdf
+    // p17, 2026-09-15), each letter a slightly different invisible blue. So
+    // every painted heading is remembered here and re-sampled whenever the
+    // theme moves — the toggle's attribute or the OS at sunset.
+    const painted = new Map<HTMLElement, HTMLElement[]>();
+    const repaint = () => {
+      for (const [el, chars] of painted) if (el.isConnected) paintSlices(el, chars);
+    };
+    const themeAttr = new MutationObserver(repaint);
+    themeAttr.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const osTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    osTheme.addEventListener("change", repaint);
+    cleanups.push(() => {
+      themeAttr.disconnect();
+      osTheme.removeEventListener("change", repaint);
+      painted.clear();
+    });
+
     // WHY THIS RUNNER LIVES IN THE PAGE AND NOT THE LAYOUT (2026-08-11).
     //
     // app/loading.tsx wraps every route in a Suspense boundary, so React
@@ -413,6 +436,7 @@ export default function TextFX() {
         // BEFORE build(): the builders set transforms on these spans in the
         // same tick, and the slices must be cut from the untransformed line
         paintSlices(el, chars);
+        painted.set(el, chars);
         const build = BUILD[el.dataset.tfx ?? ""] ?? BUILD.rise;
         const tl = build(
           chars,
@@ -480,6 +504,7 @@ export default function TextFX() {
           tl.kill();
           settle(chars);
           unsplit(el, original);
+          painted.delete(el);
           delete el.dataset.tfxDone;
         });
         // The webfont usually lands after this scan, and slices cut against

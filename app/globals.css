@@ -648,6 +648,12 @@ select {
      wrong — set left-aligned in the right half at roughly 4.4vw, where this
      was 6.4vw. Both lines start on the same left edge, so the block is
      left-aligned even though it sits to the right. */
+  /* STILL THE GEOMETRIC SANS. The 2026-09-15 pass read the client's p1 note
+     («let it be in this same font», arrow to a serif section heading) as a
+     switch to the display serif and shipped it for a day; Vardan reversed
+     that the same evening — «text must be previous font and same color as
+     now». So the letterform stays what the 2026-08-12 artwork set, and only
+     the fill changed: pure white, no gradient (that part of p1 stands). */
   font-family: var(--font-ui);
   font-weight: 700;
   /* SMALLER AGAIN (client 2026-08-12): 4.4vw matched the banner artwork, but
@@ -658,7 +664,7 @@ select {
   line-height: 1.18;
   letter-spacing: 0.01em;
   text-align: left;
-  color: var(--cream);
+  color: #fff;
   /* THE RIM IS GONE (client 2026-08-11: "remove border from text its not
      nice"). It was a 0.05em ink stroke painted behind the fill, and at that
      weight it read as an outline drawn round the letters rather than as
@@ -678,19 +684,10 @@ select {
   filter: drop-shadow(0 1px 2px rgba(23, 26, 44, 0.62)) drop-shadow(0 3px 12px rgba(23, 26, 44, 0.5))
     drop-shadow(0 8px 34px rgba(23, 26, 44, 0.42));
 }
-/* SUNLIGHT IN THE LETTERS. Each line runs white into her marigold at its
-   foot — the same light the hills behind it are painted in. Per line, not
-   across the block, so both lines carry the full run; the FX runner re-cuts
-   it into per-character slices exactly as it does for the section titles. */
-@supports (-webkit-background-clip: text) or (background-clip: text) {
-  .ap-hero__title > span {
-    --tfx-grad: linear-gradient(172deg, #fffef8 10%, #fdedc4 58%, #f2bc55 106%);
-    background: linear-gradient(172deg, #fffef8 10%, #fdedc4 58%, #f2bc55 106%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-}
+/* The sunlight run that used to be clipped into these letters (white into
+   marigold, per line) is GONE (client, change.pdf p1, 2026-09-15: «remove
+   the gradient, leave it just white»). Plain white fill; the FX runner has
+   no --tfx-grad here to re-cut, so its slices inherit the white. */
 /* direct children ONLY: these are the two title lines. A bare descendant
    `span` here would also hit every letter span the text-FX runner nests
    inside them and stack the title one character per line. */
@@ -748,10 +745,15 @@ select {
      and it is the difference from the `cover` this replaced. */
   top: 0;
   height: 100%;
-  object-fit: contain;
-  /* the push-in works from the middle of the picture now that the whole
-     picture is on screen — the old 42%/55% origin was chosen against a
-     crop that no longer exists */
+  /* COVER AGAIN (client, change.pdf p1, 2026-09-15): the ellipses on the
+     brief circle the dark bands `contain` leaves either side of the painting
+     on a viewport taller than 16:9 — «figure out how we fix these extra
+     spaces». This reverses the 2026-08-14 `contain` above: on a 16:9 screen
+     nothing changes, on a taller one the painting's left and right edges
+     crop instead of the room showing. The aurora field stays as the ground
+     the phone layer's contained picture still sits on. */
+  object-fit: cover;
+  object-position: 50% 45%;
   transform-origin: 50% 50%;
 }
 /* THE GROUND UNDER A CONTAINED PICTURE. With `cover` the aurora was behind
@@ -1003,7 +1005,13 @@ select {
   border-color: var(--cream);
 }
 .ap-gal__canvas {
-  height: clamp(420px, 74vh, 780px);
+  /* THE BALL IS AS TALL AS THE CANVAS (the camera's fov is vertical), so the
+     canvas is the globe's size. 74vh capped at 780px read small once the
+     camera stepped back far enough to stop slicing the crown (Vardan
+     2026-09-15: «make it bigger»): most of the viewport now, with the width
+     guard because the globe is as WIDE as it is tall — 88vw keeps a tall
+     narrow window from cutting its sides. */
+  height: clamp(420px, min(92vh, 88vw), 1040px);
   cursor: grab;
   /* pan-y, not none: the sphere takes horizontal drags and the browser keeps
      vertical ones, so a phone can still scroll past a section that fills most

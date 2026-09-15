@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import PhotoLightbox from "./PhotoLightbox";
 import Link from "next/link";
 import gsap from "gsap";
-import { dram } from "@/lib/cart";
+import { soon } from "@/lib/content";
+import { SoonLink } from "./Soon";
 
 // ============================================================================
 // SHOP STRIP — the client's expandable gallery, rebuilt for a shop.
@@ -110,29 +111,39 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
             onMouseLeave={() => focusPanel(null)}
           >
             {/* the whole panel is the category link — a buyer's click goes to
-                the product, never to a viewer */}
-            <Link
-              className="ap-xg__go"
-              href={c.status === "open" ? `/shop/${c.slug}` : "/shop"}
-              onFocus={() => focusPanel(idx)}
-              onBlur={() => focusPanel(null)}
-            >
-              <img
-                src={c.photo.src}
-                alt={`${c.name} by Arpine Baroyan`}
-                width={c.photo.w}
-                height={c.photo.h}
-                style={{ background: c.photo.avg }}
-                loading={idx < 4 ? undefined : "lazy"}
-                decoding="async"
-              />
-              <span className="ap-xg__veil" aria-hidden="true" style={{ opacity: DIM_REST }} />
-              <span className="ap-xg__say">
-                <strong>{c.name}</strong>
-                <em>{c.status === "open" ? `from ${dram(c.from)}` : "Soon"}</em>
-                <span className="ap-xg__blurb">{c.blurb}</span>
-              </span>
-            </Link>
+                the product, never to a viewer. A line that is not open yet
+                opens the small Available Soon window instead (client,
+                change.pdf p8, 2026-09-15), and no panel names a price now. */}
+            {(() => {
+              const face = (
+                <>
+                  <img
+                    src={c.photo.src}
+                    alt={`${c.name} by Arpine Baroyan`}
+                    width={c.photo.w}
+                    height={c.photo.h}
+                    style={{ background: c.photo.avg }}
+                    loading={idx < 4 ? undefined : "lazy"}
+                    decoding="async"
+                  />
+                  <span className="ap-xg__veil" aria-hidden="true" style={{ opacity: DIM_REST }} />
+                  <span className="ap-xg__say">
+                    <strong>{c.name}</strong>
+                    {c.status !== "open" && <em>{soon.tile}</em>}
+                    <span className="ap-xg__blurb">{c.blurb}</span>
+                  </span>
+                </>
+              );
+              return c.status === "open" ? (
+                <Link className="ap-xg__go" href={`/shop/${c.slug}`} onFocus={() => focusPanel(idx)} onBlur={() => focusPanel(null)}>
+                  {face}
+                </Link>
+              ) : (
+                <SoonLink className="ap-xg__go" name={c.name} onFocus={() => focusPanel(idx)} onBlur={() => focusPanel(null)}>
+                  {face}
+                </SoonLink>
+              );
+            })()}
 
             {c.shots.length > 1 && (
               <button

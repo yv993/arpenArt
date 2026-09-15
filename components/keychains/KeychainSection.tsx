@@ -1,38 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import gsap from "gsap";
-import KeychainCard from "./KeychainCard";
+import { useEffect, useRef, useState } from "react";
+import HangingKeychainDisplay from "./HangingKeychainDisplay";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import type { Keychain, KeychainWall } from "@/types/keychain";
 
 // ============================================================================
-// THE KEYCHAIN SHOWROOM — the whole line on one endless wall.
+// THE KEYCHAIN SHOWROOM — the walnut board, then the rack.
 //
-// Third pass (client 2026-08-31 night: "it must be smaller … user can also to
-// move right and next keychains must appere from right and circle must go to
-// left"). The three fixed pegs became a CAROUSEL: all twenty-four hang in a
-// row, the row slides, and it is a CIRCLE — advancing moves the wall left and
-// the next keychains enter from the right edge, forever.
+// Fourth pass (client 2026-09-01, with the render pair: "use first and 3rd
+// images to replace existing hangers … keep movement logic"). The endless
+// carousel is REPLACED by HangingKeychainDisplay: the client's photographed
+// walnut wall with brass hooks, three keychains hanging on the three
+// plate-hooks at measured anchor points, paged three at a time by the
+// arrows. What "keep movement logic" kept is the keychain's own physics —
+// KeychainCard is untouched: the idle sway, the drag-to-turn with the
+// elastic spring-back, the glare and the travelling shadow all ride along
+// into the new display.
 //
-// THE WRAP is the standard doubled-track marquee: the track renders the line
-// TWICE, total width W = half the track's scrollWidth, and the offset lives
-// in ((off % W) + W) % W — translate by −off and the second copy always
-// covers the seam. The copies are `ghost` cards: identical pixels,
-// aria-hidden with untabbable buttons, because a screen reader must meet
-// each keychain once.
+// The carousel (doubled-track marquee, background-drag slide, ghost copies)
+// was deleted with its markup, not parked: its logic lived HERE and this
+// file's history is the transcript. The 3D stage removed earlier the same
+// day stays parked on disk (Keychain3D.tsx / KeychainStage.tsx,
+// unreferenced) — that one was never superseded, only switched off.
 //
-// TWO GESTURES SHARE THE WALL, split by TARGET, not by axis: a drag that
-// starts ON a keychain turns that keychain (KeychainCard owns it, and its
-// pointer-capture keeps it); a drag that starts on the wall between them
-// slides the row, with velocity carrying it after release. The arrows do the
-// same slide for anyone who does not find the drag — and they are real
-// buttons, so the carousel works from a keyboard.
-//
-// live=false (phone, reduced motion, no JS): no transform, no arrows — the
-// track is an ordinary overflow-x rail the thumb scrolls natively, ghosts
-// display:none, and the rack below remains the comfortable surface.
+// live=false (phone, reduced motion, no JS): the board still shows, the
+// keychains hang still, the arrows still page — paging is not motion — and
+// the rack below carries the whole line for comfortable buying.
 // ============================================================================
 
 const GATE = "(min-width: 861px) and (hover: hover) and (prefers-reduced-motion: no-preference)";
@@ -51,14 +46,6 @@ export default function KeychainSection({
   const [added, setAdded] = useState<string | null>(null);
   const addedTimer = useRef(0);
 
-  const track = useRef<HTMLUListElement>(null);
-  const half = useRef(1); // width of ONE copy of the line
-  const off = useRef(0); // current scroll of the circle, px
-  const vel = useRef(0); // px/ms, smoothed, for the throw
-  const lastX = useRef(0);
-  const lastT = useRef(0);
-  const sliding = useRef(false);
-
   useEffect(() => {
     // no `(scripting: enabled)` here — inside an effect it is a tautology, and
     // on browsers without the `scripting` media feature the unknown query is
@@ -70,80 +57,11 @@ export default function KeychainSection({
 
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
 
-  const paint = useCallback(() => {
-    const el = track.current;
-    if (!el) return;
-    const W = half.current;
-    off.current = ((off.current % W) + W) % W;
-    el.style.transform = `translate3d(${-off.current}px, 0, 0)`;
-  }, []);
-
-  // measure one copy's width — after mount and again on resize. The images
-  // carry width/height attributes, so layout is right before they decode.
-  useEffect(() => {
-    if (!live) return;
-    const el = track.current;
-    if (!el) return;
-    const measure = () => {
-      half.current = Math.max(1, el.scrollWidth / 2);
-      paint();
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [live, paint]);
-
-  /** one keychain's slot: a copy's width over the number of keychains */
-  const step = () => half.current / Math.max(1, items.length);
-
-  const glide = (delta: number) => {
-    const p = { v: off.current };
-    gsap.killTweensOf(track.current!, "x"); // never two glides at once
-    gsap.to(p, {
-      v: off.current + delta,
-      duration: 0.55,
-      ease: "power3.out",
-      onUpdate: () => {
-        off.current = p.v;
-        paint();
-      },
-    });
-  };
-
-  // ---- sliding the wall (background drag) ---------------------------------
-  const wallDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!live) return;
-    // a press on a keychain belongs to that keychain's own turn; a press on
-    // a button belongs to the button
-    if ((e.target as HTMLElement).closest(".ap-kc__hang, button, a")) return;
-    sliding.current = true;
-    lastX.current = e.clientX;
-    lastT.current = e.timeStamp;
-    vel.current = 0;
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const wallMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!sliding.current) return;
-    const dx = e.clientX - lastX.current;
-    const dt = Math.max(1, e.timeStamp - lastT.current);
-    // the wall follows the hand: content moves WITH the pointer
-    off.current -= dx;
-    vel.current = vel.current * 0.7 + (-dx / dt) * 0.3;
-    lastX.current = e.clientX;
-    lastT.current = e.timeStamp;
-    paint();
-  };
-  const wallUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!sliding.current) return;
-    sliding.current = false;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    // the throw: carry the release velocity out over ~0.9s
-    glide(vel.current * 420);
-  };
-
   const H = heading;
-  const racked = items.slice(3);
+  // the board shows three at a time now, so the rack below carries the WHOLE
+  // line — with a rotating trio, "everything except the first three" stopped
+  // meaning anything
+  const racked = items;
 
   const rackBuy = (id: string, from: HTMLElement) => {
     add("keychains", id, 1);
@@ -174,51 +92,14 @@ export default function KeychainSection({
         </p>
       </div>
 
-      {/* ---- the endless wall --------------------------------------------- */}
-      <div
-        className="ap-kc__rail"
-        onPointerDown={wallDown}
-        onPointerMove={wallMove}
-        onPointerUp={wallUp}
-        onPointerCancel={wallUp}
-      >
-        <ul className="ap-kc__track" ref={track}>
-          {items.map((k) => (
-            <KeychainCard key={k.id} item={k} wall={wall} live={live} />
-          ))}
-          {/* the wrap copy — the circle's other half, pixels only */}
-          {items.map((k) => (
-            <KeychainCard key={`g-${k.id}`} item={k} wall={wall} live={live} ghost />
-          ))}
-        </ul>
-        {live && (
-          <>
-            <button
-              type="button"
-              className="ap-kc__arrow ap-kc__arrow--prev"
-              aria-label="Slide the keychains back — the circle turns right"
-              onClick={() => glide(-step() * 2)}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              className="ap-kc__arrow ap-kc__arrow--next"
-              aria-label="Slide to the next keychains — they come in from the right"
-              onClick={() => glide(step() * 2)}
-            >
-              ›
-            </button>
-          </>
-        )}
-      </div>
-      {live && <p className="ap-kc__hint">{wall.grab}</p>}
+      {/* ---- the walnut board: three on the photographed brass hooks ------ */}
+      <HangingKeychainDisplay items={items} wall={wall} live={live} />
 
       {/* ---- the rack: the line again as light cards, the plain surface --- */}
       <ul className="ap-kc__rack">
         {racked.map((k) => (
           <li key={k.id} className="ap-kc__rackcell">
-            <img src={k.thumb} alt={`${k.title} — acrylic keychain by Arpine Baroyan`} width={k.w} height={k.h} loading="lazy" />
+            <img src={k.thumb} alt={`${k.title} — acrylic keychain by Arpine Baroyan`} width={k.w} height={k.h} loading="lazy" decoding="async" />
             <button type="button" className="ap-kc__rackadd" onClick={(e) => rackBuy(k.id, e.currentTarget)}>
               {wall.add}
             </button>

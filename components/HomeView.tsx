@@ -10,7 +10,8 @@ import Cloud from "./Cloud";
 import FloatShop, { type FloatCat } from "./FloatShop";
 import Selector from "./Selector";
 import Sun from "./Sun";
-import { brand, categories, home } from "@/lib/content";
+import { brand, categories, home, ribbon, ring, soon } from "@/lib/content";
+import { SoonLink } from "./Soon";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 
@@ -204,14 +205,17 @@ export default function HomeView() {
     const shot = P[c.media]?.[0];
     const swatch = c.swatch?.length ? ART.find((a) => a.id === c.swatch![0]) : undefined;
     const src = shot ?? swatch;
+    // the five the client re-shot for the ring (content.ts `ring`) win over
+    // the line's first photograph
+    const r = ring[c.slug];
     return {
       slug: c.slug,
       name: c.name,
       from: c.from,
       status: c.status,
-      tex: src?.thumb ?? "/hero/hero.webp",
-      w: src?.w ?? 298,
-      h: src?.h ?? 421,
+      tex: r?.tex ?? src?.thumb ?? "/hero/hero.webp",
+      w: r?.w ?? src?.w ?? 298,
+      h: r?.h ?? src?.h ?? 421,
     };
   });
 
@@ -328,20 +332,17 @@ export default function HomeView() {
       />
 
       {/* ═══ RIBBON — the awning between the series and the gallery ════════
-          Every word on it is a fact the page already states: her tagline,
-          the real count of illustrations, the lines that are actually open.
-          aria-hidden because it repeats, never informs. ══════════════════ */}
+          HER FIVE PHRASES now (client, change.pdf p2, 2026-09-15), the
+          middle dots drawn by the ribbon's own ::after. It used to recite
+          the tagline, the count and the open lines. aria-hidden because it
+          decorates, never informs. ═══════════════════════════════════════ */}
       <div className="ap-ribbon" aria-hidden="true">
         <div className="ap-ribbon__track">
           {[0, 1].map((run) => (
             <span className="ap-ribbon__run" key={run}>
-              <span>{brand.tagline}</span>
-              <span>{ART.length} illustrations</span>
-              {categories
-                .filter((c) => c.status === "open")
-                .map((c) => (
-                  <span key={c.slug}>{c.name}</span>
-                ))}
+              {ribbon.map((w) => (
+                <span key={w}>{w}</span>
+              ))}
             </span>
           ))}
         </div>
@@ -353,7 +354,18 @@ export default function HomeView() {
           <p className="ap-kicker" data-rise>
             {home.gallery.kicker}
           </p>
-          <h2 className="ap-h2" data-tfx="flip">
+          {/* RISE, NOT FLIP (Vardan 2026-09-15, screenshot of this title:
+              «when I go to this section the word is messed and after a
+              second becomes correct»). Frames captured at 150/350/600 ms
+              into the flip showed exactly that: the first letter painted as
+              a torn cream slab (a 3D-transformed span of a clipped-gradient
+              heading, the compositor trap already noted in TextFX.tsx) and
+              the second line's letters arriving out of order as their
+              staggered turns overlapped. The flip had been tamed once
+              (2026-08-24) and still read as a mess; the masked rise — the
+              hero's and the studio title's logic, the one the client chose
+              for the shop room — never overlaps a glyph or turns it in 3D. */}
+          <h2 className="ap-h2" data-tfx="rise">
             {home.gallery.title}
           </h2>
           <p className="ap-lede" data-rise>
@@ -373,18 +385,27 @@ export default function HomeView() {
           {categories.map((c) => {
             return (
               <li className="ap-cat" key={c.slug} data-soon={c.status === "soon" || undefined}>
-                <Link href={c.status === "open" ? `/shop/${c.slug}` : "/shop"} aria-label={c.name}>
-                  <CatFig cat={c} />
-                  <div className="ap-cat__row">
-                    <h3>{c.name}</h3>
-                    {c.status === "open" ? (
-                      <span className="ap-cat__from">from {c.from.toLocaleString()} ֏</span>
-                    ) : (
-                      <span className="ap-cat__from is-soon">Soon</span>
-                    )}
-                  </div>
-                  <p className="ap-cat__blurb">{c.blurb}</p>
-                </Link>
+                {/* NO PRICE UNDER THE NAME any more (client, change.pdf p8,
+                    2026-09-15); a line that is not open yet opens the small
+                    Available Soon window instead of a page */}
+                {c.status === "open" ? (
+                  <Link href={`/shop/${c.slug}`} aria-label={c.name}>
+                    <CatFig cat={c} />
+                    <div className="ap-cat__row">
+                      <h3>{c.name}</h3>
+                    </div>
+                    <p className="ap-cat__blurb">{c.blurb}</p>
+                  </Link>
+                ) : (
+                  <SoonLink name={c.name} aria-label={`${c.name} — ${soon.tile}`}>
+                    <CatFig cat={c} />
+                    <div className="ap-cat__row">
+                      <h3>{c.name}</h3>
+                      <span className="ap-cat__from is-soon">{soon.tile}</span>
+                    </div>
+                    <p className="ap-cat__blurb">{c.blurb}</p>
+                  </SoonLink>
+                )}
               </li>
             );
           })}

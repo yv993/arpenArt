@@ -114,6 +114,9 @@ export default function MagnetFridge({
 }) {
   const [live, setLive] = useState(false);
   const [big, setBig] = useState<number | null>(null);
+  /** a magnet is in the air and will land on the dialog's picture */
+  const [arriving, setArriving] = useState(false);
+  const flyRef = useRef<HTMLImageElement | null>(null);
   const [added, setAdded] = useState<string | null>(null);
   const bigOpener = useRef<HTMLElement | null>(null);
   const addedTimer = useRef(0);
@@ -223,9 +226,6 @@ export default function MagnetFridge({
     const li = el.parentElement;
     if (li) li.style.zIndex = "6";
     const r = img.getBoundingClientRect();
-    const ar = r.width / Math.max(1, r.height);
-    const th = Math.min(window.innerHeight * 0.62, 620);
-    const tw = th * ar;
     const clone = img.cloneNode() as HTMLImageElement;
     clone.className = "ap-mf__fly";
     Object.assign(clone.style, {
@@ -236,48 +236,69 @@ export default function MagnetFridge({
     });
     document.body.appendChild(clone);
     el.style.visibility = "hidden"; // the door copy steps aside for the flight
-    gsap
-      .timeline({
-        onComplete: () => {
-          setBig(idx); // the detail window rises where the magnet landed
-          gsap.to(clone, {
-            opacity: 0,
-            duration: 0.22,
-            delay: 0.05,
-            onComplete: () => {
+    flyRef.current = clone;
+
+    // ONE UNBROKEN MOVE, ONTO THE REAL DESTINATION (client 2026-08-31: "must
+    // move and didn't stop, it must go to place where appear button price and
+    // text"). The first cut flew to the middle of the viewport and only then
+    // opened the dialog — but the dialog centres the whole STAGE, picture plus
+    // the Add to cart button under it, so its picture sits above centre. The
+    // magnet therefore stopped, the dialog appeared, and the picture jumped.
+    //
+    // This is the FLIP order instead: open the dialog FIRST and hold its
+    // picture invisible (`arriving`), let it lay out, measure where that
+    // picture actually is, and fly there. The traveller lands on the exact
+    // pixels it is about to become, so the swap is invisible and the motion
+    // never pauses. The ground darkening and the button fading in happen
+    // WHILE it flies, which is the whole effect.
+    setBig(idx);
+    setArriving(true);
+    gsap.set(clone, { transformPerspective: 700 });
+    // the peel starts immediately — it does not wait for the measurement
+    gsap.to(clone, { rotationY: -14, rotationX: 8, scale: 1.06, duration: 0.13, ease: "power2.in" });
+
+    // two frames: one for React to commit the dialog, one for layout to settle
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const dest = document.querySelector<HTMLImageElement>(".ap-xg__lb .ap-xg__stage img");
+        const d = dest?.getBoundingClientRect();
+        // THE HANDOFF IS OVERLAPPED, and it has to be. Flipping `arriving`
+        // and removing the clone in the same tick leaves one painted frame
+        // with NEITHER on screen — React has not committed the dialog's
+        // picture yet and the traveller is already gone, which reads as a
+        // blink at the exact moment the eye is on it. The clone therefore
+        // stays for two frames after the state change, sitting on the same
+        // pixels as the picture that replaces it, and only then leaves.
+        const land = () => {
+          setArriving(false);
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
               clone.remove();
+              flyRef.current = null;
               el.style.visibility = "";
               if (li) li.style.zIndex = "";
               pulling.current = false;
-            },
-          });
-        },
-      })
-      // the peel: one edge tips up off the steel…
-      .to(clone, {
-        rotationY: -14,
-        rotationX: 8,
-        scale: 1.08,
-        transformPerspective: 700,
-        duration: 0.13,
-        ease: "power2.in",
-      })
-      // …and the journey: it comes at the viewer, growing, settling flat
-      .to(
-        clone,
-        {
-          left: window.innerWidth / 2 - tw / 2,
-          top: window.innerHeight / 2 - th / 2 - window.innerHeight * 0.02,
-          width: tw,
-          height: th,
+            }),
+          );
+        };
+        if (!d || !d.width) {
+          land();
+          return;
+        }
+        gsap.to(clone, {
+          left: d.left,
+          top: d.top,
+          width: d.width,
+          height: d.height,
           rotationY: 0,
           rotationX: 0,
           scale: 1,
-          duration: 0.55,
+          duration: 0.62,
           ease: "power3.inOut",
-        },
-        "<0.07",
-      );
+          onComplete: land,
+        });
+      }),
+    );
   };
 
   const buy = (id: string, from?: HTMLElement | null) => {
@@ -394,7 +415,18 @@ export default function MagnetFridge({
           shots={shots}
           i={big}
           onIndex={(n) => setBig(n)}
-          onClose={() => setBig(null)}
+          onClose={() => {
+            // closing mid-flight would strand the clone on screen forever
+            if (flyRef.current) {
+              gsap.killTweensOf(flyRef.current);
+              flyRef.current.remove();
+              flyRef.current = null;
+              pulling.current = false;
+            }
+            setArriving(false);
+            setBig(null);
+          }}
+          arriving={arriving}
           opener={bigOpener.current}
           label={`Magnet no. ${shots[big].id} — ${magnetFridge.title}`}
           alt={(n) => `Magnet no. ${shots[n].id} of ${shots.length}, by Arpine Baroyan`}

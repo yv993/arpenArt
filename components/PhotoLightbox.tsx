@@ -33,6 +33,7 @@ export default function PhotoLightbox({
   alt,
   opener,
   footer,
+  arriving = false,
 }: {
   shots: LbShot[];
   i: number;
@@ -45,6 +46,13 @@ export default function PhotoLightbox({
   /** what had focus before this opened — it gets it back */
   opener?: HTMLElement | null;
   footer?: ReactNode;
+  /** Something is still FLYING here and will land on this dialog's picture
+   *  (the fridge magnets do this). While it is true the picture is held
+   *  invisible and its pop animation suppressed, so the traveller can arrive
+   *  onto the exact pixels it will become — the chrome around it still fades
+   *  in, which is what makes the ground darken while the magnet is on its
+   *  way. Callers that open the ordinary way never pass it. */
+  arriving?: boolean;
 }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const many = shots.length > 1;
@@ -84,7 +92,7 @@ export default function PhotoLightbox({
   const shot = shots[Math.min(i, shots.length - 1)];
 
   return (
-    <div className="ap-xg__lb" role="dialog" aria-modal="true" aria-label={label} onClick={close}>
+    <div className="ap-xg__lb" data-arriving={arriving || undefined} role="dialog" aria-modal="true" aria-label={label} onClick={close}>
       <button ref={closeRef} type="button" className="ap-xg__x" onClick={close} aria-label="Close">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 18L18 6M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

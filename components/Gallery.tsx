@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
-import { ParticleSphere, newSpin } from "./ParticleSphere";
+import { CAMERA_Z, ParticleSphere, newSpin } from "./ParticleSphere";
 import products from "@/lib/products.json";
 import { categories, home } from "@/lib/content";
 
@@ -18,9 +18,15 @@ const P = products as Record<string, Shot[]>;
  *  than category by category: consecutive indices land near each other often
  *  enough on a Fibonacci lattice that fifteen scarves in a row would read as a
  *  scarf patch on one side of the ball. */
+/** Lines that are for sale but NOT on the globe. Keychains came off it on
+ *  2026-09-15 (Vardan, with a screenshot of the globe's crown: «remove from
+ *  images in globe keychains») — the acrylic-fob photographs read as clutter
+ *  among the prints. The proper sphere set (change.pdf p3) is still owed. */
+const OFF_THE_GLOBE = new Set(["keychains"]);
+
 const CARDS: Card[] = (() => {
   const byCat = categories
-    .filter((c) => c.status === "open")
+    .filter((c) => c.status === "open" && !OFF_THE_GLOBE.has(c.slug))
     .map((c) => ({ cat: c, shots: P[c.media] ?? [] }))
     .filter((g) => g.shots.length > 0);
   const out: Card[] = [];
@@ -200,7 +206,7 @@ export default function Gallery() {
           >
             {live && (
               <Canvas
-                camera={{ position: [0, 0, 20], fov: 50 }}
+                camera={{ position: [0, 0, CAMERA_Z], fov: 50 }}
                 dpr={[1, 1.6]}
                 gl={{ antialias: true, alpha: true }}
                 onPointerMissed={() => setChosen(null)}
@@ -218,7 +224,8 @@ export default function Gallery() {
             <>
               <div className="ap-gal__info" role="status">
                 <p className="ap-gal__no">{card.name}</p>
-                <p className="ap-gal__line">from {card.from.toLocaleString()} ֏</p>
+                {/* no "from" price here any more (client, change.pdf p5/p8,
+                    2026-09-15: prices leave the catalogue) */}
                 <p className="ap-gal__blurb">{card.blurb}</p>
                 {/* THE BUY BUTTON, and it opens the piece rather than dropping
                     it in the basket. Not a hedge — a measured fact about this

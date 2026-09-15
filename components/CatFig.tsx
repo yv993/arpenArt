@@ -1,6 +1,6 @@
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
-import type { Category } from "@/lib/content";
+import { covers, type Category } from "@/lib/content";
 
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
@@ -24,11 +24,14 @@ const P = products as Record<string, Shot[]>;
 // ============================================================================
 
 export default function CatFig({ cat }: { cat: Category }) {
-  const shot = P[cat.media]?.[0];
+  // the client's own tile cover first (content.ts `covers`, 2026-09-15), so
+  // the plain grid and the moved strip show the same picture
+  const cover = covers[cat.slug];
+  const shot = cover ?? P[cat.media]?.[0];
   // the NEXT photograph of the line, crossfaded in on hover — the card
   // itself answering "what else does it look like". Lines shot once simply
   // have no second layer; nothing is borrowed to fake one.
-  const next = P[cat.media]?.[1];
+  const next = cover ? P[cat.media]?.[0] : P[cat.media]?.[1];
 
   if (shot) {
     return (

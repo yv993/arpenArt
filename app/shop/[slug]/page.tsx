@@ -18,6 +18,7 @@ import MorphHero from "@/components/MorphHero";
 import StickerFolders from "@/components/StickerFolders";
 import StickerSurfer from "@/components/StickerSurfer";
 import ToteGallery, { type ToteShot } from "@/components/ToteGallery";
+import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
 import type { Keychain } from "@/types/keychain";
@@ -219,6 +220,31 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
 
           <MagnetFridge shots={P.magnet ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+              <CategorySpec cat={cat} />
+            </div>
+          </div>
+        </>
+      ) : cat.slug === "scarves" ? (
+        /* THREE FIXED DESIGNS since the client's 2026-09-15 drop (change.pdf
+           p10): the print, its photographs and her words per design, each with
+           its own buy button. Same scaffolding as the sheets and the wall —
+           breadcrumb, the section carrying the h1, then how ordering works
+           and the spec rows. The generic view's roll and 57-picker asked a
+           question this line no longer has. */
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <ScarfDesigns cat={cat} heading="h1" />
 
           <div className="ap-cv">
             <div className="ap-sheets__foot">

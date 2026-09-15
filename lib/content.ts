@@ -11,8 +11,15 @@ export const brand = {
   role: "Illustrator & graphic designer",
   place: "Yerevan, Armenia",
   tagline: "Armenia, drawn by hand",
-  // PLACEHOLDER — swap for the real shop contacts before launch
-  email: "hello@arpenart.am",
+  /** THE FOOTER'S TWO LINES (client, change.pdf p6, 2026-09-15) — verbatim.
+   *  `tagline` stays for the metadata; the footer no longer prints it. */
+  footer: {
+    line: "Drawn in Armenia. Made to be remembered.",
+    sub: "Original illustrations inspired by the places, people and stories of Armenia.",
+  },
+  // HER REAL ADDRESS (change.pdf p6 + p9, 2026-09-15). The placeholder
+  // hello@arpenart.am is gone from every page that printed it.
+  email: "arpenbaroyan@gmail.com",
   phone: "+374 00 00 00 00",
   // EMPTY UNTIL REAL — every consumer renders these conditionally
   social: [] as Array<{ label: string; href: string }>,
@@ -95,6 +102,9 @@ export const ownItemWord: Record<string, string> = {
   "3d-stickers": "3D sticker",
   keychains: "Keychain",
   magnets: "Magnet",
+  // three fixed designs since 2026-09-15 (scarfDesigns below) — the cart's
+  // `art` is the design number, not one of the 57 illustrations
+  scarves: "Scarf",
 };
 
 // The process rows every open category shares, stated once so the story can
@@ -143,11 +153,17 @@ export const categories: Category[] = [
   },
   {
     slug: "hoodies",
-    name: "Painted hoodies",
-    blurb: "Hand-finished hoodies and tees — each one painted, so no two are identical.",
+    // RENAMED (client, change.pdf p8, 2026-09-15): the tile reads "T-Shirts".
+    // The slug stays — it is a URL and a cart key, and the page is behind
+    // "Available soon" for now anyway.
+    name: "T-Shirts",
+    blurb: "Painted tees — each one hand-finished, so no two are identical.",
     media: "apparel",
     from: 18000,
-    status: "open",
+    // AVAILABLE SOON (change.pdf p8): no page yet — a tap opens the small
+    // "Available Soon" window instead (components/Soon.tsx). `soon` already
+    // 404s the route and keeps it out of the static build.
+    status: "soon",
     // garment sizes, not product claims — the one choice a hoodie order
     // cannot be placed without
     variants: { label: "Size", options: ["S", "M", "L", "XL"] },
@@ -164,7 +180,7 @@ export const categories: Category[] = [
     blurb: "Yerevan on a mug, glazed and dishwasher-safe.",
     media: "mugs",
     from: 5500,
-    status: "open",
+    status: "soon", // change.pdf p8 — Available Soon window, no page yet
     spec: [{ k: "Care", v: "Glazed and dishwasher-safe" }, ...processSpec],
   },
   {
@@ -173,7 +189,7 @@ export const categories: Category[] = [
     blurb: "Decorative plates carrying the Opera House and other landmarks.",
     media: "plates",
     from: 7500,
-    status: "open",
+    status: "soon", // change.pdf p8 — Available Soon window, no page yet
     // "decorative" is the blurb's own word — no food-safety claim is made
     spec: [{ k: "Use", v: "Decorative" }, ...processSpec],
   },
@@ -183,7 +199,7 @@ export const categories: Category[] = [
     blurb: "Ararat and the wildflower fields, cut into a puzzle worth an evening.",
     media: "puzzles",
     from: 8500,
-    status: "open",
+    status: "soon", // change.pdf p8 — Available Soon window, no page yet
     // PLACEHOLDER-shaped gap: piece count and finished size are Arpine's to
     // supply — the spec carries only the process rows rather than a guess.
     spec: [...processSpec],
@@ -268,7 +284,11 @@ export const categories: Category[] = [
     media: "totes",
     // ARPINE'S REAL PRICE, 2026-08-24 (it replaces a 6,500 placeholder).
     from: 8000,
-    status: "open",
+    // HIDDEN FOR NOW (client, change.pdf p11–12, 2026-09-15): «remove this
+    // page for now, I will give separate designs later». `soon` 404s the
+    // choose-your-illustration page and its tote gallery, and the tile opens
+    // the Available Soon window. Flip back to "open" when her designs land.
+    status: "soon",
     // both rows repeat the tote lookbook's caption, word for word
     spec: [
       { k: "Material", v: "Natural cotton" },
@@ -299,6 +319,56 @@ export const nav = [
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
+
+/** THE RIBBON'S WORDS (client, change.pdf p2, 2026-09-15) — verbatim, her
+ *  middle dots drawn by the ribbon's own ::after. It used to recite the
+ *  tagline, the count of illustrations and the open lines. */
+export const ribbon = ["WEAR IT", "STICK IT", "COLLECT IT", "GIFT IT", "CARRY ARMENIA WITH YOU"];
+
+/** The small window a not-yet-open line opens INSTEAD of a page (client,
+ *  change.pdf p8: «let a small window open on top and say Available Soon»).
+ *  A notice, not a product claim. */
+export const soon = {
+  tile: "Available soon",
+  title: "Available Soon",
+  copy: "This line is being prepared and will open here soon.",
+  close: "Close",
+};
+
+/** THE TILE COVERS (client drop, 2026-09-15 — change.pdf p8: «change the main
+ *  pictures here»). Nine of the eleven lines came with one; stickers and 3D
+ *  stickers keep their first photograph. Sizes and averages were read off the
+ *  files by scratchpad/redesign-assets.cjs, never typed. */
+export const covers: Record<string, { src: string; thumb: string; w: number; h: number; avg: string }> = {
+  hoodies: { src: "/products/tile-hoodies.webp", thumb: "/products/tile-hoodies-sm.webp", w: 1400, h: 933, avg: "#5f5e65" },
+  scarves: { src: "/products/tile-scarves.webp", thumb: "/products/tile-scarves-sm.webp", w: 1400, h: 1400, avg: "#8a867e" },
+  postcards: { src: "/products/tile-postcards.webp", thumb: "/products/tile-postcards-sm.webp", w: 977, h: 1400, avg: "#a38d7b" },
+  totes: { src: "/products/tile-totes.webp", thumb: "/products/tile-totes-sm.webp", w: 1089, h: 1400, avg: "#636247" },
+  plates: { src: "/products/tile-plates.webp", thumb: "/products/tile-plates-sm.webp", w: 1254, h: 1254, avg: "#b4a193" },
+  cups: { src: "/products/tile-cups.webp", thumb: "/products/tile-cups-sm.webp", w: 1223, h: 1286, avg: "#a38f7f" },
+  keychains: { src: "/products/tile-keychains.webp", thumb: "/products/tile-keychains-sm.webp", w: 1145, h: 1374, avg: "#b29d8e" },
+  magnets: { src: "/products/tile-magnets.webp", thumb: "/products/tile-magnets-sm.webp", w: 933, h: 1400, avg: "#bbb4ae" },
+  puzzles: { src: "/products/tile-puzzles.webp", thumb: "/products/tile-puzzles-sm.webp", w: 1400, h: 933, avg: "#ac989d" },
+};
+
+/** THE RING'S FIVE (change.pdf p5: «replace the t-shirt, the scarf, the
+ *  postcard, the bag, the plate — the rest stay»). Four of her mockups are
+ *  delivered as PNG cut-outs with their OWN alpha, and that alpha is used
+ *  as-is: the first pass ran a near-white flood fill over them too, which
+ *  ate every white region touching the transparent ground — the white
+ *  postcard inside the envelope went, leaving its QR code and stamps
+ *  floating (Vardan 2026-09-15: «change first envelope, it must be the
+ *  second image»). The plate is the one opaque file; it is keyed as a disc. */
+export const ring: Record<string, { tex: string; w: number; h: number }> = {
+  hoodies: { tex: "/products/ring-tshirt.webp", w: 645, h: 700 },
+  scarves: { tex: "/products/ring-scarf.webp", w: 700, h: 539 },
+  postcards: { tex: "/products/ring-postcard.webp", w: 700, h: 602 },
+  totes: { tex: "/products/ring-tote.webp", w: 419, h: 700 },
+  // the plate is keyed as a DISC (centre + radius from its own silhouette),
+  // not by near-white flood fill — that ate the white rim and left a crescent
+  // (Vardan 2026-09-15, «must be the image I provided»)
+  plates: { tex: "/products/ring-plate.webp", w: 700, h: 700 },
+};
 
 // ---------------------------------------------------------------------------
 // HOW ORDERING WORKS — shown on every category page and again above the order
@@ -333,15 +403,21 @@ export const ordering = {
 // for an art shop; if she uses Facebook or Telegram instead, add the icon in
 // components/Socials.tsx and change `icon` here.
 // ---------------------------------------------------------------------------
+// THE THREE ARE HERS NOW (client, change.pdf p9, 2026-09-15): «I have no page
+// other than Instagram — keep Instagram and add Telegram and mail instead of
+// the other two». Instagram is the handle printed on her own postcard
+// mockup's stamp (@arpen_art); mail is the address she gave. Telegram is the
+// one still PENDING — no handle arrived — so it keeps the platform href and
+// the note under the card stays until it does.
 export const socials: Array<{
   label: string;
   href: string;
-  icon: "instagram" | "x" | "discord";
+  icon: "instagram" | "telegram" | "mail";
   pending?: boolean;
 }> = [
-  { label: "Instagram", href: "https://www.instagram.com/", icon: "instagram", pending: true },
-  { label: "X", href: "https://x.com/", icon: "x", pending: true },
-  { label: "Discord", href: "https://discord.com/", icon: "discord", pending: true },
+  { label: "Instagram", href: "https://www.instagram.com/arpen_art/", icon: "instagram" },
+  { label: "Telegram", href: "https://t.me/", icon: "telegram", pending: true },
+  { label: "Email", href: `mailto:${brand.email}`, icon: "mail" },
 ];
 
 export const delivery = {
@@ -482,6 +558,20 @@ export type Town = {
 
 export const stockists: Stockist[] = [
   // --- YEREVAN -------------------------------------------------------------
+  // MADE BY ARMENIA FIRST (client, change.pdf p7, 2026-09-15): «in the
+  // addresses, let the first shop be Made by Armenia». The list renders in
+  // this order.
+  {
+    id: "made-by-armenia",
+    shop: "Made by Armenia",
+    townId: "yerevan",
+    addressAm: "Արամի փողոց 42/1",
+    address: "42/1 Arami Street, 0002",
+    addressLat: 40.180748,
+    addressLng: 44.512319,
+    logo: "made-by-armenia",
+    lines: [],
+  },
   {
     id: "note-mote-northern-6",
     shop: "Note Mote",
@@ -503,17 +593,6 @@ export const stockists: Stockist[] = [
     addressLat: 40.182033,
     addressLng: 44.514485,
     logo: "note-mote",
-    lines: [],
-  },
-  {
-    id: "made-by-armenia",
-    shop: "Made by Armenia",
-    townId: "yerevan",
-    addressAm: "Արամի փողոց 42/1",
-    address: "42/1 Arami Street, 0002",
-    addressLat: 40.180748,
-    addressLng: 44.512319,
-    logo: "made-by-armenia",
     lines: [],
   },
 
@@ -590,9 +669,10 @@ export const towns: Town[] = TOWN_META.map((t) => ({
 
 export const stockistPage = {
   kicker: "(In person)",
-  title: "FIND IT IN A SHOP",
+  // HER WORDS (client, change.pdf p7, 2026-09-15) — verbatim
+  title: "FIND ARPEN ART IN PERSON",
   copy:
-    "The series travels beyond this site: printed, painted and glazed pieces sit on shelves around Armenia. Every shop below carries the work — the addresses are theirs, and the map marks the town.",
+    "Want to see and feel the work in person? Arpen Art pieces are available in selected shops across Armenia. Find your favorite illustrations, gifts and keepsakes — and take a little piece of Armenia with you.",
   /** The one-line summary above the list. Counts are computed, never typed:
    *  a hand-written "seven shops" is a number that goes stale the first time
    *  she is stocked somewhere new. */
@@ -688,8 +768,11 @@ export const home = {
   // describing what is no longer up there.
   gallery: {
     kicker: "(Gallery)",
-    title: "EVERYTHING IN THE SHOP",
-    copy: "Drag to spin it — or use the arrow keys. Every piece she sells, orbiting at once. Click one to bring it forward.",
+    // HER WORDS (client, change.pdf p3, 2026-09-15) — verbatim. The old lead
+    // carried the "drag to spin" instruction; that now lives only in the
+    // canvas's accessible name.
+    title: "THE WORLD OF ARPEN ART",
+    copy: "Discover Arpen Art’s collection of illustrated goods, where Armenian places, stories and everyday moments become things you can wear, collect, gift and keep.",
     fallback: "Browse the shop",
     /** Said under the buy button rather than discovered on the next page.
      *  EVERY open category needs a choice before it can go in a basket —
@@ -717,8 +800,9 @@ export const home = {
   // -------------------------------------------------------------------------
   studio: {
     kicker: "(In motion)",
-    title: "FROM THE STUDIO",
-    copy: "The same illustrations, set moving — short films by Arpine.",
+    // HER WORDS (client, change.pdf p4, 2026-09-15) — verbatim
+    title: "ILLUSTRATIONS IN MOTION",
+    copy: "The illustrations come to life — short films inspired by Armenia, created by Arpen Art",
     /** Shown only while no panel has a film. All five have one now, so this
      *  never renders; it stays for the next piece added without one. */
     pending: "Films are still to come; these are photographs of the same pieces.",
@@ -800,6 +884,18 @@ export const home = {
         w: 540,
         h: 960,
       },
+      // SEVEN MORE from the client's 2026-09-15 drop (change.pdf p4: "add the
+      // animations from this folder"). Eight arrived; one — the balloon over
+      // the range — is the film already above as `mountains` (same 18.667 s
+      // to the frame, same composition), so it is not shown twice. Titles and
+      // lines describe the frame, nothing more, as with the eight before.
+      { id: "pomegranates", title: "Two pomegranates", line: "Arm in arm, on a blue ground", video: "/studio/film-01.mp4", poster: "/studio/film-01.webp", w: 540, h: 960 },
+      { id: "square", title: "Coffee at the square", line: "A cup at the window, the Government House beyond", video: "/studio/film-03.mp4", poster: "/studio/film-03.webp", w: 540, h: 960 },
+      { id: "lanterns", title: "Under the lanterns", line: "Paper lanterns over a night terrace", video: "/studio/film-04.mp4", poster: "/studio/film-04.webp", w: 540, h: 960 },
+      { id: "cascade", title: "A glass at the Cascade", line: "Wine at the window, the Cascade below", video: "/studio/film-05.mp4", poster: "/studio/film-05.webp", w: 540, h: 960 },
+      { id: "chapel", title: "In the chapel window", line: "Two in a bell tower over the hills", video: "/studio/film-06.mp4", poster: "/studio/film-06.webp", w: 540, h: 960 },
+      { id: "wave", title: "The wave", line: "A cup raised to a wave on the rocks", video: "/studio/film-07.mp4", poster: "/studio/film-07.webp", w: 540, h: 960 },
+      { id: "hill", title: "The church on the hill", line: "Red hair in the wind below a hilltop church", video: "/studio/film-08.mp4", poster: "/studio/film-08.webp", w: 540, h: 960 },
     ] as Array<{
       id: string;
       /** Titles and lines DESCRIBE THE FRAME and nothing more. These are her
@@ -824,8 +920,9 @@ export const home = {
   contact: {
     kicker: "(Contact)",
     title: "COMMISSIONS & WHOLESALE",
+    // HER WORDS (client, change.pdf p9, 2026-09-15) — verbatim
     copy:
-      "For a commission, a stockist enquiry, or a question about an order — send a message and Arpine will reply herself.",
+      "For commissions, wholesale enquiries, collaborations or questions about an order — send a message and Arpine will get back to you personally.",
     send: "Send",
     sending: "Sending…",
     ok: "Thank you — your message is on its way.",
@@ -873,11 +970,51 @@ export const overtures: Record<string, { kicker: string }> = {
  *  arc). Uses the ARTWORK, so it needs no product photography at all. */
 export const morphs: Record<string, { intro: string; cue: string; title: string; copy: string }> = {
   postcards: {
-    intro: "One country, ready to send.",
+    // HER WORDS (client, change.pdf p15, 2026-09-15) — verbatim, both lines
+    intro: "SEND A LITTLE ARMENIA",
     cue: "Scroll",
     title: "Postcards",
-    copy: "All fifty-seven illustrations of the Armenia series, as cards. Choose the ones to send below.",
+    copy: "Illustrated postcards inspired by Armenia — its cities, landscapes, people and everyday moments. A little piece of home, ready to travel wherever you send it.",
   },
+};
+
+// ---------------------------------------------------------------------------
+// SCARVES — three fixed designs (client drop, 2026-09-15: twelve photographs
+// and four text files). Every word below is hers, transcribed from those
+// files unedited: `Scarf.txt` is the section, `1.txt` and `3.txt` carry a
+// title and a paragraph, `2.txt` carries a PARAGRAPH ONLY — so the second
+// design is numbered, the way everything untitled on this site is, rather
+// than given a name she did not write. `shots` are ids in products.json's
+// scarves roll, flat print first, then the wall, the rail, the worn/folded one.
+// ---------------------------------------------------------------------------
+export const scarfDesigns = {
+  kicker: "(On silk)",
+  title: "A Little Armenia to Take With You",
+  copy:
+    "Each scarf brings together a different story from Armenia — its mountains, cities, people, memories and dreams. Wear it as a colorful reminder of a place that stays close to the heart.",
+  add: "Add to cart",
+  added: "Added to your cart.",
+  designs: [
+    {
+      id: "01",
+      name: "Armenia in Every Detail",
+      copy: "A colorful journey through Armenia, bringing together its landscapes, landmarks, people and stories in one illustrated piece. From Mount Ararat and Yerevan to iconic symbols of Armenian culture, every detail carries a little piece of the country.",
+      shots: ["01", "02", "03", "04"],
+    },
+    {
+      id: "02",
+      name: "Scarf no. 02",
+      untitled: true,
+      copy: "A joyful portrait of Armenia under its bright golden sun. Surrounded by colorful mountains and landscapes, a familiar Arpen Art character celebrates the warmth, beauty and vibrant spirit of the country.",
+      shots: ["05", "06", "07", "08"],
+    },
+    {
+      id: "03",
+      name: "A Journey Above Armenia",
+      copy: "A dreamlike journey through the Armenian highlands, where colorful mountains meet the open sky. Mount Ararat rises in the distance as a symbol of home, while the hot-air balloon brings a sense of freedom, adventure and wonder.",
+      shots: ["09", "10", "11", "12"],
+    },
+  ] as Array<{ id: string; name: string; untitled?: boolean; copy: string; shots: string[] }>,
 };
 
 // ---------------------------------------------------------------------------

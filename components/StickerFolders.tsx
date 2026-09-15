@@ -256,11 +256,18 @@ export default function StickerFolders({
             {stickerSheets.title}
           </h2>
         )}
-        {stickerSheets.copy.map((t) => (
-          <p className="ap-lede" key={t}>
-            {t}
-          </p>
-        ))}
+        {/* THE RIGHT HALF WAS EMPTY (client, change.pdf p14, 2026-09-15:
+            «looks like we forgot the right side — set the text in two parts
+            so it fills the right, and the stickers rise a little»). The lead
+            keeps the line to itself; the two paragraphs stand side by side
+            under it (.ap-sf__cols, shop.css), which is what lets the folders
+            below start higher. */}
+        <p className="ap-lede">{stickerSheets.copy[0]}</p>
+        <div className="ap-sf__cols">
+          {stickerSheets.copy.slice(1).map((t) => (
+            <p key={t}>{t}</p>
+          ))}
+        </div>
         <p className="ap-cv__price ap-sf__from">
           <strong>{dram(price)}</strong> a sheet
         </p>
