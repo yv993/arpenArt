@@ -825,10 +825,28 @@ select {
        and a filled screen is 1.78:1, so the picture is already the right
        shape. */
     height: 160svh;
+    /* THE CURTAIN (Vardan 2026-09-15, screenshot of the hero: «this part
+       must stay, and after scroll the next part must go above and occupy
+       the area»). Another 100svh under the box: the stage stays stuck for
+       that much longer, and the series section is pulled up by the same
+       100svh and painted above it — so instead of the painting scrolling
+       away, the next section slides up OVER it and covers it. The scrub
+       still ends where it did (60svh in, when the curtain's top edge
+       reaches the bottom of the screen — HomeView measures that, it is not
+       a second copy of this number), and the page is the same total height
+       as before because the two hundreds cancel. */
+    height: 260svh;
   }
   .ap-hero__stage {
     position: sticky;
     top: 0;
+  }
+  .ap-cloud {
+    position: relative;
+    z-index: 2; /* above the stuck stage; the sections' own children are 1 */
+    margin-top: -100svh;
+    /* the edge of a curtain over a bright painting wants a little depth */
+    box-shadow: 0 -34px 70px -24px rgba(12, 18, 36, 0.55);
   }
 }
 

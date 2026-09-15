@@ -143,10 +143,14 @@ export default function Sun() {
       el.style.height = `${(SUN_H / SUN_W) * home.w}px`;
 
       const heroSec = hero.closest<HTMLElement>(".ap-hero");
-      // half a screen before the hero's last pixel: by then the picture is
-      // mostly gone, so the change of depth happens where there is nothing to
-      // see it against
-      handover = heroSec ? heroSec.offsetTop + heroSec.offsetHeight - window.innerHeight * 0.5 : 0;
+      // half a screen before the picture is gone: by then it is mostly
+      // covered, so the change of depth happens where there is nothing to
+      // see it against. "Gone" is when the NEXT section has slid over it
+      // (the curtain, globals.css — the hero's box runs 100svh past that
+      // point, so the box's own last pixel would be a screen too late).
+      const after = heroSec?.nextElementSibling as HTMLElement | null;
+      const gone = heroSec ? (after ? after.offsetTop : heroSec.offsetTop + heroSec.offsetHeight) : 0;
+      handover = heroSec ? gone - window.innerHeight * 0.5 : 0;
     };
 
     /** SECTIONS THE SUN MUST NOT PASS BEHIND.

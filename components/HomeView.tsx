@@ -74,11 +74,25 @@ export default function HomeView() {
         // the frame (a set, not a fromTo: a mid-timeline fromTo would not
         // apply its "from" until the playhead reaches it)
         gsap.set(".ap-hero__card", { autoAlpha: 0, y: 26 });
+        // THE SCRUB ENDS WHERE THE CURTAIN BEGINS. The hero box now runs
+        // 100svh past the point where the next section starts sliding up
+        // over the stuck stage (globals.css, the [data-x] gate), so "bottom
+        // bottom" would stretch this scrub across that slide as well. The
+        // end is MEASURED instead: the next section's top reaching the
+        // bottom of the screen — one number, read from layout, whatever the
+        // CSS heights are. Both rects are taken in the same call, so the
+        // difference does not depend on where the page is scrolled at
+        // refresh, and the stuck stage plays no part in it (the box is the
+        // trigger, and the box is not sticky).
+        const next = hero.nextElementSibling as HTMLElement | null;
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: hero,
             start: "top top",
-            end: "bottom bottom",
+            end: () =>
+              next
+                ? "+=" + Math.max(1, next.getBoundingClientRect().top - hero.getBoundingClientRect().top - window.innerHeight)
+                : "bottom bottom",
             scrub: true,
             invalidateOnRefresh: true,
           },
@@ -103,11 +117,20 @@ export default function HomeView() {
         // because this frame is one screen rather than the reference's tall
         // scroll, and because a painting is the subject: 26/14/8/4, so the
         // room moves around her work instead of the work moving in a room.
+        // THE TYPE'S DRIFT IS CAPPED BY THE CARD (2026-09-15). The type block
+        // is the whole stage with the card grid-aligned to its bottom, under
+        // `clamp(36px, 5vh, 56px)` of padding — and an 8% drift is 8% of a
+        // full screen, always more than that padding, so the CTA ended
+        // 0.03 × the viewport height BELOW the fold (25px at 835px tall). The
+        // curtain made it visible: the end state now stays on screen while
+        // the next section rises, where before the hero scrolled off. 3% is
+        // inside the padding at every height (25px vs 42px at 835; 42 vs 56
+        // at 1400), and the haze steps down with it to keep the order.
         const LAYERS: Array<[string, number]> = [
           ["1", 26], // the ground — furthest, travels most
           ["2", 14], // her painting
-          ["3", 8], // the type
-          ["4", 4], // the haze in front of it — nearest, travels least
+          ["3", 3], // the type — see the note above
+          ["4", 2], // the haze in front of it — nearest, travels least
         ];
         const stage = hero.querySelector("[data-parallax-layers]");
         LAYERS.forEach(([layer, yPercent], i) => {
