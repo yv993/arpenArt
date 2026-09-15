@@ -81,8 +81,41 @@ const COPY: Record<Panel, { title: string; sub: string; cta: string; swap: strin
   },
 };
 
+/** THE PANEL'S FILMS (client, change.pdf p16, 2026-09-15: «the right panel
+ *  becomes a moving animation» — Vardan sent two the same evening, «one for
+ *  sign up, one for sign in», in that order: Dream 17 → creating an account,
+ *  Dream 21 → signing in). Her 4K portrait renders, transcoded to H.264 with
+ *  the audio track dropped — sign-up 810×1440 at crf 27 (1.6 MB for 23 s),
+ *  sign-in 720×1280 at crf 30 (2.4 MB for 15 s: its rain is noise, and noise
+ *  does not compress; at 810/27 it was 5 MB). The poster is each film's own
+ *  frame at 1.5 s. Originals: imgss/redesign-2026-09-15/video/auth/. */
+const FILM: Record<Panel, { src: string; poster: string }> = {
+  in: { src: "/auth/signin.mp4", poster: "/auth/signin.webp" },
+  up: { src: "/auth/signup.mp4", poster: "/auth/signup.webp" },
+};
+
 export default function AuthUI({ ready, notice }: { ready: boolean; notice?: string }) {
   const [panel, setPanel] = useState<Panel>("in");
+  /** a looping film IS motion: under reduced motion the poster stands alone */
+  const [motionOff, setMotionOff] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const read = () => setMotionOff(m.matches);
+    read();
+    m.addEventListener("change", read);
+    return () => m.removeEventListener("change", read);
+  }, []);
+  /** React renders no `muted` ATTRIBUTE into the server HTML (it sets the
+   *  property on hydration), and Chrome decides autoplay from the markup it
+   *  parsed — so the first, server-rendered film could be refused as an
+   *  unmuted autoplay and never start. The ref mutes it and asks again the
+   *  moment the element exists; the catch is for policies that still say no,
+   *  where the poster simply stands. */
+  const armFilm = (v: HTMLVideoElement | null) => {
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  };
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<{ delivered: boolean } | null>(null);
   const [error, setError] = useState("");
@@ -224,18 +257,31 @@ export default function AuthUI({ ready, notice }: { ready: boolean; notice?: str
         </div>
       </div>
 
-      {/* THE PICTURE. Her own painting, not a stock interior: the supplied
+      {/* THE PICTURE MOVES. Her own films, not a stock interior: the supplied
           design used a furniture photograph because it was a generic
           template, and the whole point of this shop is that the artwork is
-          the product. */}
+          the product. Keyed by panel, so switching between signing in and
+          creating an account mounts a FRESH <video> with autoPlay on it —
+          an autoplay attribute flipped on an element that is already
+          mounted starts nothing (the trap Selector.tsx documents). */}
       <div className="ap-auth__art" data-panel={panel}>
         <figure>
-          <img
-            src={panel === "in" ? "/art/art-08-sm.webp" : "/art/art-21-sm.webp"}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-          />
+          {motionOff ? (
+            <img src={FILM[panel].poster} alt="" aria-hidden="true" decoding="async" />
+          ) : (
+            <video
+              key={panel}
+              ref={armFilm}
+              src={FILM[panel].src}
+              poster={FILM[panel].poster}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+            />
+          )}
         </figure>
         <blockquote className="ap-auth__quote">
           <p>

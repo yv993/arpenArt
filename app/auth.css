@@ -16,7 +16,16 @@
 }
 @media (min-width: 861px) {
   .ap-auth {
-    grid-template-columns: 1fr 1fr;
+    /* THE ART COLUMN IS THE FILM'S OWN SHAPE (Vardan 2026-09-15, screenshot
+       of the sign-in film with the woman's feet and the wave's crest cut
+       off: «change size, it must all illustration seen»). Both films are
+       9:16 portraits; a half-screen column is nearly square, and `cover`
+       had to lose the top and bottom of every frame to fill it. So the
+       column is as wide as a 9:16 frame of the viewport's height — and no
+       wider than half the screen on a very tall window — and the film is
+       `contain`ed in it, which on a box of its own ratio is the whole
+       picture edge to edge, no bands, no blur. The form takes the rest. */
+    grid-template-columns: minmax(0, 1fr) min(50%, calc(100svh * 9 / 16));
   }
 }
 
@@ -148,6 +157,13 @@
 @media (min-width: 861px) {
   .ap-auth__art {
     display: block;
+    /* exactly one screen tall, so with the column width above the box IS
+       the film's ratio; it stays put while a form taller than the screen
+       (the create-account one on a short window) scrolls beside it */
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    align-self: start;
   }
 }
 .ap-auth__art figure {
@@ -155,10 +171,14 @@
   inset: 0;
   margin: 0;
 }
-.ap-auth__art img {
+.ap-auth__art img,
+.ap-auth__art video {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* contain, never cover: the whole illustration, always — the column is
+     cut to the film's ratio above, so this costs no bands on desktop */
+  object-fit: contain;
   object-position: center;
 }
 /* the picture's foot dissolves into the page, which is what lets the quote
