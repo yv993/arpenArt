@@ -8,6 +8,7 @@
 @import "./auth.css";
 @import "./keychains.css";
 @import "./magnets.css";
+@import "./stories.css";
 
 /* ===========================================================================
    ArpenArt — Arpine Baroyan
@@ -444,9 +445,11 @@ select {
   .ap-ribbon:hover .ap-ribbon__track {
     animation-play-state: paused;
   }
+  /* one run of ten (HomeView renders ten identical runs) — the loop is
+     seamless because the track is always wider than the screen plus a run */
   @keyframes ap-ribbon {
     to {
-      transform: translateX(-50%);
+      transform: translateX(-10%);
     }
   }
 }
@@ -648,21 +651,20 @@ select {
      wrong — set left-aligned in the right half at roughly 4.4vw, where this
      was 6.4vw. Both lines start on the same left edge, so the block is
      left-aligned even though it sits to the right. */
-  /* STILL THE GEOMETRIC SANS. The 2026-09-15 pass read the client's p1 note
-     («let it be in this same font», arrow to a serif section heading) as a
-     switch to the display serif and shipped it for a day; Vardan reversed
-     that the same evening — «text must be previous font and same color as
-     now». So the letterform stays what the 2026-08-12 artwork set, and only
-     the fill changed: pure white, no gradient (that part of p1 stands). */
-  font-family: var(--font-ui);
-  font-weight: 700;
-  /* SMALLER AGAIN (client 2026-08-12): 4.4vw matched the banner artwork, but
-     in the corner of a full-height hero it still read large. 3.2vw — 44px at
-     1366, against the 60px it was. The lines keep their shared left edge from
-     the artwork even though the block sits right. */
-  font-size: clamp(1.15rem, 3.2vw, 2.7rem);
-  line-height: 1.18;
-  letter-spacing: 0.01em;
+  /* THE SECTION TITLES' SERIF, ASKED FOR TWICE. Her 2026-09-15 note drew an
+     arrow from this title to a serif section heading — «let it be in this
+     same font» — and it shipped for a day before Vardan reversed it to the
+     geometric sans. Her 2026-09-21 PDF (p1) repeats the same arrow with the
+     same words, so it is the client's decision and it stands: Fraunces at
+     the .ap-h2 weight, tracking and leading. The size follows .ap-h2 too —
+     "the exact same styling" — which is larger than the 3.2vw sans was, and
+     the two-line block still sits inside the right half of the frame. The
+     fill stays pure white, her earlier note (no gradient here). */
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.4vw, 3.9rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
   text-align: left;
   color: #fff;
   /* THE RIM IS GONE (client 2026-08-11: "remove border from text its not

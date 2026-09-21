@@ -200,6 +200,13 @@
   line-height: 1.2;
   letter-spacing: 0.005em;
 }
+/* the title's two lines (change.pdf p2, 2026-09-21): one block each, and
+   a line never wraps inside itself — "A JOURNEY THROUGH" is one line by her
+   instruction, not by whatever width the box has */
+.ap-cloud__tl {
+  display: block;
+  white-space: nowrap;
+}
 /* the "Drag to move" cue is gone from the markup with the drag itself */
 
 /* --------------------------------------------------------------------------
@@ -358,8 +365,11 @@
     left: calc(var(--gutter) - clamp(14px, 2vw, 30px));
     top: clamp(84px, 12vh, 140px);
     z-index: 999; /* above every card, whatever its --z */
-    width: min(30ch, 44vw);
-    max-width: none; /* the plain layer's 62ch was still winning */
+    /* as wide as its longest line wants: `30ch` was the BODY font's ch (~8px
+       → 240px) and folded "A JOURNEY THROUGH" onto two lines — the very
+       three-line stack the client circled (change.pdf p2, 2026-09-21) */
+    width: max-content;
+    max-width: 60vw; /* the plain layer's 62ch was still winning */
     justify-items: start;
     text-align: left;
     padding: 0;

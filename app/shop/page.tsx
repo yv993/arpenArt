@@ -56,9 +56,16 @@ export default function ShopPage() {
       <div className="ap-sec ap-shop">
         <div className="ap-sec__head">
           <p className="ap-kicker">(Shop)</p>
-          {/* HER WORDS (client, change.pdf p8, 2026-09-15) — verbatim */}
-          <h1 className="ap-h2" data-tfx="focus">
-            ONE ILLUSTRATION. MANY WAYS TO TAKE IT WITH YOU
+          {/* HER WORDS (client, change.pdf p8, 2026-09-15) — verbatim — on
+              HER TWO LINES (change.pdf p4, 2026-09-21: «write it in 2 lines,
+              TAKE IT WITH YOU up to the line»). One span per line, each
+              revealed by the runner on its own; CSS keeps the first from
+              wrapping wherever the screen is wide enough to hold it. */}
+          <h1 className="ap-h2 ap-shop__title">
+            <span data-tfx="focus">ONE ILLUSTRATION. MANY WAYS TO</span>
+            <span data-tfx="focus" data-tfx-delay="0.16">
+              TAKE IT WITH YOU
+            </span>
           </h1>
           <p className="ap-lede">
             Your favorite Arpen Art illustrations appear across a growing collection of objects — made to

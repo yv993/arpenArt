@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
+import { categories } from "@/lib/content";
 import type { Keychain, KeychainWall } from "@/types/keychain";
 
 // ============================================================================
@@ -49,12 +50,17 @@ import type { Keychain, KeychainWall } from "@/types/keychain";
 const MAX_TURN = 62; // degrees either way — see the note above
 const PER_PX = 0.42; // how many degrees a pixel of drag is worth
 
+/** ONE price for the line, and it is the catalogue's — the same field the
+ *  cart and /api/order re-price from (1,500 ֏ on her 2026-09-21 list; the
+ *  1,000 that used to be typed here three times over is what her list
+ *  corrected). */
+export const KEYCHAIN_PRICE = categories.find((c) => c.slug === "keychains")?.from ?? 0;
+
 export default function KeychainCard({
   item,
   wall,
   live,
   ghost = false,
-  peg = true,
 }: {
   item: Keychain;
   wall: KeychainWall;
@@ -62,9 +68,6 @@ export default function KeychainCard({
   /** the wrap copy on the carousel: visually identical, invisible to AT —
    *  a screen reader must meet each keychain once, not twice */
   ghost?: boolean;
-  /** false when the hook is part of the wall PHOTOGRAPH (the walnut board):
-   *  the card then draws no peg of its own and simply hangs at its anchor */
-  peg?: boolean;
 }) {
   const spin = useRef<HTMLDivElement>(null);
   const img = useRef<HTMLImageElement>(null);
@@ -149,9 +152,7 @@ export default function KeychainCard({
           alpha'd off its wall by scratchpad's flood cut. This section keeps
           its own dark ground in both themes, so a fixed photograph is safe
           where a theme-following drawing used to be needed. */}
-      {peg && (
-        <img className="ap-kc__peg" src="/products/peg.webp" alt="" width={109} height={600} loading="lazy" draggable={false} aria-hidden />
-      )}
+      <img className="ap-kc__peg" src="/products/peg.webp" alt="" width={109} height={600} loading="lazy" draggable={false} aria-hidden />
 
       <div
         className="ap-kc__hang"
@@ -196,7 +197,7 @@ export default function KeychainCard({
           {wall.add}
         </button>
         <p className="ap-kc__name">{item.title}</p>
-        <p className="ap-kc__price">{dram(1000)}</p>
+        <p className="ap-kc__price">{dram(KEYCHAIN_PRICE)}</p>
         <p className="ap-kc__added" role="status">
           {added ? wall.added : ""}
         </p>

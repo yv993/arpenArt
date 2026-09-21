@@ -1,0 +1,509 @@
+/* ==========================================================================
+   STUDIO STORIES — /stories (components/StoriesView.tsx)
+   Two layers on one markup. PLAIN (phones, reduced motion, no JS): a cover,
+   then the stories as a flowing column, words first, pictures after. STACK
+   (`[data-stack]`, desktop with motion): every story is one screen that
+   slides up over the one before it — see the note at the top of the
+   component. GSAP owns the transform of every `.ap-st__sheet`, so none of
+   them may carry a CSS translate/scale of its own (the individual-transform
+   trap, memory: gsap-individual-transform-trap).
+   ========================================================================== */
+.ap-st {
+  padding-top: clamp(110px, 15vh, 190px);
+  background: var(--paper);
+}
+
+/* ---- the cover ---------------------------------------------------------- */
+.ap-st__cover .ap-st__sheet {
+  display: grid;
+  gap: 16px;
+  max-width: 62ch;
+  margin-bottom: clamp(38px, 6vh, 76px);
+}
+.ap-st__cover-say {
+  display: grid;
+  gap: 16px;
+}
+.ap-st__index {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.ap-st__index a {
+  display: grid;
+  gap: 2px;
+  padding: 12px 0;
+  min-height: 44px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  transition: color 0.2s var(--ease);
+}
+.ap-st__index a:hover,
+.ap-st__index a:focus-visible {
+  color: var(--indigo-ink);
+}
+.ap-st__index-when {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-st__index-title {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  line-height: 1.2;
+}
+.ap-st__cue {
+  display: none; /* the stack shows it; a flowing column needs no cue */
+}
+
+/* ---- the stories, flowing ------------------------------------------------ */
+.ap-st__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(72px, 11vh, 150px);
+}
+/* the flow markers the stack's triggers read from — on the plain layer they
+   would be empty grid children, each adding a gap between stories, so they
+   do not exist here; the stack switches them on below */
+.ap-st__mark {
+  display: none;
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+.ap-st[data-stack] .ap-st__mark {
+  display: block;
+}
+.ap-st__item .ap-st__sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(28px, 4.5vw, 84px);
+  align-items: start;
+}
+/* every second story's pictures sit on the left */
+.ap-st__item[data-side="left"] .ap-st__media {
+  order: -1;
+}
+.ap-st__say {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  max-width: 58ch;
+}
+.ap-st__when {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.ap-st__n {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ap-st__title {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.9vw, 2.55rem);
+}
+.ap-st__p {
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.62;
+}
+/* her closing line — the last sentence of each file stands on its own */
+.ap-st__close {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.22em;
+  line-height: 1.3;
+  color: var(--ink);
+}
+/* a word, once the stack has split the paragraph: inline-block so it can
+   be moved as well as faded, and the spaces between are still text */
+.ap-st__w {
+  display: inline-block;
+}
+.ap-st__more {
+  margin-top: 6px;
+}
+.ap-st__more summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--indigo-ink);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+  list-style: none;
+}
+.ap-st__more summary::-webkit-details-marker {
+  display: none;
+}
+.ap-st__more summary::after {
+  content: " +";
+}
+.ap-st__more[open] summary::after {
+  content: " −";
+}
+.ap-st__more > div {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.ap-st__more > div p {
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+.ap-st__credit {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+/* ---- the pictures ------------------------------------------------------ */
+.ap-st__media {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+.ap-st__lead {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: zoom-in;
+  max-width: 100%;
+  box-shadow: 0 18px 50px rgba(27, 43, 76, 0.16);
+}
+/* natural aspect, capped: a tall drawing must not become a 1,200px column */
+.ap-st__lead img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(68vh, 680px);
+  transition: transform 0.5s var(--ease);
+}
+.ap-st__lead:hover img,
+.ap-st__lead:focus-visible img {
+  transform: scale(1.02);
+}
+.ap-st__lead:focus-visible,
+.ap-st__thumbs button:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
+}
+.ap-st__thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ap-st__thumbs button {
+  display: block;
+  width: clamp(72px, 7vw, 104px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.ap-st__thumbs img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--ease);
+}
+.ap-st__thumbs button:hover img {
+  transform: scale(1.05);
+}
+.ap-st__film {
+  margin: 0;
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+.ap-st__film video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: #0d0d0f;
+  box-shadow: 0 18px 50px rgba(27, 43, 76, 0.16);
+}
+.ap-st__film figcaption {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 860px) {
+  .ap-st__item .ap-st__sheet {
+    grid-template-columns: 1fr;
+  }
+  .ap-st__item[data-side="left"] .ap-st__media {
+    order: 0;
+  }
+  .ap-st__lead img {
+    max-height: 60vh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-st__lead img,
+  .ap-st__thumbs img {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   THE STACK — desktop with motion, switched on by the component
+   ========================================================================== */
+.ap-st[data-stack] {
+  padding: 0;
+}
+/* the cover is the first sheet: it sticks, and the first story rides over it */
+.ap-st[data-stack] .ap-st__cover {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+}
+.ap-st[data-stack] .ap-st__cover .ap-st__sheet {
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: calc(var(--nav-h, 84px) + 24px) var(--gutter) clamp(32px, 6vh, 64px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(28px, 5vw, 96px);
+  align-items: end;
+  background: var(--paper);
+  transform-origin: 50% 0;
+  will-change: transform, filter;
+}
+.ap-st[data-stack] .ap-st__h1 {
+  font-size: clamp(3.2rem, 8.6vw, 8.6rem);
+  line-height: 0.92;
+}
+.ap-st[data-stack] .ap-st__index {
+  margin: 0;
+  max-height: calc(100svh - var(--nav-h, 84px) - 120px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.ap-st[data-stack] .ap-st__cue {
+  display: block;
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(18px, 3vh, 34px);
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-left: 34px;
+}
+.ap-st[data-stack] .ap-st__cue::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 24px;
+  height: 1px;
+  background: currentColor;
+  animation: ap-st-cue 1.8s var(--ease) infinite;
+}
+@keyframes ap-st-cue {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+.ap-st[data-stack] .ap-st__cover {
+  position: sticky;
+}
+.ap-st[data-stack] .ap-st__cover .ap-st__sheet {
+  position: relative; /* the cue is placed against it */
+}
+
+/* the stories: each a sticky screen; the next, 40svh later in flow, rides
+   up over it. The li sticks; the SHEET inside it is what GSAP scales. */
+.ap-st[data-stack] .ap-st__list {
+  display: block;
+  gap: 0;
+}
+.ap-st[data-stack] .ap-st__item {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  margin-bottom: 40svh;
+  display: block;
+}
+.ap-st[data-stack] .ap-st__item:last-child {
+  margin-bottom: 0;
+}
+.ap-st[data-stack] .ap-st__item .ap-st__sheet {
+  height: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  /* the right gutter is wider by the timeline rail's own width, so a
+     picture or a text column never runs under it (measured: the rail sat
+     on the film's right edge at 1440) */
+  padding: calc(var(--nav-h, 84px) + 12px) calc(var(--gutter) + 60px) clamp(24px, 4vh, 48px) var(--gutter);
+  background: var(--paper);
+  /* the sheet's top corners and a shadow under its leading edge — it reads
+     as a sheet of paper sliding over the one beneath, not a page jump */
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -28px 80px -24px rgba(27, 43, 76, 0.32);
+  transform-origin: 50% 0;
+  will-change: transform, filter;
+  overflow: hidden;
+}
+.ap-st[data-stack] .ap-st__item[data-side="left"] .ap-st__sheet {
+  background: var(--paper-2);
+}
+/* the two with a television feature are night sheets — the film has a dark
+   room to play in, and the column of six reads as chapters */
+.ap-st[data-stack] .ap-st__item.ap-dark .ap-st__sheet {
+  background: var(--ink-solid);
+  color: var(--cream);
+}
+.ap-st[data-stack] .ap-dark .ap-kicker,
+.ap-st[data-stack] .ap-dark .ap-st__p,
+.ap-st[data-stack] .ap-dark .ap-st__film figcaption {
+  color: color-mix(in srgb, var(--cream) 76%, transparent);
+}
+.ap-st[data-stack] .ap-dark .ap-st__n,
+.ap-st[data-stack] .ap-dark .ap-st__close {
+  color: var(--cream);
+}
+.ap-st[data-stack] .ap-dark .ap-st__more summary,
+.ap-st[data-stack] .ap-dark .ap-st__link {
+  color: var(--marigold);
+}
+
+/* the type is sized to the screen's HEIGHT here: a sheet must hold a whole
+   story, and a laptop at 768px tall has less room than a 1,080 one */
+.ap-st[data-stack] .ap-st__say {
+  gap: clamp(8px, 1.4svh, 16px);
+  max-width: 60ch;
+  font-size: clamp(14px, 1.75svh, 16.5px);
+}
+.ap-st[data-stack] .ap-st__title {
+  font-size: clamp(1.5rem, 3.6svh, 2.7rem);
+}
+.ap-st[data-stack] .ap-st__close {
+  font-size: 1.18em;
+}
+/* the full interview opens INSIDE its sheet — a scrolling well, so the
+   sheet stays one screen */
+.ap-st[data-stack] .ap-st__more > div {
+  max-height: 30svh;
+  overflow: auto;
+  padding-right: 10px;
+  scrollbar-width: thin;
+}
+
+/* the pictures: capped to the sheet, and GSAP moves the column and pushes
+   the lead in, so nothing here carries its own transform */
+.ap-st[data-stack] .ap-st__media {
+  will-change: transform;
+}
+.ap-st[data-stack] .ap-st__lead img {
+  max-height: min(56svh, 620px);
+  transition: none;
+  transform-origin: 50% 50%;
+}
+.ap-st[data-stack] .ap-st__lead {
+  border-radius: 14px;
+}
+.ap-st[data-stack] .ap-st__film video {
+  transform-origin: 50% 50%;
+}
+.ap-st[data-stack] .ap-st__film {
+  border-radius: 14px;
+}
+.ap-st[data-stack] .ap-st__thumbs button {
+  width: clamp(64px, 6vw, 96px);
+}
+
+/* ---- the timeline rail ---------------------------------------------------
+   fixed at the right, in `difference` like the home page's rail, so it
+   reads on a paper sheet and a night sheet alike */
+.ap-st__rail {
+  position: fixed;
+  right: clamp(12px, 1.8vw, 28px);
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 5;
+  mix-blend-mode: difference;
+  color: #fff;
+  /* asleep on the cover — its index is the navigation there — and awake
+     from the first sheet on */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease);
+}
+.ap-st__rail[data-on] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ap-st__rail ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.ap-st__rail button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s var(--ease);
+}
+.ap-st__rail button::after {
+  content: "";
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s var(--ease);
+}
+.ap-st__rail button:hover,
+.ap-st__rail button:focus-visible {
+  color: rgba(255, 255, 255, 0.85);
+}
+.ap-st__rail button:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+.ap-st__rail button[aria-current="true"] {
+  color: #fff;
+}
+.ap-st__rail button[aria-current="true"]::after {
+  width: 30px;
+}

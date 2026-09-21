@@ -5,41 +5,47 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import { CAMERA_Z, ParticleSphere, newSpin } from "./ParticleSphere";
-import products from "@/lib/products.json";
-import { categories, home } from "@/lib/content";
+import { SoonLink, openSoon } from "./Soon";
+import globeShots from "@/lib/globe.json";
+import { categories, globe, home, priceList, soon } from "@/lib/content";
+import { dram } from "@/lib/cart";
 
-// The sphere used to hold the 57 illustrations. It holds THE SHOP now (client
-// 2026-08-06) — every photograph of every piece she actually sells.
-type Shot = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
-type Card = Shot & { slug: string; name: string; from: number; blurb: string };
-const P = products as Record<string, Shot[]>;
+// The sphere used to hold the 57 illustrations, then every photograph of
+// every piece for sale (client 2026-08-06) — sixty cards, and she found it
+// crowded. It holds HER OWN SET now (client, change.pdf p3, 2026-09-21: «the
+// pictures are far too many — put only the pictures of this folder, remove
+// the rest»): sixteen cut-outs, one line each, in the order of her folder.
+// `globe` in content.ts says which line each one shows; lib/globe.json holds
+// the files and their measured sizes.
+type Shot = { id: string; src: string; w: number; h: number; avg: string };
+type Card = Shot & {
+  name: string;
+  blurb: string;
+  /** the page to buy it on — absent for a line that is not open yet */
+  href?: string;
+  /** the Available Soon window's kicker — present exactly when `href` is not */
+  soonName?: string;
+  /** her price for a line the shop does not carry yet (priceList) */
+  price?: number;
+};
+const G = globeShots as Shot[];
 
-/** One card per product photograph, ROUND-ROBIN across the categories rather
- *  than category by category: consecutive indices land near each other often
- *  enough on a Fibonacci lattice that fifteen scarves in a row would read as a
- *  scarf patch on one side of the ball. */
-/** Lines that are for sale but NOT on the globe. Keychains came off it on
- *  2026-09-15 (Vardan, with a screenshot of the globe's crown: «remove from
- *  images in globe keychains») — the acrylic-fob photographs read as clutter
- *  among the prints. The proper sphere set (change.pdf p3) is still owed. */
-const OFF_THE_GLOBE = new Set(["keychains"]);
-
-const CARDS: Card[] = (() => {
-  const byCat = categories
-    .filter((c) => c.status === "open" && !OFF_THE_GLOBE.has(c.slug))
-    .map((c) => ({ cat: c, shots: P[c.media] ?? [] }))
-    .filter((g) => g.shots.length > 0);
-  const out: Card[] = [];
-  const most = Math.max(0, ...byCat.map((g) => g.shots.length));
-  for (let i = 0; i < most; i++) {
-    for (const g of byCat) {
-      const s = g.shots[i];
-      if (!s) continue;
-      out.push({ ...s, slug: g.cat.slug, name: g.cat.name, from: g.cat.from, blurb: g.cat.blurb });
-    }
+const CARDS: Card[] = globe.flatMap((g) => {
+  const shot = G.find((s) => s.id === g.id);
+  if (!shot) return [];
+  if (g.slug) {
+    const cat = categories.find((c) => c.slug === g.slug);
+    if (!cat) return [];
+    return [
+      cat.status === "open"
+        ? { ...shot, name: cat.name, blurb: cat.blurb, href: `/shop/${cat.slug}` }
+        : { ...shot, name: cat.name, blurb: cat.blurb, soonName: cat.name },
+    ];
   }
-  return out;
-})();
+  const line = g.list ? priceList[g.list] : undefined;
+  if (!line) return [];
+  return [{ ...shot, name: line.name, blurb: home.gallery.soonNote, soonName: line.name, price: line.from }];
+});
 
 /** A full drag across the canvas turns the sphere most of the way round,
  *  measured against the element so it feels identical at any width. */
@@ -74,8 +80,13 @@ export default function Gallery() {
   const onPick = useCallback(
     (i: number) => {
       if (chosenRef.current === i) {
-        // straight to the piece it is a photograph OF, not a fixed slug
-        if (Date.now() - lastPickAt.current > 450) router.push(`/shop/${CARDS[i].slug}`);
+        // straight to the piece it is a photograph OF — or, for a line that
+        // is not open yet, the small Available Soon window
+        if (Date.now() - lastPickAt.current > 450) {
+          const c = CARDS[i];
+          if (c.href) router.push(c.href);
+          else openSoon(c.soonName);
+        }
         return;
       }
       lastPickAt.current = Date.now();
@@ -185,7 +196,7 @@ export default function Gallery() {
     go();
   }, []);
 
-  const images = CARDS.map((c) => c.thumb);
+  const images = CARDS.map((c) => c.src);
   const card = chosen !== null ? CARDS[chosen] : null;
 
   return (
@@ -224,22 +235,33 @@ export default function Gallery() {
             <>
               <div className="ap-gal__info" role="status">
                 <p className="ap-gal__no">{card.name}</p>
-                {/* no "from" price here any more (client, change.pdf p5/p8,
-                    2026-09-15: prices leave the catalogue) */}
+                {/* no "from" price for a line the shop sells (client,
+                    change.pdf p5/p8, 2026-09-15: prices leave the catalogue);
+                    a line that exists only on her price list so far shows
+                    that price — it is the one place the number can live */}
+                {card.price !== undefined && <p className="ap-gal__price">{dram(card.price)}</p>}
                 <p className="ap-gal__blurb">{card.blurb}</p>
-                {/* THE BUY BUTTON, and it opens the piece rather than dropping
-                    it in the basket. Not a hedge — a measured fact about this
-                    catalogue: every open category needs a choice first. Six
-                    need an illustration; postcards, scarves and hoodies need a
-                    format, style or size. Adding from here would mean picking
-                    the artwork FOR the customer, on a site whose whole shop is
-                    built the other way ("the artwork IS the product, so
-                    choosing one silently would be worse than asking"). This is
-                    what a variable product does in any real shop. */}
-                <Link className="ap-btn ap-gal__buy" href={`/shop/${card.slug}`}>
-                  Buy it <span aria-hidden>→</span>
-                </Link>
-                <p className="ap-gal__note">{home.gallery.buyNote}</p>
+                {card.href ? (
+                  <>
+                    {/* THE BUY BUTTON, and it opens the piece rather than
+                        dropping it in the basket. Not a hedge — a measured
+                        fact about this catalogue: every open category needs a
+                        choice first. Six need an illustration; postcards,
+                        scarves and hoodies need a format, style or size.
+                        Adding from here would mean picking the artwork FOR
+                        the customer, on a site whose whole shop is built the
+                        other way. This is what a variable product does in any
+                        real shop. */}
+                    <Link className="ap-btn ap-gal__buy" href={card.href}>
+                      Buy it <span aria-hidden>→</span>
+                    </Link>
+                    <p className="ap-gal__note">{home.gallery.buyNote}</p>
+                  </>
+                ) : (
+                  <SoonLink className="ap-btn ap-gal__buy" name={card.soonName ?? card.name}>
+                    {soon.tile} <span aria-hidden>→</span>
+                  </SoonLink>
+                )}
               </div>
               <button
                 type="button"
@@ -255,9 +277,9 @@ export default function Gallery() {
           <noscript>
             <ul className="ap-gal__grid">
               {CARDS.map((c) => (
-                <li key={c.slug + c.id}>
-                  <a href={`/shop/${c.slug}`} aria-label={c.name}>
-                    <img src={c.thumb} alt="" width={c.w} height={c.h} loading="lazy" />
+                <li key={c.id}>
+                  <a href={c.href ?? "/shop"} aria-label={c.name}>
+                    <img src={c.src} alt="" width={c.w} height={c.h} loading="lazy" />
                   </a>
                 </li>
               ))}
@@ -266,15 +288,22 @@ export default function Gallery() {
         </>
       ) : (
         // Phones, reduced motion and no WebGL get the same pieces as a real
-        // grid — and now every tile is a LINK, because these are things for
-        // sale rather than pictures to look at. The sphere's whole purpose is
+        // grid — and every tile is a LINK, because these are things for sale
+        // rather than pictures to look at; a line that is not open yet opens
+        // the Available Soon window here too. The sphere's whole purpose is
         // reachable here.
         <ul className="ap-gal__grid">
           {CARDS.map((c) => (
-            <li key={c.slug + c.id} style={{ background: c.avg }}>
-              <Link href={`/shop/${c.slug}`} aria-label={`${c.name} — from ${c.from.toLocaleString()} ֏`}>
-                <img src={c.thumb} alt="" width={c.w} height={c.h} loading="lazy" decoding="async" />
-              </Link>
+            <li key={c.id} style={{ background: c.avg }}>
+              {c.href ? (
+                <Link href={c.href} aria-label={c.name}>
+                  <img src={c.src} alt="" width={c.w} height={c.h} loading="lazy" decoding="async" />
+                </Link>
+              ) : (
+                <SoonLink name={c.soonName ?? c.name} aria-label={`${c.name} — ${soon.tile}`}>
+                  <img src={c.src} alt="" width={c.w} height={c.h} loading="lazy" decoding="async" />
+                </SoonLink>
+              )}
             </li>
           ))}
         </ul>

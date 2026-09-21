@@ -141,8 +141,17 @@
 @media (min-width: 861px) {
   .ap-isel__strip {
     /* ONE height for the row, named, because the open panel's width is
-       derived from it below */
-    --isel-h: clamp(400px, 64vh, 600px);
+       derived from it below.
+       WIDTH-AWARE since 2026-09-21. The row went from five panels to fifteen
+       on 2026-09-15 and stopped fitting: at 1024×768 the open frame (278px)
+       plus fourteen 62px slivers plus gaps is 1,258px in a 920px section —
+       the page grew a horizontal scrollbar, 52px wide, measured on the live
+       site. The height is capped at 40vw as well as 64vh, so on a narrow
+       screen the open frame (whose width is this height × the film's
+       ratio) gets narrower with the screen; at 1440 and above 64vh still
+       wins and nothing changes. Verified: scrollWidth = viewport at 861,
+       1024 and 1280; the open frame's ratio 0.5625 at every width. */
+    --isel-h: clamp(400px, min(64vh, 40vw), 600px);
     display: flex;
     align-items: stretch;
     /* the row is as wide as its contents now, not as wide as the page: with
@@ -151,7 +160,9 @@
        accordion would stop reading as one */
     justify-content: center;
     height: var(--isel-h);
-    gap: 8px;
+    /* 8px at 1440 and above, as it was; down to 4px where fourteen gaps are
+       a tenth of the row */
+    gap: clamp(4px, 0.6vw, 8px);
   }
 
   .ap-isel__panel {
@@ -164,7 +175,12 @@
     width: auto;
     aspect-ratio: auto;
     margin-inline: 0;
-    min-width: 62px;
+    /* the closed slivers absorb the tight row (the open frame never
+       shrinks, see below). 62px let fourteen of them overflow the page at
+       1024; 32px is the floor at which the row still fits at the 861px
+       breakpoint with the row height at its 400px minimum. A sliver is a
+       strip of poster with a hover on it — it has no composition to keep. */
+    min-width: 32px;
     min-height: 0;
     /* the original animated flex-grow, which relayouts every frame. It is
        still the only honest way to do this effect — the panels genuinely

@@ -25,7 +25,14 @@ const SPHERE_RADIUS = 9;
 const PARTICLE_COUNT = 1500;
 const POSITION_RANDOMNESS = 4;
 const ROTATION_SPEED_Y = 0.0005;
-const IMAGE_SIZE = 2.6;
+/** THE CARD SIZE FOLLOWS THE COUNT. 2.6 units was right for sixty product
+ *  photographs; her own set (change.pdf p3, 2026-09-21) is sixteen, and
+ *  sixteen cards of 2.6 on a radius-9 ball are specks in a snow-globe. The
+ *  size grows as the count falls so the ball keeps roughly the same share
+ *  of its surface under pictures — sixteen cards at 4.4 cover ~30%, sixty
+ *  at 2.6 covered ~40% — capped where the crown would leave the frame
+ *  (CAMERA_Z below is measured for 4.4). */
+const imageSize = (n: number) => Math.min(4.4, Math.max(2.6, 2.6 * Math.sqrt(60 / Math.max(1, n))));
 
 /** How far the sphere may be tipped, in radians. Past about this the lattice
  *  starts showing its poles and it stops reading as a globe. */
@@ -60,14 +67,14 @@ export const newSpin = (): Spin => ({ yaw: 0, pitch: 0, vYaw: 0, vPitch: 0, drag
  *  only ~15 units away, where the view is 7 units tall — so its corners
  *  projected past the frame at every viewport (worst corner measured at
  *  110.6% of the half-height, scratchpad/plate-and-fit.cjs). The camera
- *  now sits at CAMERA_Z, where the worst corner of a FULL lattice lands at
- *  88.4%: the whole ball, crown and base, inside the canvas with a thin
- *  margin. (26 was the first cut — 80.6%, safe but visibly small; Vardan:
- *  «make it bigger». The rest of the size comes from the canvas itself,
- *  .ap-gal__canvas in globals.css, which now takes most of the viewport.)
- *  The lattice is back to full, on the half-step formula so no card sits
+ *  now sits at CAMERA_Z, where the worst corner of a FULL lattice lands
+ *  inside the canvas with a margin: with her sixteen 4.4-unit cards it is
+ *  84.1% (24 gave 92.6%, a whisker from the crown clipping again — 24 was
+ *  right for the sixty small cards; the size of the ball on screen comes
+ *  from the canvas, .ap-gal__canvas in globals.css, which takes most of the
+ *  viewport). The lattice is full, on the half-step formula so no card sits
  *  exactly on a pole (that one lies flat and reads as nothing). */
-export const CAMERA_Z = 24;
+export const CAMERA_Z = 26;
 
 /** Evenly spaced points on a sphere — avoids the clumping of naive random. */
 function fibonacciSphere(n: number, radius: number) {
@@ -159,12 +166,15 @@ function ArtCard({
   texture,
   i,
   home,
+  size,
   chosenRef,
   onPick,
 }: {
   texture: THREE.Texture;
   i: number;
   home: { pos: THREE.Vector3; quat: THREE.Quaternion };
+  /** the card's box — the sphere's card size for this count */
+  size: number;
   chosenRef: React.RefObject<number | null>;
   onPick: (i: number) => void;
 }) {
@@ -172,6 +182,17 @@ function ArtCard({
   const matA = useRef<THREE.MeshBasicMaterial>(null);
   const matB = useRef<THREE.MeshBasicMaterial>(null);
   const dim = useRef(1);
+
+  // THE PLANE TAKES THE PICTURE'S SHAPE. Square planes were fine for sixty
+  // photographs of similar proportion; her cut-outs run from a 276×640
+  // keychain to a 640×493 scarf, and a square would stretch the keychain to
+  // more than twice its width. Each plane fits the picture inside the card's
+  // box instead — its own ratio, never larger than the box.
+  const [planeW, planeH] = useMemo(() => {
+    const img = texture.image as { width?: number; height?: number } | undefined;
+    const ar = img?.width && img?.height ? img.width / img.height : 1;
+    return ar >= 1 ? [size, size / ar] : [size * ar, size];
+  }, [texture, size]);
 
   useFrame((state) => {
     const g = group.current;
@@ -192,7 +213,9 @@ function ArtCard({
       g.position.lerp(TMP_V, 0.14);
       g.parent.getWorldQuaternion(TMP_Q).invert();
       g.quaternion.slerp(TMP_Q, 0.16);
-      wantScale = ((wide ? 0.7 : 0.42) * VIS_H) / IMAGE_SIZE;
+      // sized by the plane's own height, so a wide scarf and a tall keychain
+      // both present at the same share of the view
+      wantScale = ((wide ? 0.7 : 0.42) * VIS_H) / planeH;
     } else {
       g.position.lerp(home.pos, 0.1);
       g.quaternion.slerp(home.quat, 0.12);
@@ -241,11 +264,11 @@ function ArtCard({
           alphaTest DISCARDS the fragment instead, so depth still writes and
           the cut-outs are simply not there. */}
       <mesh>
-        <planeGeometry args={[IMAGE_SIZE, IMAGE_SIZE]} />
+        <planeGeometry args={[planeW, planeH]} />
         <meshBasicMaterial ref={matA} map={texture} toneMapped={false} alphaTest={0.5} />
       </mesh>
       <mesh rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[IMAGE_SIZE, IMAGE_SIZE]} />
+        <planeGeometry args={[planeW, planeH]} />
         <meshBasicMaterial ref={matB} map={texture} toneMapped={false} alphaTest={0.5} />
       </mesh>
     </group>
@@ -279,10 +302,12 @@ function Artworks({
     });
   }, [images.length]);
 
+  const size = imageSize(images.length);
+
   return (
     <>
       {placed.map((home, i) => (
-        <ArtCard key={i} texture={textures[i]} i={i} home={home} chosenRef={chosenRef} onPick={onPick} />
+        <ArtCard key={i} texture={textures[i]} i={i} home={home} size={size} chosenRef={chosenRef} onPick={onPick} />
       ))}
     </>
   );

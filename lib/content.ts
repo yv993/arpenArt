@@ -61,8 +61,13 @@ export type Category = {
   /** Price in Armenian dram.
    *
    *  REAL, confirmed by Arpine: postcards 1,000 (2026-08-12, re-confirmed
-   *  2026-08-24), 3D stickers 500 (2026-08-22), and sticker sheets 1,600,
-   *  scarves 8,000 and totes 8,000 (all 2026-08-24).
+   *  2026-08-24 and again on her 2026-09-21 price list), 3D stickers 500
+   *  (2026-08-22, re-confirmed 2026-09-21), scarves 8,000 and totes 8,000
+   *  (2026-08-24). HER 2026-09-21 PRICE LIST (change.pdf p9, «these are the
+   *  correct prices — wherever a section shows one, let it be right») MOVED
+   *  three lines: sticker sheets 1,600 → 1,800, keychains 1,000 → 1,500,
+   *  magnets 1,600 → 1,500. The same list names five lines the shop does
+   *  not carry yet — see `priceList` below.
    *
    *  STILL PLACEHOLDERS, waiting on her figures: hoodies, cups, plates,
    *  puzzles. Every one she has corrected so far moved by a lot and in both
@@ -121,7 +126,10 @@ export const categories: Category[] = [
   {
     slug: "postcards",
     name: "Postcards",
-    blurb: "The full Armenia series, printed on heavy uncoated card. Sold singly or as a set.",
+    // EVERY BLURB BELOW IS HERS, verbatim (client, change.pdf p5, 2026-09-21:
+    // «let's change these texts underneath») — the line after the dash in
+    // "Postcards — A little piece of Armenia to send."
+    blurb: "A little piece of Armenia to send.",
     media: "postcards",
     // Arpine's real price, 2026-08-12, RE-CONFIRMED 2026-08-24: every card
     // is 1,000 dram. Unchanged — it was right the first time.
@@ -139,7 +147,7 @@ export const categories: Category[] = [
   {
     slug: "scarves",
     name: "Scarves",
-    blurb: "Silk squares and bandanas, the illustrations redrawn to wrap and fold.",
+    blurb: "Stories of Armenia, woven in color.",
     media: "scarves",
     // ARPINE'S REAL PRICE, 2026-08-24 — it replaces a 14,000 placeholder,
     // which was nearly twice what she actually charges.
@@ -157,7 +165,7 @@ export const categories: Category[] = [
     // The slug stays — it is a URL and a cart key, and the page is behind
     // "Available soon" for now anyway.
     name: "T-Shirts",
-    blurb: "Painted tees — each one hand-finished, so no two are identical.",
+    blurb: "Wear your favorite Armenian story.",
     media: "apparel",
     from: 18000,
     // AVAILABLE SOON (change.pdf p8): no page yet — a tap opens the small
@@ -177,7 +185,7 @@ export const categories: Category[] = [
   {
     slug: "cups",
     name: "Cups",
-    blurb: "Yerevan on a mug, glazed and dishwasher-safe.",
+    blurb: "Start your day with a little Armenia.",
     media: "mugs",
     from: 5500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
@@ -186,7 +194,7 @@ export const categories: Category[] = [
   {
     slug: "plates",
     name: "Plates",
-    blurb: "Decorative plates carrying the Opera House and other landmarks.",
+    blurb: "Armenian stories for your table.",
     media: "plates",
     from: 7500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
@@ -196,7 +204,7 @@ export const categories: Category[] = [
   {
     slug: "puzzles",
     name: "Puzzles",
-    blurb: "Ararat and the wildflower fields, cut into a puzzle worth an evening.",
+    blurb: "Piece together a little Armenia.",
     media: "puzzles",
     from: 8500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
@@ -211,16 +219,13 @@ export const categories: Category[] = [
     // of any one of the 57 illustrations, chosen from the picker — that path
     // is gone, so the blurb cannot keep promising it. What she actually
     // delivered is six fixed sheets; the page sells those.
-    // her lead sentence — a grid card wants one line, and it should be hers
-    blurb: "A collection of stories, one sticker at a time.",
+    blurb: "Little illustrations, ready to travel.",
     media: "stickers",
-    // ARPINE'S REAL PRICE, 2026-08-24: 1,600 dram a sheet. It replaces the 600
-    // that was left standing when this line stopped selling single die-cuts —
-    // flagged at the time as "very probably too low", and it was, by nearly
-    // three times. Every sheet is the same size and count, so one number covers
-    // all six, which is also what keeps /api/order able to re-price a sheet
-    // from its own copy of this table.
-    from: 1600,
+    // ARPINE'S REAL PRICE: 1,600 dram a sheet on 2026-08-24, 1,800 on her
+    // 2026-09-21 list («ստիկեր 1800»). Every sheet is the same size and
+    // count, so one number covers all six, which is also what keeps
+    // /api/order able to re-price a sheet from its own copy of this table.
+    from: 1800,
     status: "open",
     spec: [
       { k: "Sheet", v: "158 × 200 mm · 20 stickers" },
@@ -231,12 +236,12 @@ export const categories: Category[] = [
   {
     slug: "3d-stickers",
     name: "3D stickers",
-    blurb: "Bring a little piece of Armenia to life.",
+    blurb: "Bring Armenian stories to life.",
     media: "sticker3d",
-    // ARPINE'S REAL PRICE, 2026-08-22: 500 dram each. Not a placeholder — the
-    // second confirmed figure on the site after the postcards'. It is LOWER
-    // than the guess it replaced (900), which is the whole argument for never
-    // inventing one: a plausible number would have overcharged for a week.
+    // ARPINE'S REAL PRICE, 2026-08-22, re-confirmed 2026-09-21: 500 dram
+    // each. It is LOWER than the guess it replaced (900), which is the whole
+    // argument for never inventing one: a plausible number would have
+    // overcharged for a week.
     from: 500,
     status: "open",
     spec: [
@@ -247,14 +252,13 @@ export const categories: Category[] = [
   {
     slug: "keychains",
     name: "Keychains",
-    blurb: "Small illustrations, big memories — a little piece of Armenia on your keys.",
+    blurb: "Carry a little Armenia with you.",
     media: "keychain",
-    // ARPINE'S REAL PRICE, 2026-08-31: 1,000 dram each, from the text file
-    // that came with the twenty-four photographs ("price 1000 amd"). Not a
-    // placeholder. The brief that asked for this section priced them
-    // $20.00–$25.00, which is roughly eight times what she charges — a good
-    // illustration of why a number that merely looks plausible never ships.
-    from: 1000,
+    // ARPINE'S REAL PRICE: 1,000 dram on 2026-08-31 (the text file with the
+    // twenty-four photographs), 1,500 on her 2026-09-21 list («կախազարդ
+    // 1500»). The keychain section reads THIS number — nothing there is
+    // typed by hand any more.
+    from: 1500,
     status: "open",
     spec: [
       { k: "Finish", v: "Clear acrylic case on a split ring" },
@@ -264,13 +268,11 @@ export const categories: Category[] = [
   {
     slug: "magnets",
     name: "Magnets",
-    // her phrase, from the text file that came with the pictures
-    blurb: "Original illustrations in acrylic magnet frames — a small keepsake to remember Armenia by.",
+    blurb: "Keep a little Armenia close.",
     media: "magnet",
-    // ARPINE'S REAL PRICE, 2026-08-31: 1,600 dram, from the same text file
-    // ("price 1600") — the third line priced by her own note rather than a
-    // guess, after the postcards and the keychains.
-    from: 1600,
+    // ARPINE'S REAL PRICE: 1,600 dram on 2026-08-31 ("price 1600"), 1,500 on
+    // her 2026-09-21 list («մագնիս 1500»).
+    from: 1500,
     status: "open",
     spec: [
       { k: "Finish", v: "Print in a clear acrylic frame magnet" },
@@ -280,15 +282,16 @@ export const categories: Category[] = [
   {
     slug: "totes",
     name: "Tote bags",
-    blurb: "Cotton totes carrying the stamp grid of the whole Armenia series.",
+    blurb: "Carry your favorite Armenian stories.",
     media: "totes",
     // ARPINE'S REAL PRICE, 2026-08-24 (it replaces a 6,500 placeholder).
     from: 8000,
-    // HIDDEN FOR NOW (client, change.pdf p11–12, 2026-09-15): «remove this
-    // page for now, I will give separate designs later». `soon` 404s the
-    // choose-your-illustration page and its tote gallery, and the tile opens
-    // the Available Soon window. Flip back to "open" when her designs land.
-    status: "soon",
+    // OPEN AGAIN (client, change.pdf p7, 2026-09-21: «you had the tote bag
+    // made, for the 4 designs, with their pictures — bring that back»). It
+    // was hidden for six days on her 2026-09-15 note; the four-design gallery
+    // and the choose-your-illustration page were never deleted, only gated
+    // by this flag, so the page is exactly the one she remembers.
+    status: "open",
     // both rows repeat the tote lookbook's caption, word for word
     spec: [
       { k: "Material", v: "Natural cotton" },
@@ -316,8 +319,57 @@ export const categories: Category[] = [
 export const nav = [
   { label: "Shop", href: "/shop" },
   { label: "Find in store", href: "/find-in-store" },
+  // NEW (client, change.pdf p12, 2026-09-21: «we are adding a new section
+  // … a place in this row», circling the bar)
+  { label: "Stories", href: "/stories" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
+];
+
+/** HER PRICE LIST, 2026-09-21 (change.pdf p9), for the lines the shop does
+ *  not carry yet — the ones she underlined in red with «I will send the
+ *  materials soon». Bookmarks were on the list without an underline and
+ *  without a product anywhere, so they wait here too. The globe already
+ *  shows three of these (her Drive set includes the bracelets, the brooches
+ *  and the beaded pendant), and reads their prices from here; when a line
+ *  arrives it becomes a `categories` entry and leaves this table. */
+export const priceList: Record<string, { name: string; hy: string; from: number }> = {
+  brooches: { name: "Stone brooches", hy: "Քարե բրոշ", from: 2500 },
+  bracelets: { name: "Wooden bracelets", hy: "Թևնոց", from: 2000 },
+  notebooks: { name: "Notebooks", hy: "Նոթատետր", from: 2500 },
+  bookmarks: { name: "Bookmarks", hy: "Էջանշան", from: 500 },
+  pendants: { name: "Beaded pendants", hy: "Հուլունքով կախազարդ", from: 4000 },
+};
+
+/** THE GLOBE'S SEVENTEEN (client, change.pdf p3, 2026-09-21: «the pictures
+ *  are far too many — put ONLY the pictures of this folder, remove the
+ *  rest»). One card per file in her Drive folder, in her order; the files
+ *  are in lib/globe.json (sizes and colours read off them, never typed).
+ *  A card names the line it shows: a `slug` for a line the shop carries
+ *  (open or Available Soon), or a `list` key for one that exists only on
+ *  her price list so far. */
+export const globe: { id: string; slug?: string; list?: keyof typeof priceList }[] = [
+  { id: "01", slug: "magnets" },
+  { id: "02", slug: "magnets" },
+  { id: "03", slug: "keychains" },
+  { id: "04", slug: "scarves" },
+  { id: "05", slug: "cups" },
+  { id: "06", slug: "keychains" },
+  { id: "07", list: "bracelets" },
+  { id: "08", list: "brooches" },
+  { id: "09", slug: "hoodies" },
+  { id: "10", list: "pendants" },
+  { id: "11", slug: "postcards" },
+  { id: "12", slug: "hoodies" },
+  { id: "13", slug: "stickers" },
+  { id: "14", slug: "stickers" },
+  { id: "15", slug: "puzzles" },
+  { id: "16", slug: "keychains" },
+  // THREE magnets, not one: 01 Tsitsernakaberd, 02 the café by the Opera,
+  // 17 Republic Square. A whole-image comparison called 17 a duplicate of
+  // 01 (the shared white card dominates the pixels); the magnets themselves
+  // — the centre 30% — differ by 28–33/255. Compare the product, not the card.
+  { id: "17", slug: "magnets" },
 ];
 
 /** THE RIBBON'S WORDS (client, change.pdf p2, 2026-09-15) — verbatim, her
@@ -751,8 +803,11 @@ export const home = {
   },
   strip: {
     kicker: "(The series)",
-    // Arpine's own header for the series (Header - Text.txt, 2026-08-12)
-    title: "A JOURNEY THROUGH ARMENIA",
+    // Arpine's own header for the series (Header - Text.txt, 2026-08-12).
+    // TWO LINES, and the break is hers (change.pdf p2, 2026-09-21: «write it
+    // in 2 lines, move ARMENIA up to the line»): the verb phrase, then the
+    // country.
+    title: ["A JOURNEY THROUGH", "ARMENIA"],
     copy:
       "A collection of over 50 illustrations inspired by Armenia’s cities, landscapes, traditions and everyday moments. Each piece tells a unique story — capturing the spirit, colors and memories of Armenia.",
     /** What a picked picture says. STILL only facts we have: its number and
@@ -782,6 +837,9 @@ export const home = {
      *  the piece with its picker instead, which is what a variable product
      *  does in any serious shop. */
     buyNote: "You choose the illustration and the options on the product itself.",
+    /** under a globe card whose line is not in the shop yet — a fact about
+     *  the catalogue, not a promise about a date */
+    soonNote: "This line is being prepared; its price is from Arpine's list.",
   },
   shopIntro: {
     kicker: "(Shop)",
@@ -968,10 +1026,11 @@ export const overtures: Record<string, { kicker: string }> = {
 
 /** Categories that open with the scroll-morph hero (scatter → line → ring →
  *  arc). Uses the ARTWORK, so it needs no product photography at all. */
-export const morphs: Record<string, { intro: string; cue: string; title: string; copy: string }> = {
+export const morphs: Record<string, { intro: string[]; cue: string; title: string; copy: string }> = {
   postcards: {
-    // HER WORDS (client, change.pdf p15, 2026-09-15) — verbatim, both lines
-    intro: "SEND A LITTLE ARMENIA",
+    // HER WORDS (client, change.pdf p15, 2026-09-15) — verbatim; the break
+    // into two lines is hers too (change.pdf p10, 2026-09-21)
+    intro: ["SEND", "A LITTLE ARMENIA"],
     cue: "Scroll",
     title: "Postcards",
     copy: "Illustrated postcards inspired by Armenia — its cities, landscapes, people and everyday moments. A little piece of home, ready to travel wherever you send it.",
@@ -1144,6 +1203,165 @@ export const toteBags = {
   /** said once under the row, and only where a pointer can act on it */
   cue: "Hover a bag to see it carried",
   series: "The Armenia series",
+};
+
+// ---------------------------------------------------------------------------
+// STUDIO STORIES — /stories (client, change.pdf p12, 2026-09-21: «we are
+// adding a new section», a Drive folder of texts, photographs and two
+// television features).
+//
+// EVERY WORD BELOW IS HERS, transcribed from the six text files unedited —
+// headings, date lines, paragraphs, the closing lines. Two things in them
+// are hers to reconcile, not mine to fix, so they stand as written:
+//   · the 2022 file is headed "A JOURNEY THROUGH ILLUSIONS" and its own
+//     paragraph calls the show “A Journey Through Illustrations”;
+//   · the Dilijan file is dated 07.07.2025 while the poster in the same
+//     folder says 07 June.
+// The photographs are placed by what is IN them (the poster, the Union's
+// building, the framed drawings behind her, the trees), and the two films
+// by their own lower-thirds — the Union's vice-president speaks in one, the
+// Narekatsi Art Institute in the other. Where a work could not be tied to a
+// show it is not forced into one.
+// ---------------------------------------------------------------------------
+export type Story = {
+  id: string;
+  /** her date line, verbatim */
+  when: string;
+  title: string;
+  /** her paragraphs, in order; the last one is her closing line */
+  body: string[];
+  /** ids in lib/stories.json — the first is the card's lead picture */
+  photos: string[];
+  /** a television feature, self-hosted; sound stays on, so it plays on a press */
+  film?: { src: string; poster: string; label: string };
+  /** the full interview, in the language it was given */
+  more?: { label: string; lang: string; paragraphs: string[]; credit: string };
+  link?: { label: string; href: string };
+};
+
+export const stories = {
+  kicker: "(Studio stories)",
+  title: "STUDIO STORIES",
+  copy: "Exhibitions, interviews, collaborations and stories from Arpen Art.",
+  watch: "Watch the feature",
+  entries: [
+    {
+      id: "dilijan-2025",
+      when: "07.07.2025 · DILIJAN · RESTART BOUTIQUE HOTEL",
+      title: "A PLACE FULL OF MEMORIES",
+      body: [
+        "In July 2025, I presented a selection of my illustrations at Restart Boutique Hotel in Dilijan, bringing together works created at different moments of my artistic journey.",
+        "The location made this exhibition especially meaningful to me. Dilijan has always held a special place in my heart — a place connected to warm memories, familiar landscapes and moments I continue to carry with me.",
+        "It felt natural to bring my work back to a place that has inspired so many feelings and memories over the years.",
+        "A collection of illustrations, shown in a place that feels a little like home.",
+      ],
+      // the poster ("Beyond the Hidden Border — Exhibition by Arpine
+      // Baroyan, RestArt Boutique Hotel Dilijan"), the DREAM piece and its
+      // two other views, two of the graphic drawings, and Dilijan itself
+      photos: ["31", "36", "34", "35", "37", "26", "28"],
+    },
+    {
+      id: "media-m-2025",
+      when: "07.03.2025 · MEDIA M",
+      title: "IN CONVERSATION WITH ARPINE",
+      body: [
+        "An interview about illustration, Armenian culture and the stories behind Arpen Art. In conversation with Media M, Arpine shares her creative journey, the ideas behind her work, and her vision for bringing Armenian stories into contemporary illustration.",
+        "Read the full interview below.",
+      ],
+      photos: ["27"],
+      more: {
+        label: "Read the full interview (in Armenian)",
+        lang: "hy",
+        paragraphs: [
+          "Նկարչուհի Արփինե Բարոյանի հերոսները խոսում են «հոգու լեզվով»։ Նրանք ստեղծագործ են, երազկոտ, սիրում են բնությունն ու գույների աշխարհը։ Media M.am-ի հետ զրույցում երիտասարդ նկարչուհին խոսել է իր նկարների, նախընտրած ժանրի և ցուցահանդեսների մասին։",
+          "— Բարև Ձեզ։ Արփինե, քանի՞ տարեկանից եք սկսել նկարել։ Որտե՞ղ եք սովորել։",
+          "—Բարև Ձեզ։ Նկարել սկսել եմ մանկուց։ Դպրոցում իմ սիրելի առարկան նկարչությունն էր։ Հիշում եմ՝ հորեղբորս նվիրած առաջին մատիտները և թղթերը օրս վերածել էին տոնի։ Այդ ժամանակ էլ որոշեցի, որ կդառնամ նկարչուհի կամ գիտնական։ Արվեստի դպրոցում սովորելուց և կիսատ թողնելուց հետո տարիներ անց՝ եղբորս խորհրդով կրկին վերադարձա նկարչությանը։",
+          "Սովորել եմ Ճարտարապետության և շինարարության Հայաստանի ազգային համալսարանի դիզայնի ֆակուլտետում։ Ուզում եմ նշել նաև Թումո ստեղծարար տեխնոլոգիաների կենտրոնի մասին։ Այն ինձ լայն հնարավորություններ տվեց՝ փորձարկելու տարբեր տեխնիկաներ, սովորելու համակարգչային ծրագրեր, լուսանկարչություն, կինոարվեստ և անիմացիա։",
+          "Սակայն, անկախ նրանից, թե որտեղ ենք սովորում, կարծում եմ, որ իրական առաջընթաց լինում է այն դեպքում, երբ ամեն օր աշխատում ենք մեր հմտությունների զարգացման վրա։",
+          "—Ձեր աշխատանքներում գերակշռում են երևանյան թեմատիկայով նկարները։ Ինչպե՞ս է ծնվել գաղափարը։ Ովքե՞ր են Ձեր հերոսները։",
+          "—Ապրելով Երևանում՝ չեմ կարող չնկարել այն։ Ուզում եմ, որ մեր քաղաքն ունենա տարբերվող իլյուստրացիաներ։ Իմ հերոսները մարդիկ են, ովքեր իրենց արվեստով կարողանում են խոսել հոգու լեզվով։",
+          "Մարդիկ են, որ ունեն իրենց ճանապարհը գտնելու և դրանով քայլելու համարձակություն։ Նրանք ստեղծագործ են, հետևողական իրենց գաղափարների մեջ։",
+          "—2023 թվականից համարվում եք Նկարիչների միության անդամ։ Պարտավորեցնո՞ղ է։",
+          "—Այո, անկեղծ ասած՝ պարտավորեցնող է։ Երբ մտածում եմ, որ միության անդամներից շատերը մեծ փորձ ունեցող նկարիչներ են, ովքեր ունեն կայուն ոճ և տարիների փորձ, հասկանում եմ, որ ես դեռ փնտրտուքների ու փորձարկումների փուլում եմ։ Միության ամենամյա ցուցահանդեսներին ձգտում եմ պատրաստվել լրջորեն՝ ներկայացնելով հետաքրքիր ու ինքնատիպ աշխատանքներ։",
+          "—Ձեր ստեղծագործություններում ունեք Վահան Տերյանին և «Գոշավանք» վանական համալիրին նվիրված աշխատանքներ։ Ինչպե՞ս ծնվեց գաղափարը։ Արդյո՞ք այն կլինի շարունակական։",
+          "—Վահան Տերյանին նվիրված աշխատանքը պատվեր էր՝ ստեղծված «Ձմռան գիշեր» բանաստեղծության հիման վրա։ Երաժշտությունը գրել է Գեղամ Մարգարյանը, որի հետ արդեն մեկ տարի է աշխատում ենք իր տարբեր երգերի անիմացիաների վրա։",
+          "«Գոշավանք» թվային աշխատանքը մի փոքր անձնական է։ Գոշավանքը գտնվում է Դիլիջանում՝ մի վայրում, որն առանձնահատուկ է ինձ համար։ Վանքը ոչ միայն հայկական ճարտարապետության գոհարներից է, այլև մի վայր է, որտեղից ժամանակին տարածվել է դպրություն ու արվեստ։ Այն եղել է հսկա մշակութային օջախ, ինչը շատ ոգևորիչ է։ Ամեն անգամ այնտեղ լինելով ես նորովի եմ բացահայտում վանքի կախարդական մթնոլորտը, քարերի պատմությունը։",
+          "Հայկական մշակութային ժառանգությունն ինձ համար անսպառ թեմա է։ Անշուշտ, հայկական թեմատիկայով պատկերներ դեռ կլինեն իմ ստեղծագործական էջերում։",
+          "—Խոսենք, Ձեր «Գարնանային սալոն 2024» և «Ծառապատում» ցուցահանդեսների մասին։ Ի՞նչ եք փորձել փոխանցել նկարների միջոցով։ Ինչու՞ «Ծառապատում»։",
+          "— «Գարնանային սալոն» ցուցահանդեսին ներկայացրել եմ «Ծառապատում» շարքի նկարներից, որից հետո կազմակերպվեց անհատական ցուցահանդես նույն անվամբ։",
+          "Այս շարքում գերակշռում էին բնության պատկերները՝ հատկապես ծառերը։ Վերջին շրջանում ծառահատումները շատացել են։ Իմ նկարներում ծառերը հիմնականում ներկայացված են անտերև ու մռայլ՝ ասես նեղացած մարդկանցից։ Այնուամենայնիվ, կա հույս, որ զանգվածային ծառահատումները կնվազեն, և կտնկվեն նոր «կյանքեր»։",
+          "Ցուցահանդեսը նպատակ ուներ սթափեցնել մարդկանց՝ հիշեցնելու բնության ու ծառերի պահպանության կարևորության մասին։ «Ծառապատում» անվանումը կարող ենք բացատրել երկու ձևով․ առաջինը՝ որպես ծառերի մասին պատմություններ, երկրորդը՝ որպես ծառերի տնկում։",
+        ],
+        credit: "Հարցազրույցը՝ media_m.am",
+      },
+    },
+    {
+      id: "tsarapatum-2024",
+      when: "29.07.2024 · YEREVAN · NAREKATSI ART INSTITUTE",
+      title: "TSARAPATUM — STORIES OF TREES",
+      body: [
+        "In July 2024, I presented my solo exhibition “Tsarapatum” at the Narekatsi Art Institute in Yerevan.",
+        "The entire series was dedicated to trees — their forms, rhythms and quiet presence. For me, trees became more than a subject to draw. They became symbols of growth, memory, roots, time and connection.",
+        "The title “Tsarapatum” was deeply symbolic, reflecting the idea of looking at life through the language of trees — grounded in one place, yet constantly reaching, changing and growing.",
+        "This exhibition was a personal exploration of nature and emotion, bringing together a series of works connected by one simple but powerful image: the tree.",
+        "A story about roots, growth and everything that quietly lives within us.",
+      ],
+      // the opening with the musicians, the sheep among the trees, the tree
+      // on wine-red
+      photos: ["39", "32", "33"],
+      film: {
+        src: "/stories/film-tsarapatum.mp4",
+        poster: "/stories/film-tsarapatum.webp",
+        label: "Television feature on the Tsarapatum exhibition, Narekatsi Art Institute, 2024 — in Armenian",
+      },
+    },
+    {
+      id: "artists-union-2023",
+      when: "05.12.2023 · YEREVAN, ARMENIA",
+      title: "A NEW CHAPTER IN MY ARTISTIC JOURNEY",
+      body: [
+        "In December 2023, I became a member of the Artists’ Union of Armenia — an institution with a long history at the heart of Armenia’s artistic life.",
+        "Established in 1932, the Artists’ Union has brought together generations of Armenian artists and continues to support artistic development, exhibitions, cultural exchange and the professional community.",
+        "Becoming a member was a meaningful step in my own artistic journey — a connection to the wider community of Armenian artists and to a tradition that continues to evolve with every new generation.",
+        "Proud to be part of it since December 5, 2023.",
+      ],
+      // the Union's building on Abovyan Street, from the square and at the door
+      photos: ["20", "18"],
+    },
+    {
+      id: "first-solo-2022",
+      when: "22.10.2022 · YEREVAN · ARTISTS’ UNION OF ARMENIA",
+      title: "A JOURNEY THROUGH ILLUSIONS",
+      body: [
+        "In October 2022, I presented my first solo exhibition in Yerevan at the Artists’ Union of Armenia.",
+        "Titled “A Journey Through Illustrations,” the exhibition brought together works from different moments of my creative journey — a collection of images, ideas and stories that marked an important beginning for me as an artist.",
+        "This exhibition holds a very special place in my story. It was my first solo show, the first time I presented my work as a complete artistic journey, and a moment that gave me the confidence to continue exploring illustration as my own visual language.",
+        "The beginning of a journey that continues to this day.",
+      ],
+      // her beside the framed drawings, and two of the drawings themselves
+      photos: ["25", "19", "30"],
+      film: {
+        src: "/stories/film-union.mp4",
+        poster: "/stories/film-union.webp",
+        label: "Television feature “Arpine Baroyan’s mysterious world”, at the Artists’ Union of Armenia — in Armenian",
+      },
+    },
+    {
+      id: "akn-eye",
+      when: "AKN EYE · ARTIST PAGE",
+      title: "ARPINE ON AKN EYE",
+      body: [
+        "Arpine is an artist and illustrator based in Armenia, whose creative journey began with a strong foundation in graphic design. Over the years, her artistic focus has evolved, embracing the world of illustration with a deep connection to both the natural world and the fantastical realms of her imagination.",
+        "Her journey into the visual arts started during her university years at the Armenian University of Architecture and Construction and TUMO, where she honed her skills in design techniques and developed a unique visual language. Arpine has had two solo exhibitions and is also a member of the Artists' Union in Armenia.",
+        "Her diverse skill set includes not only illustration and character design but also graphic design and branding, allowing her to bring a unique perspective to every project she undertakes.",
+        "Arpine is also the creative force behind her own growing brand, ArpenArt, where her vision continues to evolve, and her artistic voice resonates across various mediums.",
+      ],
+      // the sculpted faces and the cat — character work, which is what this
+      // page of hers is about
+      photos: ["24", "29"],
+      link: { label: "See the page on akneye.com", href: "https://www.akneye.com/artists/arpine-baroyan" },
+    },
+  ] satisfies Story[],
 };
 
 export const lookbooks: Record<string, Lookbook> = {

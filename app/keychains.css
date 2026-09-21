@@ -77,94 +77,83 @@
 /* THE 3D STAGE'S STYLES ARE GONE with the stage itself (client 2026-08-31:
    "remove this part"). The components that used them, Keychain3D.tsx and
    KeychainStage.tsx, are still on disk and referenced by nothing; restoring
-   the block means restoring this rule set too. */
+   the block means restoring this rule set too.
+   THE WALNUT BOARD IS GONE TOO (client, change.pdf p6, 2026-09-21: «the
+   previous hangers looked better, neutral») — its rules, its component and
+   its wood photographs are deleted, not parked; this file's history has
+   them. The carousel below is the 2026-08-31 one, restored from the same
+   history, on the light ground. */
 
-/* ---- the walnut board: three on the photographed hooks ------------------ */
-/* The stage is the client's render of the brass-hooked walnut wall, and the
-   geometry contract is: the IMAGE IS SQUARE and so is this box, so cover
-   neither crops nor letterboxes and the measured hook anchors (see
-   HangingKeychainDisplay.tsx) mean the same pixel at every width. Never give
-   this box a different aspect-ratio without re-measuring the anchors. */
-.ap-kh {
-  max-width: 1100px;
-  margin-inline: auto;
-}
-.ap-kh__wall {
+/* ---- the endless wall --------------------------------------------------- */
+/* the rail is the WINDOW; the track inside holds the line twice and the
+   script translates it. Without the live layer the rail is an ordinary
+   thumb-scrolled strip and the wrap copy simply does not display. */
+.ap-kc__rail {
   position: relative;
-  aspect-ratio: 1;
-  background-image: url("/products/wood-wall.webp");
-  background-size: cover;
-  background-position: center top;
-  border-radius: 10px;
+  max-width: 1160px;
+  margin-inline: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.ap-kc[data-live] .ap-kc__rail {
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  cursor: grab;
 }
-/* an anchor is a measured point on the photograph; the keychain hangs from
-   it, centred, sized as a fraction of the wall so the ring always matches
-   the photographed knob's scale */
-.ap-kh__anchor {
-  position: absolute;
-  transform: translateX(-50%);
-  width: 17.5%;
+.ap-kc[data-live] .ap-kc__rail:active {
+  cursor: grabbing;
 }
-.ap-kh__mount {
+.ap-kc__track {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-.ap-kh__anchor .ap-kc__cell {
-  width: 100%;
-}
-/* NO FIXED PIXELS INSIDE THE ANCHOR SYSTEM. The card's base rule seats it
-   30px below its own drawn peg — a leftover from peg-in-card mode. On the
-   board every distance must be a % of the aspect-locked stage or the seat
-   drifts with the viewport: measured before this override, the photo top sat
-   at 18.33% of the stage at 1280px but 24.01% on a phone — the rings sagged
-   almost 6% of the wall below their knobs. The offset lives in ANCHORS.y
-   now, which scales by construction. */
-.ap-kh__anchor .ap-kc__hang {
-  margin-top: 0;
-}
-/* the buy block sits ON the wood, under its keychain — light text, seated
-   with a shadow so it reads at any grain */
-.ap-kh .ap-kc__name {
-  color: #f6efe6;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-}
-.ap-kh .ap-kc__price {
-  color: rgba(246, 239, 230, 0.8);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-}
-.ap-kh .ap-kc__added {
-  color: rgba(246, 239, 230, 0.75);
-}
-.ap-kh__hint {
-  margin-top: clamp(18px, 3vh, 30px);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(18px, 2.6vw, 40px);
+  width: max-content;
+  will-change: transform;
 }
 
-/* the slide controls, riding the window's edges */
+.ap-kc__cell {
+  position: relative; /* the peg pins to the cell, the card hangs over it */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  width: clamp(150px, 15vw, 185px);
+}
+/* the wrap copy exists only for the moving circle */
+.ap-kc__cell[data-ghost] {
+  display: none;
+}
+.ap-kc[data-live] .ap-kc__cell[data-ghost] {
+  display: flex;
+}
+
+/* the slide controls, riding the window's edges — paper discs with an ink
+   rim now that the wall is paper (they were cream on charcoal) */
 .ap-kc__arrow {
   position: absolute;
   top: 38%;
   z-index: 4;
   width: 44px;
   height: 44px;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
   border-radius: 50%;
   font-size: 26px;
   line-height: 1;
-  color: #2b2320;
-  background: rgba(240, 233, 226, 0.9);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  box-shadow: 0 8px 20px rgba(43, 35, 32, 0.16);
   cursor: pointer;
   transition: background 0.2s var(--ease), transform 0.2s var(--ease);
 }
 .ap-kc__arrow:hover {
-  background: #ffffff;
+  background: var(--paper);
   transform: scale(1.07);
 }
 .ap-kc__arrow:focus-visible {
-  background: #ffffff;
+  background: var(--paper);
   transform: scale(1.07);
 }
 .ap-kc__arrow--prev {
@@ -348,9 +337,10 @@
   font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: #2b2320;
-  background: rgba(240, 233, 226, 0.92);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 6px 18px rgba(43, 35, 32, 0.12);
 }
 
 /* ---- name, price, buy — riding with each card on the moving wall ------- */
@@ -365,21 +355,11 @@
   padding: 9px 16px;
   font-size: 11px;
 }
+/* the buy button is the site's own indigo .ap-btn again — it was cream while
+   the room was dark ("the one light control in a dark room"), and cream on
+   paper is a button that is not there */
 .ap-kc__add.ap-btn {
-  /* the one light control in a dark room — it should read as the way out */
-  background: #f6f1e8;
-  color: #171d2b;
-  border-color: transparent;
-}
-/* separate rules, not a comma list: Safari <15.4 drops a whole selector list
-   over an unknown :focus-visible, hover feedback included */
-.ap-kc__add.ap-btn:hover {
-  background: #ffffff;
-  transform: translateY(-1px);
-}
-.ap-kc__add.ap-btn:focus-visible {
-  background: #ffffff;
-  transform: translateY(-1px);
+  min-height: 44px;
 }
 .ap-kc__name {
   margin: 12px 0 2px;
@@ -472,60 +452,17 @@
   }
 }
 @media (max-width: 640px) {
-  /* THE BUY STACK IS WIDER THAN ITS KEYCHAIN (2026-09-15). The first fix for
-     a price clipped by the wall's overflow:hidden (2026-09-07) shrank the
-     stack to fit the 60px column the hanger occupies — which set "Add to
-     cart" in 8.5px type wrapped onto THREE lines, a button that cleared 44px
-     only because it wrapped. The clip was never about size: it was the name
-     wrapping in a column too narrow for it. So the stack now spans 170% of
-     its anchor (≈102px, centred under the keychain) and the type returns to
-     the rack's own 11px on one line. Measured at a 339px board: buttons
-     91×44, 11px clear between neighbours, every price bottom at ≤298px of
-     the 339px wall. The neighbours' centres sit 30.3% of the board apart,
-     so 170% is near the ceiling — widen it and the buttons touch. */
-  .ap-kh .ap-kc__buy {
-    margin-top: 6px;
-    width: 170%;
-    margin-inline: -35%;
+  /* the wall is a plain thumb-scrolled strip here (no live layer), and the
+     rack below is where a phone reads the line comfortably */
+  .ap-kc__cell {
+    width: 132px;
   }
-  .ap-kh .ap-kc__add.ap-btn {
-    min-height: 44px;
-    padding: 0 10px;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-  .ap-kh .ap-kc__name {
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .ap-kh .ap-kc__price {
-    font-size: 11px;
-  }
-  .ap-kh .ap-kc__added {
-    display: none; /* the rack right below carries the confirmation */
+  .ap-kc__track {
+    gap: 14px;
   }
   .ap-kc__rack {
     grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
     gap: 12px 10px;
-  }
-}
-/* …and below 360px the 170% stack runs out. The board shrinks with the
-   screen but "Add to cart" does not, so at 320px the three 91px buttons
-   OVERLAPPED their neighbours by 5–6px — a tap on the seam lands on the wrong
-   keychain. Here the button fills a narrower 160% stack instead of sizing to
-   its label, and gives up its side padding and tracking (the label still
-   fits on one line). Measured at 320px: 79.5×44, 6px clear between buttons. */
-@media (max-width: 359px) {
-  .ap-kh .ap-kc__buy {
-    width: 160%;
-    margin-inline: -30%;
-  }
-  .ap-kh .ap-kc__add.ap-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 0;
-    letter-spacing: 0;
   }
 }
 
@@ -555,8 +492,11 @@
   background: var(--paper);
   box-shadow: 0 8px 22px rgba(43, 35, 32, 0.14);
 }
-.ap-kh__wall {
-  box-shadow: 0 18px 44px rgba(43, 35, 32, 0.28);
+/* the pool of light each keychain threw on the charcoal wall is a stain on
+   paper — a faint shadow instead, so the card still sits on something */
+.ap-kc__hang::after {
+  background: radial-gradient(closest-side, rgba(43, 35, 32, 0.28) 0%, transparent 100%);
+  opacity: 0.45;
 }
 /* the tint: the title run's own colours as the ground, the title light — the
    low-contrast dark-run-on-dark-room title she circled cannot happen here */

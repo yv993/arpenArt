@@ -29,22 +29,63 @@ import { useEffect, useRef } from "react";
 
 const DESKTOP = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 
-/** Where the sun sits inside the source illustration, in its own pixels.
+/** THE SUN IS HER OWN FILE NOW (client, change.pdf p8, 2026-09-21: «aren't
+ *  we bringing that gorgeous sun back?», with the sun attached — it is
+ *  embedded in the PDF at 928×905 with real alpha and was pulled out of it
+ *  by scratchpad/pdfimages.mjs, trimmed to 879×830). It replaces the cutout
+ *  that used to be flood-filled out of the painting. */
+const IMG_W = 879;
+const IMG_H = 830;
+
+/** Where the sun sits in the hero, in the SOURCE FRAME's own pixels — and
+ *  the hero has two sources.
  *
- *  THE CENTRE IS THE DISC'S, NOT THE CENTROID'S. Averaging every sun pixel put
- *  it at y=126 and produced a 506x376 OVAL, because the crown is clipped by
- *  the top of the picture and the missing pixels drag the average down. The
- *  disc's real centre is the point furthest from any edge of the shape — the
- *  centre of the largest inscribed circle, which a distance transform finds
- *  and which does not care what the image edge cut off. That is y=74, and
- *  built around it the sun comes out 538x538, aspect 1.000, round like the
- *  painting. See scratchpad/sun4.mjs. */
-const ART_W = 1427;
-const ART_H = 1102;
-const SUN_CX = 414;
-const SUN_CY = 74;
-const SUN_W = 538;
-const SUN_H = 538;
+ *  STILL: the painting (hero.webp). THE CENTRE IS THE DISC'S, NOT THE
+ *  CENTROID'S. Averaging every sun pixel put it at y=126 and produced a
+ *  506x376 OVAL, because the crown is clipped by the top of the picture and
+ *  the missing pixels drag the average down. The disc's real centre is the
+ *  point furthest from any edge of the shape — the centre of the largest
+ *  inscribed circle, which a distance transform finds and which does not
+ *  care what the image edge cut off. That is y=74, and built around it the
+ *  sun comes out 538 wide, round like the painting. See scratchpad/sun4.mjs.
+ *
+ *  FILM: her animated cut (intro.mp4, 1280×720) is framed tighter and has no
+ *  sun of its own — which is why the sun stayed out of the page for a month
+ *  (a sun over a sky she did not paint one into felt invented). She asked
+ *  for it back, so it takes the corner it came from: the painting's sun sat
+ *  29% in from the left and cut off by the top edge; here it sits at the
+ *  same corner, whole, above her hair. Fractions of the frame, so it lands
+ *  on the same pixels of the film at every viewport. */
+type Frame = {
+  w: number;
+  h: number;
+  cx: number;
+  cy: number;
+  sunW: number;
+  /** HER HEAD, as an ellipse in fractions of the frame — where the sun must
+   *  not paint, so it reads as BEHIND her (Vardan 2026-09-21, screenshot of
+   *  the disc over her eye: «move sun behind girl head and a bit top, it
+   *  must start from there»). The film is one flat layer, so "behind" is a
+   *  mask: the part of the sun inside this ellipse is cut away. Read off the
+   *  poster frame (1280×720): the crown at y 215, the face centred at x 370,
+   *  the hair 180–540 wide at eye level — an ellipse centred at (0.289,
+   *  0.62) with radii 0.16 × 0.32 has its top at the crown and is hair-wide
+   *  at the eyes. Her hair drifts a few pixels in the film; the mask is
+   *  static against the frame and a soft edge covers the difference. */
+  head?: { cx: number; cy: number; rx: number; ry: number };
+};
+const STILL: Frame = { w: 1427, h: 1102, cx: 414, cy: 74, sunW: 538 };
+// The sun rises from behind her head: its centre a little above the crown
+// (0.30), so the upper half and the rays show over her hair and the lower
+// half is hidden by the head mask. It leaves to the right from there.
+const FILM: Frame = {
+  w: 1280,
+  h: 720,
+  cx: 1280 * 0.289,
+  cy: 720 * 0.26,
+  sunW: 1280 * 0.22,
+  head: { cx: 0.289, cy: 0.62, rx: 0.16, ry: 0.32 },
+};
 
 /** The journey, as fractions of the viewport. `p` is progress through the
  *  whole document. The first two legs are the ones the client asked for by
@@ -93,18 +134,10 @@ export default function Sun() {
     const hero = document.querySelector<HTMLElement>(".ap-hero__img");
     if (!hero) return;
 
-    // THE ANIMATED HERO HAS NO SUN TO LEAVE (2026-08-11). This whole component
-    // exists because the painted illustration had a sun in its top-left: it is
-    // cut out, the plate is swapped for one with the sun inpainted away, and
-    // the cutout then flies down the page. Arpine's animated cut of the same
-    // artwork is framed tighter and the sun is not in it — so there is nothing
-    // to take out, nothing to fly, and a sun appearing over her sky would be a
-    // decoration we invented rather than a piece of her painting that moved.
-    // Every constant below (SUN_CX/CY, the geometry read off ART_W x ART_H) is
-    // measured against the STILL, and would land in the wrong place here.
-    // So: while the hero is the film, the sun stays out of it. Put the still
-    // back in HomeView and this returns on its own.
-    if (hero.tagName === "VIDEO") return;
+    // the hero is the film on desktop today and was the painting before it;
+    // both are handled, so putting the still back in HomeView costs nothing
+    // here (see the two Frames above)
+    const art: Frame = hero.tagName === "VIDEO" ? FILM : STILL;
 
     // The sunless plate is chosen by <picture> in HomeView, not swapped here.
     // A JS swap made desktop download both plates and showed the change; the
@@ -117,6 +150,9 @@ export default function Sun() {
      *  geometry — it is `contain` on the plain layer and `cover` once the
      *  media expansion engages, so the fit has to be read, not assumed */
     let home = { x: 0, y: 0, w: 0 };
+    /** whether the hero fills its box (cover) or sits inside it (contain) —
+     *  read once, used by the head mask every frame */
+    let cover = true;
     /** Where the sun stops being part of the picture and becomes scenery.
      *  Read from the hero's own laid-out height — which INCLUDES its pin
      *  spacer, so it is the real scroll distance the hero occupies — rather
@@ -127,20 +163,18 @@ export default function Sun() {
     const measure = () => {
       const r = hero.getBoundingClientRect();
       const fit = getComputedStyle(hero).objectFit;
-      const k =
-        fit === "cover"
-          ? Math.max(r.width / ART_W, r.height / ART_H)
-          : Math.min(r.width / ART_W, r.height / ART_H);
-      const dw = ART_W * k;
-      const dh = ART_H * k;
+      cover = fit === "cover";
+      const k = cover ? Math.max(r.width / art.w, r.height / art.h) : Math.min(r.width / art.w, r.height / art.h);
+      const dw = art.w * k;
+      const dh = art.h * k;
       // object-position is 50% 50% on both branches
       home = {
-        x: r.left + (r.width - dw) / 2 + SUN_CX * k,
-        y: r.top + (r.height - dh) / 2 + SUN_CY * k,
-        w: SUN_W * k,
+        x: r.left + (r.width - dw) / 2 + art.cx * k,
+        y: r.top + (r.height - dh) / 2 + art.cy * k,
+        w: art.sunW * k,
       };
       el.style.width = `${home.w}px`;
-      el.style.height = `${(SUN_H / SUN_W) * home.w}px`;
+      el.style.height = `${(IMG_H / IMG_W) * home.w}px`;
 
       const heroSec = hero.closest<HTMLElement>(".ap-hero");
       // half a screen before the picture is gone: by then it is mostly
@@ -186,7 +220,7 @@ export default function Sun() {
       const s = lerp(a.s, b.s, t);
       const o = lerp(a.o, b.o, t);
 
-      const h = (SUN_H / SUN_W) * home.w;
+      const h = (IMG_H / IMG_W) * home.w;
       el.style.transform = `translate3d(${x - home.w / 2}px, ${y - h / 2}px, 0) scale(${s})`;
 
       // the disc's box on screen, computed rather than measured — scale is
@@ -206,11 +240,39 @@ export default function Sun() {
       }
       el.style.opacity = String(o * (1 - ease(veil)));
 
+      // BEHIND HER HEAD. The mask lives on the fixed, viewport-sized box, so
+      // its coordinates are the screen's and the disc can fly through it.
+      // The head is read from the hero's LIVE box every frame — the scrub
+      // pushes the film in and parallaxes it up, and the mask follows —
+      // and the mask is only written while the disc actually overlaps the
+      // head's box; elsewhere it is "none", so a full-screen gradient is
+      // not rasterised on every scroll frame of the page.
+      if (art.head) {
+        const r = hero.getBoundingClientRect();
+        const k = cover ? Math.max(r.width / art.w, r.height / art.h) : Math.min(r.width / art.w, r.height / art.h);
+        const fw = art.w * k;
+        const fh = art.h * k;
+        const ex = r.left + (r.width - fw) / 2 + art.head.cx * fw;
+        const ey = r.top + (r.height - fh) / 2 + art.head.cy * fh;
+        const erx = art.head.rx * fw;
+        const ery = art.head.ry * fh;
+        const hit = dx < ex + erx && dx + dw > ex - erx && dy < ey + ery && dy + dh > ey - ery;
+        const mask = hit
+          ? `radial-gradient(${erx.toFixed(1)}px ${ery.toFixed(1)}px at ${ex.toFixed(1)}px ${ey.toFixed(1)}px, transparent 96%, #000 100%)`
+          : "none";
+        if (mask !== lastMask) {
+          lastMask = mask;
+          box.style.setProperty("mask-image", mask);
+          box.style.setProperty("-webkit-mask-image", mask);
+        }
+      }
+
       // in front of the hero while it is still the hero's sun, behind the
       // page's content from there on
       if (window.scrollY > handover) box.dataset.behind = "";
       else delete box.dataset.behind;
     };
+    let lastMask = "";
 
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(draw);
@@ -241,7 +303,7 @@ export default function Sun() {
       {/* eslint-disable-next-line @next/next/no-img-element -- positioned by
           transform against measured hero geometry; next/image's own wrapper
           fights that, and this is one small decorative cutout */}
-      <img ref={img} className="ap-sun__disc" src="/hero/sun.webp" alt="" width={SUN_W} height={SUN_H} />
+      <img ref={img} className="ap-sun__disc" src="/hero/sun.webp" alt="" width={IMG_W} height={IMG_H} />
     </div>
   );
 }

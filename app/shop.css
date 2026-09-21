@@ -3780,3 +3780,30 @@ html[data-footfx] .ap-foot {
   max-width: 48ch;
   color: color-mix(in srgb, var(--cream) 78%, transparent);
 }
+
+/* ==========================================================================
+   /shop TITLE ON HER TWO LINES (client, change.pdf p4, 2026-09-21: «write it
+   in 2 lines, TAKE IT WITH YOU up to the line»). The head's 74ch box folded
+   the sentence onto three; the box opens to the page and each line is a
+   block that will not wrap inside itself wherever the screen can hold it.
+   Below 861px the lines may break again — a phone cannot set thirty
+   capitals of Fraunces on one line at any size that still reads as a title.
+   ========================================================================== */
+.ap-shop .ap-sec__head {
+  max-width: none;
+}
+.ap-shop .ap-sec__head .ap-lede {
+  max-width: 56ch;
+}
+/* DIRECT CHILDREN ONLY — the text-FX runner nests a span per letter inside
+   each line, and a descendant `span` rule here stacked the title one
+   capital per line, 1,655px tall (measured on the first pass of this
+   change; the hero title has the same note). */
+.ap-shop__title > span {
+  display: block;
+}
+@media (min-width: 861px) {
+  .ap-shop__title > span {
+    white-space: nowrap;
+  }
+}

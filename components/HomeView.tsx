@@ -358,10 +358,18 @@ export default function HomeView() {
           HER FIVE PHRASES now (client, change.pdf p2, 2026-09-15), the
           middle dots drawn by the ribbon's own ::after. It used to recite
           the tagline, the count and the open lines. aria-hidden because it
-          decorates, never informs. ═══════════════════════════════════════ */}
+          decorates, never informs.
+          TEN RUNS, NOT TWO (client, change.pdf p2, 2026-09-21: «can this
+          empty space not be there — after the last one the first should
+          come again»). Five short phrases make a run of ~850px, so two of
+          them (1,700px) ended INSIDE a 1,900px screen and the track's end
+          scrolled past as a blank. Ten runs are 8,500px — wider than any
+          screen plus one run, which is the condition for a seamless loop —
+          and the keyframe moves one run (a tenth), so the speed is
+          unchanged. ═══════════════════════════════════════════════════════ */}
       <div className="ap-ribbon" aria-hidden="true">
         <div className="ap-ribbon__track">
-          {[0, 1].map((run) => (
+          {Array.from({ length: 10 }, (_, run) => run).map((run) => (
             <span className="ap-ribbon__run" key={run}>
               {ribbon.map((w) => (
                 <span key={w}>{w}</span>

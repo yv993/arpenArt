@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: base + "/", lastModified: now, priority: 1 },
     { url: base + "/shop", lastModified: now, priority: 0.9 },
     { url: base + "/find-in-store", lastModified: now, priority: 0.7 },
+    { url: base + "/stories", lastModified: now, priority: 0.6 },
     { url: base + "/about", lastModified: now, priority: 0.6 },
     { url: base + "/contact", lastModified: now, priority: 0.6 },
     ...categories

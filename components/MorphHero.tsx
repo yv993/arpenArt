@@ -69,7 +69,7 @@ export default function MorphHero({
   copy,
 }: {
   items: Art[];
-  intro: string;
+  intro: string[];
   cue: string;
   title: string;
   copy: string;
@@ -260,7 +260,15 @@ export default function MorphHero({
         ))}
 
         <div className="ap-mh__intro" aria-hidden="true">
-          <p className="ap-mh__line">{intro}</p>
+          {/* her line break (change.pdf p10, 2026-09-21): SEND / A LITTLE
+              ARMENIA — one block per line */}
+          <p className="ap-mh__line">
+            {intro.map((l) => (
+              <span key={l} style={{ display: "block" }}>
+                {l}
+              </span>
+            ))}
+          </p>
           <p className="ap-mh__cue">{cue}</p>
         </div>
 

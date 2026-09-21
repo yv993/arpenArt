@@ -124,7 +124,9 @@ export default function Cloud({
   pick: { line: string; body: string; cta: string };
   items: Art[];
   kicker: string;
-  title: string;
+  /** the title's LINES — the break is the client's (change.pdf p2,
+   *  2026-09-21), so it is data, not a wrap the viewport happens to make */
+  title: string[];
   copy: string;
 }) {
   const root = useRef<HTMLDivElement | null>(null);
@@ -384,7 +386,7 @@ export default function Cloud({
   return (
     // data-nosun: the flying sun (components/Sun.tsx) fades out rather than
     // passing behind this wall of pictures — see the note beside `veils`.
-    <section className="ap-cloud ap-dark" ref={root} aria-label={title} data-nosun>
+    <section className="ap-cloud ap-dark" ref={root} aria-label={title.join(" ")} data-nosun>
       <div
         className="ap-cloud__frame"
         data-chosen={chosen || undefined}
@@ -480,9 +482,16 @@ export default function Cloud({
         <div className="ap-cloud__say">
           <p className="ap-kicker">{kicker}</p>
           {/* every letter arrives cut in two — the halves slide vertically
-              and seam shut, left to right */}
-          <h2 className="ap-h2" data-tfx="cut">
-            {title}
+              and seam shut, left to right. ONE LINE PER SPAN (change.pdf p2,
+              2026-09-21: «write it in 2 lines, ARMENIA up to the line»): the
+              runner splits each line on its own, the second a beat behind,
+              and CSS keeps a line from wrapping where the box is narrow. */}
+          <h2 className="ap-h2">
+            {title.map((line, i) => (
+              <span className="ap-cloud__tl" key={line} data-tfx="cut" data-tfx-delay={i ? "0.18" : undefined}>
+                {line}
+              </span>
+            ))}
           </h2>
           <p className="ap-lede">{copy}</p>
         </div>
