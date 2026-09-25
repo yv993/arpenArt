@@ -283,7 +283,9 @@ export default function StickerSurfer({
       <div className="ap-s3__plain">
         <div className="ap-sec__head">
           <p className="ap-kicker">{stickers3d.kicker}</p>
-          <h2 className="ap-h2">{stickers3d.title}</h2>
+          {/* the same level as the lane's heading: on a phone the lane is
+              display:none, and this WAS an h2 — the page had no h1 there */}
+          <H className="ap-h2">{stickers3d.title}</H>
           {stickers3d.copy.map((t) => (
             <p className="ap-lede" key={t}>
               {t}

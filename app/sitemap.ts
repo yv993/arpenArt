@@ -1,12 +1,11 @@
 import type { MetadataRoute } from "next";
 import { categories } from "@/lib/content";
+import { indexable, origin as base } from "@/lib/site";
 
-// Same guard as robots.ts: until a real https origin is configured, an empty
-// sitemap beats one full of localhost URLs that a crawler could be handed.
-const base = process.env.NEXT_PUBLIC_SITE_URL;
-
+// Same switch as robots.ts: until the owner opens indexing, an empty sitemap
+// beats one that hands a crawler pages robots.txt tells it to skip.
 export default function sitemap(): MetadataRoute.Sitemap {
-  if (!base || !base.startsWith("https://")) return [];
+  if (!indexable) return [];
   const now = new Date();
   return [
     { url: base + "/", lastModified: now, priority: 1 },

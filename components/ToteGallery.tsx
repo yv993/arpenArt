@@ -40,16 +40,19 @@ export type ToteShot = {
   avg: string;
 };
 
-export default function ToteGallery({ shots }: { shots: ToteShot[] }) {
+export default function ToteGallery({ shots, heading = "h2" }: { shots: ToteShot[]; heading?: "h1" | "h2" }) {
   if (!shots.length) return null;
+  // the gallery opens /shop/totes, so there it carries the page's h1 and the
+  // buy panel under it steps down to h2 (the audit read h2 → h1 → h2)
+  const H = heading;
 
   return (
     <section className="ap-tg" aria-label={toteBags.title}>
       <div className="ap-tg__head">
         <p className="ap-kicker">{toteBags.kicker}</p>
-        <h2 className="ap-h2" data-tfx="rise">
+        <H className="ap-h2" data-tfx="rise">
           {toteBags.title}
-        </h2>
+        </H>
         {toteBags.copy.map((t) => (
           <p className="ap-lede" key={t}>
             {t}

@@ -7,6 +7,7 @@ import TextFX from "@/components/TextFX";
 export const metadata: Metadata = {
   title: "Contact",
   description: home.contact.copy,
+  alternates: { canonical: "/contact" },
 };
 
 export default function Page() {

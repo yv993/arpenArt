@@ -383,7 +383,9 @@ export default function MagnetFridge({
 
       {/* ---- every magnet, buyable: the layer everyone gets --------------- */}
       <div className="ap-mf__allwrap">
-        <h3 className="ap-mf__allhead">{magnetFridge.all}</h3>
+        {/* h2: it follows the page's h1 with nothing between (the audit read
+            h1 → h3 → h2 here) */}
+        <h2 className="ap-mf__allhead">{magnetFridge.all}</h2>
         <ul className="ap-mf__all">
           {shots.map((s, i) => (
             <li key={s.id}>

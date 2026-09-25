@@ -1,15 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla, Montserrat } from "next/font/google";
 import { brand } from "@/lib/content";
+import { indexable, origin } from "@/lib/site";
 import Foot from "@/components/Foot";
 import "./globals.css";
 
-// Social cards need absolute URLs, so metadata gets a base. Same guard as
-// robots.ts: until a real https origin is configured we resolve against the
-// dev origin — harmless, because robots.ts is disallowing everything in that
-// state anyway.
-const site = process.env.NEXT_PUBLIC_SITE_URL;
-const origin = site && site.startsWith("https://") ? site : "http://localhost:4000";
+// Social cards need absolute URLs, so metadata gets a base — the public
+// origin decided in lib/site.ts (it used to be guessed here, and on Vercel
+// the guess was localhost: the live og:image pointed at a dev server).
 
 const description =
   "Original illustration by Arpine Baroyan, printed and painted onto postcards, scarves, hoodies, cups, plates, puzzles and stickers. Made in Yerevan.";
@@ -46,10 +44,13 @@ export const metadata: Metadata = {
   description,
   applicationName: brand.name,
   authors: [{ name: brand.artist }],
-  robots: { index: false, follow: false }, // stays off until a real domain is set
+  // off until the owner configures a real domain (lib/site.ts `indexable`)
+  robots: { index: indexable, follow: indexable },
   // The shop sells through shared links, so the link preview IS the shopfront.
-  // No image URL is written here on purpose: Next wires app/opengraph-image.png
+  // No image URL is written here on purpose: Next wires app/opengraph-image.jpg
   // into og:image (and Twitter falls back to it) with correct absolute URLs.
+  // (A JPEG since 2026-09-22: the same card was a 356 KB PNG, 137 KB now —
+  // messaging apps fetch it on every share.)
   openGraph: {
     type: "website",
     siteName: brand.name,
@@ -90,10 +91,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body>
+        {/* THE FOOTER'S CURTAIN STATE IS SET HERE TOO, before the first paint.
+            FootReveal used to be the only writer of html[data-footfx], from a
+            layout effect — so every page painted the footer in flow at the
+            document's end, then hydration fixed it under <main> at the
+            bottom of the viewport. The Layout Instability API counts that
+            arrival (an element ending inside the viewport it was not in): the
+            2026-09-22 audit read it as 0.45 of the home's 0.51 CLS and 0.28 on
+            /account, though nobody sees it — it sits behind main. Written
+            here under FootReveal's own gate (lib/textfx FX_MEDIA), the footer
+            is fixed from the first frame; the effect still measures --foot-h
+            and drives the reveal. suppressHydrationWarning above covers the
+            attribute the server could not have known about. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('ap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}",
+              "try{var t=localStorage.getItem('ap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}" +
+              "try{if(matchMedia('(min-width: 861px) and (prefers-reduced-motion: no-preference)').matches)document.documentElement.setAttribute('data-footfx','')}catch(e){}",
           }}
         />
         <a className="ap-skip" href="#main">

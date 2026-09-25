@@ -357,9 +357,11 @@ export default function StickerFolders({
                    This is the whole content for phones, reduced motion and
                    no-JS — real images, not an empty stage. */}
               <div className="ap-sf__plain">
-                <h3 className="ap-sf__plainname">
+                {/* h2, not h3: on the plain layer these follow the page's h1
+                    directly (the audit read h1 → h3 on phones) */}
+                <h2 className="ap-sf__plainname">
                   {sheet.name} <span>{stickerSheets.spec}</span>
-                </h3>
+                </h2>
                 <ul>
                   {three.map((s, i) => (
                     <li key={s.id} style={{ background: s.avg }}>

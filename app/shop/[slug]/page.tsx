@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { origin } from "@/lib/site";
 import Chrome from "@/components/Chrome";
 import Link from "next/link";
 import CategoryView, { CategorySpec, OrderingSteps } from "@/components/CategoryView";
@@ -56,11 +57,7 @@ const keychains: Keychain[] = (P.keychain ?? []).map((s, i) => ({
 
 export const dynamicParams = false; // unknown slugs are a real 404, not a soft one
 
-// Structured data wants absolute URLs. Same guard as robots.ts and layout.tsx:
-// a real https origin when configured, the dev origin otherwise — harmless,
-// because robots.ts keeps crawlers out in that state.
-const site = process.env.NEXT_PUBLIC_SITE_URL;
-const origin = site && site.startsWith("https://") ? site : "http://localhost:4000";
+// (structured data below wants absolute URLs: `origin` comes from lib/site.ts)
 
 export function generateStaticParams() {
   return categories.filter((c) => c.status === "open").map((c) => ({ slug: c.slug }));
@@ -74,7 +71,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return {};
-  return { title: cat.name, description: cat.blurb };
+  return { title: cat.name, description: cat.blurb, alternates: { canonical: `/shop/${cat.slug}` } };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -285,9 +282,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               photographs are what make somebody want the thing the panel
               sells. */}
           {cat.slug === "totes" && (
-            <ToteGallery shots={(products as unknown as { toteBags?: ToteShot[] }).toteBags ?? []} />
+            <ToteGallery shots={(products as unknown as { toteBags?: ToteShot[] }).toteBags ?? []} heading="h1" />
           )}
-          <CategoryView cat={cat} demoted={opens || !!morph} />
+          <CategoryView cat={cat} demoted={opens || !!morph || cat.slug === "totes"} />
         </>
       )}
       {book && shots.length >= 7 && (

@@ -7,6 +7,7 @@ import TextFX from "@/components/TextFX";
 export const metadata: Metadata = {
   title: "About",
   description: about.lead,
+  alternates: { canonical: "/about" },
 };
 
 export default function Page() {

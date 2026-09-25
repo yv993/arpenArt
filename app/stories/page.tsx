@@ -9,6 +9,7 @@ import { brand, stories } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Studio stories",
   description: stories.copy,
+  alternates: { canonical: "/stories" },
 };
 
 export default function Page() {

@@ -1,0 +1,115 @@
+/* ==========================================================================
+   quality.css — the 2026-09-22 audit's fixes. Every route was loaded at
+   1440×900 and 390×844 in a real Chromium with LCP / layout-shift / long-task
+   observers injected before the document, and every control measured
+   (scratchpad audit.mjs). Kept in one file, imported last, so each rule can
+   name the number it moved.
+   ========================================================================== */
+
+/* ---- 1. LAYOUT SHIFTS: the live layer is laid out BEFORE hydration -------
+   Four bespoke sections switched their whole layout on `data-live`, which a
+   client effect sets after hydration: the plain grid painted first, then
+   was swapped for the stage. Measured CLS: 3D stickers 0.87 (a 100svh lane
+   appearing), magnets 0.29 (the fridge render), sticker sheets 0.14 (three
+   280–340px stages), the store map 0.26 (the map column mounting). The
+   media condition the effects test is written here as CSS, so the geometry
+   the effect will want is the geometry the server render already has —
+   the trick the hero and the cloud already use with `scripting: enabled`.
+   `data-live` keeps only the behaviour (hover, ticker, drag). */
+@media (scripting: enabled) and (min-width: 861px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* sticker sheets — StickerFolders' GATE */
+  .ap-sf .ap-sf__row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ap-sf .ap-sf__stage {
+    display: block;
+  }
+  .ap-sf .ap-sf__plain {
+    display: none;
+  }
+  .ap-sf .ap-sf__hint {
+    display: block;
+  }
+  .ap-sf .ap-sf__buy .ap-sf__pname {
+    display: none;
+  }
+  /* the 3D sticker lane — StickerSurfer's GATE. The lane is PINNED for
+     0.34 screens per card (PIN_PER_CARD × 48 in StickerSurfer.tsx), and the
+     pin-spacer GSAP creates after hydration used to push everything below
+     down by that much: the section reserves the same room up front, so the
+     spacer lands inside a box that already had its height. */
+  .ap-s3 {
+    min-height: calc(100svh * (1 + 0.34 * 48));
+  }
+  .ap-s3 .ap-s3__scene {
+    display: block;
+    position: relative;
+    height: 100svh;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .ap-s3 .ap-s3__plain {
+    display: none;
+  }
+  /* the fridge — MagnetFridge's GATE */
+  .ap-mf .ap-mf__scene {
+    display: block;
+    position: relative;
+    max-width: 880px;
+    margin: 0 auto clamp(56px, 8vh, 96px);
+    border-radius: 10px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+}
+/* the store map's column: FindInStore renders the hold on the server with
+   an empty stage of the map's own height, and the map mounts INTO it once
+   WebGL and the effect arrive — so the list beside it never jumps. Below
+   the desktop gate the hold does not exist, as before. */
+.ap-map__hold {
+  display: none;
+}
+@media (scripting: enabled) and (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+  .ap-map__hold {
+    display: block;
+  }
+}
+.ap-map__stage--wait {
+  background:
+    radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--sky) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--paper-3) 70%, var(--paper));
+}
+
+/* ---- 2. TARGETS UNDER THE 24px FLOOR (WCAG 2.5.8) ------------------------
+   Text links measured 14–23px tall: the nav row, the footer row, the
+   directions links and street-map toggles on Find in store, the sign-in
+   swap button, the about and stories links. The box that is hit-tested
+   grows to 44px through a pseudo-element; the text, its underline and the
+   layout do not move. (The consent checkbox and the inline privacy link
+   are exempt — the wrapping label is the target, and inline text links
+   are excluded by the rule.) */
+.ap-nav__cart,
+.ap-foot a,
+.ap-map__dir,
+.ap-smap__toggle,
+.ap-about__link,
+.ap-auth__swap button,
+.ap-auth__ghost {
+  position: relative;
+}
+.ap-nav__links a::before,
+.ap-nav__cart::before,
+.ap-foot a::before,
+.ap-map__dir::before,
+.ap-smap__toggle::before,
+.ap-about__link::before,
+.ap-auth__swap button::before,
+.ap-auth__ghost::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}

@@ -261,6 +261,12 @@ export default function HomeView() {
             3 = the type, 4 = the haze in front of it. The type sitting
             BETWEEN two moving planes is the whole reason the reference
             reads as depth rather than as a zoom. */}
+        {/* THE POSTER IS THE LARGEST CONTENTFUL PAINT on every device (the
+            audit read the hero <video> as the LCP element at both widths),
+            and a poster is only discovered when the parser reaches the
+            <video>. Preloaded from the head instead — React hoists this
+            link — so it is in flight with the stylesheet. */}
+        <link rel="preload" as="image" href="/hero/intro.webp" />
         <div className="ap-hero__stage" data-parallax-layers>
           <div className="ap-hero__field" data-parallax-layer="1" aria-hidden="true" />
           {/* TWO PLATES, and the browser picks ONE. `hero-nosun` has the sun

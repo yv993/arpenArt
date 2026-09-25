@@ -9,6 +9,7 @@ import TextFX from "@/components/TextFX";
 export const metadata: Metadata = {
   title: "Find in store",
   description: stockistPage.copy,
+  alternates: { canonical: "/find-in-store" },
 };
 
 /** WHICH LOGOS ACTUALLY EXIST, read at build time.

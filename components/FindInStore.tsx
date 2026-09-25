@@ -345,12 +345,22 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
       )}
 
       <div className="ap-map__grid">
-        {live && (
-          <div className="ap-map__hold">
+        {/* THE COLUMN EXISTS BEFORE THE MAP DOES. This hold used to be
+            rendered only once `live` was set, so the server sent a one-column
+            grid and the list jumped sideways when the map column appeared
+            after hydration — measured as a 0.26 layout shift on the desktop
+            audit (2026-09-22). The hold is always in the markup now (CSS
+            shows it under the same desktop gate the effect tests), holding
+            an empty stage of the map's own height until the map mounts into
+            it. */}
+        <div className="ap-map__hold">
+          {live ? (
             <ArmeniaMap towns={list} sel={sel} cue={stockistPage.cue} onPick={pickFromMap} />
-            <p className="ap-map__credit">{stockistPage.credit}</p>
-          </div>
-        )}
+          ) : (
+            <div className="ap-map__stage ap-map__stage--wait" aria-hidden="true" />
+          )}
+          <p className="ap-map__credit">{stockistPage.credit}</p>
+        </div>
 
         <ul className="ap-map__list">
           {list.map((t) => (
@@ -417,7 +427,9 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
                           )}
                         </span>
                         <div>
-                          <h3 className="ap-stk__name">{s.shop}</h3>
+                          {/* h2: the shop names sit directly under the page's
+                              h1 (the audit read h1 → h3 ×7) */}
+                          <h2 className="ap-stk__name">{s.shop}</h2>
                           {/* HER LINE FIRST. `lang` is not decoration: it tells
                               a screen reader to switch voice, and without it
                               Armenian is read out as mangled Latin. */}

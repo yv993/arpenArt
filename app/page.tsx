@@ -2,13 +2,15 @@ import Chrome from "@/components/Chrome";
 import SectionRail from "@/components/SectionRail";
 import HomeView from "@/components/HomeView";
 import { about, brand } from "@/lib/content";
+import { origin } from "@/lib/site";
 import TextFX from "@/components/TextFX";
+import type { Metadata } from "next";
 
-// Structured data wants absolute URLs. Same guard as robots.ts and layout.tsx:
-// a real https origin when configured, the dev origin otherwise — harmless,
-// because robots.ts keeps crawlers out in that state.
-const site = process.env.NEXT_PUBLIC_SITE_URL;
-const origin = site && site.startsWith("https://") ? site : "http://localhost:4000";
+// the canonical resolves against metadataBase (lib/site.ts) — written on
+// every indexable page so a shared or tracked URL always points home
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+// Structured data wants absolute URLs: the public origin from lib/site.ts.
 
 // Who runs this site, in schema.org terms. Every fact is lifted from
 // lib/content.ts — her role, her city, her verifiable artist page — and the

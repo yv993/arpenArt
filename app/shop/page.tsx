@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   description:
     categories.map((c) => c.name.toLowerCase()).join(", ").replace(/, ([^,]+)$/, " and $1") +
     " carrying Arpine Baroyan's Armenia illustrations.",
+  alternates: { canonical: "/shop" },
 };
 
 export default function ShopPage() {
