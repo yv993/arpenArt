@@ -384,9 +384,13 @@ export default function Cloud({
   }, []);
 
   return (
-    // data-nosun: the flying sun (components/Sun.tsx) fades out rather than
-    // passing behind this wall of pictures — see the note beside `veils`.
-    <section className="ap-cloud ap-dark" ref={root} aria-label={title.join(" ")} data-nosun>
+    // No `data-nosun` here any more: this section is an opaque stacking
+    // context at z 2 (globals.css) and the flying sun (components/Sun.tsx)
+    // is under it from the moment the curtain rises — it SETS behind this
+    // wall of pictures rather than fading out over it. The client's 2026-08-10
+    // note (no sun showing between the cards) still holds; the cards simply
+    // cover it now.
+    <section className="ap-cloud ap-dark" ref={root} aria-label={title.join(" ")}>
       <div
         className="ap-cloud__frame"
         data-chosen={chosen || undefined}

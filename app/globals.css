@@ -9,6 +9,7 @@
 @import "./keychains.css";
 @import "./magnets.css";
 @import "./stories.css";
+@import "./quality.css";
 
 /* ===========================================================================
    ArpenArt — Arpine Baroyan
@@ -589,6 +590,43 @@ select {
 /* set once the hero has gone by — from here the sun is scenery */
 .ap-sun[data-behind] {
   z-index: 0;
+}
+/* WHILE IT IS THE HERO'S SUN ([data-hero], set by Sun.tsx until the
+   handover): under the hero title and under the cloud's curtain (both 2)
+   and above the stuck stage, with HER COPY one step above it. The stage is
+   sticky and therefore one flat layer here, so the sun cannot be slid
+   between the film and the title inside it — 1 is the lowest that still
+   clears the film. Being under the curtain is the point: as the cloud
+   section rises over the hero the sun sets behind it, instead of fading in
+   mid air (Vardan 2026-09-22: «sun disappeared … look how bad it looks»). */
+.ap-sun[data-hero] {
+  z-index: 1;
+}
+/* HER, copied live out of the film onto a canvas that sits over the sun
+   (components/Sun.tsx): opaque where she is, clear where the hills are, so
+   the sun is genuinely behind her rather than cut around her. Drawn at the
+   film's own 1280×720 and sized to the film's on-screen box by Sun.tsx, so
+   it resamples exactly as the video does; masked to the sun's neighbourhood
+   so the copy's edge never shows elsewhere on her. */
+.ap-sun__her {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: none;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  /* THE RESET'S `canvas { max-width: 100% }` MUST NOT APPLY. The film's
+     frame is wider than the viewport under `cover` (1600px at 1440, 1760
+     mid-scrub), and the cap squeezed the copy to the viewport's width while
+     its height stayed — her copy sat up to 100px left of the film and her
+     head doubled (Vardan 2026-09-22: «girl's head also moved some space»). */
+  max-width: none;
+  max-height: none;
+}
+.ap-sun__her[data-on] {
+  display: block;
 }
 /* Section CONTENT rides above the sun; section BACKGROUNDS stay under it.
    A block's background paints before positioned descendants, so leaving the
