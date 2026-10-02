@@ -1,0 +1,101 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>pdf</title>
+<!-- pdf.js on the main thread: the worker script is loaded as a plain script
+     so pdf.js uses it as a "fake worker" — a real cross-origin Worker cannot
+     be created from a file:// page. Driven by scratchpad/pdf.mjs. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+  let doc = null;
+  /** node hands the file over as base64 (no file:// fetch, no flags) */
+  window.openPdf = async (b64) => {
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    doc = await pdfjsLib.getDocument({ data: u8, isOffscreenCanvasSupported: false }).promise;
+    return doc.numPages;
+  };
+  window.renderPage = async (n, scale) => {
+    const page = await doc.getPage(n);
+    const vp = page.getViewport({ scale });
+    const c = document.createElement("canvas");
+    c.width = Math.ceil(vp.width);
+    c.height = Math.ceil(vp.height);
+    await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+    return { w: c.width, h: c.height, png: c.toDataURL("image/png").split(",")[1] };
+  };
+  /** text items with their positions (top-left origin, in page points) */
+  window.pageText = async (n) => {
+    const page = await doc.getPage(n);
+    const vp = page.getViewport({ scale: 1 });
+    const tc = await page.getTextContent();
+    return tc.items
+      .filter((i) => i.str && i.str.trim())
+      .map((i) => ({ s: i.str, x: Math.round(i.transform[4]), y: Math.round(vp.height - i.transform[5]), h: Math.round(i.height) }));
+  };
+  /** every embedded raster on the page at its NATIVE resolution, with where
+   *  it is placed on the page (so a picture can be matched to a note) */
+  window.pageImages = async (n) => {
+    const page = await doc.getPage(n);
+    const vp = page.getViewport({ scale: 1 });
+    const ops = await page.getOperatorList();
+    const OPS = pdfjsLib.OPS;
+    const out = [];
+    let ctm = [1, 0, 0, 1, 0, 0];
+    const stack = [];
+    const mul = (m, t) => [
+      m[0] * t[0] + m[2] * t[1],
+      m[1] * t[0] + m[3] * t[1],
+      m[0] * t[2] + m[2] * t[3],
+      m[1] * t[2] + m[3] * t[3],
+      m[0] * t[4] + m[2] * t[5] + m[4],
+      m[1] * t[4] + m[3] * t[5] + m[5],
+    ];
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i];
+      const a = ops.argsArray[i];
+      if (fn === OPS.save) stack.push(ctm);
+      else if (fn === OPS.restore) ctm = stack.pop() || ctm;
+      else if (fn === OPS.transform) ctm = mul(ctm, a);
+      else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject) {
+        const id = a[0];
+        const img = await new Promise((res) => {
+          const store = id.startsWith("g_") ? page.commonObjs : page.objs;
+          try {
+            store.get(id, res);
+          } catch {
+            res(null);
+          }
+        });
+        if (!img) continue;
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const g = c.getContext("2d");
+        if (img.bitmap) g.drawImage(img.bitmap, 0, 0);
+        else if (img.data) {
+          const id2 = g.createImageData(img.width, img.height);
+          const d = img.data;
+          const px = img.width * img.height;
+          if (d.length === px * 4) id2.data.set(d);
+          else if (d.length === px * 3) for (let p = 0; p < px; p++) { id2.data[p * 4] = d[p * 3]; id2.data[p * 4 + 1] = d[p * 3 + 1]; id2.data[p * 4 + 2] = d[p * 3 + 2]; id2.data[p * 4 + 3] = 255; }
+          else if (d.length === px) for (let p = 0; p < px; p++) { id2.data[p * 4] = id2.data[p * 4 + 1] = id2.data[p * 4 + 2] = d[p]; id2.data[p * 4 + 3] = 255; }
+          else continue;
+          g.putImageData(id2, 0, 0);
+        } else continue;
+        // the unit square under the CTM is the image's box on the page
+        const xs = [ctm[4], ctm[4] + ctm[0], ctm[4] + ctm[2], ctm[4] + ctm[0] + ctm[2]];
+        const ys = [ctm[5], ctm[5] + ctm[1], ctm[5] + ctm[3], ctm[5] + ctm[1] + ctm[3]];
+        out.push({
+          id,
+          w: img.width,
+          h: img.height,
+          box: [Math.round(Math.min(...xs)), Math.round(vp.height - Math.max(...ys)), Math.round(Math.max(...xs) - Math.min(...xs)), Math.round(Math.max(...ys) - Math.min(...ys))],
+          png: c.toDataURL("image/png").split(",")[1],
+        });
+      }
+    }
+    return out;
+  };
+</script>
