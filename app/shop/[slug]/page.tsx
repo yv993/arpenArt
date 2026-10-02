@@ -23,7 +23,7 @@ import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
 import type { Keychain } from "@/types/keychain";
-import { brand, categories, keychainWall, lookbooks, morphs, overtures } from "@/lib/content";
+import { brand, categories, keychainWall, lookbooks, morphs, overtures, withheldArt } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
@@ -96,9 +96,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   // The morph hero draws on the ARTWORK, not product photography — 20 cards
   // sampled evenly across the whole series, not the first twenty. (A stride of
   // 3 across 57 gives 19, and a 19-card ring built for 20 has a gap in it.)
+  // …of the series THIS LINE SELLS: the deck is the page's shop window, and its
+  // card backs read "No. 25", so a card the client took out of the postcard
+  // catalogue (change 3.pdf p2, 2026-10-01 — `withheldArt`) must not be dealt
+  // into it. Before this, the even stride landed on no. 25 itself.
   const morph = morphs[cat.slug];
+  const morphPool = ART.filter((a) => !withheldArt[cat.slug]?.includes(a.id));
   const morphDeck = morph
-    ? Array.from({ length: 20 }, (_, i) => ART[Math.round((i * (ART.length - 1)) / 19)])
+    ? Array.from({ length: 20 }, (_, i) => morphPool[Math.round((i * (morphPool.length - 1)) / 19)])
     : [];
 
   // The first product shot doubles as the Product image; the price is the same
@@ -274,18 +279,44 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             </div>
           </div>
         </>
-      ) : (
+      ) : cat.slug === "totes" ? (
+        /* THE TOTES ARE FOUR FIXED BAGS NOW, AND THE GALLERY IS THE PAGE
+           (client, change 3.pdf p5, 2026-10-01, circling the whole buy panel
+           under the cards — "Tote bags / Carry your favorite Armenian
+           stories. / Choose an illustration" and its 57-picture grid: «էս
+           մասը մենակ պետք չի, վերևում … դրանք հերիք են» — this part is not
+           needed, the ones above are enough). So this line stopped rendering
+           CategoryView, exactly as the sheets, the lane, the wall, the fridge
+           and the scarves did before it: each card opens that bag's window,
+           and the window is where it is bought (p4).
+           KEPT, because none of it was about choosing an illustration: the
+           breadcrumb, how ordering works, and the spec rows that carry the
+           material, the made-to-order and the returns wording. The crumb and
+           the foot use the gallery's own wrappers rather than `.ap-cv` — see
+           `.ap-tg__top` in shop.css for why. */
         <>
-          {/* HER FOUR TOTE DESIGNS, above the buy panel (client 2026-08-24,
-              pointing at shadcnblocks' gallery1). It is the page's entrance,
-              which is why it sits before CategoryView rather than after: the
-              photographs are what make somebody want the thing the panel
-              sells. */}
-          {cat.slug === "totes" && (
-            <ToteGallery shots={(products as unknown as { toteBags?: ToteShot[] }).toteBags ?? []} heading="h1" />
-          )}
-          <CategoryView cat={cat} demoted={opens || !!morph || cat.slug === "totes"} />
+          <div className="ap-tg__top">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <ToteGallery
+            shots={(products as unknown as { toteBags?: ToteShot[] }).toteBags ?? []}
+            slug={cat.slug}
+            price={cat.from}
+            heading="h1"
+          />
+
+          <div className="ap-tg__foot">
+            <OrderingSteps />
+            <CategorySpec cat={cat} />
+          </div>
         </>
+      ) : (
+        <CategoryView cat={cat} demoted={opens || !!morph} />
       )}
       {book && shots.length >= 7 && (
         <Lookbook

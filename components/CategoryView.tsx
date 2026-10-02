@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { add } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { ordering, type Category } from "@/lib/content";
+import { ordering, withheldArt, type Category } from "@/lib/content";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 import MugPrint from "./MugPrint";
@@ -458,7 +458,19 @@ export default function CategoryView({
    *  measured fraction of the photo (coloured-pixel bounding box on the
    *  original: 223,536 758x767 of 1578x1600), so it holds at any size. */
   const mock = MOCKUPS[cat.slug];
-  const chosenArt = art ? ART.find((a) => a.id === art) : undefined;
+  /** WHAT THIS LINE ACTUALLY OFFERS. The series is one list for the whole
+   *  site, but a line may not sell every picture in it: the client took two
+   *  cards out of the postcard catalogue (change 3.pdf p2, 2026-10-01 — see
+   *  `withheldArt` in content.ts) while the pictures themselves stay in the
+   *  series. Everything below that offers or counts illustrations reads THIS,
+   *  never ART directly, so the picker, the default face and the "one of the
+   *  N" hint cannot disagree. Cups, plates and puzzles have no entry and keep
+   *  all of them. */
+  const pool = useMemo(() => {
+    const out = withheldArt[cat.slug];
+    return out ? ART.filter((a) => !out.includes(a.id)) : ART;
+  }, [cat.slug]);
+  const chosenArt = art ? pool.find((a) => a.id === art) : undefined;
 
   /** The chosen card's faces, in the order a buyer wants them: the picture
    *  first, then what is on the back, then the thing itself printed. Built
@@ -478,7 +490,7 @@ export default function CategoryView({
    *  nothing more — the picker still shows nothing as pressed and Add to cart
    *  still asks for a real choice, which is the rule that has always applied
    *  here: the artwork IS the product, so it is never chosen silently. */
-  const faceArt = cat.slug === "postcards" ? (chosenArt ?? ART[0]) : undefined;
+  const faceArt = cat.slug === "postcards" ? (chosenArt ?? pool[0]) : undefined;
   const faceShots = faceArt
     ? ([
         { key: "front" as const, src: faceArt.src, label: `Illustration no. ${faceArt.id}` },
@@ -552,7 +564,15 @@ export default function CategoryView({
                   into it; once one is, the frame becomes that card and the
                   three thumbnails below turn it over. */}
               {shownFace && faceArt ? (
-                <figure className="ap-cv__hero ap-cv__hero--face" style={{ background: faceArt.avg }}>
+                // NO AVERAGE-COLOUR GROUND HERE (client, change 3.pdf p3,
+                // 2026-10-01: «կարա՞ն էս գույները չլինեն նկարների հետևի՝ լինի
+                // սովորական նույն բաց գույնի ֆոնը»). A portrait card contained
+                // in the square frame leaves a block either side, and painted
+                // in the picture's average those blocks came out grey-brown.
+                // The ground is the page's own paper now — set in shop.css on
+                // `.ap-cv__hero--face`, a token rather than an inline colour so
+                // it follows the theme.
+                <figure className="ap-cv__hero ap-cv__hero--face">
                   <img
                     key={shownFace.key}
                     src={shownFace.src}
@@ -778,7 +798,7 @@ export default function CategoryView({
                   thumbnails above — listbox/option needs arrow-key management
                   this grid never had, so claiming the role only misled AT */}
               <ul className="ap-pick__grid" aria-labelledby="ap-pick-lab">
-                {ART.map((a) => (
+                {pool.map((a) => (
                   <li key={a.id}>
                     <button
                       type="button"
@@ -840,7 +860,12 @@ export default function CategoryView({
             </button>
             {picks && cat.status === "open" && !art && (
               <p className="ap-cv__hint" role={need ? "alert" : undefined}>
-                {need ? "Choose one of the 57 illustrations above, then add it." : "Pick an illustration first."}
+                {/* the count is the picker's own, not a typed "57": postcards
+                    offer two fewer since 2026-10-01 and the line must stay
+                    true on every category */}
+                {need
+                  ? `Choose one of the ${pool.length} illustrations above, then add it.`
+                  : "Pick an illustration first."}
               </p>
             )}
             <p className="ap-cv__added" role="status">

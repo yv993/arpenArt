@@ -6,7 +6,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { about } from "@/lib/content";
 import products from "@/lib/products.json";
 
-type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
+/** `thumbW` is the small file's measured width (scratchpad/assets-1001-about.cjs
+ *  writes it) — the srcSet below needs a true `w` descriptor for both files */
+type Shot = { id: string; src: string; thumb: string; w: number; h: number; thumbW?: number; alpha: boolean; avg: string };
 const P = products as Record<string, Shot[]>;
 
 // ============================================================================
@@ -18,6 +20,14 @@ const P = products as Record<string, Shot[]>;
 // matchMedia block, which does not run here. The name still writes itself
 // letter by letter — that is the shared TextFX runner in the layout, which
 // scans every route.
+//
+// CLIENT ROUND 3 (change 3.pdf p10, 2026-10-01), three notes on this page:
+//   · «փոխենք նկարը» — the laptop picture is replaced by her own photograph,
+//     Arpine on a balcony holding her postcards;
+//   · «Հանենք էս սաղ» — the whole fact list (Based in / Studied at / Solo
+//     exhibitions / Member of) and the «Artist page» link under it are gone,
+//     so the page is now her biography and her picture, nothing else;
+//   · «Դարձնենք» — the exhibitions sentence is rewritten (lib/content.ts).
 // ============================================================================
 
 export default function AboutView() {
@@ -74,23 +84,20 @@ export default function AboutView() {
                 {p}
               </p>
             ))}
-            <dl className="ap-about__facts" data-rise>
-              {about.facts.map((f) => (
-                <div key={f.k}>
-                  <dt>{f.k}</dt>
-                  <dd>{f.v}</dd>
-                </div>
-              ))}
-            </dl>
-            <a className="ap-about__link" href={about.link.href} target="_blank" rel="noopener noreferrer">
-              {about.link.label} <span aria-hidden>↗</span>
-            </a>
           </div>
           {shot && (
             <figure className="ap-about__fig" data-rise>
+              {/* The alt says what the photograph shows and no more: the
+                  building behind her is not named, because a caption is not
+                  where this site starts asserting addresses.
+                  srcSet: a phone column is ~350px wide, so the 525px file
+                  serves it at 1x and the 1200px one takes over from there;
+                  the desktop column is ~41% of the window. */}
               <img
                 src={shot.src}
-                alt="Arpine at work, laying out the Armenia illustration series on screen"
+                srcSet={shot.thumbW ? `${shot.thumb} ${shot.thumbW}w, ${shot.src} ${shot.w}w` : undefined}
+                sizes="(max-width: 860px) 92vw, 42vw"
+                alt="Arpine on a balcony shaded by vine leaves, above a square with a fountain in Yerevan, smiling and holding up a fan of her illustrated postcards"
                 width={shot.w}
                 height={shot.h}
                 decoding="async"

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { brand, categories, delivery, home, ownItemWord } from "@/lib/content";
+import { brand, categories, delivery, home, ownItemMedia, ownItemWord } from "@/lib/content";
 import { clear, dram, read, remove, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
 import { OrderingSteps } from "@/components/CategoryView";
 import artworks from "@/lib/artworks.json";
@@ -86,7 +86,12 @@ export default function CartView() {
   // no. 05 — a different picture — for magnet no. 05.
   const thumbOf = (l: Line) => {
     const media = categories.find((c) => c.slug === l.cat)?.media ?? "";
-    if (ownItemWord[l.cat]) return (l.art && P[media]?.find((s) => s.id === l.art)?.thumb) || P[media]?.[0]?.thumb;
+    // …and a fixed item's pictures are not always the category's own roll:
+    // the four tote bags (2026-10-01) live in `toteBags`, while the totes'
+    // roll is nine lookbook photographs that share the ids 01–09 by accident
+    // — ownItemMedia says where to look. No entry means the roll, as before.
+    const own = P[ownItemMedia[l.cat] ?? media];
+    if (ownItemWord[l.cat]) return (l.art && own?.find((s) => s.id === l.art)?.thumb) || own?.[0]?.thumb;
     return (l.art ? ART.find((a) => a.id === l.art)?.thumb : undefined) ?? P[media]?.[0]?.thumb;
   };
 
@@ -308,7 +313,9 @@ export default function CartView() {
               const t = thumbOf(l);
               return (
                 <li className="ap-cart__row" key={l.cat + (l.art ?? "") + (l.variant ?? "")}>
-                  <figure className="ap-cart__fig">
+                  {/* data-cat: a line whose photograph is not centred on its
+                      object can say where to crop (the totes do, in shop.css) */}
+                  <figure className="ap-cart__fig" data-cat={l.cat}>
                     {t && <img src={t} alt="" width={120} height={160} loading="lazy" />}
                   </figure>
                   <div className="ap-cart__what">

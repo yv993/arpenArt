@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
+import { withheldArt } from "@/lib/content";
 
 type Art = {
   id: string;
@@ -157,6 +158,8 @@ export default function Cloud({
    *  card — so the cart, the totals and the order endpoint's server-side
    *  re-pricing all treat it identically; nothing here names a price. */
   const [added, setAdded] = useState(false);
+  /** the open picture is not sold as a postcard — see the buy row below */
+  const notACard = !!chosen && !!withheldArt.postcards?.includes(chosen);
   const buy = useCallback((id: string) => {
     add("postcards", id, 1, "Single card");
     flyToCart(document.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${id}"]`));
@@ -545,14 +548,26 @@ export default function Cloud({
                 →
               </button>
             </div>
-            {/* buy this card without leaving the cloud */}
-            <p className="ap-cloud__price">
-              <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
-            </p>
+            {/* buy this card without leaving the cloud — UNLESS it is one the
+                client took out of the postcard catalogue (change 3.pdf p2,
+                2026-10-01: nos. 23 and 25, `withheldArt` in content.ts). The
+                picture stays in the cloud to be looked at — her note removes
+                a postcard, not a picture — but this button writes a
+                "postcards" line to the cart, i.e. it is a second door into
+                the very catalogue she closed, so for those two neither the
+                card's price nor the button is offered. The way to the shop
+                stays. */}
+            {!notACard && (
+              <p className="ap-cloud__price">
+                <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
+              </p>
+            )}
             <div className="ap-cloud__buy">
-              <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
-                {added ? "Added ✓" : "Add to cart"}
-              </button>
+              {!notACard && (
+                <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
+                  {added ? "Added ✓" : "Add to cart"}
+                </button>
+              )}
               <Link className="ap-cloud__go" href="/shop/postcards">
                 {pick.cta} <span aria-hidden>→</span>
               </Link>

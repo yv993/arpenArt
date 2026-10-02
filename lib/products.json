@@ -268,7 +268,7 @@
    "thumb": "/products/scarf-05-sm.webp",
    "w": 1600,
    "h": 1599,
-   "avg": "#b18854",
+   "avg": "#b18955",
    "alpha": false
   },
   {
@@ -332,6 +332,35 @@
    "w": 1200,
    "h": 1600,
    "avg": "#6f5c32",
+   "alpha": false
+  }
+ ],
+ "scarfDesigns": [
+  {
+   "id": "01",
+   "src": "/products/scarf-01.webp",
+   "thumb": "/products/scarf-01-sm.webp",
+   "w": 1600,
+   "h": 1599,
+   "avg": "#8b8879",
+   "alpha": false
+  },
+  {
+   "id": "02",
+   "src": "/products/scarf-05.webp",
+   "thumb": "/products/scarf-05-sm.webp",
+   "w": 1600,
+   "h": 1599,
+   "avg": "#b18955",
+   "alpha": false
+  },
+  {
+   "id": "03",
+   "src": "/products/scarf-09.webp",
+   "thumb": "/products/scarf-09-sm.webp",
+   "w": 1600,
+   "h": 1600,
+   "avg": "#909fa3",
    "alpha": false
   }
  ],
@@ -593,13 +622,14 @@
  ],
  "about": [
   {
-   "id": "01",
-   "src": "/products/about-01.webp",
-   "thumb": "/products/about-01-sm.webp",
-   "w": 1067,
+   "id": "02",
+   "src": "/products/about-02.webp",
+   "thumb": "/products/about-02-sm.webp",
+   "w": 1200,
    "h": 1600,
+   "thumbW": 525,
    "alpha": false,
-   "avg": "#575746"
+   "avg": "#737b74"
   }
  ],
  "sticker3d": [

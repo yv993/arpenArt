@@ -5,7 +5,8 @@ import TextFX from "@/components/TextFX";
 import { brand, stories } from "@/lib/content";
 
 // STUDIO STORIES (client, change.pdf p12, 2026-09-21) — the page the new
-// nav word opens. Her heading, her subtitle, her six texts.
+// nav word opens. Her heading, her subtitle, her texts: six then, eleven
+// since change 3.pdf p11 (2026-10-01), newest first.
 export const metadata: Metadata = {
   title: "Studio stories",
   description: stories.copy,
@@ -17,8 +18,13 @@ export default function Page() {
     <>
       <Chrome />
       <StoriesView />
-      {/* the exhibitions, stated once more for machines — the same dates
-          and places as the page, nothing added */}
+      {/* the stories, stated once more for machines — her titles, her
+          second lines and her first paragraphs, nothing added. A story's
+          outbound link is a `citation`, not its `url`: the Akn page and the
+          YouTube playlist are what a story points AT, and since 2026-10-01
+          one of them is a playlist, which no reading makes "the article's
+          address". The five new stories carry no date property — the dates
+          she gave are when things happened, not when a text was published. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -31,8 +37,9 @@ export default function Page() {
             hasPart: stories.entries.map((s) => ({
               "@type": "Article",
               headline: s.title,
+              ...(s.sub ? { alternativeHeadline: s.sub[0] } : {}),
               description: s.body[0],
-              ...(s.link ? { url: s.link.href } : {}),
+              ...(s.link ? { citation: s.link.href } : {}),
             })),
           }),
         }}

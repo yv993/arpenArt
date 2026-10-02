@@ -9,8 +9,17 @@
    trap, memory: gsap-individual-transform-trap).
    ========================================================================== */
 .ap-st {
-  padding-top: clamp(110px, 15vh, 190px);
   background: var(--paper);
+}
+/* THE PLAIN LAYER'S TOP: the cover starts right under the nav (client,
+   change 3.pdf p11, 2026-10-01: «էս ազատ տարածքը մեզ պետք չի, վերացնենք»).
+   Written against `.ap-sec` on purpose: this file is imported ABOVE
+   globals.css's own rules, so a bare `.ap-st { padding-top }` here lost to
+   `.ap-sec { padding: clamp(80px, 13vh, 170px) … }` and never applied
+   (measured: 109.72px = 13vh on an 844px phone, 133px on a 1,024px-tall
+   tablet — a band of 34–94px of bare paper under the 76px bar). */
+.ap-sec.ap-st {
+  padding-top: calc(var(--nav-h, 76px) + clamp(18px, 3vh, 32px));
 }
 
 /* ---- the cover ---------------------------------------------------------- */
@@ -65,7 +74,9 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(72px, 11vh, 150px);
+  /* named, because two night stories in a row pull back over it (below) */
+  --st-gap: clamp(72px, 11vh, 150px);
+  gap: var(--st-gap);
 }
 /* the flow markers the stack's triggers read from — on the plain layer they
    would be empty grid children, each adding a gap between stories, so they
@@ -108,6 +119,25 @@
 .ap-st__title {
   margin: 0;
   font-size: clamp(1.55rem, 2.9vw, 2.55rem);
+}
+/* the lines she sets between a title and its text («A children’s book by
+   Tamar Panossian, illustrated by Arpine Baroyan» / «Age 5+»): the first
+   reads as the title's second voice, any after it as a small note */
+.ap-st__sub {
+  margin: -4px 0 2px;
+  display: grid;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 1.14em;
+  line-height: 1.3;
+  color: var(--ink);
+}
+/* direct children only: a line may hold a lang="hy" run of its own */
+.ap-st__sub > span + span {
+  font-family: var(--font-ui);
+  font-size: 0.74em;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 .ap-st__p {
   margin: 0;
@@ -248,6 +278,46 @@
   color: var(--ink-muted);
 }
 
+/* ---- THE NIGHT STORIES, on both layers ----------------------------------
+   A story with a film carries `.ap-dark`, and globals.css gives every
+   `.ap-dark .ap-h2` the PAPER run — cream letters. Only the stack painted
+   the dark sheet under them, so on the plain layer (every phone) those
+   titles were cream on cream paper: measured 2026-10-01 on a 390px capture,
+   where «TSARAPATUM — STORIES OF TREES» and «A JOURNEY THROUGH ILLUSIONS»
+   were all but invisible — and since the same brief the FIRST story on the
+   page is a film story. So the night is the story's on both layers: on the
+   plain one the item itself is a full-bleed dark band. Two night stories in
+   a row (music, then Tsarapatum) close up into one band rather than leaving
+   a stripe of paper between them. */
+.ap-st:not([data-stack]) .ap-st__item.ap-dark {
+  margin-inline: calc(-1 * var(--gutter));
+  padding: clamp(44px, 7vh, 84px) var(--gutter);
+  background: var(--ink-solid);
+  color: var(--cream);
+}
+/* (the flow markers are `display: none` here, but they are still the
+   siblings in between) */
+.ap-st:not([data-stack]) .ap-st__item.ap-dark + .ap-st__mark + .ap-st__item.ap-dark {
+  margin-top: calc(-1 * var(--st-gap));
+}
+.ap-st .ap-dark .ap-kicker,
+.ap-st .ap-dark .ap-st__p,
+.ap-st .ap-dark .ap-st__film figcaption {
+  color: color-mix(in srgb, var(--cream) 76%, transparent);
+}
+.ap-st .ap-dark .ap-st__n,
+.ap-st .ap-dark .ap-st__sub,
+.ap-st .ap-dark .ap-st__close {
+  color: var(--cream);
+}
+.ap-st .ap-dark .ap-st__sub > span + span {
+  color: color-mix(in srgb, var(--cream) 76%, transparent);
+}
+.ap-st .ap-dark .ap-st__more summary,
+.ap-st .ap-dark .ap-st__link {
+  color: var(--marigold);
+}
+
 @media (max-width: 860px) {
   .ap-st__item .ap-st__sheet {
     grid-template-columns: 1fr;
@@ -278,28 +348,61 @@
   top: 0;
   height: 100svh;
 }
+/* THE COVER STARTS UNDER THE NAV (client, change 3.pdf p11, 2026-10-01).
+   It used to sit at the BOTTOM of its screen (align-items: end), which with
+   six stories left the band she circled — 390px of bare paper between the
+   bar and the first index row at 1440×900. Now both columns run the sheet's
+   whole height from just under the bar: the title at the top of the left
+   column with her subtitle at its foot, and the index — ELEVEN rows since
+   the same brief — sharing the right column's height between them, so the
+   list fills the screen at 720 tall and at 1,080 alike and never needs a
+   scrollbar of its own (the overflow stays as a floor for a window shorter
+   than eleven 44px rows). */
 .ap-st[data-stack] .ap-st__cover .ap-st__sheet {
   height: 100%;
   max-width: none;
   margin: 0;
-  padding: calc(var(--nav-h, 84px) + 24px) var(--gutter) clamp(32px, 6vh, 64px);
+  padding: calc(var(--nav-h, 76px) + clamp(12px, 2.4svh, 24px)) var(--gutter) clamp(48px, 7.5svh, 72px);
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: clamp(28px, 5vw, 96px);
-  align-items: end;
+  align-items: stretch;
   background: var(--paper);
   transform-origin: 50% 0;
   will-change: transform, filter;
 }
+.ap-st[data-stack] .ap-st__cover-say {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.ap-st[data-stack] .ap-st__cover-say .ap-lede {
+  align-self: end;
+  margin: 0;
+}
 .ap-st[data-stack] .ap-st__h1 {
-  font-size: clamp(3.2rem, 8.6vw, 8.6rem);
+  /* by the screen's width AND its height: at 1280×720 the two lines must
+     leave the subtitle its place above the scroll cue */
+  font-size: clamp(3.2rem, min(8.6vw, 17svh), 8.6rem);
   line-height: 0.92;
 }
 .ap-st[data-stack] .ap-st__index {
   margin: 0;
-  max-height: calc(100svh - var(--nav-h, 84px) - 120px);
+  height: 100%;
+  min-height: 0;
+  grid-auto-rows: minmax(min-content, 1fr);
   overflow: auto;
   scrollbar-width: thin;
+}
+.ap-st[data-stack] .ap-st__index li {
+  display: grid;
+}
+.ap-st[data-stack] .ap-st__index a {
+  align-content: center;
+  padding: 3px 0;
+}
+.ap-st[data-stack] .ap-st__index-title {
+  font-size: clamp(14.5px, 2.15svh, 18.5px);
+  line-height: 1.15;
 }
 .ap-st[data-stack] .ap-st__cue {
   display: block;
@@ -376,24 +479,23 @@
 .ap-st[data-stack] .ap-st__item[data-side="left"] .ap-st__sheet {
   background: var(--paper-2);
 }
-/* the two with a television feature are night sheets — the film has a dark
-   room to play in, and the column of six reads as chapters */
+/* a film is 16:9 — a short picture — and the stories that carry one are the
+   long ones (the AGBU text is six paragraphs), so on those sheets the WORDS
+   take the wider column, whichever side they are on (2026-10-01; the
+   component's fit pass steps the type down if that is still not enough) */
+.ap-st[data-stack] .ap-st__item[data-film][data-side="right"] .ap-st__sheet {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+.ap-st[data-stack] .ap-st__item[data-film][data-side="left"] .ap-st__sheet {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+/* the ones with a film are night sheets — the film has a dark room to play
+   in, and the column reads as chapters. Their type colours are set for both
+   layers, further up (THE NIGHT STORIES); the plain layer paints the night
+   on the item, the stack on the sheet, which is what moves. */
 .ap-st[data-stack] .ap-st__item.ap-dark .ap-st__sheet {
   background: var(--ink-solid);
   color: var(--cream);
-}
-.ap-st[data-stack] .ap-dark .ap-kicker,
-.ap-st[data-stack] .ap-dark .ap-st__p,
-.ap-st[data-stack] .ap-dark .ap-st__film figcaption {
-  color: color-mix(in srgb, var(--cream) 76%, transparent);
-}
-.ap-st[data-stack] .ap-dark .ap-st__n,
-.ap-st[data-stack] .ap-dark .ap-st__close {
-  color: var(--cream);
-}
-.ap-st[data-stack] .ap-dark .ap-st__more summary,
-.ap-st[data-stack] .ap-dark .ap-st__link {
-  color: var(--marigold);
 }
 
 /* the type is sized to the screen's HEIGHT here: a sheet must hold a whole
@@ -440,6 +542,16 @@
 .ap-st[data-stack] .ap-st__thumbs button {
   width: clamp(64px, 6vw, 96px);
 }
+/* more than eight pictures (her Tsarapatum folder holds thirteen,
+   2026-10-01): three rows of the usual size pushed the column 19px past
+   its sheet at 1886×835, so they are set smaller and take two rows — still
+   a 48px target at the narrowest stack */
+.ap-st[data-stack] .ap-st__thumbs[data-many] {
+  gap: 8px;
+}
+.ap-st[data-stack] .ap-st__thumbs[data-many] button {
+  width: clamp(48px, 4.4vw, 72px);
+}
 
 /* ---- the timeline rail ---------------------------------------------------
    fixed at the right, in `difference` like the home page's rail, so it
@@ -467,14 +579,19 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 2px;
 }
+/* ELEVEN entries (client, change 3.pdf p11, 2026-10-01). Each is a full
+   44px target — eleven of them are 484px, which clears the nav on a 720px
+   laptop — and the YEAR is written once per year: the story that opens a
+   year carries it, the ones after it are a shorter tick, and a tick shows
+   its year while it is the story on screen, hovered or focused. */
 .ap-st__rail button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  min-height: 32px;
+  width: 100%;
+  min-height: 44px;
   padding: 4px 6px;
   border: 0;
   background: none;
@@ -506,4 +623,18 @@
 }
 .ap-st__rail button[aria-current="true"]::after {
   width: 30px;
+}
+.ap-st__rail-y {
+  transition: opacity 0.2s var(--ease);
+}
+.ap-st__rail button:not([data-heads]) .ap-st__rail-y {
+  opacity: 0;
+}
+.ap-st__rail button:not([data-heads]):hover .ap-st__rail-y,
+.ap-st__rail button:not([data-heads]):focus-visible .ap-st__rail-y,
+.ap-st__rail button:not([data-heads])[aria-current="true"] .ap-st__rail-y {
+  opacity: 1;
+}
+.ap-st__rail button:not([data-heads]):not([aria-current="true"])::after {
+  width: 8px;
 }

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import PhotoLightbox from "./PhotoLightbox";
-import { add } from "@/lib/cart";
+import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { scarfDesigns, type Category } from "@/lib/content";
 import products from "@/lib/products.json";
@@ -51,31 +51,50 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
 
   return (
     <section className="ap-sd" aria-labelledby="ap-sd-title">
-      <div className="ap-sec__head">
+      {/* THE LEAD SITS BESIDE THE TITLE (client, change 3.pdf p7, 2026-10-01,
+          circling the paragraph under the title: «էս էլ բերել հիմնական
+          տեքստի կողքը» — bring this one, too, beside the main text). Same
+          three elements in the same order — the kicker, the title, her
+          paragraph — so a phone, a reader and a crawler meet them exactly as
+          before; the two columns are the stylesheet's (`.ap-sd__head`). */}
+      <div className="ap-sec__head ap-sd__head">
         <p className="ap-kicker">{scarfDesigns.kicker}</p>
-        <H className="ap-h2" id="ap-sd-title" data-tfx="rise">
+        <H className="ap-h2 ap-sd__title" id="ap-sd-title" data-tfx="rise">
           {scarfDesigns.title}
         </H>
-        <p className="ap-lede">{scarfDesigns.copy}</p>
+        <p className="ap-lede ap-sd__lead">{scarfDesigns.copy}</p>
       </div>
 
-      {/* one Style choice for the page — it is a property of the order, not
-          of a design, and the three blocks below all add with it */}
-      {cat.variants && (
-        <div className="ap-var ap-sd__var" role="group" aria-labelledby="ap-sd-var">
-          <p className="ap-pick__lab" id="ap-sd-var">
-            {cat.variants.label}
-            {variant ? ` — ${variant}` : ""}
-          </p>
-          <div className="ap-var__row">
-            {cat.variants.options.map((o) => (
-              <button key={o} type="button" aria-pressed={variant === o} className={variant === o ? "on" : ""} onClick={() => setVariant(o)}>
-                {o}
-              </button>
-            ))}
+      {/* THE ORDER ROW: the one Style choice and the one price. The Style is
+          a property of the order, not of a design, and the three blocks
+          below all add with it — and so is the PRICE (change 3.pdf p7:
+          «ինչ-որ մի տեղ գինն էլ ավելացնենք՝ 8000 դրամ» — let's add the price
+          somewhere too, 8000 dram). It is ONE figure for every design and
+          either cut, so it is said once, on the row where the buyer settles
+          what they are ordering, before the first design — not three times
+          beside three buttons. Read from `cat.from`, the same field the cart
+          and /api/order price the line from, so the page can never show a
+          number the order does not use. */}
+      <div className="ap-sd__bar">
+        {cat.variants && (
+          <div className="ap-var ap-sd__var" role="group" aria-labelledby="ap-sd-var">
+            <p className="ap-pick__lab" id="ap-sd-var">
+              {cat.variants.label}
+              {variant ? ` — ${variant}` : ""}
+            </p>
+            <div className="ap-var__row">
+              {cat.variants.options.map((o) => (
+                <button key={o} type="button" aria-pressed={variant === o} className={variant === o ? "on" : ""} onClick={() => setVariant(o)}>
+                  {o}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        <p className="ap-cv__price ap-sd__price">
+          <strong>{dram(cat.from)}</strong> {scarfDesigns.each}
+        </p>
+      </div>
 
       <ol className="ap-sd__list">
         {scarfDesigns.designs.map((d, di) => {

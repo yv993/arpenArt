@@ -47,12 +47,63 @@ const byId = (id: string) => S.find((s) => s.id === id);
 // it was — words first, pictures after, nothing autoplays, the films keep
 // their controls and a poster. `data-stack` on the section is the only
 // switch, and it is set from a matchMedia, never from CSS alone.
+//
+// ROUND 3 (client, change 3.pdf p9 + p11, 2026-10-01): ELEVEN stories, newest
+// first, five of them new. What that changed here:
+//   · the cover starts right under the nav («էս ազատ տարածքը մեզ պետք չի») and
+//     its index, now eleven rows, takes the sheet's whole height;
+//   · the rail says a YEAR ONCE — 2026 heads three stories and 2025 four, and
+//     a column reading 2026 2026 2026 2025 2025… told nobody where they were.
+//     Each later story of a year is a tick under its year; every button still
+//     carries its story's own name for a screen reader and a tooltip;
+//   · a story can carry SUB lines under its title, end on a plain paragraph,
+//     and loop a film of a few seconds — see the Story type;
+//   · an Armenian run inside her English text is marked lang="hy", and the
+//     word-splitter keeps that mark (it used to flatten a paragraph to text).
 // ============================================================================
 
 const STACK = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 
 /** the rail's word for a story: its year, or the first word of its date line */
 const railLabel = (s: Story) => s.when.match(/(\d{4})/)?.[1] ?? s.when.split(" ")[0];
+
+/** Her English text names an Armenian book in Armenian («“Հիշելու հեքիաթներ”»).
+ *  Those runs are marked lang="hy" so a screen reader switches voice and the
+ *  browser picks an Armenian face. A run is whole WORDS — whatever touches
+ *  the Armenian letters without a space (her quotation marks) stays inside
+ *  it, so a line can never break between a quote mark and its word. */
+const HY = /[Ա-֏]/;
+const GAP = /^\s+$/;
+function hy(text: string) {
+  if (!HY.test(text)) return text;
+  const parts = text.split(/(\s+)/).filter(Boolean);
+  const runs: { hy: boolean; text: string }[] = [];
+  for (let i = 0; i < parts.length; ) {
+    if (HY.test(parts[i])) {
+      let run = parts[i++];
+      // a space between two Armenian words belongs to the run
+      while (i + 1 < parts.length && GAP.test(parts[i]) && HY.test(parts[i + 1])) {
+        run += parts[i] + parts[i + 1];
+        i += 2;
+      }
+      runs.push({ hy: true, text: run });
+    } else {
+      const last = runs[runs.length - 1];
+      if (last && !last.hy) last.text += parts[i];
+      else runs.push({ hy: false, text: parts[i] });
+      i++;
+    }
+  }
+  return runs.map((r, i) =>
+    r.hy ? (
+      <span lang="hy" key={i}>
+        {r.text}
+      </span>
+    ) : (
+      r.text
+    ),
+  );
+}
 
 export default function StoriesView() {
   const root = useRef<HTMLDivElement | null>(null);
@@ -110,24 +161,73 @@ export default function StoriesView() {
       //    at word boundaries; cleanup puts the original text back.
       items.forEach((li) => {
         li.querySelectorAll<HTMLElement>("[data-words]").forEach((p) => {
-          const text = p.textContent ?? "";
-          const frag = document.createDocumentFragment();
-          for (const part of text.split(/(\s+)/)) {
-            if (!part) continue;
-            if (/^\s+$/.test(part)) {
-              frag.appendChild(document.createTextNode(part));
-              continue;
+          // the paragraph's own nodes are kept and put back as they were —
+          // they are React's, and one of them may be a lang="hy" run, which
+          // is split INSIDE a copy of its element so the mark survives
+          const own = Array.from(p.childNodes);
+          const split = (text: string, into: Node) => {
+            for (const part of text.split(/(\s+)/)) {
+              if (!part) continue;
+              if (GAP.test(part)) {
+                into.appendChild(document.createTextNode(part));
+                continue;
+              }
+              const w = document.createElement("span");
+              w.className = "ap-st__w";
+              w.textContent = part;
+              into.appendChild(w);
             }
-            const w = document.createElement("span");
-            w.className = "ap-st__w";
-            w.textContent = part;
-            frag.appendChild(w);
-          }
+          };
+          const frag = document.createDocumentFragment();
+          own.forEach((n) => {
+            if (n instanceof HTMLElement) {
+              const shell = n.cloneNode(false);
+              split(n.textContent ?? "", shell);
+              frag.appendChild(shell);
+            } else if (n.nodeType === Node.TEXT_NODE) split(n.textContent ?? "", frag);
+          });
           p.replaceChildren(frag);
           restore.push(() => {
-            p.textContent = text;
+            p.replaceChildren(...own);
           });
         });
+      });
+
+      // 1b. THE FIT. A sheet is one screen, and its type is sized by the
+      //    screen's height (stories.css) — which held for her first six
+      //    texts and cannot hold for whatever she sends next: the AGBU story
+      //    (2026-10-01, six paragraphs) ran 130px past a 1024×768 sheet,
+      //    whose overflow is clipped. So a text column taller than its
+      //    sheet's inner box steps its type down, half a pixel at a time,
+      //    until it fits (12px is the floor). Run again on every refresh —
+      //    a resize changes both the box and the type — and once the web
+      //    fonts are in, which change the line count. offsetHeight is
+      //    layout, so GSAP's transforms on the sheet do not skew it.
+      const fit = () => {
+        items.forEach((li) => {
+          const sheet = li.querySelector<HTMLElement>(".ap-st__sheet");
+          const say = li.querySelector<HTMLElement>(".ap-st__say");
+          if (!sheet || !say) return;
+          say.style.fontSize = "";
+          const cs = getComputedStyle(sheet);
+          const room = sheet.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+          let px = parseFloat(getComputedStyle(say).fontSize);
+          while (say.offsetHeight > room && px > 12) {
+            px -= 0.5;
+            say.style.fontSize = `${px}px`;
+          }
+        });
+      };
+      fit();
+      ScrollTrigger.addEventListener("refreshInit", fit);
+      let gone = false;
+      document.fonts?.ready.then(() => {
+        if (!gone) fit();
+      });
+      restore.push(() => {
+        gone = true;
+        ScrollTrigger.removeEventListener("refreshInit", fit);
+        items.forEach((li) => li.querySelector<HTMLElement>(".ap-st__say")?.style.removeProperty("font-size"));
       });
 
       // 2. the recede: as sheet i+1 rides up (its mark travels from the
@@ -185,11 +285,18 @@ export default function StoriesView() {
         // (the last one's end is the page's own maximum, as a NUMBER — the
         // string "max" next to an endTrigger resolved to an empty range and
         // the last story never came on; measured on the first pass)
+        // …PLUS ONE (2026-10-01). A trigger is "active" strictly inside its
+        // range, and the page's maximum is a place a visitor can ARRIVE at
+        // without passing through — the End key, a reload that restores the
+        // scroll at the bottom. There the last story sat at progress 1,
+        // never toggled, and its rail mark and its film stayed off (measured:
+        // a jump to the end left active at −1). One pixel past the maximum
+        // keeps the bottom of the page inside the last story's range.
         const next = marks[i + 1];
         ScrollTrigger.create({
           trigger: mark,
           start: "top top",
-          ...(next ? { endTrigger: next, end: "top top" } : { end: () => ScrollTrigger.maxScroll(window) }),
+          ...(next ? { endTrigger: next, end: "top top" } : { end: () => ScrollTrigger.maxScroll(window) + 1 }),
           onToggle: (self) => {
             if (self.isActive) setActive(i);
           },
@@ -287,6 +394,7 @@ export default function StoriesView() {
                 key={story.id}
                 id={story.id}
                 data-side={si % 2 ? "left" : "right"}
+                data-film={night || undefined}
               >
                 <div className="ap-st__sheet">
                   <div className="ap-st__say">
@@ -299,11 +407,23 @@ export default function StoriesView() {
                     <h2 className="ap-h2 ap-st__title" data-tfx="rise">
                       {story.title}
                     </h2>
+                    {/* the lines she sets under a title — whose book, for what age */}
+                    {story.sub && (
+                      <p className="ap-st__sub" data-reveal>
+                        {story.sub.map((line) => (
+                          <span key={line}>{hy(line)}</span>
+                        ))}
+                      </p>
+                    )}
                     {story.body.map((p, i) => {
-                      const closing = i === story.body.length - 1 && story.body.length > 1 && !story.link && !story.more;
+                      // her closing line stands on its own — unless the text
+                      // ends on a paragraph (plainEnd), or on a link / the
+                      // interview, where the last line only introduces them
+                      const closing =
+                        i === story.body.length - 1 && story.body.length > 1 && !story.link && !story.more && !story.plainEnd;
                       return (
                         <p key={p.slice(0, 32)} className={closing ? "ap-st__close" : "ap-st__p"} data-words>
-                          {p}
+                          {hy(p)}
                         </p>
                       );
                     })}
@@ -337,6 +457,7 @@ export default function StoriesView() {
                           muted={stack}
                           preload={stack ? "metadata" : "none"}
                           playsInline
+                          loop={story.film.loop}
                           poster={story.film.poster}
                           aria-label={story.film.label}
                           onVolumeChange={(e) => {
@@ -364,7 +485,7 @@ export default function StoriesView() {
                       )
                     )}
                     {pics.length > (story.film ? 0 : 1) && (
-                      <ul className="ap-st__thumbs">
+                      <ul className="ap-st__thumbs" data-many={pics.length > 8 || undefined}>
                         {(story.film ? pics : pics.slice(1)).map((p, i) => {
                           const at = story.film ? i : i + 1;
                           return (
@@ -399,13 +520,28 @@ export default function StoriesView() {
       {stack && (
         <nav className="ap-st__rail" aria-label="Jump to a story" data-on={active >= 0 || undefined}>
           <ol>
-            {stories.entries.map((s, i) => (
-              <li key={s.id}>
-                <button type="button" aria-current={active === i ? "true" : undefined} onClick={() => go(i)}>
-                  {railLabel(s)}
-                </button>
-              </li>
-            ))}
+            {stories.entries.map((s, i, all) => {
+              const year = railLabel(s);
+              // the year is SHOWN on the first story of that year; the ones
+              // after it are ticks under it, and show theirs when they are
+              // the story on screen, hovered or focused. The name each button
+              // answers to is its story's, not the year four of them share.
+              const heads = i === 0 || railLabel(all[i - 1]) !== year;
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    aria-current={active === i ? "true" : undefined}
+                    aria-label={`${s.title} — ${s.when}`}
+                    title={s.title}
+                    data-heads={heads || undefined}
+                    onClick={() => go(i)}
+                  >
+                    <span className="ap-st__rail-y">{year}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ol>
         </nav>
       )}

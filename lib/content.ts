@@ -35,18 +35,29 @@ export const about = {
   lead:
     "Arpine is an artist and illustrator based in Armenia, whose creative journey began with a strong foundation in graphic design. Over the years, her artistic focus has evolved, embracing the world of illustration with a deep connection to both the natural world and the fantastical realms of her imagination.",
   body: [
-    "Her journey into the visual arts started during her university years at the Armenian University of Architecture and Construction and TUMO, where she honed her skills in design techniques and developed a unique visual language. Arpine has had two solo exhibitions and is also a member of the Artists' Union in Armenia.",
+    // THE LAST TWO SENTENCES ARE HER REWRITE (client, change 3.pdf p10,
+    // 2026-10-01 — «Դարձնենք»), verbatim, her curly apostrophe included. They
+    // replace «Arpine has had two solo exhibitions and is also a member of the
+    // Artists' Union in Armenia.», which she struck through. (The old sentence
+    // still stands once more, inside the Akn Eye story further down. That text
+    // is HER OWN FILE — imgss/redesign-2026-10-01/drive/akn/story.txt — printed
+    // on /stories as ordinary story copy, and her note was written on /about
+    // only. So it stays verbatim until she says the story takes the new
+    // sentence too: an open question for her, not ours to settle.)
+    "Her journey into the visual arts started during her university years at the Armenian University of Architecture and Construction and TUMO, where she honed her skills in design techniques and developed a unique visual language. Arpine frequently participates in exhibitions and also organizes solo exhibitions. She is a member of the Artists’ Union of Armenia.",
     "Her diverse skill set includes not only illustration and character design but also graphic design and branding, allowing her to bring a unique perspective to every project she undertakes.",
     "Arpine is also the creative force behind her own growing brand, ArpenArt, where her vision continues to evolve, and her artistic voice resonates across various mediums.",
   ],
-  facts: [
-    { k: "Based in", v: "Yerevan, Armenia" },
-    { k: "Studied at", v: "Armenian University of Architecture & Construction · TUMO" },
-    { k: "Solo exhibitions", v: "Two" },
-    { k: "Member of", v: "Artists' Union of Armenia" },
-  ],
-  // her artist page — a real, verifiable link
-  link: { label: "Artist page", href: "https://www.akneye.com/artists/arpine-baroyan" },
+  // NO FACT LIST ANY MORE (client, change 3.pdf p10, 2026-10-01 — «Հանենք էս
+  // սաղ», "take all of this out"): Based in / Studied at / Solo exhibitions /
+  // Member of and the «Artist page» link under them left the page, and the
+  // rows left this file with them — nothing else read them, and «Solo
+  // exhibitions: Two» was the same count the biography just dropped.
+  //
+  // Her artist page — a real, verifiable link. It is no longer printed on
+  // /about; it stays for the machines: the Person JSON-LD on the home page and
+  // on /about cites it as `sameAs`.
+  link: { href: "https://www.akneye.com/artists/arpine-baroyan" },
 };
 
 // ---------------------------------------------------------------------------
@@ -110,6 +121,47 @@ export const ownItemWord: Record<string, string> = {
   // three fixed designs since 2026-09-15 (scarfDesigns below) — the cart's
   // `art` is the design number, not one of the 57 illustrations
   scarves: "Scarf",
+  // FOUR FIXED BAGS since 2026-10-01 (client, change 3.pdf p4 + p5: the
+  // choose-an-illustration panel came off /shop/totes — «վերևում … դրանք
+  // հերիք են», the four above are enough — and each bag is bought from its
+  // own window). The cart's `art` is now the BAG number, 01–04, as the cards
+  // name them; before this it was one of the 57 illustrations.
+  totes: "Tote bag",
+};
+
+/** WHERE AN OWN-ITEM LINE'S PICTURES LIVE, when that is not the category's
+ *  `media` roll. The cart finds a fixed item's thumbnail by its id in
+ *  products.json[media] — right for magnets and keychains, whose roll IS the
+ *  items. The totes' roll is the nine lookbook photographs (ids 01–09, none
+ *  of them tied to a bag number), while the four bags are `toteBags`: without
+ *  this, "Tote bag no. 02" in the cart wore lookbook photograph 02. */
+export const ownItemMedia: Record<string, string> = {
+  totes: "toteBags",
+  // THE SAME TRAP, ON THE SCARVES (found 2026-10-01 while checking every
+  // place the girl-and-sun design is pictured, change 3.pdf p8). The roll is
+  // twelve photographs, ids 01–12, four per design; the cart line's `art` is
+  // the DESIGN number, 01–03. So "Scarf no. 02" wore roll photograph 02 —
+  // design 01 on a wall — and "Scarf no. 03" wore design 01 on a rail: the
+  // buyer of one scarf was shown another. `scarfDesigns` in products.json is
+  // one row per design, a copy of that design's flat print (roll 01, 05, 09 —
+  // the first of each `shots` list in `scarfDesigns` below).
+  scarves: "scarfDesigns",
+};
+
+/** ILLUSTRATIONS A LINE DOES NOT SELL, keyed by category slug (client,
+ *  «change 3.pdf» p2, 2026-10-01: «հանում ենք էս տեսակ բացիկը» on no. 25, the
+ *  girl dreaming under the stars — «ԵՐԱԶԵԼՈՎ» — and «սա էլ» on no. 23, the two
+ *  fish kissing on the waves). Her note is on the POSTCARD picker and says
+ *  "this kind of postcard", so the two leave the postcard catalogue only: the
+ *  pictures stay in the series itself (the home cloud, the cups / plates /
+ *  puzzles pickers), which is why this is a list beside artworks.json and not
+ *  two deleted rows in it. ONE list, read by everything that offers a
+ *  postcard: the picker in CategoryView, the hero's deck on /shop/postcards
+ *  and the cloud's own "Add to cart". (Both are among the three pictures that
+ *  never came with print scans — 23, 25, 34 — i.e. they were never
+ *  postcards she printed.) */
+export const withheldArt: Record<string, readonly string[]> = {
+  postcards: ["23", "25"],
 };
 
 // The process rows every open category shares, stated once so the story can
@@ -284,13 +336,17 @@ export const categories: Category[] = [
     name: "Tote bags",
     blurb: "Carry your favorite Armenian stories.",
     media: "totes",
-    // ARPINE'S REAL PRICE, 2026-08-24 (it replaces a 6,500 placeholder).
+    // ARPINE'S REAL PRICE, 2026-08-24 (it replaces a 6,500 placeholder) —
+    // and said again on 2026-10-01 (change 3.pdf p4: «կարանք գին գրենք՝ 8000
+    // դրամ»), which is when it went back ON the page: the gallery's head and
+    // each bag's window both read this number.
     from: 8000,
     // OPEN AGAIN (client, change.pdf p7, 2026-09-21: «you had the tote bag
     // made, for the 4 designs, with their pictures — bring that back»). It
-    // was hidden for six days on her 2026-09-15 note; the four-design gallery
-    // and the choose-your-illustration page were never deleted, only gated
-    // by this flag, so the page is exactly the one she remembers.
+    // was hidden for six days on her 2026-09-15 note. SINCE 2026-10-01 the
+    // page is the four bags and nothing else to choose from (change 3.pdf
+    // p5): the choose-an-illustration panel that used to sit under them is
+    // gone from this line, and a bag is bought from the window its card opens.
     status: "open",
     // both rows repeat the tote lookbook's caption, word for word
     spec: [
@@ -1053,6 +1109,15 @@ export const scarfDesigns = {
     "Each scarf brings together a different story from Armenia — its mountains, cities, people, memories and dreams. Wear it as a colorful reminder of a place that stays close to the heart.",
   add: "Add to cart",
   added: "Added to your cart.",
+  // THE PRICE LINE'S ONE WORD (client, change 3.pdf p7, 2026-10-01: «ինչ-որ
+  // մի տեղ գինն էլ ավելացնենք՝ 8000 դրամ»). The FIGURE is not here — the page
+  // reads it from `categories[scarves].from`, the field the cart and
+  // /api/order price from. "each" is the site's own word, the one the
+  // magnets, the keychains and the 3D stickers already put after theirs.
+  each: "each",
+  // THE SECOND DESIGN'S PRINT (shot 05) IS HER 2026-10-01 FILE (change 3.pdf
+  // p8: «փոխենք նկարը սրանով» — the same square without the small red figure
+  // on the hill). Same id, same paths; made by scratchpad/assets-1001-scarf.cjs.
   designs: [
     {
       id: "01",
@@ -1194,15 +1259,32 @@ export const stickers3d = {
 // ---------------------------------------------------------------------------
 export const toteBags = {
   kicker: "(Tote bags)",
-  title: "A LITTLE ARMENIA, WHEREVER YOU GO",
+  // HER TWO LINES (client, change 3.pdf p6, 2026-10-01: «2 տողով սարքել էս
+  // տեքստը» — "make this text two lines", with the break drawn after the
+  // comma). One entry per line, the way `about.title` and the series title
+  // are modelled; the words themselves are unchanged.
+  title: ["A LITTLE ARMENIA,", "WHEREVER YOU GO"],
+  // …and the paragraph BESIDE the heading, not under it (same page: «էս էլ
+  // բերել կողքը»). Two entries because her text file breaks there — the
+  // second sentence keeps its own line in the right-hand column.
   copy: [
     "Inspired by Armenia’s cities, landscapes and stories, these illustrated tote bags turn everyday essentials into wearable memories.",
     "Carry the colors and spirit of Armenia with you.",
   ],
   badges: ["Natural cotton", "Printed in Yerevan"],
-  /** said once under the row, and only where a pointer can act on it */
-  cue: "Hover a bag to see it carried",
+  /** Said once under the row. It used to promise only the hover, and a click
+   *  did nothing — which is exactly what she reported (change 3.pdf p4: «երբ
+   *  որ քլիք եմ անում նկարի վրա, ոչ մի բան չի բացվում»). The first is for a
+   *  pointer that can hover; the second is what a phone gets, where there is
+   *  no hover to promise. Interface words, not her copy. */
+  cue: "Hover a bag to see it carried · click to open",
+  cueTouch: "Tap a bag to open it",
   series: "The Armenia series",
+  /** the window a card opens (change 3.pdf p4: «թող բացվի պատուհանիկ ու բերի
+   *  իմ ուղարկած 2 նկարը ամեն տեսակի» — "let a little window open and bring
+   *  my two pictures of each kind"). The same four interface words the 3D
+   *  stickers' window uses; nothing here describes the product. */
+  open: { each: "each", add: "Add to cart", added: "Added to your cart.", close: "Close" },
 };
 
 // ---------------------------------------------------------------------------
@@ -1217,23 +1299,50 @@ export const toteBags = {
 //     paragraph calls the show “A Journey Through Illustrations”;
 //   · the Dilijan file is dated 07.07.2025 while the poster in the same
 //     folder says 07 June.
-// The photographs are placed by what is IN them (the poster, the Union's
-// building, the framed drawings behind her, the trees), and the two films
-// by their own lower-thirds — the Union's vice-president speaks in one, the
-// Narekatsi Art Institute in the other. Where a work could not be tied to a
-// show it is not forced into one.
+// The two 2022/2024 films are placed by their own lower-thirds — the Union's
+// vice-president speaks in one, the Narekatsi Art Institute in the other.
+//
+// ROUND 3 (client, change 3.pdf p9 + p11, 2026-10-01):
+//   · THE PHOTOGRAPHS ARE PLACED BY HER FOLDERS, no longer by what is in
+//     them. «Խառնվել են նկարները… խնդրում եմ նորից ըստ պապկաների ստուգես»:
+//     placing by eye had put the three Akn eye renders into the Dilijan
+//     show and two pieces from other folders into the Akn story. Every
+//     `photos` list below is one Drive folder, lead first, built by
+//     scratchpad/assets-1001-stories.cjs — which is where the folder → story
+//     table lives. Dilijan leads with the photograph of Dilijan («հիմնական
+//     նկարն էլ դիլիջանի ֆոտոն դնենք»); the eye pieces are ONLY in akn-eye.
+//   · FIVE NEW STORIES («Նոր բաժիններ ենք ավելացնում»), each from its own
+//     text file, unedited. They carry no date line of their own, so `when`
+//     is only what she gave: the date in the folder's name (and "2024–2025"
+//     for the music project) — no place is added that she did not write.
+//     The Akn story gets its folder's date the same way.
+//   · NEWEST FIRST («ամենանորը ամենասկզբում»).
+//   · Three more things that are hers to settle and stand as she sent them:
+//     the music text has no title line, so its first line is the title; the
+//     first-solo poster in her folder says 16 Sep at Zangak while the text
+//     says 22.10.2022 at the Artists' Union; and the Akn text still has the
+//     sentence she replaced on /about ("has had two solo exhibitions") — it
+//     is that page's own wording, in her folder as before.
 // ---------------------------------------------------------------------------
 export type Story = {
   id: string;
   /** her date line, verbatim */
   when: string;
   title: string;
+  /** the heading-like lines she sets between a title and its text ("A story
+   *  about Arpen Art, …", "Age 5+"), verbatim and in her order */
+  sub?: string[];
   /** her paragraphs, in order; the last one is her closing line */
   body: string[];
+  /** her text ends on a full paragraph, not on a one-line closing sentence —
+   *  so the last paragraph is set as a paragraph, not as the pull line */
+  plainEnd?: true;
   /** ids in lib/stories.json — the first is the card's lead picture */
   photos: string[];
-  /** a television feature, self-hosted; sound stays on, so it plays on a press */
-  film?: { src: string; poster: string; label: string };
+  /** a film, self-hosted. A television feature keeps its sound and starts
+   *  muted; `loop` is for a clip of a few seconds (an animated illustration),
+   *  which would otherwise stop before it has been looked at */
+  film?: { src: string; poster: string; label: string; loop?: true };
   /** the full interview, in the language it was given */
   more?: { label: string; lang: string; paragraphs: string[]; credit: string };
   link?: { label: string; href: string };
@@ -1246,6 +1355,71 @@ export const stories = {
   watch: "Watch the feature",
   entries: [
     {
+      id: "agbu-2026",
+      when: "10.09.2026",
+      title: "TURNING ARMENIA’S HERITAGE INTO ART",
+      sub: ["A story about Arpen Art, illustration and cultural entrepreneurship"],
+      body: [
+        "Graphic designer and artist Arpine Baroyan transforms the impressions she draws from Armenia’s historical and cultural monuments into contemporary, functional illustrations — from postcards and notebooks to bags and scarves.",
+        "Through Arpen Art, her work aims to bring Armenian culture into everyday life in a modern and accessible way, turning familiar places and cultural symbols into objects that can be carried, shared and remembered.",
+        "Arpine took part in the AGBU “Women Entrepreneurs” program, where she gained valuable knowledge in business development, registration, cost calculation and effective communication with customers.",
+        "At the end of the program, she was awarded a business development grant, which she planned to invest in new equipment. This support would allow her to become less dependent on external printing services, bring more of the production process into her own studio, and reduce production costs.",
+        "Today, Arpine is working on a new original illustration series dedicated to the regions and picturesque towns of Armenia, continuing to explore the country through her own visual language.",
+        "From heritage to illustration. From illustration to everyday life.",
+      ],
+      // her folder holds the text and the feature, no photographs
+      photos: [],
+      film: {
+        src: "/stories/film-agbu.mp4",
+        poster: "/stories/film-agbu.webp",
+        // what the frames themselves show: a television report, its headline
+        // band and name plate set in Armenian. The spoken language was not
+        // checked by ear, so only the titles are named.
+        label: "Television feature about Arpine Baroyan and Arpen Art — on-screen titles in Armenian",
+      },
+    },
+    {
+      id: "tales-2026",
+      when: "17.08.2026",
+      title: "FROM WORDS TO IMAGES",
+      sub: ["Illustrating “Հիշելու հեքիաթներ” by Arpi Maghakyan"],
+      body: [
+        "Arpen Art created the illustrations for “Հիշելու հեքիաթներ” a new collection of stories by Armenian author Arpi Maghakyan.",
+        "The book brings together eight true-to-life and magical tales inspired by the lives of important figures from Armenian history and culture. It is a journey into the depths of Armenia’s past, where readers encounter remarkable personalities such as Komitas, Hovhannes Tumanyan, Ghazaros Aghayan, Khrimian Hayrik, Momik, Trdat the Architect, and others.",
+        "Through illustration, Arpen Art translates these stories into a visual language — bringing historical figures, places and moments to life while creating a bridge between the past and a new generation of readers.",
+        "A book where history, imagination and illustration meet.",
+      ],
+      // the book's cover, an open spread, two of the illustrations
+      photos: ["tales-3844", "tales-mockup-5", "tales-a5-02", "tales-a5-06"],
+    },
+    {
+      id: "vardavar-2026",
+      when: "26.06.2026",
+      title: "VARDAVAR — A STORY ACROSS BORDERS",
+      sub: ["A children’s book by Tamar Panossian, illustrated by Arpine Baroyan", "Age 5+"],
+      body: [
+        "Written by Tamar Panossian, an Armenian author based in Montreal, Canada, Vardavar is a children’s book inspired by one of Armenia’s beloved traditions.",
+        "For this project, Arpen Art created the illustrations, bringing the story into a colorful visual world designed for young readers.",
+        "Created across borders, the book is a small but meaningful connection between Armenia and the Armenian diaspora — carrying a piece of Armenian culture, tradition and imagination from one generation to the next.",
+      ],
+      plainEnd: true,
+      photos: ["vardavar-mockup-4", "vardavar-mockup-5", "vardavar-7452"],
+    },
+    {
+      id: "wishes-2025",
+      when: "24.11.2025",
+      title: "365 WISHES",
+      sub: ["A children’s book by Tamar Panossian, illustrated by Arpine Baroyan"],
+      body: [
+        "Written by Tamar Panossian, an Armenian author based in Montreal, Canada, 365 Wishes is a heartfelt book dedicated to little Raffi and to all the Armenian children who continue to inspire Tamar through their dreams, curiosity and imagination.",
+        "For this special project, Arpen Art created the illustrations, giving each page its own colorful visual character and helping bring the world of the book to life.",
+        "At the heart of 365 Wishes is a simple and beautiful idea: one wish for every day of the year — a collection of hopes, dreams and little moments created especially for children.",
+      ],
+      plainEnd: true,
+      // the cover first, then two spreads
+      photos: ["wishes-mockup-13", "wishes-mockup-01", "wishes-mockup-07"],
+    },
+    {
       id: "dilijan-2025",
       when: "07.07.2025 · DILIJAN · RESTART BOUTIQUE HOTEL",
       title: "A PLACE FULL OF MEMORIES",
@@ -1255,10 +1429,10 @@ export const stories = {
         "It felt natural to bring my work back to a place that has inspired so many feelings and memories over the years.",
         "A collection of illustrations, shown in a place that feels a little like home.",
       ],
-      // the poster ("Beyond the Hidden Border — Exhibition by Arpine
-      // Baroyan, RestArt Boutique Hotel Dilijan"), the DREAM piece and its
-      // two other views, two of the graphic drawings, and Dilijan itself
-      photos: ["31", "36", "34", "35", "37", "26", "28"],
+      // her «21.06.2025 դիլիջան» folder: Dilijan itself leads (her note on
+      // p9), then the poster ("Beyond the Hidden Border — Exhibition by
+      // Arpine Baroyan, RestArt Boutique Hotel Dilijan") and the four works
+      photos: ["dilijan-lzav", "dilijan-poster", "dilijan-20230505", "dilijan-9201", "dilijan-02", "dilijan-vvv"],
     },
     {
       id: "media-m-2025",
@@ -1268,7 +1442,7 @@ export const stories = {
         "An interview about illustration, Armenian culture and the stories behind Arpen Art. In conversation with Media M, Arpine shares her creative journey, the ideas behind her work, and her vision for bringing Armenian stories into contemporary illustration.",
         "Read the full interview below.",
       ],
-      photos: ["27"],
+      photos: ["interview-7131"],
       more: {
         label: "Read the full interview (in Armenian)",
         lang: "hy",
@@ -1296,6 +1470,45 @@ export const stories = {
       },
     },
     {
+      id: "akn-eye",
+      // the date is her folder's («25.01.2025 akn»); the text file has none
+      when: "25.01.2025 · AKN EYE · ARTIST PAGE",
+      title: "ARPINE ON AKN EYE",
+      body: [
+        "Arpine is an artist and illustrator based in Armenia, whose creative journey began with a strong foundation in graphic design. Over the years, her artistic focus has evolved, embracing the world of illustration with a deep connection to both the natural world and the fantastical realms of her imagination.",
+        "Her journey into the visual arts started during her university years at the Armenian University of Architecture and Construction and TUMO, where she honed her skills in design techniques and developed a unique visual language. Arpine has had two solo exhibitions and is also a member of the Artists' Union in Armenia.",
+        "Her diverse skill set includes not only illustration and character design but also graphic design and branding, allowing her to bring a unique perspective to every project she undertakes.",
+        "Arpine is also the creative force behind her own growing brand, ArpenArt, where her vision continues to evolve, and her artistic voice resonates across various mediums.",
+      ],
+      // «Աչքի նկարները ստեղ պետք ա լինեին»: her holding the eye, then its
+      // three renders — and they are in no other story
+      photos: ["akn-photo-01", "akn-final-03", "akn-final-05", "akn-final-06"],
+      link: { label: "See the page on akneye.com", href: "https://www.akneye.com/artists/arpine-baroyan" },
+    },
+    {
+      id: "music-2024",
+      when: "2024–2025",
+      // her text has NO title line: this is its first line, in the capitals
+      // the other ten titles are written in (open point for her)
+      title: "AN ANIMATED ILLUSTRATION PROJECT INSPIRED BY ARMENIAN MUSIC",
+      body: [
+        "For this project, Arpen Art created a series of colorful animated illustrations, transforming music into a visual world of movement, characters, color and emotion.",
+        "The project brought together artists from different parts of the Armenian diaspora. The music for the songs was created by Gegham Margaryan, based in Boston, USA, while the main vocalist and performer, Rafael Hovhannisyan, is based in Los Angeles, USA.",
+        "For me, this was a particularly exciting project — a collaboration where music and illustration come together to create something alive, playful and full of color.",
+        "🎵 Listen to the songs and watch the animated illustrations:",
+      ],
+      photos: ["music-5659", "music-monument"],
+      film: {
+        src: "/stories/film-music.mp4",
+        poster: "/stories/film-music.webp",
+        label: "One of the animated illustrations from the project",
+        loop: true,
+      },
+      // her line reads «YouTube playlist →https://…» — her words are the
+      // label, her address the link
+      link: { label: "YouTube playlist", href: "https://www.youtube.com/watch?v=NVS0Krzt4c8&list=PL8-0aaPsjsLWHDBUbZY49NnqapKo2t4ZT" },
+    },
+    {
       id: "tsarapatum-2024",
       when: "29.07.2024 · YEREVAN · NAREKATSI ART INSTITUTE",
       title: "TSARAPATUM — STORIES OF TREES",
@@ -1306,9 +1519,23 @@ export const stories = {
         "This exhibition was a personal exploration of nature and emotion, bringing together a series of works connected by one simple but powerful image: the tree.",
         "A story about roots, growth and everything that quietly lives within us.",
       ],
-      // the opening with the musicians, the sheep among the trees, the tree
-      // on wine-red
-      photos: ["39", "32", "33"],
+      // her «29-07-2024 ծառապատում» folder: the poster, her at the show, the
+      // opening, the five framed tree drawings, the visitors
+      photos: [
+        "tsarapatum-6483",
+        "tsarapatum-6979",
+        "tsarapatum-7108",
+        "tsarapatum-a",
+        "tsarapatum-b",
+        "tsarapatum-c",
+        "tsarapatum-d",
+        "tsarapatum-demq",
+        "tsarapatum-7151",
+        "tsarapatum-7154",
+        "tsarapatum-7155",
+        "tsarapatum-7156",
+        "tsarapatum-7157",
+      ],
       film: {
         src: "/stories/film-tsarapatum.mp4",
         poster: "/stories/film-tsarapatum.webp",
@@ -1325,8 +1552,11 @@ export const stories = {
         "Becoming a member was a meaningful step in my own artistic journey — a connection to the wider community of Armenian artists and to a tradition that continues to evolve with every new generation.",
         "Proud to be part of it since December 5, 2023.",
       ],
-      // the Union's building on Abovyan Street, from the square and at the door
-      photos: ["20", "18"],
+      // her «05-12-2023 միություն» folder: the Union's building at the door
+      // and from the square, her beside the framed drawings, three works.
+      // shared-01 and shared-1u are the two files this folder and the
+      // first-solo folder both hold, byte for byte — stored once
+      photos: ["union-building", "union-b148952023", "union-6503", "shared-01", "shared-1u", "union-9745"],
     },
     {
       id: "first-solo-2022",
@@ -1338,28 +1568,14 @@ export const stories = {
         "This exhibition holds a very special place in my story. It was my first solo show, the first time I presented my work as a complete artistic journey, and a moment that gave me the confidence to continue exploring illustration as my own visual language.",
         "The beginning of a journey that continues to this day.",
       ],
-      // her beside the framed drawings, and two of the drawings themselves
-      photos: ["25", "19", "30"],
+      // her «25-10-2022 1-ին» folder: the poster, two photographs from the
+      // opening, five works (the last two shared with the union folder)
+      photos: ["first-poster", "first-dsc06834", "first-dsc06735", "first-mg-0025", "first-mg-0760", "first-net-002", "shared-01", "shared-1u"],
       film: {
         src: "/stories/film-union.mp4",
         poster: "/stories/film-union.webp",
         label: "Television feature “Arpine Baroyan’s mysterious world”, at the Artists’ Union of Armenia — in Armenian",
       },
-    },
-    {
-      id: "akn-eye",
-      when: "AKN EYE · ARTIST PAGE",
-      title: "ARPINE ON AKN EYE",
-      body: [
-        "Arpine is an artist and illustrator based in Armenia, whose creative journey began with a strong foundation in graphic design. Over the years, her artistic focus has evolved, embracing the world of illustration with a deep connection to both the natural world and the fantastical realms of her imagination.",
-        "Her journey into the visual arts started during her university years at the Armenian University of Architecture and Construction and TUMO, where she honed her skills in design techniques and developed a unique visual language. Arpine has had two solo exhibitions and is also a member of the Artists' Union in Armenia.",
-        "Her diverse skill set includes not only illustration and character design but also graphic design and branding, allowing her to bring a unique perspective to every project she undertakes.",
-        "Arpine is also the creative force behind her own growing brand, ArpenArt, where her vision continues to evolve, and her artistic voice resonates across various mediums.",
-      ],
-      // the sculpted faces and the cat — character work, which is what this
-      // page of hers is about
-      photos: ["24", "29"],
-      link: { label: "See the page on akneye.com", href: "https://www.akneye.com/artists/arpine-baroyan" },
     },
   ] satisfies Story[],
 };
