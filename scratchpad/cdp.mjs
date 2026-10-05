@@ -56,6 +56,12 @@ export async function launch({ port = 9341, args = [] } = {}) {
       "--hide-scrollbars",
       "--mute-audio",
       "--autoplay-policy=no-user-gesture-required",
+      // a Chrome extension registered machine-wide (HKCU\Software\Google\
+      // Chrome\Extensions) installs itself into every fresh profile and, ~20 s
+      // in, opens a sign-in tab that hides the page: requestAnimationFrame
+      // stops and long walks wedge (2026-10-05, postcards resize walk)
+      "--disable-extensions",
+      "--disable-sync",
       ...args,
       "about:blank",
     ],

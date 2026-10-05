@@ -33,7 +33,7 @@ await send("Page.enable"); await send("Runtime.enable");
 console.log("=== 1. one basket, four id-spaces ===");
 await send("Page.navigate", { url: "http://localhost:4000/cart" });
 await sleep(9000);
-await ev(`localStorage.setItem("arpenart.cart.v1", JSON.stringify([
+await ev(`localStorage.setItem("arpenart.cart.v2", JSON.stringify([
   { cat: "magnets", art: "05", qty: 1 },
   { cat: "keychains", art: "05", qty: 1 },
   { cat: "3d-stickers", art: "05", qty: 1 },
@@ -60,13 +60,13 @@ console.log("dialog shows      :", await ev(`document.querySelector(".ap-xg__lb"
 await ev(`document.querySelector(".ap-xg__x").click()`); await sleep(700);
 
 console.log("=== 3. grid buy bumps the badge ===");
-await ev(`localStorage.setItem("arpenart.cart.v1", "[]")`);
+await ev(`localStorage.setItem("arpenart.cart.v2", "[]")`);
 await send("Page.navigate", { url: "http://localhost:4000/shop/magnets" });
 await sleep(14000);
 await ev(`(() => { const b = document.querySelectorAll(".ap-mf__add")[1]; b.scrollIntoView({block:"center"}); b.click(); })()`);
 await sleep(2000);
 console.log("badge:", await ev(`document.querySelector('a[href="/cart"]')?.innerText.replace(/\s+/g, " ").trim()`),
-  "| stored:", await ev(`localStorage.getItem("arpenart.cart.v1")`));
+  "| stored:", await ev(`localStorage.getItem("arpenart.cart.v2")`));
 
 console.log("=== 4. /shop copy ===");
 await send("Page.navigate", { url: "http://localhost:4000/shop" });

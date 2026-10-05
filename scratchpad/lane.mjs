@@ -73,7 +73,7 @@ writeFileSync("scratchpad/lane-open.png", Buffer.from(s2.result.data, "base64"))
 
 await ev(`document.querySelector('.ap-s3__panel .ap-btn').click()`);
 await sleep(800);
-console.log("cart:", await ev(`localStorage.getItem('arpenart.cart.v1')`),
+console.log("cart:", await ev(`localStorage.getItem('arpenart.cart.v2')`),
   " said:", await ev(`document.querySelector('.ap-s3__added')?.textContent`));
 
 await ev(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);

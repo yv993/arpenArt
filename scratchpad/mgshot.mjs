@@ -45,7 +45,7 @@ const b = await send("Page.captureScreenshot", { format: "png" });
 writeFileSync("scratchpad/mg-big.png", Buffer.from(b.result.data, "base64"));
 console.log("buy       :", await ev(`(() => { const f = document.querySelector(".ap-xg__stage figcaption button"); if (!f) return "no buy"; f.click(); return "clicked: " + f.textContent.trim(); })()`));
 await sleep(2200);
-console.log("stored    :", await ev(`localStorage.getItem("arpenart.cart.v1")`));
+console.log("stored    :", await ev(`localStorage.getItem("arpenart.cart.v2")`));
 console.log("badge     :", await ev(`document.querySelector('a[href="/cart"]')?.innerText.replace(/\s+/g, " ").trim()`));
 console.log("errors    :", errs.length ? errs : "none");
 sock.close(); edge.kill();

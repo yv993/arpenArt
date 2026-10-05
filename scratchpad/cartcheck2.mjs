@@ -39,7 +39,7 @@ const ev = async (e) => {
 await send("Page.enable"); await send("Runtime.enable");
 
 const badge = `(() => { const a = document.querySelector('a[href="/cart"]'); return a ? a.innerText.replace(/\\s+/g, " ").trim() : "NO LINK"; })()`;
-const store = `localStorage.getItem("arpenart.cart.v1") ?? "(empty)"`;
+const store = `localStorage.getItem("arpenart.cart.v2") ?? "(empty)"`;
 const addBtn = `[...document.querySelectorAll("button")].find(x => /add to cart/i.test(x.textContent))`;
 
 console.log("=== 1. postcards WITHOUT choosing — must refuse and say so ===");

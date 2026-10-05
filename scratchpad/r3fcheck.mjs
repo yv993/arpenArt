@@ -107,10 +107,10 @@ await sleep(4000);
 console.log("after :", await ev(`document.querySelector(".ap-kc__stagebuy .ap-kc__name").textContent`));
 
 console.log("\n=== 5. buy from the stage ===");
-await ev(`localStorage.setItem("arpenart.cart.v1", "[]")`);
+await ev(`localStorage.setItem("arpenart.cart.v2", "[]")`);
 await ev(`document.querySelector(".ap-kc__stagebuy .ap-kc__add").click()`);
 await sleep(2000);
-console.log("stored:", await ev(`localStorage.getItem("arpenart.cart.v1")`));
+console.log("stored:", await ev(`localStorage.getItem("arpenart.cart.v2")`));
 
 const full = await send("Page.captureScreenshot", { format: "png" });
 writeFileSync("scratchpad/r3f-page.png", Buffer.from(full.result.data, "base64"));

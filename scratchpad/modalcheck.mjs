@@ -39,7 +39,7 @@ const ev = async (e) => {
 };
 await send("Page.enable"); await send("Runtime.enable");
 const badge = `(() => { const a = document.querySelector('a[href="/cart"]'); return a ? a.innerText.replace(/\\s+/g, " ").trim() : "NO LINK"; })()`;
-const store = `localStorage.getItem("arpenart.cart.v1") ?? "(empty)"`;
+const store = `localStorage.getItem("arpenart.cart.v2") ?? "(empty)"`;
 
 console.log("=== 3D STICKERS: click a flying card ===");
 await send("Page.navigate", { url: "http://localhost:4010/shop/3d-stickers" });

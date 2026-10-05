@@ -43,7 +43,7 @@ console.log("badge before:", await ev(`document.querySelector('a[href="/cart"]')
 console.log("buy         :", await ev(`(() => { const b = document.querySelectorAll(".ap-kc__add")[1]; b.click(); return "clicked " + b.textContent; })()`));
 await sleep(2200);
 console.log("badge after :", await ev(`document.querySelector('a[href="/cart"]').innerText.replace(/\s+/g," ").trim()`));
-console.log("stored      :", await ev(`localStorage.getItem("arpenart.cart.v1")`));
+console.log("stored      :", await ev(`localStorage.getItem("arpenart.cart.v2")`));
 console.log("said        :", await ev(`[...document.querySelectorAll(".ap-kc__added")].map(e=>e.textContent).filter(Boolean).join("")`));
 
 await send("Page.navigate", { url: "http://localhost:4000/cart" });

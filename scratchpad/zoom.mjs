@@ -84,7 +84,7 @@ console.log("after ArrowRight     ->", await state());
 // --- 4. buy from inside, then Escape --------------------------------------
 await ev(`document.querySelector('.ap-xg__stage figcaption .ap-btn').click()`);
 await sleep(800);
-console.log("cart:", await ev(`localStorage.getItem('arpenart.cart.v1')`));
+console.log("cart:", await ev(`localStorage.getItem('arpenart.cart.v2')`));
 await ev(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);
 await sleep(700);
 console.log("after Escape         ->", await state());

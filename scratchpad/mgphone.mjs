@@ -41,7 +41,7 @@ await sleep(1600);
 console.log("dialog           :", await ev(`document.querySelector(".ap-xg__lb")?.getAttribute("aria-label")?.slice(0, 40) ?? "NOT OPEN"`));
 console.log("buy              :", await ev(`(() => { const f = document.querySelector(".ap-xg__stage figcaption button"); if (!f) return "no buy"; f.click(); return "clicked"; })()`));
 await sleep(1800);
-console.log("stored           :", await ev(`localStorage.getItem("arpenart.cart.v1")`));
+console.log("stored           :", await ev(`localStorage.getItem("arpenart.cart.v2")`));
 const a = await send("Page.captureScreenshot", { format: "png" });
 writeFileSync("scratchpad/mg-phone.png", Buffer.from(a.result.data, "base64"));
 
