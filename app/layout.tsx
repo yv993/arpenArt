@@ -90,6 +90,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${display.variable} ${body.variable} ${ui.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* WITH SCRIPTING OFF, A STREAMED PAGE WAS ONLY THE SPLASH (site
+            repair, 2026-10-05; confirmed on the live deploy for /stories,
+            /shop/totes and /shop/postcards). loading.tsx makes every route a
+            Suspense boundary: when a page is not ready inside the first
+            flush, React sends the splash (.ap-load) in its place in <main>,
+            then the page itself at the END of <body> — inside
+            <div hidden id="S:…">, after the footer — with a tiny script
+            ($RC) that swaps it in. No script, no swap: a fixed paper sheet
+            with "ArpenArt" on it, and the page hidden under it for good.
+            The splash stays (it was built for slow connections, and every
+            client navigation still gets it); this undoes the swap's absence
+            in CSS, and ONLY for a browser that runs no scripts — with
+            scripting on, a <noscript> in <head> is inert text.
+              · the splash is hidden;
+              · React's outlined segments (`S:` + a number — React's own
+                naming, used by nothing else on the site) are shown, wearing
+                main's warm top;
+              · body becomes a column and the footer is ordered after them,
+                so the page reads nav → content → footer, not footer first.
+            !important because the app's stylesheet may load after this tag
+            and .ap-load sets its own display. Inner HTML rather than a
+            <style> child, so the CSS reaches the page byte for byte. */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html:
+              "<style>" +
+              ".ap-load{display:none!important}" +
+              "body{display:flex;flex-direction:column}" +
+              'div[hidden][id^="S:"]{display:block!important;background-image:var(--page-wash);background-repeat:no-repeat}' +
+              "body>.ap-foot{order:1}" +
+              "</style>",
+          }}
+        />
+      </head>
       <body>
         {/* THE FOOTER'S CURTAIN STATE IS SET HERE TOO, before the first paint.
             FootReveal used to be the only writer of html[data-footfx], from a

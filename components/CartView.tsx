@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { brand, categories, delivery, home, ownItemMedia, ownItemWord } from "@/lib/content";
+import { brand, categories, delivery, home, ownItemMedia, ownItemWord, scarfDesigns, stickerSheets } from "@/lib/content";
 import { clear, dram, read, remove, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
 import { OrderingSteps } from "@/components/CategoryView";
 import artworks from "@/lib/artworks.json";
@@ -91,7 +91,28 @@ export default function CartView() {
     // roll is nine lookbook photographs that share the ids 01–09 by accident
     // — ownItemMedia says where to look. No entry means the roll, as before.
     const own = P[ownItemMedia[l.cat] ?? media];
-    if (ownItemWord[l.cat]) return (l.art && own?.find((s) => s.id === l.art)?.thumb) || own?.[0]?.thumb;
+    if (ownItemWord[l.cat]) {
+      // THE SCARVES' ROLL IS TWELVE PHOTOGRAPHS, FOUR PER DESIGN, and a scarf
+      // line's `art` is the DESIGN number, 01–03 — so "Scarf no. 02" wore roll
+      // photograph 02, design 01 on a wall (found 2026-10-01 while checking
+      // every place the girl-and-sun print is pictured, change 3.pdf p8). The
+      // design's first shot is its flat print, read from the ONE list the page
+      // itself draws from (content.ts `scarfDesigns`): the first fix copied
+      // those three rows into the manifest under their own key, which nothing
+      // kept in step with the roll (reviewer, 2026-10-01).
+      const id = l.cat === "scarves" ? scarfDesigns.designs.find((d) => d.id === l.art)?.shots[0] : l.art;
+      return (id && own?.find((s) => s.id === id)?.thumb) || own?.[0]?.thumb;
+    }
+    // A STICKER SHEET HAS NO `art` — the sheet itself travels in `variant`
+    // ("Sheet 03", StickerFolders' buy), so every sheet fell through to the
+    // roll's first photograph: Sheet 03 in the cart wore Sheet 01's print
+    // (verifier, 2026-10-05). The sheet's own print is the first of its
+    // shots in content.ts `stickerSheets`, the list the page draws from.
+    if (l.cat === "stickers") {
+      const print = stickerSheets.sheets.find((s) => s.name === l.variant)?.shots[0];
+      const thumb = print && P[media]?.find((s) => s.id === print)?.thumb;
+      if (thumb) return thumb;
+    }
     return (l.art ? ART.find((a) => a.id === l.art)?.thumb : undefined) ?? P[media]?.[0]?.thumb;
   };
 

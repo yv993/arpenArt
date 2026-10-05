@@ -310,6 +310,52 @@ export default function StoriesView() {
       });
     }, el);
 
+    // 4. WHICH STORY IS ON SCREEN WHEN THE STACK WAKES (2026-10-02). A
+    //    trigger created INSIDE its range takes its progress silently — the
+    //    callbacks are held back during a refresh (ScrollTrigger.js, update():
+    //    `stateChanged && !_refreshing`) — and the next scroll finds nothing
+    //    to toggle. The stack wakes after hydration, at whatever scroll the
+    //    browser has by then: a reload that restores the scroll, a hash it
+    //    answered in the plain layout, React's own second run of this effect
+    //    in development. So the first `active` is READ from the measured
+    //    starts, not awaited from a toggle (measured: a load at #agbu-2026
+    //    sat at 901, inside the first story, with the rail off and nothing
+    //    playing). From there the toggles take over.
+    const sync = () => {
+      const y = window.scrollY;
+      let on = -1;
+      starts.current.forEach((top, i) => {
+        if (y >= top) on = i;
+      });
+      setActive(on);
+    };
+    //    A DEEP LINK — /stories#tsarapatum-2024 from elsewhere, or a hash set
+    //    while the stack is up. The browser answers a hash by putting the
+    //    anchor's top at the top of the window, and the anchor is the sticky
+    //    item whose flow position IS its mark's: the page lands exactly on
+    //    the trigger's START, where a trigger is not yet active (`!!clipped
+    //    && clipped < 1`) — the rail stayed off and the film never started
+    //    until the visitor moved a pixel (measured at 1440×900). A hash in
+    //    the address on a FRESH load fared worse: answered in the plain
+    //    layout, then the stack replaced that layout and the page was left
+    //    at the top (measured: scrollY 0). So the hash is answered here the
+    //    way go() answers the rail — one pixel inside the story's range —
+    //    once the triggers have measured their starts (a trigger refreshes
+    //    as it is created), and again on every change.
+    const toHash = () => {
+      const i = stories.entries.findIndex((s) => `#${s.id}` === location.hash);
+      const top = i < 0 ? undefined : starts.current[i];
+      if (top === undefined) return;
+      window.scrollTo({ top: top + 1, behavior: "instant" });
+    };
+    const onHash = () => {
+      toHash();
+      sync();
+    };
+    onHash();
+    window.addEventListener("hashchange", onHash);
+    restore.push(() => window.removeEventListener("hashchange", onHash));
+
     return () => {
       ctx.revert();
       restore.forEach((fn) => fn());

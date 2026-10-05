@@ -335,35 +335,6 @@
    "alpha": false
   }
  ],
- "scarfDesigns": [
-  {
-   "id": "01",
-   "src": "/products/scarf-01.webp",
-   "thumb": "/products/scarf-01-sm.webp",
-   "w": 1600,
-   "h": 1599,
-   "avg": "#8b8879",
-   "alpha": false
-  },
-  {
-   "id": "02",
-   "src": "/products/scarf-05.webp",
-   "thumb": "/products/scarf-05-sm.webp",
-   "w": 1600,
-   "h": 1599,
-   "avg": "#b18955",
-   "alpha": false
-  },
-  {
-   "id": "03",
-   "src": "/products/scarf-09.webp",
-   "thumb": "/products/scarf-09-sm.webp",
-   "w": 1600,
-   "h": 1600,
-   "avg": "#909fa3",
-   "alpha": false
-  }
- ],
  "apparel": [
   {
    "id": "01",

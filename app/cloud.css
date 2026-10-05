@@ -30,16 +30,20 @@
 /* --------------------------------------------------------------------------
    1. PLAIN — a swipeable rail
    -------------------------------------------------------------------------- */
-.ap-cloud__frame {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
+/* THE RAIL SCROLLS, NOT THE FRAME (2026-10-05, the phone repair pass). The
+   frame used to be the horizontal scroller with a max-content plane inside
+   it — and the frame also holds the title block and the chosen picture's
+   panel, so they scrolled sideways WITH the rail: swipe to card 26, press
+   it, and its panel opened 3362px off the left edge of the screen
+   (measured at 390x844), the section's title gone the same way. The plane
+   is the scroller now and its two siblings stay where the reader is. */
 .ap-cloud__plane {
   display: flex;
   align-items: center;
   gap: clamp(14px, 1.6vw, 26px);
-  width: max-content;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
   padding: clamp(30px, 5vh, 60px) var(--gutter);
 }
 /* buttons now, so every trace of the UA button costume goes */
@@ -209,6 +213,160 @@
 }
 /* the "Drag to move" cue is gone from the markup with the drag itself */
 
+/* ---- what a picked picture says, on the PLAIN layer ---------------------
+   (2026-10-05.) Pressing a card on the rail opens the same panel the live
+   cloud opens beside its picture — number, series, Arpine's note, the faces,
+   ‹ n/57 ›, price, Add to cart, the way to the shop, ✕ — but every rule for
+   it sat inside the desktop media block below, so on a phone it rendered
+   as bare text flush against the left edge: the buy button at x=0, «Front
+   Back Printed» run together, a loose ✕ under it all (verifier, 390x844).
+   This is that panel in the plain layer's own terms: the desktop panel's
+   type, pills and button, in the gutter, every control 44px. The query is
+   the moved layer's exact complement wherever the panel can exist at all —
+   it needs scripting, so (scripting: none) never shows one — which leaves
+   the desktop panel untouched. Colours mix from --cream and --ink-solid,
+   the two tokens that stay put on an always-dark band in both themes. */
+@media (max-width: 860px), (prefers-reduced-motion: reduce) {
+  /* rail, then the panel, then the title block: the panel lands directly
+     under the card that opened it instead of below the introduction, where
+     a phone reader looking at the rail would never see it arrive. The title
+     block holds no controls, so the keyboard order still matches the eye. */
+  .ap-cloud__frame {
+    display: flex;
+    flex-direction: column;
+  }
+  .ap-cloud__say {
+    order: 2;
+  }
+  .ap-cloud__info {
+    order: 1;
+    position: relative; /* the ✕'s corner */
+    display: grid;
+    gap: 7px;
+    max-width: 60ch;
+    margin: 0 var(--gutter) clamp(40px, 7vh, 72px);
+    color: var(--cream);
+  }
+  .ap-cloud__no {
+    margin: 0;
+    /* clear of the ✕ in the corner */
+    padding-right: 56px;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .ap-cloud__series {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
+  }
+  .ap-cloud__body {
+    margin: 4px 0 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--cream) 84%, transparent);
+  }
+  /* Front · Back · Printed — the desktop's pills, 44px tall */
+  .ap-cloud__views {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .ap-cloud__views button {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
+    color: color-mix(in srgb, var(--cream) 78%, transparent);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  .ap-cloud__views button:hover {
+    color: var(--cream);
+  }
+  .ap-cloud__views button[aria-pressed="true"] {
+    background: var(--cream);
+    color: var(--ink-solid);
+    border-color: var(--cream);
+  }
+  /* ‹ n/57 › — browse the series without closing */
+  .ap-cloud__nav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
+  }
+  .ap-cloud__nav button,
+  .ap-cloud__close {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
+    color: var(--cream);
+    font-size: 15px;
+    transition: background 0.25s ease;
+  }
+  .ap-cloud__nav button:hover,
+  .ap-cloud__close:hover {
+    background: color-mix(in srgb, var(--cream) 12%, transparent);
+  }
+  .ap-cloud__close {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  .ap-cloud__price {
+    margin-top: 6px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .ap-cloud__price strong {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 1.45rem;
+    letter-spacing: 0;
+  }
+  .ap-cloud__price span {
+    color: color-mix(in srgb, var(--cream) 66%, transparent);
+  }
+  .ap-cloud__buy {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 2px;
+  }
+  /* --ink-solid, not --ink: --ink turns cream at night, and cream on
+     marigold does not read */
+  .ap-cloud__buy .ap-btn[data-added] {
+    background: var(--marigold);
+    border-color: var(--marigold);
+    color: var(--ink-solid);
+  }
+  .ap-cloud__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+  }
+  .ap-cloud__go:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
 /* --------------------------------------------------------------------------
    2. MOVED — the pinned frame and its plane
    -------------------------------------------------------------------------- */
@@ -313,6 +471,9 @@
     height: auto;
     padding: 0;
     gap: 0;
+    /* the plain layer's rail scrolls on this element (2026-10-05); here the
+       frame clips, and the plane must not — a chosen card grows past it */
+    overflow: visible;
     will-change: transform;
   }
 
@@ -488,10 +649,13 @@
     flex-wrap: wrap;
     margin-top: 2px;
   }
+  /* --ink-solid, not --ink, as in the phone rule above (repair, 2026-10-05):
+     --ink turns cream at night, and cream «ADDED ✓» on marigold measured
+     1.63:1 at 1440 in the dark theme */
   .ap-cloud__buy .ap-btn[data-added] {
     background: var(--marigold);
     border-color: var(--marigold);
-    color: var(--ink);
+    color: var(--ink-solid);
   }
   /* browse the series without closing — ‹ n/57 › under the note */
   .ap-cloud__nav {

@@ -137,15 +137,12 @@ export const ownItemWord: Record<string, string> = {
  *  this, "Tote bag no. 02" in the cart wore lookbook photograph 02. */
 export const ownItemMedia: Record<string, string> = {
   totes: "toteBags",
-  // THE SAME TRAP, ON THE SCARVES (found 2026-10-01 while checking every
-  // place the girl-and-sun design is pictured, change 3.pdf p8). The roll is
-  // twelve photographs, ids 01–12, four per design; the cart line's `art` is
-  // the DESIGN number, 01–03. So "Scarf no. 02" wore roll photograph 02 —
-  // design 01 on a wall — and "Scarf no. 03" wore design 01 on a rail: the
-  // buyer of one scarf was shown another. `scarfDesigns` in products.json is
-  // one row per design, a copy of that design's flat print (roll 01, 05, 09 —
-  // the first of each `shots` list in `scarfDesigns` below).
-  scarves: "scarfDesigns",
+  // The scarves have the same trap — twelve photographs in the roll, a DESIGN
+  // number in the line — but no entry here: the cart reaches a design's flat
+  // print through `scarfDesigns.designs[].shots[0]` in that same roll
+  // (CartView's thumbOf), so the manifest holds each print once. A copy of
+  // the three rows under a key of their own was the first fix (2026-10-01)
+  // and would have drifted the next time a print was regenerated (reviewer).
 };
 
 /** ILLUSTRATIONS A LINE DOES NOT SELL, keyed by category slug (client,
@@ -1292,8 +1289,9 @@ export const toteBags = {
 // adding a new section», a Drive folder of texts, photographs and two
 // television features).
 //
-// EVERY WORD BELOW IS HERS, transcribed from the six text files unedited —
-// headings, date lines, paragraphs, the closing lines. Two things in them
+// EVERY WORD BELOW IS HERS, transcribed from her eleven text files unedited
+// (six from 2026-09-21, five from the `p2-*` folders of her 2026-10-01 round)
+// — headings, date lines, paragraphs, the closing lines. Two things in them
 // are hers to reconcile, not mine to fix, so they stand as written:
 //   · the 2022 file is headed "A JOURNEY THROUGH ILLUSIONS" and its own
 //     paragraph calls the show “A Journey Through Illustrations”;
@@ -1466,7 +1464,13 @@ export const stories = {
           "Այս շարքում գերակշռում էին բնության պատկերները՝ հատկապես ծառերը։ Վերջին շրջանում ծառահատումները շատացել են։ Իմ նկարներում ծառերը հիմնականում ներկայացված են անտերև ու մռայլ՝ ասես նեղացած մարդկանցից։ Այնուամենայնիվ, կա հույս, որ զանգվածային ծառահատումները կնվազեն, և կտնկվեն նոր «կյանքեր»։",
           "Ցուցահանդեսը նպատակ ուներ սթափեցնել մարդկանց՝ հիշեցնելու բնության ու ծառերի պահպանության կարևորության մասին։ «Ծառապատում» անվանումը կարող ենք բացատրել երկու ձևով․ առաջինը՝ որպես ծառերի մասին պատմություններ, երկրորդը՝ որպես ծառերի տնկում։",
         ],
-        credit: "Հարցազրույցը՝ media_m.am",
+        // her file's own mark: an ASCII backtick where the Armenian comma (՝)
+        // is meant — set verbatim, as every line here is, not normalised
+        // (it had been, since round 2; restored 2026-10-02 — a question for
+        // her). Her last line before the credit, «#մաս_երկրորդ» — the tag of
+        // the post's second part — is not page copy and is left off: hers to
+        // decide too.
+        credit: "Հարցազրույցը` media_m.am",
       },
     },
     {
@@ -1488,9 +1492,13 @@ export const stories = {
     {
       id: "music-2024",
       when: "2024–2025",
-      // her text has NO title line: this is its first line, in the capitals
-      // the other ten titles are written in (open point for her)
-      title: "AN ANIMATED ILLUSTRATION PROJECT INSPIRED BY ARMENIAN MUSIC",
+      // her text has NO title line: this is its first line, AS SHE WROTE IT —
+      // sentence case (open point for her). The other ten are capitals in her
+      // own files; the capitals on the page are stories.css's text-transform,
+      // so this heading matches them while the reader's name for the rail, the
+      // aria-labels and the JSON-LD headline keep her words (2026-10-05 — it
+      // had been retyped in capitals here, which changed her line)
+      title: "An animated illustration project inspired by Armenian music",
       body: [
         "For this project, Arpen Art created a series of colorful animated illustrations, transforming music into a visual world of movement, characters, color and emotion.",
         "The project brought together artists from different parts of the Armenian diaspora. The music for the songs was created by Gegham Margaryan, based in Boston, USA, while the main vocalist and performer, Rafael Hovhannisyan, is based in Los Angeles, USA.",

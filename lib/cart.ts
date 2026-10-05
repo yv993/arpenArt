@@ -9,7 +9,7 @@
 // PLACEHOLDERS until Arpine supplies real ones; the cart never invents a
 // total of its own, it only ever multiplies what is written there.
 
-import { categories } from "./content";
+import { categories, withheldArt } from "./content";
 
 export type Line = {
   /** category slug, e.g. "postcards" */
@@ -21,13 +21,21 @@ export type Line = {
   qty: number;
 };
 
-const KEY = "arpenart.cart.v1";
+const KEY = "arpenart.cart.v2";
+// THE KEY BEFORE 2026-10-01. Bumped because a TOTE line's `art` changed its
+// meaning that day: it had been one of the 57 illustrations (the
+// choose-a-picture panel on /shop/totes, live since 2026-09-21) and became the
+// BAG number, 01–04 (change 3.pdf p4 + p5; `ownItemWord.totes` in
+// content.ts). Read under the new meaning, a v1 tote line is a bag the buyer
+// never chose — or, for an illustration id outside 01–04, a bag that does not
+// exist — with nothing on the cart page to say so. The first read on a
+// returning browser carries every OTHER line across once, then empties v1.
+const OLD_KEY = "arpenart.cart.v1";
 const EVT = "arpenart:cart";
 
-export function read(): Line[] {
-  if (typeof window === "undefined") return [];
+/** the lines in one stored value, with anything malformed or withdrawn dropped */
+function parse(raw: string | null): Line[] {
   try {
-    const raw = window.localStorage.getItem(KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : [];
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
@@ -38,8 +46,33 @@ export function read(): Line[] {
         Number.isFinite((l as Line).qty) &&
         // a stored variant that is not a string (old or tampered data) would
         // poison the merge key, so such lines are dropped, not coerced
-        ((l as Line).variant === undefined || typeof (l as Line).variant === "string"),
+        ((l as Line).variant === undefined || typeof (l as Line).variant === "string") &&
+        // an illustration the client has since withdrawn from this line
+        // (`withheldArt` — the two postcards of change 3.pdf p2, 2026-10-01)
+        // may still sit in a cart saved before she did; it is dropped here,
+        // silently, the way the picker no longer offers it
+        !withheldArt[(l as Line).cat]?.includes((l as Line).art ?? ""),
     );
+  } catch {
+    return [];
+  }
+}
+
+export function read(): Line[] {
+  if (typeof window === "undefined") return [];
+  try {
+    let raw = window.localStorage.getItem(KEY);
+    if (raw === null) {
+      // the one-time move from v1 — see OLD_KEY. Tote lines stay behind: the
+      // number in them names an illustration, not one of the four bags
+      const old = window.localStorage.getItem(OLD_KEY);
+      if (old !== null) {
+        raw = JSON.stringify(parse(old).filter((l) => l.cat !== "totes"));
+        window.localStorage.setItem(KEY, raw);
+        window.localStorage.removeItem(OLD_KEY);
+      }
+    }
+    return parse(raw);
   } catch {
     return [];
   }

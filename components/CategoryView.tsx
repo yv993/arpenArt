@@ -374,7 +374,12 @@ const boxVars = (b: [number, number, number, number]) =>
 // the 57, die-cut" and became six fixed SHEETS, so there is no illustration
 // left to choose — /shop/stickers renders StickerFolders instead of this view
 // and each folder carries its own buy button.
-const CHOOSES_DESIGN = new Set(["postcards", "cups", "plates", "puzzles", "totes"]);
+// TOTES LEFT IT on 2026-10-01 (client, change 3.pdf p5: the choose-an-
+// illustration panel under the four bags — «էս մասը մենակ պետք չի, վերևում …
+// դրանք հերիք են»). The bags are four fixed items now, each bought from the
+// gallery's own window, so /shop/totes renders ToteGallery and this view
+// never sees that slug any more.
+const CHOOSES_DESIGN = new Set(["postcards", "cups", "plates", "puzzles"]);
 
 
 /** The product's trust rows. Exported for the same reason OrderingSteps is:

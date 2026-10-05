@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { categories, delivery, ownItemWord } from "@/lib/content";
+import { categories, delivery, ownItemWord, withheldArt } from "@/lib/content";
+import products from "@/lib/products.json";
 
 // Zero-dependency order intake.
 //
@@ -19,6 +20,10 @@ const clean = (v: unknown, max = 400) =>
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .trim()
     .slice(0, max);
+
+/** the four bags a TOTE line may name — `art` is a bag number there
+ *  (ownItemWord.totes), and these are the only numbers that exist */
+const toteIds = new Set(((products as { toteBags?: { id: string }[] }).toteBags ?? []).map((b) => b.id));
 
 const hits = new Map<string, { n: number; until: number }>();
 function limited(ip: string) {
@@ -83,10 +88,25 @@ export async function POST(req: Request) {
       const cat = categories.find((c) => c.slug === clean(l.cat, 40) && c.status === "open");
       const qty = Math.max(1, Math.min(99, Math.floor(Number(l.qty) || 0)));
       if (!cat) return null;
+      let art = clean(l.art, 8) || null;
+      // an illustration the client withdrew from this line (`withheldArt`,
+      // change 3.pdf p2, 2026-10-01) is refused the way an unknown category
+      // is: the line is dropped, so a cart saved before the withdrawal — or
+      // a hand-made request — cannot put it in front of Arpine as an order
+      if (art && withheldArt[cat.slug]?.includes(art)) return null;
+      // a TOTE line's `art` has been a BAG number since 2026-10-01 (change
+      // 3.pdf p4 + p5), and only the four in products.json exist. Anything
+      // else — above all an illustration id from a cart saved while
+      // /shop/totes still asked the buyer to choose one — is not named: the
+      // line stays (its price is the category's either way) but reaches
+      // Arpine without a number rather than as a bag she never printed. The
+      // browser drops such lines itself (lib/cart.ts, the v1→v2 move); this
+      // is the server's own copy of the rule, for a cart it has never seen.
+      if (cat.slug === "totes" && art && !toteIds.has(art)) art = null;
       return {
         slug: cat.slug,
         name: cat.name,
-        art: clean(l.art, 8) || null,
+        art,
         // a size or format label — free text through the same wringer as
         // everything else (control chars out, trimmed, capped), never priced:
         // the artist confirms what it costs either way

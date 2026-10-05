@@ -3184,10 +3184,13 @@ html[data-footfx] .ap-foot {
    TOTE GALLERY (/shop/totes) — shadcnblocks' "gallery1" anatomy: a row of
    cards, the pointed-at one opening while the rest give way.
 
-   THE EXPANSION IS TWO CSS RULES AND NO JAVASCRIPT. The ROW being hovered
-   shrinks every card; the CARD being hovered grows. `:focus-within` gives the
-   keyboard the same behaviour. 4.5 against 1 puts the open card at
-   4.5/(4.5+3) = 60% of the row, which is the ratio the original uses.
+   THE EXPANSION IS CSS. The ROW being hovered shrinks every card; the CARD
+   being hovered grows; `:has(button:focus-visible)` gives the keyboard the
+   same — see the note on that rule below for why it stopped being
+   `:focus-within` (2026-10-01). 4.5 against 1 puts the open card at
+   4.5/(4.5+3) = 60% of the row, which is the ratio the original uses. The
+   JavaScript on this page is the bag's WINDOW (`.ap-tgq`, at the end of this
+   block), which a card has opened since 2026-10-01.
    ========================================================================== */
 .ap-tg {
   padding: clamp(56px, 9vh, 110px) var(--gutter) clamp(30px, 5vh, 60px);
@@ -3211,14 +3214,25 @@ html[data-footfx] .ap-foot {
 /* THE HEAD IS TWO COLUMNS (client, change 3.pdf p6, 2026-10-01: «2 տողով
    սարքել էս տեքստը» on the title, «էս էլ բերել կողքը» on the paragraph). The
    title keeps its own width — two lines that do not wrap — and the copy takes
-   what is left, set against the right edge with its foot on the title's foot,
-   which is where her red box sits on the page. The kicker spans both. */
+   what is left, set against the right edge. The kicker spans both.
+
+   WHO SITS WHERE, VERTICALLY: the title is pinned to the TOP of its row and
+   the copy to the FOOT, each on its own (align-self) — never the row as a
+   whole. This was `align-items: end` on the row, the copy's foot on the
+   title's foot where her red box sits; but a grid row is as tall as its
+   taller column, and wherever the copy outgrew the two title lines it was
+   the HEADING that got pushed down to meet it: 111px of blank between the
+   kicker and the title at 861px (a 355px copy column, six lines), 69 at
+   1024, 46 at 1280, 34 even at 1440 (reviewer, 2026-10-01). Pinned apart, a
+   taller copy leaves the heading under its kicker and runs on beside it,
+   which is what her sketch shows; a taller TITLE — a longer one, a smaller
+   paragraph face — still gets the copy's foot on its own. */
 .ap-tg__head {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   column-gap: clamp(32px, 6vw, 110px);
   row-gap: 14px;
-  align-items: end;
+  align-items: start;
   margin-bottom: clamp(26px, 4vh, 48px);
 }
 .ap-tg__head .ap-kicker {
@@ -3227,6 +3241,7 @@ html[data-footfx] .ap-foot {
 }
 .ap-tg__title {
   margin: 0;
+  align-self: start;
 }
 /* DIRECT CHILDREN ONLY — the text-FX runner nests a span per letter inside
    each line, and a descendant `span` rule would stack the title one capital
@@ -3237,11 +3252,13 @@ html[data-footfx] .ap-foot {
 }
 .ap-tg__copy {
   justify-self: end;
+  align-self: end;
   display: grid;
   gap: 8px;
   max-width: 56ch;
-  /* optical: the paragraph's last baseline sits a hair above the capitals'
-     foot otherwise, because the title's line box carries descender room */
+  /* optical, for the foot-aligned case: the paragraph's last baseline sits a
+     hair above the capitals' foot otherwise, because the title's line box
+     carries descender room */
   padding-bottom: 0.4em;
 }
 .ap-tg__copy p {
@@ -3560,6 +3577,10 @@ html[data-footfx] .ap-foot {
   grid-template-rows: minmax(0, 1fr);
   place-items: center;
   padding: clamp(10px, 3vh, 40px) clamp(10px, 3vw, 40px);
+  /* the box, and the buy row stuck to its foot, clear a phone's home
+     indicator: a fixed veil runs under it wherever the viewport is set to
+     cover the screen (env() is 0 everywhere else, and this is the plain pad) */
+  padding-bottom: max(clamp(10px, 3vh, 40px), env(safe-area-inset-bottom, 0px));
   background: color-mix(in srgb, var(--ink-solid) 62%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -3579,7 +3600,9 @@ html[data-footfx] .ap-foot {
   overscroll-behavior: contain;
   display: grid;
   gap: clamp(12px, 2vh, 20px);
-  padding: clamp(14px, 2vw, 26px);
+  /* NO PADDING AT THE FOOT — the buy row carries it (see .ap-tgq__buy) */
+  --tgq-pad: clamp(14px, 2vw, 26px);
+  padding: var(--tgq-pad) var(--tgq-pad) 0;
   border-radius: 16px;
   background: var(--paper);
   color: var(--ink);
@@ -3655,12 +3678,35 @@ html[data-footfx] .ap-foot {
   width: 100%;
   height: auto;
 }
+/* THE BUY ROW STAYS IN REACH (reviewer, 2026-10-01). The box scrolls on a
+   short screen, and the row was simply its last line: on a 390×844 iPhone
+   with Safari's bars up (664px tall) the button showed 19 of its 48px, on a
+   375×553 SE nothing of it or of the price, and only 390×844 and 412×915
+   showed it whole — while nothing said the box could scroll, and since the
+   buy panel left the page (change 3.pdf p5) this button is the only way to
+   buy a bag. So the row STICKS to the foot of the scrolling box, on paper,
+   under a hairline, and the photographs scroll away beneath it.
+   THE BOX'S BOTTOM PADDING LIVES ON THIS ROW, not on the box. Where a stuck
+   element comes to rest against a padded scroller differs by engine (this
+   Chromium measured it on the box's CONTENT edge, 14px short of the box;
+   the spec's older reading is the box edge itself), and the negative-margin
+   trick that covers the padding in one model doubles it in the other
+   (measured: 53px under the button instead of 26 at 1440×900). With no
+   padding under it the two edges are one and the same, so stuck or at rest,
+   in either model, the button stands exactly the box's pad above its foot —
+   the same as before this row could stick. Where the box does not overflow
+   nothing moves and the row is where it always was. */
 .ap-tgq__buy {
+  position: sticky;
+  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
+  padding: 12px 0 var(--tgq-pad);
+  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  background: var(--paper);
 }
 .ap-tgq__facts {
   display: grid;
@@ -3829,6 +3875,18 @@ html[data-footfx] .ap-foot {
   height: 100%;
   object-fit: contain;
   animation: ap-face-in 0.32s var(--ease) both;
+}
+/* THE THREE FACES SIT UNDER THE CARD, NOT UNDER THE COLUMN (2026-10-01).
+   Once the frame wore the page's own paper its edge vanished, and a portrait
+   card contained in the square frame stands ~100px in from the column's left
+   edge — so a row of thumbnails starting at that edge no longer lined up
+   with anything the eye could see. Centred, the row shares the picture's
+   axis whichever face is up (the portrait scans and the landscape printed
+   photograph are both centred in the frame). Only this frame's row: the
+   photograph frame's scene strip elsewhere keeps its left edge, because
+   there the photograph fills the frame and the edge is visible. */
+.ap-cv__hero--face + .ap-cv__thumbs {
+  justify-content: center;
 }
 
 /* ==========================================================================
@@ -4021,6 +4079,22 @@ html[data-footfx] .ap-foot {
 .ap-sd {
   padding: clamp(40px, 6vh, 80px) var(--gutter) clamp(56px, 8vh, 100px);
 }
+/* THE BREADCRUMB RIDES ON THE SECTION'S OWN CLEARANCE, as on /shop/totes
+   (`.ap-tg__top`, and for the same reason). Hung in a bare `.ap-cv` it sat
+   108px above the kicker at 1440x900 — that wrapper's 135px top padding,
+   sized for a page that OPENS with the crumb, then the crumb's 36px margin,
+   then this section's own 54px — where the totes' kicker follows its crumb by
+   38px (orchestrator, 2026-10-01). The same values as the totes, so the two
+   sibling heads open at the same height. */
+.ap-sd__top {
+  padding-top: clamp(84px, 11.5vh, 124px);
+}
+.ap-sd__top .ap-crumb {
+  margin-bottom: clamp(14px, 2.2vh, 22px);
+}
+.ap-sd__top + .ap-sd {
+  padding-top: 0;
+}
 /* THE HEAD IS TWO COLUMNS (client, change 3.pdf p7, 2026-10-01, circling the
    paragraph under the title: «էս էլ բերել հիմնական տեքստի կողքը» — bring this
    one, too, beside the main text). It used to be one 62ch stack: title, then
@@ -4028,9 +4102,19 @@ html[data-footfx] .ap-foot {
    THE COLUMNS ARE THE DESIGNS' OWN (`.ap-sd__item` below: 1.05fr / 1fr and the
    same gap), so her paragraph starts on the line the design names start on,
    and the page keeps ONE vertical seam from the head to the last scarf rather
-   than a second, slightly different one. The paragraph's foot sits on the
-   title's foot. Below 861px — where the designs themselves go to one column —
-   the head is the plain stack again. */
+   than a second, slightly different one. Below 861px — where the designs
+   themselves go to one column — the head is the plain stack again.
+
+   WHO SITS WHERE, VERTICALLY — the totes head's model (`.ap-tg__head`): the
+   kicker on a row of its own across both columns, then the title pinned to
+   the TOP of the second row and her paragraph to its FOOT, each on its own
+   (align-self), never the row as a whole. The first cut had the paragraph
+   spanning both rows and sent the spare height ABOVE the kicker, so wherever
+   the paragraph outgrew the title (four lines against two at 861px) the
+   kicker and the title dropped away from the breadcrumb together — the same
+   hole the totes had already closed. Pinned apart, a taller paragraph leaves
+   the title under its kicker and runs on beside it; a shorter one keeps its
+   foot on the title's foot. */
 .ap-sd .ap-sec__head,
 .ap-sd__bar {
   display: grid;
@@ -4040,28 +4124,19 @@ html[data-footfx] .ap-foot {
 }
 .ap-sd .ap-sec__head {
   max-width: none;
-  /* THE KICKER STAYS ON THE TITLE. Her paragraph spans both rows of the left
-     column, and on a narrow desktop it is the TALLER side (four lines of copy
-     against two of title at 861px). With two `auto` rows the spare height was
-     shared between them and opened a 60px hole between "(On silk)" and the
-     title it labels (seen on the first capture at 861px). So the spare goes
-     to the first row alone, and the kicker sits at that row's foot. */
-  grid-template-rows: 1fr auto;
   row-gap: 14px;
+  align-items: start;
   margin-bottom: 0;
 }
 .ap-sd .ap-sec__head .ap-kicker {
-  grid-area: 1 / 1;
-  align-self: end;
+  grid-column: 1 / -1;
 }
-.ap-sd__title {
-  grid-area: 2 / 1;
-}
-/* her paragraph's foot on the title's foot — no optical nudge needed: probed
-   at 861 / 1024 / 1440 / 1920px, the two last baselines land within 2px of
-   each other as the boxes fall */
+/* her paragraph's foot on the title's foot — no optical nudge needed: where
+   the paragraph is the shorter side (1440 and 1920px) the two last baselines
+   land within 1px of each other as the boxes fall; where it is the taller
+   (1024, 861px) it keeps the title's top and runs 13–28px past its foot */
 .ap-sd__lead {
-  grid-area: 1 / 2 / span 2;
+  align-self: end;
 }
 /* THE TITLE KEEPS THE TWO LINES SHE KNOWS — "A Little Armenia / to Take With
    You", the break the old 62ch box happened to give it. Left to fill its new
@@ -4109,16 +4184,10 @@ html[data-footfx] .ap-foot {
   .ap-sd__bar {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ap-sd .ap-sec__head {
-    grid-template-rows: none;
-  }
-  .ap-sd .ap-sec__head .ap-kicker,
-  .ap-sd__title,
-  .ap-sd__lead,
+  /* the price's second column does not exist here — left on column 2 it
+     would open an implicit one beside the picker */
   .ap-sd__price {
-    grid-area: auto;
-  }
-  .ap-sd__price {
+    grid-column: auto;
     padding-bottom: 0;
   }
 }

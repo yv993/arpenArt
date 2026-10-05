@@ -379,6 +379,27 @@ export default function Cloud({
     return () => window.removeEventListener("keydown", onKey);
   }, [chosen, write, step]);
 
+  // THE RAIL FOLLOWS THE PANEL — plain layer only (phone repair pass,
+  // 2026-10-05). ‹ › in the panel choose the next picture, and on the rail
+  // that card can be screens away sideways; its caption and the face the
+  // panel's Front · Back · Printed switch to are drawn ON the card, so
+  // pressing Back changed a picture nobody could see (measured at 390x844:
+  // card 12 off the right edge while its panel said "Back"). The rail slides
+  // the chosen card to its middle — sideways only, the page never moves.
+  useEffect(() => {
+    const el = root.current;
+    if (!chosen || !el || window.matchMedia(DESKTOP).matches) return;
+    const plane = el.querySelector<HTMLElement>(".ap-cloud__plane");
+    const card = el.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${chosen}"]`);
+    if (!plane || !card) return;
+    const pr = plane.getBoundingClientRect();
+    const cr = card.getBoundingClientRect();
+    plane.scrollBy({
+      left: cr.left + cr.width / 2 - (pr.left + pr.width / 2),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [chosen]);
+
   /** Press a card to open it, press it again to put it back. With no drag to
    *  distinguish this from, onClick is the whole of it — pointer and keyboard
    *  alike. */

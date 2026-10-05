@@ -63,6 +63,7 @@
   font-family: var(--font-display);
   font-size: 1.05em;
   line-height: 1.2;
+  text-transform: uppercase; /* a story's title is set in capitals — see .ap-st__title */
 }
 .ap-st__cue {
   display: none; /* the stack shows it; a flowing column needs no cue */
@@ -116,9 +117,19 @@
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
+/* THE CAPITALS ARE PRESENTATION. Ten of her eleven texts give their title in
+   capitals; the music text (change 3.pdf, 2026-10-01) has no title line, so
+   its first line is the title — and she wrote that one in sentence case. It
+   is kept as she wrote it in lib/content.ts and capitalised HERE, on the
+   heading and on its cover-index row only, so the page reads as one set
+   while the aria-labels, the rail's tooltip and the JSON-LD carry her words
+   (2026-10-05). On the ten capital titles this is a no-op: none has a
+   lowercase letter, Latin or Armenian. Both layers share this heading, and
+   the text-FX split inherits the transform into every letter span. */
 .ap-st__title {
   margin: 0;
   font-size: clamp(1.55rem, 2.9vw, 2.55rem);
+  text-transform: uppercase;
 }
 /* the lines she sets between a title and its text («A children’s book by
    Tamar Panossian, illustrated by Arpine Baroyan» / «Age 5+»): the first
@@ -353,11 +364,14 @@
    six stories left the band she circled — 390px of bare paper between the
    bar and the first index row at 1440×900. Now both columns run the sheet's
    whole height from just under the bar: the title at the top of the left
-   column with her subtitle at its foot, and the index — ELEVEN rows since
-   the same brief — sharing the right column's height between them, so the
-   list fills the screen at 720 tall and at 1,080 alike and never needs a
-   scrollbar of its own (the overflow stays as a floor for a window shorter
-   than eleven 44px rows). */
+   column with her subtitle directly under it, and the index — ELEVEN rows
+   since the same brief — sharing the right column's height between them,
+   so the list fills the screen at 720 tall and at 1,080 alike and never
+   needs a scrollbar of its own (the overflow stays as a floor for a window
+   shorter than eleven rows; SHORT WINDOWS, below, is where the rows give).
+   The subtitle sat at the column's FOOT for a day (2026-10-01 → 02): at
+   1280×720 that read as a title, a void and a stray line above the cue, so
+   it moved up under the title; only the scroll cue keeps the foot. */
 .ap-st[data-stack] .ap-st__cover .ap-st__sheet {
   height: 100%;
   max-width: none;
@@ -373,15 +387,15 @@
   will-change: transform, filter;
 }
 .ap-st[data-stack] .ap-st__cover-say {
-  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: start;
 }
 .ap-st[data-stack] .ap-st__cover-say .ap-lede {
-  align-self: end;
-  margin: 0;
+  /* a breath more than the grid's 16px under a title this size */
+  margin: clamp(4px, 1.2svh, 14px) 0 0;
 }
 .ap-st[data-stack] .ap-st__h1 {
-  /* by the screen's width AND its height: at 1280×720 the two lines must
-     leave the subtitle its place above the scroll cue */
+  /* by the screen's width AND its height: at 1280×720 the kicker, the two
+     lines and the subtitle under them must still leave the cue its corner */
   font-size: clamp(3.2rem, min(8.6vw, 17svh), 8.6rem);
   line-height: 0.92;
 }
@@ -553,6 +567,47 @@
   width: clamp(48px, 4.4vw, 72px);
 }
 
+/* ---- SHORT WINDOWS (2026-10-02) ------------------------------------------
+   The stack was proved at 720px tall and up; a 1366×768 laptop shows the
+   page in ≈625px once the browser's own bars are on, and a 1280×600 window
+   is not rare. Measured there: the cover's eleven 44px rows no longer fit
+   their column (499px in 485 — the last title cut behind the index's own
+   scrollbar), the AGBU text stepped down to the 12px floor and still ran
+   23px past its sheet, and the first-solo pictures ran 13px over. Three
+   things give way, only under 680px tall:
+   · the cover sheet's padding, and the index rows' floor — 40px, which the
+     rows stretch back from whenever there is room;
+   · the measure: a short, wide window reads a longer line. Capped in px as
+     well as ch, because a ch narrows with every step the component's fit
+     pass takes — at 70ch the type stepped down and the line count barely
+     moved (measured 12.5px at 1280×600); a 600px line gets more words as
+     the type shrinks, which is what that pass needs;
+   · the thumbnails, a size down, so a film plus eight of them is two short
+     rows — still a 56px target;
+   · the story sheets' own padding, 14px of it, which is what stands
+     between the AGBU text at 13px and at its full 14px on a 1366×625
+     laptop (the columns are centred, so a shorter text never notices). */
+@media (max-height: 680px) {
+  .ap-st[data-stack] .ap-st__cover .ap-st__sheet {
+    padding-top: calc(var(--nav-h, 76px) + 8px);
+    padding-bottom: 32px;
+  }
+  .ap-st[data-stack] .ap-st__item .ap-st__sheet {
+    padding-top: calc(var(--nav-h, 84px) + 6px);
+    padding-bottom: 16px;
+  }
+  .ap-st[data-stack] .ap-st__index a {
+    min-height: 40px;
+    padding: 2px 0;
+  }
+  .ap-st[data-stack] .ap-st__say {
+    max-width: min(76ch, 600px);
+  }
+  .ap-st[data-stack] .ap-st__thumbs button {
+    width: clamp(56px, 5vw, 80px);
+  }
+}
+
 /* ---- the timeline rail ---------------------------------------------------
    fixed at the right, in `difference` like the home page's rail, so it
    reads on a paper sheet and a night sheet alike */
@@ -637,4 +692,13 @@
 }
 .ap-st__rail button:not([data-heads]):not([aria-current="true"])::after {
   width: 8px;
+}
+/* SHORT WINDOWS, the rail's share (2026-10-02; after the rules above so it
+   wins on equal specificity): eleven 44px buttons, centred, start 58px
+   from the top of a 600px window — under the 76px bar. The same 40px floor
+   the index rows take puts the column at 80px (measured 1280×600). */
+@media (max-height: 680px) {
+  .ap-st__rail button {
+    min-height: 40px;
+  }
 }

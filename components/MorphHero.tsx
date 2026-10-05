@@ -29,16 +29,16 @@ type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: 
 // MORPH HERO — the opening of /shop/postcards, ported from
 // feturesss21/best/examples/scroll-morph-hero.tsx.
 //
-// The original's anatomy, kept exactly:
+// The original's anatomy:
 //   load      cards scatter in from nowhere → snap into a LINE → curl into a
-//             RING around the intro line
+//             RING around the intro line (the original's formulas verbatim:
+//             ring radius min(35% of the short side, 350))
 //   scroll    the ring morphs into a bottom "rainbow" ARC (lerp of the two
-//             polar layouts, the original's formulas verbatim: ring radius
-//             min(35% of the short side, 350); arc radius 1.1× min(W, 1.5H),
-//             apex at 25% below centre, 130° spread, cards ×1.8)
-//   further   the arc rotates through the deck and STOPS WITH THE LAST CARD
-//             STILL WHOLE IN THE FRAME — see "THE DARK VOID" below; this is
-//             the one place the original's numbers are not kept
+//             polar layouts). The original's arc — radius 1.1× min(W, 1.5H),
+//             apex at 25% below centre, 130° spread, cards ×1.8 — is NOT
+//             kept: see THE DARK VOID below for the FAN that replaced it
+//   further   the arc rotates through the deck and stops with the last card
+//             still whole in the frame
 //   always    the arc sways ±100px with the pointer; a hovered card flips to
 //             its back face
 //
@@ -68,25 +68,30 @@ const MAX_CARDS = 20;
 //   80%               3 left
 //   93%               1, cut
 //  100%               0 — title, copy and an empty dark stage
-// …and then that empty stage, a full 100svh of it, scrolls away before the
-// buy panel arrives. So roughly the second half of the pin plus one whole
-// screen was dark with nothing on it: her screenshot is the 100% frame.
+// …and then that empty stage, a full 100svh of it, scrolled away before the
+// buy panel arrived. Her screenshot is the 100% frame, and her ellipse is the
+// MIDDLE of it.
 //
-// The pin-spacer was never wrong (its padding is exactly the pin's length and
-// the next section starts at its bottom edge). The cause is the shuffle's
-// bound. The original turns the arc by 0.8 × its 130° spread = 104°, but the
-// frame holds whole cards only within about ±24° of the apex — the rest of
-// the arc is below the fold — so the last card, which starts 65° right of the
-// apex, is carried to 39° LEFT of it: out of the frame, with all nineteen
-// others ahead of it. "Clamped so the last card never leaves" was true of the
-// original's small boxed demo and false of a full-viewport stage.
+// Two things were wrong, fixed in two passes the same day:
 //
-// The fix keeps everything up to the moment the last card arrives exactly as
-// it was — same morph, same turn per pixel scrolled — and ENDS THE PIN THERE:
-// the arc now turns only until the last card stands whole at the right end of
-// the frame (`travel`, measured from the stage, not a constant), and the pin
-// is shortened by the same proportion. The stage is released with a full row
-// on it and the buy panel follows it directly.
+// 1. THE PIN OUTLIVED THE ROW. The original turns the arc by 0.8 × its 130°
+//    spread = 104°, but a full-viewport frame holds whole cards only within
+//    about ±24° of the apex, so the last card was carried clean out of the
+//    frame with all nineteen others ahead of it. The pin now ends when the
+//    last card has arrived (`travel`, measured from the stage, not a
+//    constant), and the buy panel follows the stage directly.
+//
+// 2. THE ROW WAS NOT THE SUBJECT OF THE STAGE. The original's arc puts its
+//    apex 75% of the way down and never applied its ×1.8 (GSAP resolves the
+//    alias "scale" to "scaleX,scaleY" before quickSetter looks for a setter,
+//    and finds none), so after pass 1 the frame still read as her lead copy,
+//    a third of a screen of nothing, and a row of 72px cards along the bottom
+//    edge — about 60% of her ellipse was still empty. The arc is now a FAN
+//    built from the frame itself (see `measure`): its apex card hangs
+//    directly under the lead copy, its outermost whole cards reach the
+//    bottom corners, the cards are as large as seven whole ones allow, and
+//    the geometry is re-derived on every refresh so it holds at 1366×625 and
+//    2560×1300 alike.
 
 /** The pin's length in viewport heights IF the arc turned the original's full
  *  0.8 × spread. It no longer does (see above), so this is a RATE — the turn
@@ -96,12 +101,45 @@ const PIN_VH = 1.9;
 /** How much of that the ring→arc morph takes; the rest shuffles the deck. */
 const MORPH_SLICE = 0.22;
 
-/** The arc's spread and the original's turn through it, in degrees. */
-const SPREAD = 130;
-const FULL_TURN = SPREAD * 0.8;
+/** The pointer sway's amplitude in px — the original's ±100. ONE constant,
+ *  because it is also part of the fan's side clearance: the reviewer found
+ *  the "last card whole" promise broken with the mouse at the right edge,
+ *  the sway having carried the arc 100px past a clearance that ignored it. */
+const SWAY = 100;
+
+/** Whole cards the frame holds at the pin's end (and at the fan's first
+ *  frame) — an odd number, so a card stands on the apex in both. */
+const WHOLE = 7;
+
+/** The row's distance under the lead copy, and how far it may grow when a
+ *  tall frame has room to spare (the brief's window is 40–120px, measured
+ *  to the top of the HIGHEST card, which mid-turn is a corner a few px above
+ *  the apex card's top). */
+const GAP_MIN = 56;
+const GAP_MAX = 104;
+
+/** How far a whole card keeps off the frame's sides and bottom. */
+const EDGE_X = 10;
+const EDGE_Y = 12;
+
+/** Daylight between neighbouring cards where they come nearest — their
+ *  inner corners, since the fan turns each card to its own radius. */
+const BETWEEN = 10;
+
+/** The fan's furthest reach from the apex, in degrees. Tall frames (4:3,
+ *  16:10) would otherwise close into more than a half-wheel, and past ~52°
+ *  the step between cards grows to where twenty of them wrap the full circle
+ *  and the first re-enters at the far corner behind the last. */
+const MAX_REACH = 50;
+
+/** Card scale ceiling: the faces are 420px thumbs, and ×2.9 of the 72px card
+ *  is what keeps them crisp on a 2× screen. */
+const K_MAX = 2.9;
 
 const DESKTOP = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 const lerp = (a: number, b: number, t: number) => a * (1 - t) + b * t;
+const clamp = (lo: number, hi: number, v: number) => Math.max(lo, Math.min(hi, v));
+const RAD = Math.PI / 180;
 
 export default function MorphHero({
   items,
@@ -131,52 +169,98 @@ export default function MorphHero({
       const arcEl = el.querySelector<HTMLElement>(".ap-mh__arc");
       if (!stage || cards.length === 0) return;
       const N = cards.length; // the ring and arc are built for what actually renders
+      const mid = Math.floor((N - 1) / 2); // the card on the apex when the fan forms
+      const half = (WHOLE - 1) / 2;
+
+      // THE CARD'S OWN SIZE — read once, before `--mh-k` is set on the stage.
+      // The card is laid out at the FAN's size (72×102 × k, through that
+      // custom property in morph.css) and GSAP scales it DOWN for the ring,
+      // never up: a composited layer (will-change + preserve-3d) is
+      // rasterised at its layout size, so a 72px card scaled ×2.7 would be
+      // a 72px picture stretched — blurred faces in Safari always and in
+      // Chrome under will-change.
+      const baseW = cards[0].offsetWidth || 72;
+      const baseH = cards[0].offsetHeight || 102;
 
       let W = stage.offsetWidth;
       let H = stage.offsetHeight;
-      /** how far the arc turns, in degrees — until the last card stands whole
-       *  at the right end of the frame, and no further */
+      /** the fan: card scale, radius, degrees between neighbours, the apex
+       *  card's centre in px below the stage's centre */
+      let k = 1;
+      let arcR = 1;
+      let step = 1;
+      let apexY = 0;
+      /** how far the fan turns, in degrees — until the last card stands on
+       *  the outermost whole position at the right, and no further */
       let travel = 0;
       /** the pin's two legs in scrolled pixels: the morph, then the shuffle */
       let morphPx = 1;
       let spinPx = 0;
 
-      /** Read the stage and derive the three numbers above. Runs wherever
-       *  ScrollTrigger re-reads `end` — on load, on resize, on refresh — so
-       *  the bound is always the one for the frame on screen. */
+      /** Read the stage and derive the fan. Runs wherever ScrollTrigger
+       *  re-reads `end` — on load, on resize, on refresh — so the geometry
+       *  is always the one for the frame on screen.
+       *
+       *  THE FAN IS SOLVED FROM THE FRAME, not set by constants. Given the
+       *  box left under the lead copy — half the width minus the sway and
+       *  the side clearance (a), the height down to the bottom clearance
+       *  (b) — the arc through the apex that leaves the box exactly at its
+       *  bottom corners has reach θ = 2·atan(b/a) and radius a/sin θ. The
+       *  step between cards is θ/3 so that seven stand whole from −θ to +θ,
+       *  and the card is as wide as that step allows at the inner corners:
+       *  w = 2(R − h/2)·tan(step/2) − BETWEEN. The clearances depend on the
+       *  card's rotated half-extents, which depend on the card, so it is
+       *  iterated to a fixed point. Where the reach would exceed MAX_REACH it
+       *  is capped and the room left over splits between the gap under the
+       *  copy and the bottom margin. */
       const measure = () => {
         W = stage.offsetWidth;
         H = stage.offsetHeight;
-        const arcR = Math.min(W, H * 1.5) * 1.1;
-        // THE FRAME'S REACH ALONG THE ARC: the furthest a card can sit from
-        // the apex and still be whole on the stage. The arc leaves a wide
-        // frame through the BOTTOM edge and a narrow one through the SIDES,
-        // so it is whichever comes first. One card-height of clearance
-        // covers the card's own rotated half-extent with room to spare
-        // (1440×900 gives 23.5° — within half a degree of where the
-        // outermost WHOLE card of the freshly formed arc stands, 23.9° — so
-        // the row the pin ends on is as full as the row it begins with:
-        // measured 8 whole cards at both).
-        //
-        // That is for the cards AS THEY RENDER, which is at their CSS size:
-        // the ×1.8 the tick asks for never reaches the transform (measured
-        // 2026-10-01 — no scale() in a card's inline transform at the arc;
-        // GSAP resolves the alias "scale" to "scaleX,scaleY" before
-        // quickSetter looks for a setter, and finds none). Left alone on
-        // purpose: this size is the row the client has seen and called
-        // «սիրուն». If the scale is ever made to apply, a card's half-extent
-        // grows past this clearance by ~10px — raise it in the same change.
-        const clear = cards[0].offsetHeight;
-        const byX = Math.asin(Math.max(0, Math.min(1, (W / 2 - clear) / arcR)));
-        const byY = Math.acos(Math.max(-1, Math.min(1, 1 - Math.max(0, H * 0.25 - clear) / arcR)));
-        const reach = (Math.min(byX, byY) * 180) / Math.PI;
-        // the last card starts SPREAD/2 right of the apex and may come in as
-        // far as `reach`; never more than the original's turn
-        travel = Math.max(0, Math.min(FULL_TURN, SPREAD / 2 - reach));
+        // the lead copy's bottom edge — offsetTop ignores the transform the
+        // tick writes on the block, which is what makes it safe to read here
+        const copyBottom = arcEl ? arcEl.offsetTop + arcEl.offsetHeight : H * 0.3;
+        const top = copyBottom + GAP_MIN; // the highest a card may reach
+        const ratio = baseH / baseW;
+        let reach = MAX_REACH * RAD;
+        let kk = 1.8;
+        let b = 1;
+        for (let i = 0; i < 30; i++) {
+          const w = baseW * kk;
+          const h = baseH * kk;
+          const hx = (w / 2) * Math.cos(reach) + (h / 2) * Math.sin(reach);
+          const hy = (w / 2) * Math.sin(reach) + (h / 2) * Math.cos(reach);
+          const a = Math.max(1, W / 2 - SWAY - EDGE_X - hx);
+          b = Math.max(1, H - EDGE_Y - hy - (top + h / 2));
+          const t = Math.min(MAX_REACH * RAD, 2 * Math.atan2(b, a));
+          const R = a / Math.sin(t);
+          const st = t / half;
+          const tn = Math.tan(st / 2);
+          const kFit = (2 * R * tn - BETWEEN) / (1 + ratio * tn) / baseW;
+          // and never taller than four fifths of the band itself (a very
+          // short frame), nor larger than the thumbs can honestly fill
+          const kTall = ((H - EDGE_Y - top) / baseH) * 0.8;
+          const next = clamp(0.5, K_MAX, Math.min(kFit, kTall));
+          kk += (next - kk) / 2;
+          reach += (t - reach) / 2;
+          arcR = R;
+          step = st / RAD;
+        }
+        k = kk;
+        const h = baseH * k;
+        const used = arcR * (1 - Math.cos(reach)); // the drop to the outermost whole card
+        const room = Math.max(0, b - used); // 0 unless the reach was capped
+        const gap = GAP_MIN + Math.min(GAP_MAX - GAP_MIN, room / 2);
+        apexY = copyBottom + gap + h / 2 - H / 2;
+        stage.style.setProperty("--mh-k", k.toFixed(4));
+        // at spin 0 card `mid` is on the apex; the last card is (N-1-mid)
+        // steps right of it and comes in as far as the outermost whole
+        // position, `half` steps right of the apex
+        travel = Math.max(0, N - 1 - mid - half) * step;
         const full = window.innerHeight * PIN_VH;
         morphPx = full * MORPH_SLICE;
-        // same turn per pixel as before, so a shorter turn is a shorter pin
-        spinPx = full * (1 - MORPH_SLICE) * (travel / FULL_TURN);
+        // same CARDS per pixel as the original, whose 0.8 × spread turn is
+        // 0.8 × (N − 1) steps — so a shorter turn is a shorter pin
+        spinPx = full * (1 - MORPH_SLICE) * (travel / step / (0.8 * (N - 1)));
       };
       measure();
 
@@ -185,31 +269,31 @@ export default function MorphHero({
       const t = { morph: 0, spin: 0, par: 0 };
       let introDone = false;
 
+      // scaleX AND scaleY, not "scale": quickSetter resolves that alias to
+      // the string "scaleX,scaleY" and then finds no setter for it, so the
+      // original's ×1.8 silently never happened (measured 2026-10-01)
       const setters = cards.map((c) => ({
         x: gsap.quickSetter(c, "x", "px"),
         y: gsap.quickSetter(c, "y", "px"),
         r: gsap.quickSetter(c, "rotation", "deg"),
-        sc: gsap.quickSetter(c, "scale"),
+        sx: gsap.quickSetter(c, "scaleX"),
+        sy: gsap.quickSetter(c, "scaleY"),
       }));
 
-      /** The original's two polar layouts, verbatim — except how far `spin`
-       *  turns the arc: `travel`, not 0.8 × spread (THE DARK VOID, above). */
+      /** The original's ring, verbatim, and the fan `measure` solved — a
+       *  card's scale runs from 1/k (its 72×102 ring size) to 1 (its layout
+       *  size), see the note on `baseW`. */
       const shape = (i: number, morph: number, spin: number, par: number) => {
         const minDim = Math.min(W, H);
         const circleR = Math.min(minDim * 0.35, 350);
-        const cAng = ((i / N) * 360 * Math.PI) / 180;
+        const cAng = (i / N) * 360 * RAD;
         const cx = Math.cos(cAng) * circleR;
         const cy = Math.sin(cAng) * circleR;
         const cRot = (i / N) * 360 + 90;
 
-        const arcR = Math.min(W, H * 1.5) * 1.1;
-        const centerY = H * 0.25 + arcR;
-        const spread = SPREAD;
-        const start = -90 - spread / 2;
-        const step = spread / (N - 1);
-        const bounded = -spin * travel;
-        const aDeg = start + i * step + bounded;
-        const aRad = (aDeg * Math.PI) / 180;
+        const centerY = apexY + arcR;
+        const aDeg = -90 + (i - mid) * step - spin * travel;
+        const aRad = aDeg * RAD;
         const ax = Math.cos(aRad) * arcR + par;
         const ay = Math.sin(aRad) * arcR + centerY;
 
@@ -217,7 +301,7 @@ export default function MorphHero({
           x: lerp(cx, ax, morph),
           y: lerp(cy, ay, morph),
           rot: lerp(cRot, aDeg + 90, morph),
-          scale: lerp(1, 1.8, morph),
+          scale: lerp(1 / k, 1, morph),
         };
       };
 
@@ -233,7 +317,8 @@ export default function MorphHero({
           setters[i].x(p.x);
           setters[i].y(p.y);
           setters[i].r(p.rot);
-          setters[i].sc(p.scale);
+          setters[i].sx(p.scale);
+          setters[i].sy(p.scale);
         }
         if (introEl) introEl.style.opacity = String(Math.max(0, Math.min(1, 1 - s.morph * 2)));
         if (arcEl) {
@@ -245,12 +330,13 @@ export default function MorphHero({
       gsap.ticker.add(tick);
 
       // ---- the load sequence: scatter → line → ring ------------------------
+      // (scales are the original's 0.6 and 1, in ring units — i.e. over k)
       cards.forEach((c) => {
         gsap.set(c, {
           x: (Math.random() - 0.5) * 1500,
           y: (Math.random() - 0.5) * 1000,
           rotation: (Math.random() - 0.5) * 180,
-          scale: 0.6,
+          scale: 0.6 / k,
           opacity: 0,
           xPercent: -50,
           yPercent: -50,
@@ -262,7 +348,7 @@ export default function MorphHero({
         x: (i) => i * lineSpacing - (N * lineSpacing) / 2,
         y: 0,
         rotation: 0,
-        scale: 1,
+        scale: () => 1 / k,
         opacity: 1,
         duration: 1.05,
         ease: "power3.out",
@@ -311,10 +397,10 @@ export default function MorphHero({
         },
       });
 
-      // ---- pointer sway, ±100px like the original --------------------------
+      // ---- pointer sway, ±SWAY px like the original ------------------------
       const onMouse = (e: MouseEvent) => {
         const r = stage.getBoundingClientRect();
-        t.par = ((e.clientX - r.left) / r.width) * 200 - 100;
+        t.par = ((e.clientX - r.left) / r.width) * 2 * SWAY - SWAY;
       };
       stage.addEventListener("mousemove", onMouse);
 
@@ -329,6 +415,15 @@ export default function MorphHero({
         // parent, finds the spacer instead, and throws NotFoundError:
         // "The node to be removed is not a child of this node".
         st.kill(true);
+        // WHAT THE TICK WROTE BY HAND, matchMedia cannot revert (it only
+        // knows the tweens). Leaving it crossed the 861px breakpoint
+        // downward — an iPad turning to portrait — with the plain layer's
+        // h1 and lead copy stuck at opacity 0 and shoved half off the left
+        // edge by the arc's translate(-50%) (reviewer, 2026-10-01).
+        arcEl?.style.removeProperty("opacity");
+        arcEl?.style.removeProperty("transform");
+        introEl?.style.removeProperty("opacity");
+        stage.style.removeProperty("--mh-k");
       };
     });
 
@@ -376,4 +471,3 @@ export default function MorphHero({
     </section>
   );
 }
-

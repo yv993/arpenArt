@@ -109,15 +109,21 @@
     perspective: 1200px;
   }
 
-  /* every card exists here, parked at the centre; GSAP owns x/y/rotation */
+  /* every card exists here, parked at the centre; GSAP owns x/y/rotation.
+     LAID OUT AT THE FAN'S SIZE: `--mh-k` is the card scale MorphHero solves
+     from the frame (×1.3 on a 1024 stage, ×2.7 on the client's 1886×835),
+     and GSAP scales the card DOWN to 72×102 for the ring rather than up for
+     the fan — a composited layer is rasterised at its layout size, and a
+     72px face stretched ×2.7 is a blur (2026-10-01). Without the property
+     (the plain layer, or before the JS measures) the card is its old self. */
   .ap-mh__card,
   .ap-mh__card:nth-child(-n + 7) {
     display: block;
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 72px;
-    height: 102px;
+    width: calc(72px * var(--mh-k, 1));
+    height: calc(102px * var(--mh-k, 1));
     margin: 0;
     transform: none;
     opacity: 0; /* until the scatter tween sets it — no flash at the centre */
@@ -139,25 +145,28 @@
     position: absolute;
     inset: 0;
     backface-visibility: hidden;
-    border-radius: 8px;
+    /* 8px on the 72px card, growing with it but slower than it — a ×2.7
+       card with a ×2.7 radius read as a playing card, not a postcard */
+    border-radius: calc(5px + 3px * var(--mh-k, 1));
   }
   .ap-mh__face.is-back {
     display: grid;
     place-content: center;
-    gap: 2px;
+    gap: calc(2px * var(--mh-k, 1));
     text-align: center;
     transform: rotateY(180deg);
     background: var(--ink-indigo);
     border: 1px solid color-mix(in srgb, var(--paper) 22%, transparent);
   }
+  /* the back's type was drawn for the 72px card; it keeps its proportion */
   .ap-mh__face.is-back span {
-    font-size: 13px;
+    font-size: calc(13px * var(--mh-k, 1));
     font-weight: 700;
     letter-spacing: 0.12em;
   }
   .ap-mh__face.is-back em {
     font-style: normal;
-    font-size: 7.5px;
+    font-size: calc(7.5px * var(--mh-k, 1));
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: color-mix(in srgb, var(--cream) 66%, transparent);

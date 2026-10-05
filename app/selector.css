@@ -137,8 +137,17 @@
 /* --------------------------------------------------------------------------
    THE ACCORDION — desktop only. Five panels sharing one row is a shape that
    needs width; the gate matches the rest of the site's moved layer.
+   AND ONLY WITH SCRIPTING (no-JS repair, 2026-10-05). Every panel's start
+   state below is opacity 0, and only [data-in] — written by the effect in
+   Selector.tsx — plays them in; with scripting off the home at 1440 showed
+   «Illustrations in motion» over an ~800px empty band (measured: all 15
+   panels opacity 0, translateX(-60px)). Opening a panel is React state too,
+   so without scripts the row would be one film and fourteen slivers that
+   never open. No scripting now gets the plain layer instead — the stack of
+   cards with their titles showing, as on a phone — the same
+   `scripting: enabled` gate the cloud, the lookbook and the morph use.
    -------------------------------------------------------------------------- */
-@media (min-width: 861px) {
+@media (min-width: 861px) and (scripting: enabled) {
   .ap-isel__strip {
     /* ONE height for the row, named, because the open panel's width is
        derived from it below.
@@ -250,6 +259,19 @@
   .ap-isel__strip[data-in] .ap-isel__panel {
     animation: ap-isel-in 0.75s var(--ease) forwards;
     animation-delay: calc(var(--i) * 0.14s);
+  }
+}
+
+/* The plain layer on a wide screen with scripting off (no-JS repair,
+   2026-10-05): the same cards, titles showing, wrapped into rows rather than
+   one phone-width column — fifteen films stacked singly ran eight screens at
+   1440. Five to a row at the strip's 1100px; each card keeps the plain
+   layer's own height cap, so a short window still sees a whole one. */
+@media (min-width: 861px) and (scripting: none) {
+  .ap-isel__strip {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    align-items: start;
+    gap: clamp(10px, 1.2vw, 16px);
   }
 }
 

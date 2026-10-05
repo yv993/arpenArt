@@ -94,9 +94,17 @@
 .ap-smap__toggle,
 .ap-about__link,
 .ap-auth__swap button,
-.ap-auth__ghost {
+.ap-auth__ghost,
+.ap-nav__mark,
+.ap-nav__theme,
+.ap-map__locate {
   position: relative;
 }
+/* The last three joined on 2026-10-05 (site repair pass, 390x844 probed
+   with elementFromPoint at ±20px round each centre): the logo link is
+   44x40 at phone width, the night switch 34x34, «Find the nearest town»
+   38px tall — each missed a finger 20px off its centre. Same box, same
+   rule: the look does not move. */
 .ap-nav__links a::before,
 .ap-nav__cart::before,
 .ap-foot a::before,
@@ -104,7 +112,10 @@
 .ap-smap__toggle::before,
 .ap-about__link::before,
 .ap-auth__swap button::before,
-.ap-auth__ghost::before {
+.ap-auth__ghost::before,
+.ap-nav__mark::before,
+.ap-nav__theme::before,
+.ap-map__locate::before {
   content: "";
   position: absolute;
   left: -8px;
@@ -112,4 +123,41 @@
   top: 50%;
   height: 44px;
   transform: translateY(-50%);
+}
+/* A hit box can only be as tall as the room between its neighbours, and
+   two places stacked their controls closer than 44px — so the box above
+   simply lost to the next one down (2026-10-05):
+   · the getting-there row on Find in store wraps on a phone, and its rows
+     sat 29px apart — a finger 20px under «Directions to the door» landed
+     on «Open a larger map». 22px between rows puts them 44px apart.
+   · the open phone menu tucked the night switch between Contact and the
+     account icon with a −8px margin (kept on the desktop bar, where it
+     stops the 34px button from thickening the bar): 33px from each. Here
+     it gets its own 44px row; the icon itself does not change.
+   · …and the menu that row lengthens scrolls inside itself once it is
+     taller than the screen. It hangs from a FIXED bar, so whatever ran
+     past the bottom edge could never be reached at all: at 390x844 the
+     cart row already sat on the edge, and a phone browser's own toolbars
+     take another 100–180px of that height. `100%` is the bar's height (an
+     absolute box's percentages read its containing block, the bar, which
+     `top: 100%` already hangs it from), so the menu ends at the bottom of
+     the small viewport. */
+@media (max-width: 860px) {
+  .ap-map__acts {
+    row-gap: 22px;
+  }
+  .ap-nav__links .ap-nav__theme {
+    min-height: 44px;
+    margin-block: 0;
+  }
+  .ap-nav__links {
+    max-height: calc(100svh - 100%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* a capped flex column SHRINKS its rows to fit before it scrolls — the
+     44px account icon came out 35px tall — so the rows keep their size */
+  .ap-nav__links > * {
+    flex-shrink: 0;
+  }
 }

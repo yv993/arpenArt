@@ -53,10 +53,10 @@ async function pair(src, base, big, small) {
   console.log(`${BASE}.webp ${r.entry.w}x${r.entry.h} ${r.kb.big} KB · ${BASE}-sm.webp ${r.small.w}x${r.small.h} ${r.kb.small} KB`);
   console.log("products.json → scarves[id 05]:");
   console.log(JSON.stringify({ id: "05", ...r.entry, alpha: false }, null, 1));
-  // The same picture is also the DESIGN's own picture: `scarfDesigns` in
-  // products.json is keyed by design number (01–03), each entry a copy of that
-  // design's print row, so the cart can picture "Scarf no. 02" (see
-  // ownItemMedia in lib/content.ts). Design 02's print is shot 05.
-  console.log("products.json → scarfDesigns[id 02]:");
-  console.log(JSON.stringify({ id: "02", ...r.entry, alpha: false }, null, 1));
+  // That one row is ALL of it. The cart pictures "Scarf no. 02" through this
+  // same row — content.ts `scarfDesigns.designs[].shots[0]`, read by CartView —
+  // so there is no second entry to paste. (An earlier cut also printed a
+  // `scarfDesigns` copy of the row for products.json; that key is gone,
+  // because nothing kept the copy in step with the roll — reviewer,
+  // 2026-10-01.)
 })().catch((e) => { console.error(e); process.exit(1); });

@@ -238,7 +238,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
            and the spec rows. The generic view's roll and 57-picker asked a
            question this line no longer has. */
         <>
-          <div className="ap-cv">
+          {/* the crumb rides on the section's own clearance, as on /shop/totes
+              — `.ap-sd__top` in shop.css for why */}
+          <div className="ap-sd__top">
             <nav className="ap-crumb" aria-label="Breadcrumb">
               <Link href="/shop">Shop</Link>
               <span aria-hidden>/</span>

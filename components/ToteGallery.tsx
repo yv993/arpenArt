@@ -77,6 +77,8 @@ export default function ToteGallery({
   const closeBtn = useRef<HTMLButtonElement | null>(null);
   const firstShot = useRef<HTMLImageElement | null>(null);
   const addTimer = useRef(0);
+  /** whether the press in flight BEGAN on the veil — see the veil's onClick */
+  const veilPress = useRef(false);
 
   const show = (i: number, from: HTMLElement) => {
     opener.current = from;
@@ -250,9 +252,29 @@ export default function ToteGallery({
 
       {/* ---- the bag's window ------------------------------------------- */}
       {bag && (
-        // the veil closes it; the box stops the press getting there
-        <div className="ap-tgq" role="dialog" aria-modal="true" aria-labelledby="ap-tgq-title" onClick={close}>
-          <div className="ap-tgq__box" ref={box} onClick={(e) => e.stopPropagation()}>
+        // THE VEIL CLOSES IT — on a press that both began AND ended on the
+        // veil (reviewer, 2026-10-01). A click fires on the nearest common
+        // ancestor of where the button went down and where it came up, so a
+        // drag that started INSIDE the box — selecting the price, a finger
+        // slipping off a photograph — and was let go on the veil arrived here
+        // as a click on the veil and took the window away under the buyer.
+        // Only pointerdown knows where a press began, hence the ref; and with
+        // the target test on the click itself, the box no longer needs to
+        // stop clicks on their way up.
+        <div
+          className="ap-tgq"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ap-tgq-title"
+          onPointerDown={(e) => {
+            veilPress.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            if (veilPress.current && e.target === e.currentTarget) close();
+            veilPress.current = false;
+          }}
+        >
+          <div className="ap-tgq__box" ref={box}>
             <div className="ap-tgq__top">
               <div>
                 <p className="ap-kicker">{toteBags.series}</p>

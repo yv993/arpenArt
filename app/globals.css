@@ -313,9 +313,13 @@ select {
   color: inherit;
 }
 
-/* one visible focus treatment everywhere — indigo clears 7.48:1 on paper */
+/* one visible focus treatment everywhere — indigo clears 7.48:1 on paper.
+   --indigo-ink, not --indigo: the pigment keeps its value after dark while
+   --paper goes navy, and the ring measured 1.98:1 on every night page (under
+   the 3:1 a focus indicator needs; 2026-10-05 verification). --indigo-ink is
+   the same #374897 by day and her indigo re-lit at night, 6.38:1 on navy. */
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid var(--indigo);
+  outline: 2px solid var(--indigo-ink);
   outline-offset: 3px;
   border-radius: 3px;
 }
@@ -1086,6 +1090,17 @@ select {
   outline-offset: -6px;
   border-radius: 4px;
 }
+/* NO SCRIPTING, NO SPHERE (no-JS repair, 2026-10-05). The server renders the
+   desktop branch, so the holder arrives sized for the globe but stays empty —
+   the Canvas only mounts from an effect. Measured with scripting off: an
+   828px blank navy band at 1440 (420px at 390) between the gallery's intro
+   and the <noscript> grid that stands in for it, and a focusable "drag the
+   sphere" group with nothing in it. Gone here, the grid follows the intro. */
+@media (scripting: none) {
+  .ap-gal__canvas {
+    display: none;
+  }
+}
 .ap-gal__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
@@ -1532,8 +1547,13 @@ select {
     align-items: center;
     min-height: 44px;
   }
-  /* a row of actions must not have its items overlap once they are 44px tall */
+  /* a row of actions must not have its items overlap once they are 44px
+     tall. 2px did not do it: the −11px block margins above buy each link's
+     height back, so a wrapped row laid out 22px tall and the next row's
+     44px box covered the bottom 20px of this one (measured 2026-10-05 —
+     a tap just under «Directions to the door» opened the larger map).
+     22px between rows lays the boxes edge to edge. */
   .ap-map__acts {
-    gap: 2px 16px;
+    gap: 22px 16px;
   }
 }
