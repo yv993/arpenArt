@@ -2621,9 +2621,13 @@
   pointer-events: none;
 }
 /* a finger's sideways swipe on the picture is the window's own (the swipe in
-   PhotoLightbox.tsx); vertical stays the browser's */
+   PhotoLightbox.tsx); vertical stays the browser's — AND SO DOES THE PINCH
+   (2026-10-12): `pan-y` alone withheld pinch-zoom for any touch that landed
+   on the picture, and the picture is nearly the whole window, so a phone
+   could no longer zoom into a sheet of twenty stickers it had opened to
+   read. pan-x stays out, which is what hands the swipe to the script. */
 .ap-xg__stage img {
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 /* A SHORT SCREEN GIVES THE COUNTER THE TOP ROW (2026-10-05, mobile pass).
    At 844x390 and 667x375 the bottom-centred «1 / 35» overlapped the

@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { FX_MEDIA, POOL, settle } from "@/lib/textfx";
 import { soon } from "@/lib/content";
 import { openSoon } from "./Soon";
+import MapBoundary from "./MapBoundary";
 import type { Spot } from "./FloatShopCanvas";
 
 /** THE ROOM IS ITS OWN CHUNK (2026-10-05 package, done 2026-10-07). Its
@@ -363,8 +364,16 @@ export default function FloatShop({
   return (
     <div className="ap-fs" ref={root} data-live={live || undefined}>
       <div className="ap-fs__stage" aria-hidden="true">
+        {/* the room's chunk can fail to arrive (a page left open across a
+            deploy asks for a filename that is gone), and next/dynamic throws
+            that to app/error.tsx — the whole home for one room. With the
+            boundary the room fails alone and the section falls back to its
+            plain layer, the grid every phone already gets (2026-10-12; the
+            `live` gate above runs once, so nothing turns it back on). */}
         {live && (
-          <FloatShopCanvas cats={cats} view={view} scrollP={scrollP} spots={spots} onPick={onPick} onHover={onHover} onFocus={onFocus} />
+          <MapBoundary onError={() => setLive(false)}>
+            <FloatShopCanvas cats={cats} view={view} scrollP={scrollP} spots={spots} onPick={onPick} onHover={onHover} onFocus={onFocus} />
+          </MapBoundary>
         )}
       </div>
 

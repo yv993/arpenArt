@@ -173,6 +173,16 @@ export default function CartView() {
     restore(gone.line, gone.at);
     setGone(null);
   };
+  // A HELD KEY MUST NOT EMPTY THE CART (2026-10-12). After a removal the
+  // keyboard lands on the next row's first control, which is that row's "−"
+  // (the effect above). Enter held on "−" therefore went on: this line down
+  // to nothing, then the next, then the next, in a tenth of a second — and
+  // Undo holds only the last one. A repeated keydown is not a second
+  // decision, so the two controls that can take a line away ignore it;
+  // "+" still repeats, and a fresh press works as it always did.
+  const oncePerPress = (e: React.KeyboardEvent) => {
+    if (e.repeat && e.key === "Enter") e.preventDefault();
+  };
 
   // RETURN MEANS "NEXT" ON A PHONE (2026-10-05). Return in Name submitted the
   // whole order — the form is noValidate, so it went straight to the consent
@@ -440,6 +450,7 @@ export default function CartView() {
                     <button
                       type="button"
                       aria-label={`One fewer: ${lineLabel(l)}`}
+                      onKeyDown={oncePerPress}
                       onClick={() => (l.qty > 1 ? setQty(l.cat, l.art, l.qty - 1, l.variant) : drop(l, i))}
                     >
                       −
@@ -457,6 +468,7 @@ export default function CartView() {
                   <button
                     type="button"
                     className="ap-cart__rm"
+                    onKeyDown={oncePerPress}
                     onClick={() => drop(l, i)}
                     aria-label={`Remove ${lineLabel(l)}`}
                   >

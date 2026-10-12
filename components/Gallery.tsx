@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { newSpin } from "./sphereSpin";
+import MapBoundary from "./MapBoundary";
 import { SoonLink, openSoon } from "./Soon";
 import globeShots from "@/lib/globe.json";
 import { categories, globe, home, priceList, soon } from "@/lib/content";
@@ -276,14 +277,23 @@ export default function Gallery() {
             onPointerCancel={onUp}
             onKeyDown={onKey}
           >
+            {/* A LAZY CHUNK CAN FAIL TO ARRIVE (2026-10-12): a page left open
+                across a deploy asks for a filename that no longer exists, and
+                next/dynamic throws that past itself to app/error.tsx — the
+                whole home replaced by "SOMETHING BROKE" for a sphere. The
+                boundary the map already has (MapBoundary.tsx) lets the
+                optional thing fail alone: `ok` false is the link grid that
+                reduced motion and no-WebGL already get. */}
             {live && (
-              <GlobeCanvas
-                images={IMAGES}
-                spin={spin}
-                chosenRef={chosenRef}
-                onPick={onPick}
-                onPointerMissed={onPointerMissed}
-              />
+              <MapBoundary onError={() => setOk(false)}>
+                <GlobeCanvas
+                  images={IMAGES}
+                  spin={spin}
+                  chosenRef={chosenRef}
+                  onPick={onPick}
+                  onPointerMissed={onPointerMissed}
+                />
+              </MapBoundary>
             )}
           </div>
 

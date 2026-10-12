@@ -109,6 +109,10 @@ export default function PhotoLightbox({
     const from = swipeFrom.current;
     swipeFrom.current = null;
     if (!from || !many) return;
+    // a visitor who has pinched in is looking at THIS photograph: a sideways
+    // drag must not turn the page under them (2026-10-12, with the pinch
+    // given back in shop.css)
+    if ((window.visualViewport?.scale ?? 1) > 1.01) return;
     const dx = e.clientX - from.x;
     const dy = e.clientY - from.y;
     if (Math.abs(dx) <= 40 || Math.abs(dx) <= Math.abs(dy)) return;

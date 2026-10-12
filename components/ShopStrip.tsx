@@ -48,10 +48,28 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
   const [lb, setLb] = useState<number | null>(null);
   const [i, setI] = useState(0);
 
+  // THE STRIP FOLLOWS ITS QUERY (2026-10-12, the gate before the phone pass
+  // was pushed). `live` used to be read once at mount, which was harmless
+  // while the panels held plain <img>s. The phone pass put each photograph
+  // behind a <picture> whose <source> is a LIVE media query (below, and the
+  // first grid card in CatFig.tsx) — so a tablet turned to portrait, a window
+  // snapped to half, or a page zoomed past 860px swapped all eleven pictures
+  // for the 1x1 GIF while the strip stayed on screen and the grid stayed
+  // hidden: a shop index of flat colour panels until a reload. The other way
+  // round, the grid's first card went blank. Strip, grid and both sources now
+  // switch together. The viewer is rendered INSIDE the strip and locks the
+  // page's scroll, so it is closed when the strip stops — otherwise it would
+  // be an invisible dialog holding a locked page.
   useEffect(() => {
-    if (window.matchMedia(DESKTOP).matches && window.matchMedia("(scripting: enabled)").matches) {
-      setLive(true);
-    }
+    const m = window.matchMedia(DESKTOP);
+    const read = () => {
+      const on = m.matches && window.matchMedia("(scripting: enabled)").matches;
+      setLive(on);
+      if (!on) setLb(null);
+    };
+    read();
+    m.addEventListener("change", read);
+    return () => m.removeEventListener("change", read);
   }, []);
 
   // the section attribute is what hides the plain grid — set only once the
