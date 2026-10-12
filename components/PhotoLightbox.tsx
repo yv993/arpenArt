@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { loopTab } from "@/lib/tabLoop";
 
 // ============================================================================
 // PHOTO LIGHTBOX — one picture, big, with the rest of its set behind the
@@ -55,6 +56,11 @@ export default function PhotoLightbox({
   arriving?: boolean;
 }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  /** whether the press in flight BEGAN on the bare ground (see onClick) */
+  const groundPress = useRef(false);
+  /** where a finger went down on the picture, for the swipe */
+  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
   const many = shots.length > 1;
 
   const close = useCallback(() => {
@@ -80,6 +86,10 @@ export default function PhotoLightbox({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
+      // TAB STAYS IN HERE (2026-10-05): on magnets, stickers and scarves the
+      // fourth Tab from Close already left for the footer behind the veil
+      // (measured, 390x844) — see lib/tabLoop.ts
+      loopTab(e, rootRef.current);
       if (!many) return;
       if (e.key === "ArrowRight") onIndex((i + 1) % shots.length);
       if (e.key === "ArrowLeft") onIndex((i - 1 + shots.length) % shots.length);
@@ -91,8 +101,43 @@ export default function PhotoLightbox({
   if (!shots.length) return null;
   const shot = shots[Math.min(i, shots.length - 1)];
 
+  // A SWIPE TURNS THE PAGE (2026-10-05, mobile pass): a phone had the two
+  // 46px arrows and nothing else — no gesture that every photo viewer it
+  // knows answers to (UX laws D3). Right-to-left is the next photograph.
+  // Touch and pen only: a mouse drag on the desktop does what it always did.
+  const swipeEnd = (e: React.PointerEvent<HTMLElement>) => {
+    const from = swipeFrom.current;
+    swipeFrom.current = null;
+    if (!from || !many) return;
+    const dx = e.clientX - from.x;
+    const dy = e.clientY - from.y;
+    if (Math.abs(dx) <= 40 || Math.abs(dx) <= Math.abs(dy)) return;
+    onIndex(dx < 0 ? (i + 1) % shots.length : (i - 1 + shots.length) % shots.length);
+  };
+
   return (
-    <div className="ap-xg__lb" data-arriving={arriving || undefined} role="dialog" aria-modal="true" aria-label={label} onClick={close}>
+    // THE GROUND CLOSES IT — on a press that began AND ended on the ground
+    // (2026-10-05, the tote window's rule, ToteGallery.tsx). It used to close
+    // on ANY click that bubbled up to it, and at 844x390 the «1 / 35» line
+    // overlapped the buy button by 11px: a tap there hit the counter, the
+    // click bubbled here, and the window closed with nothing added (measured,
+    // cart empty). The counter no longer takes a pointer (shop.css) and only
+    // the ground itself closes.
+    <div
+      ref={rootRef}
+      className="ap-xg__lb"
+      data-arriving={arriving || undefined}
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+      onPointerDown={(e) => {
+        groundPress.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (groundPress.current && e.target === e.currentTarget) close();
+        groundPress.current = false;
+      }}
+    >
       <button ref={closeRef} type="button" className="ap-xg__x" onClick={close} aria-label="Close">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 18L18 6M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -116,7 +161,17 @@ export default function PhotoLightbox({
       )}
 
       {/* the ground closes; the picture itself must not */}
-      <figure className="ap-xg__stage" onClick={(e) => e.stopPropagation()}>
+      <figure
+        className="ap-xg__stage"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => {
+          swipeFrom.current = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={swipeEnd}
+        onPointerCancel={() => {
+          swipeFrom.current = null;
+        }}
+      >
         <img key={shot.id ?? i} src={shot.src} alt={alt(i)} width={shot.w} height={shot.h} />
         {footer && <figcaption>{footer}</figcaption>}
       </figure>

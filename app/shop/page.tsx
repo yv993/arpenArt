@@ -79,13 +79,15 @@ export default function ShopPage() {
         <ShopStrip cats={strip} />
 
         <ul className="ap-cats">
-          {categories.map((c) => (
+          {categories.map((c, i) => (
             <li className="ap-cat" key={c.slug} data-soon={c.status === "soon" || undefined}>
               {/* no price under the name (change.pdf p8); a closed line opens
                   the Available Soon window, not a page */}
               {c.status === "open" ? (
                 <Link href={`/shop/${c.slug}`} aria-label={c.name}>
-                  <CatFig cat={c} />
+                  {/* the first card is this page's LCP on a phone (2026-10-05
+                      package) — see CatFig */}
+                  <CatFig cat={c} eager={i === 0} />
                   <div className="ap-cat__row">
                     <h2>{c.name}</h2>
                   </div>

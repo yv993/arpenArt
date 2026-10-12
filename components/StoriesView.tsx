@@ -7,7 +7,9 @@ import PhotoLightbox from "./PhotoLightbox";
 import { stories, type Story } from "@/lib/content";
 import shots from "@/lib/stories.json";
 
-type Shot = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
+/** `md`: a 1,080px-wide copy, on the leads whose master is wider than 1,200
+ *  (2026-10-05) — see the lead's <picture> */
+type Shot = { id: string; src: string; thumb: string; md?: string; w: number; h: number; avg: string };
 const S = shots as Shot[];
 const byId = (id: string) => S.find((s) => s.id === id);
 
@@ -411,7 +413,7 @@ export default function StoriesView() {
               </h1>
               <p className="ap-lede">{stories.copy}</p>
             </div>
-            <ol className="ap-st__index" aria-label="The stories">
+            <ol className="ap-st__index" id="ap-st-index" aria-label="The stories">
               {stories.entries.map((s, i) => (
                 <li key={s.id}>
                   <a href={`#${s.id}`} onClick={(e) => go(i, e)}>
@@ -475,7 +477,12 @@ export default function StoriesView() {
                     })}
                     {story.more && (
                       <details className="ap-st__more" data-reveal>
-                        <summary>{story.more.label}</summary>
+                        {/* the label in its own box: on a phone the summary
+                            grows to a 44px target and the underline stays on
+                            the words (stories.css, 2026-10-05) */}
+                        <summary>
+                          <span>{story.more.label}</span>
+                        </summary>
                         <div lang={story.more.lang}>
                           {story.more.paragraphs.map((p) => (
                             <p key={p.slice(0, 40)}>{p}</p>
@@ -519,14 +526,41 @@ export default function StoriesView() {
                         <button
                           type="button"
                           className="ap-st__lead"
-                          style={{ background: lead.avg }}
+                          // THE BOX IS SIZED BEFORE THE PICTURE ARRIVES
+                          // (2026-10-05). The lead used to take its size
+                          // from the loaded file, so every lead was 0px tall
+                          // until it came in (7 of 7 at 360x740) and the page
+                          // grew from 12,335 to 14,628px under a phone
+                          // reader's thumb — an index jump landed one story
+                          // early. Its ratio and natural width ride here, on
+                          // the button, so stories.css can give the button
+                          // its final width up front (see `.ap-st__lead`).
+                          style={
+                            {
+                              background: lead.avg,
+                              "--r": lead.w / lead.h,
+                              "--w": `${lead.w}px`,
+                            } as React.CSSProperties
+                          }
                           onClick={(e) => {
                             opener.current = e.currentTarget;
                             setLb({ s: si, i: 0 });
                           }}
                           aria-label={`Open the photographs of “${story.title}”`}
                         >
-                          <img src={lead.src} alt="" width={lead.w} height={lead.h} loading={si === 0 ? "eager" : "lazy"} decoding="async" />
+                          {/* A PHONE TAKES THE 1,080 COPY (2026-10-05). The
+                              lead had one file, the 1,600 master, and every
+                              phone downloaded it for a 354px column (708px
+                              at DPR 2, 1,062 at DPR 3). Under 860px a lead
+                              that has the middle rung offers it; the desktop
+                              matches no source and keeps the master it
+                              always had, pixel for pixel. */}
+                          <picture>
+                            {lead.md && (
+                              <source media="(max-width: 860px)" srcSet={`${lead.md} 1080w, ${lead.src} ${lead.w}w`} sizes="92vw" />
+                            )}
+                            <img src={lead.src} alt="" width={lead.w} height={lead.h} loading={si === 0 ? "eager" : "lazy"} decoding="async" />
+                          </picture>
                         </button>
                       )
                     )}
@@ -554,6 +588,15 @@ export default function StoriesView() {
                     )}
                   </div>
                 </div>
+                {/* BACK TO THE INDEX, on a phone (2026-10-05). /stories is
+                    18-21 phone screens and its index is only at the top, so
+                    each story ends with the way back to it. stories.css
+                    shows it at 860px and under only: the stack has its rail,
+                    and the desktop's plain layer is left as it was. */}
+                <a className="ap-st__back" href="#ap-st-index">
+                  <span aria-hidden="true">↑</span>
+                  <span>All stories</span>
+                </a>
               </li>,
             ];
           })}

@@ -18,17 +18,40 @@ import gsap from "gsap";
 // top bar, so an upward overshoot has nowhere to go.
 
 export function flyToCart(from: HTMLElement | null | undefined) {
-  if (!from || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+  // NO PICTURE TO THROW IS STILL AN ADD (2026-10-05 repair). A missing or
+  // unrendered source used to end here in silence: /shop/postcards once a
+  // card was picked (the ref sat on the other <img>, so null — at 390 AND at
+  // 1440) and /shop/stickers on a phone (its stage picture is display:none
+  // on the plain layer, a 0x0 box) measured 0 flight frames and no count
+  // bump. The count still takes the hit, so every add is acknowledged.
+  if (!from || !from.getBoundingClientRect().width) {
+    bumpCart();
+    return;
+  }
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     bumpCart();
     return;
   }
-  const cart = document.querySelector<HTMLElement>(".ap-nav__cart");
-  if (!cart) return;
+  // THE CART THAT IS ON SCREEN (2026-10-05, mobile pass). There are two now:
+  // the drawer's `.ap-nav__cart` (the desktop bar's own) and the phone bar's
+  // `.ap-nav__cartbar` (Chrome.tsx). Whichever has a box is the one in view —
+  // on a phone the drawer's measured 0x0, which used to end the flight here
+  // before it began, so a phone never saw an add land.
+  const cart = Array.from(document.querySelectorAll<HTMLElement>(".ap-nav__cart, .ap-nav__cartbar")).find(
+    (e) => e.getBoundingClientRect().width > 0,
+  );
+  if (!cart) {
+    bumpCart();
+    return;
+  }
 
   const a = from.getBoundingClientRect();
   const b = cart.getBoundingClientRect();
-  if (!a.width || !b.width) return;
+  if (!a.width || !b.width) {
+    bumpCart();
+    return;
+  }
 
   const clone = from.cloneNode(true) as HTMLElement;
   clone.className = "ap-fly";
@@ -62,12 +85,17 @@ export function flyToCart(from: HTMLElement | null | undefined) {
 /** The count catches it — a short squash, kept separate so reduced motion
  *  still gets the acknowledgement without the flight. */
 export function bumpCart() {
-  const n = document.querySelector<HTMLElement>(".ap-nav__n");
-  if (!n) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  gsap.fromTo(
-    n,
-    { scale: 1 },
-    { scale: 1.55, duration: 0.16, ease: "power2.out", yoyo: true, repeat: 1, clearProps: "scale" },
-  );
+  // EVERY RENDERED COUNT, not the first in the document (2026-10-05): the
+  // phone bar's copy comes first in the DOM and is display:none on the
+  // desktop bar — taking only the first would have bumped an invisible box
+  // there and left the count you can see standing still.
+  document.querySelectorAll<HTMLElement>(".ap-nav__n").forEach((n) => {
+    if (!n.getClientRects().length) return;
+    gsap.fromTo(
+      n,
+      { scale: 1 },
+      { scale: 1.55, duration: 0.16, ease: "power2.out", yoyo: true, repeat: 1, clearProps: "scale" },
+    );
+  });
 }

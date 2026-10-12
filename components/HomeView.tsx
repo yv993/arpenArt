@@ -266,7 +266,12 @@ export default function HomeView() {
             and a poster is only discovered when the parser reaches the
             <video>. Preloaded from the head instead — React hoists this
             link — so it is in flight with the stylesheet. */}
-        <link rel="preload" as="image" href="/hero/intro.webp" />
+        {/* fetchPriority high (2026-10-05 package): the preload went out at
+            the browser's default "Low" image priority on every device
+            (measured at 390x844: initialPriority Low, in the same batch as
+            the sun and fifteen film posters), and the live LCP was 4.8s. It
+            is the LCP image everywhere, so it says so. */}
+        <link rel="preload" as="image" href="/hero/intro.webp" fetchPriority="high" />
         <div className="ap-hero__stage" data-parallax-layers>
           <div className="ap-hero__field" data-parallax-layer="1" aria-hidden="true" />
           {/* TWO PLATES, and the browser picks ONE. `hero-nosun` has the sun

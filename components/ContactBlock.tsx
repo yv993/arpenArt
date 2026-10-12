@@ -7,6 +7,10 @@ import Socials from "./Socials";
 
 type State = "idle" | "sending" | "sent" | "logged" | "error";
 
+/** the fields a Return can move between: typed ones only — never the consent
+ *  box — and never the hidden honeypot (tabIndex -1) */
+const TEXT_FIELDS = 'input:not([type="checkbox"]):not([tabindex="-1"]), textarea';
+
 export default function ContactBlock({
   heading = "h2",
 }: {
@@ -17,14 +21,33 @@ export default function ContactBlock({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const Title = heading;
 
+  // put the keyboard where the fix is — the first field rejected, in the
+  // order they appear in the form (the cart's focusFirst, CartView.tsx)
+  const focusFirst = (form: HTMLFormElement, errs: Record<string, string>) => {
+    const first = ["name", "email", "message", "consent"].find((k) => errs[k]);
+    if (!first) return;
+    (form.querySelector(`[name="${first}"]`) as HTMLElement | null)?.focus();
+  };
+
   const send = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (state === "sending") return;
     const form = e.currentTarget;
     const f = new FormData(form);
     const get = (k: string) => String(f.get(k) ?? "").trim();
-    setState("sending");
     setErrors({});
+    // CONSENT WAS NEVER READ (2026-10-05). The form is noValidate — so the
+    // server's messages are the one voice — which means `required` on the
+    // box does nothing, and an unticked Send went out regardless (measured:
+    // the request fired with no consent in it, and the route did not ask).
+    // Enforced here first, as the cart does, and again by the route.
+    if (!f.get("consent")) {
+      const errs = { consent: "Please tick the box so Arpine may reply to you." };
+      setErrors(errs);
+      focusFirst(form, errs);
+      return;
+    }
+    setState("sending");
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -34,6 +57,7 @@ export default function ContactBlock({
           email: get("email"),
           message: get("message"),
           company: get("company"),
+          consent: true,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -44,6 +68,8 @@ export default function ContactBlock({
       if (res.status === 422 && data.errors) {
         setErrors(data.errors);
         setState("idle");
+        // after a 422 the focus sat on <body> and nothing was announced
+        focusFirst(form, data.errors);
         return;
       }
       if (!res.ok || !data.ok) {
@@ -56,6 +82,27 @@ export default function ContactBlock({
       setState("error");
     }
   };
+
+  // Return in Name means "next", not "send", on a phone — the cart's
+  // enterNext (CartView.tsx), which has the measurements; desktop keyboards
+  // keep implicit submission
+  const enterNext = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    const t = e.target;
+    if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+    if (!(t instanceof HTMLInputElement) || t.enterKeyHint !== "next") return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    const fields = [...e.currentTarget.querySelectorAll<HTMLElement>(TEXT_FIELDS)];
+    const next = fields[fields.indexOf(t) + 1];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+  };
+
+  // an error <em> sits inside its field's label, so each field is NAMED by
+  // its label text alone (aria-labelledby) and the error is its DESCRIPTION —
+  // read once, after the name, instead of being folded into it
+  const err = (k: string) =>
+    errors[k] ? { "aria-describedby": `c-${k}-err`, "aria-invalid": true as const } : { "aria-invalid": false as const };
 
   return (
     <section className="ap-sec" id="contact">
@@ -75,34 +122,60 @@ export default function ContactBlock({
           <Socials />
         </div>
 
-        <form className="ap-contact__form" onSubmit={send} noValidate>
+        <form className="ap-contact__form" onSubmit={send} onKeyDown={enterNext} noValidate>
           <div className="ap-pot" aria-hidden="true">
             <label htmlFor="c-company">Company</label>
             <input id="c-company" name="company" tabIndex={-1} autoComplete="off" />
           </div>
 
           <label className="ap-field">
-            <span>{home.contact.fields.name}</span>
-            <input name="name" required autoComplete="name" aria-invalid={!!errors.name} />
-            {errors.name && <em className="ap-contact__warn">{errors.name}</em>}
+            <span id="c-name-lab">{home.contact.fields.name}</span>
+            <input name="name" required autoComplete="name" enterKeyHint="next" aria-labelledby="c-name-lab" {...err("name")} />
+            {errors.name && (
+              <em id="c-name-err" className="ap-contact__warn">
+                {errors.name}
+              </em>
+            )}
           </label>
           <label className="ap-field">
-            <span>{home.contact.fields.email}</span>
-            <input name="email" type="email" required autoComplete="email" aria-invalid={!!errors.email} />
-            {errors.email && <em className="ap-contact__warn">{errors.email}</em>}
+            <span id="c-email-lab">{home.contact.fields.email}</span>
+            <input name="email" type="email" required autoComplete="email" aria-labelledby="c-email-lab" {...err("email")} />
+            {errors.email && (
+              <em id="c-email-err" className="ap-contact__warn">
+                {errors.email}
+              </em>
+            )}
           </label>
           <label className="ap-field">
-            <span>{home.contact.fields.message}</span>
-            <textarea name="message" rows={4} required aria-invalid={!!errors.message} />
-            {errors.message && <em className="ap-contact__warn">{errors.message}</em>}
+            <span id="c-message-lab">{home.contact.fields.message}</span>
+            <textarea name="message" rows={4} required aria-labelledby="c-message-lab" {...err("message")} />
+            {errors.message && (
+              <em id="c-message-err" className="ap-contact__warn">
+                {errors.message}
+              </em>
+            )}
           </label>
 
-          <label className="ap-field" style={{ gridAutoFlow: "column", justifyContent: "start", gap: 10, alignItems: "center" }}>
-            <input type="checkbox" name="consent" required style={{ width: "auto" }} />
-            <span style={{ letterSpacing: 0, textTransform: "none", fontSize: "12.5px" }}>
-              {home.contact.consent} — <Link href="/privacy">privacy</Link>
+          {/* .ap-consent, the cart's own consent row, instead of the inline
+              styles this used to carry: the same layout on a desktop, and the
+              inline `width: auto` no longer out-ranks the touch rule that
+              draws the box at 22px (it measured 13px here, 22px on /cart) */}
+          <label className="ap-field ap-consent">
+            <input type="checkbox" name="consent" required {...err("consent")} />
+            {/* a new tab, so the message typed so far survives reading it —
+                the cart's link, CartView.tsx */}
+            <span>
+              {home.contact.consent} —{" "}
+              <Link href="/privacy" target="_blank" rel="noopener">
+                privacy<span className="ap-sr"> (opens in a new tab)</span>
+              </Link>
             </span>
           </label>
+          {errors.consent && (
+            <em id="c-consent-err" className="ap-contact__warn">
+              {errors.consent}
+            </em>
+          )}
 
           {state === "sent" && (
             <p className="ap-contact__ok" role="status">
@@ -116,7 +189,9 @@ export default function ContactBlock({
             </p>
           )}
 
-          <button className="ap-btn" type="submit" disabled={state === "sending"}>
+          {/* aria-disabled, not disabled: a disabled button drops the focus
+              it holds; `send` returns early while a request is in flight */}
+          <button className="ap-btn" type="submit" aria-disabled={state === "sending" ? true : undefined}>
             {state === "sending" ? home.contact.sending : home.contact.send}
           </button>
         </form>

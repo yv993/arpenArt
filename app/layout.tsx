@@ -14,11 +14,17 @@ const description =
 
 // Fraunces carries the hand-made warmth of the gouache without being twee;
 // Karla keeps the shop information plain and legible underneath it.
+// opsz ONLY (2026-10-05 package). SOFT and WONK were shipped and nothing uses
+// them — no rule on the site sets font-variation-settings — so the display
+// face's woff2 carried two axes no glyph ever moved along: 118 KB with them,
+// 66 KB without (measured 2026-10-07 at 390 and 1440). The auditor's 60-run
+// diff and this package's own check read identical glyph widths both ways
+// (six strings at 1440, to the hundredth of a pixel).
 const display = Fraunces({
   subsets: ["latin"],
   variable: "--f-display",
   display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
+  axes: ["opsz"],
 });
 const body = Karla({
   subsets: ["latin"],
@@ -66,8 +72,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // --paper, so the browser chrome blends into the page instead of framing it
-  themeColor: "#fcf2e6",
+  // --paper, so the browser chrome blends into the page instead of framing it.
+  // ONE PER SCHEME (2026-10-05 package): a single #fcf2e6 put a cream toolbar
+  // over the navy night page on every dark phone. The night one is --n-paper.
+  // A theme chosen with the nav's switch overrides both (ThemeToggle.tsx).
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcf2e6" },
+    { media: "(prefers-color-scheme: dark)", color: "#131f39" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -109,7 +121,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 naming, used by nothing else on the site) are shown, wearing
                 main's warm top;
               · body becomes a column and the footer is ordered after them,
-                so the page reads nav → content → footer, not footer first.
+                so the page reads nav → content → footer, not footer first;
+              · <main>'s phone floor of one screen (globals.css, the footer
+                CLS fix) is dropped (2026-10-05 repair): here <main> holds
+                only the hidden splash, so that floor was an empty 100svh
+                ABOVE the streamed page — measured at 390x844 with scripting
+                off, the bar started at y 844 and the h1 at 1144–1329 on /,
+                /shop, /shop/postcards, /shop/totes, /stories and
+                /find-in-store. The shift that floor prevents needs a script
+                to mount the cart late, so nothing is lost without one.
             !important because the app's stylesheet may load after this tag
             and .ap-load sets its own display. Inner HTML rather than a
             <style> child, so the CSS reaches the page byte for byte. */}
@@ -121,6 +141,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "body{display:flex;flex-direction:column}" +
               'div[hidden][id^="S:"]{display:block!important;background-image:var(--page-wash);background-repeat:no-repeat}' +
               "body>.ap-foot{order:1}" +
+              "#main{min-height:0!important}" +
               "</style>",
           }}
         />
@@ -145,7 +166,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "try{if(matchMedia('(min-width: 861px) and (prefers-reduced-motion: no-preference)').matches)document.documentElement.setAttribute('data-footfx','')}catch(e){}",
           }}
         />
-        <a className="ap-skip" href="#main">
+        <a className="ap-skip" href="#content">
           Skip to content
         </a>
         <main id="main">{children}</main>

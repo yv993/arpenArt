@@ -269,10 +269,17 @@ export default function AuthUI({ ready, notice }: { ready: boolean; notice?: str
           {motionOff ? (
             <img src={FILM[panel].poster} alt="" aria-hidden="true" decoding="async" />
           ) : (
+            // THE FILM ONLY WHERE ITS COLUMN EXISTS (2026-10-05 package). The
+            // picture column is display:none below 861px (auth.css), but the
+            // <video src> still loaded and played: /account at 390x844
+            // downloaded all of signin.mp4 (2.39 MB) into a 0px box, and the
+            // create-account view added signup.mp4 (1.53 MB). A media-gated
+            // <source> — the trick the hero's video uses — resolves before a
+            // byte moves: a phone matches no source (NETWORK_NO_SOURCE), the
+            // desktop matches this one and plays exactly as before.
             <video
               key={panel}
               ref={armFilm}
-              src={FILM[panel].src}
               poster={FILM[panel].poster}
               autoPlay
               muted
@@ -280,7 +287,9 @@ export default function AuthUI({ ready, notice }: { ready: boolean; notice?: str
               playsInline
               preload="metadata"
               aria-hidden="true"
-            />
+            >
+              <source src={FILM[panel].src} type="video/mp4" media="(min-width: 861px)" />
+            </video>
           )}
         </figure>
         <blockquote className="ap-auth__quote">

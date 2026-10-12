@@ -105,6 +105,18 @@ export function remove(cat: string, art?: string, variant?: string) {
   write(read().filter((l) => !same(l, { cat, art, variant })));
 }
 
+/** Put a removed line back WHERE IT WAS — the cart page's Undo (2026-10-05).
+ *  `add` appends, so an undone middle line would have come back at the foot
+ *  of the list and the stored order would have changed under the buyer.
+ *  If the same line was added again in the meantime, the two merge. */
+export function restore(line: Line, at: number) {
+  const lines = read();
+  const hit = lines.find((l) => same(l, line));
+  if (hit) hit.qty = Math.min(99, hit.qty + line.qty);
+  else lines.splice(Math.max(0, Math.min(at, lines.length)), 0, line);
+  write(lines);
+}
+
 export function clear() {
   write([]);
 }

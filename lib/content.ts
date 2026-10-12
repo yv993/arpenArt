@@ -218,8 +218,8 @@ export const categories: Category[] = [
     media: "apparel",
     from: 18000,
     // AVAILABLE SOON (change.pdf p8): no page yet — a tap opens the small
-    // "Available Soon" window instead (components/Soon.tsx). `soon` already
-    // 404s the route and keeps it out of the static build.
+    // "Available Soon" window instead (components/Soon.tsx). Its address
+    // shows the same notice rather than a 404 (app/shop/[slug], 2026-10-05).
     status: "soon",
     // garment sizes, not product claims — the one choice a hoodie order
     // cannot be placed without
@@ -889,7 +889,17 @@ export const home = {
      *  that can honestly be added in one click from here. The button opens
      *  the piece with its picker instead, which is what a variable product
      *  does in any serious shop. */
-    buyNote: "You choose the illustration and the options on the product itself.",
+    // LINE-AWARE since the 2026-10-05 phone package (UI microcopy, not her
+    // words). The sentence above was said under every open line, and only
+    // the lines with options to set have any: postcards (the illustration and
+    // the format) and scarves (the design and the cut) keep it; the lines of
+    // fixed pieces — magnets, keychains, sticker sheets — have nothing to
+    // configure, only one to pick. Gallery.tsx chooses by the line's
+    // `variants`.
+    buyNote: {
+      choose: "You choose the illustration and the options on the product itself.",
+      pick: "Pick your favourite on its page.",
+    },
     /** under a globe card whose line is not in the shop yet — a fact about
      *  the catalogue, not a promise about a date */
     soonNote: "This line is being prepared; its price is from Arpine's list.",
@@ -1042,6 +1052,10 @@ export const home = {
     failed: "That did not send. Please try again, or reach out directly:",
     fields: { name: "Name", email: "Email", message: "What can Arpine help with?" },
     consent: "I agree to be contacted about this enquiry",
+    // site copy, not hers (2026-10-05): the cart's form borrowed the line
+    // above, so a buyer agreed to be contacted about an "enquiry" while
+    // sending an order. Same sentence, the cart's own noun.
+    consentOrder: "I agree to be contacted about this order",
   },
   footer: {
     toTop: "To top",
@@ -1105,7 +1119,13 @@ export const scarfDesigns = {
   copy:
     "Each scarf brings together a different story from Armenia — its mountains, cities, people, memories and dreams. Wear it as a colorful reminder of a place that stays close to the heart.",
   add: "Add to cart",
-  added: "Added to your cart.",
+  // THE CONFIRMATION NAMES THE STYLE (mobile pass, 2026-10-05 — interface
+  // words, not hers). The one Style choice sits at the top of the page —
+  // 2,127px above the third design's Add at 390x664 — and the line used to
+  // say only «Added to your cart.», so nothing near the button said WHICH cut
+  // was added (UX laws M4). `{style}` is the chosen option, verbatim; with no
+  // Style on the line the dash and the slot are dropped (ScarfDesigns.tsx).
+  added: "Added to your cart — {style}.",
   // THE PRICE LINE'S ONE WORD (client, change 3.pdf p7, 2026-10-01: «ինչ-որ
   // մի տեղ գինն էլ ավելացնենք՝ 8000 դրամ»). The FIGURE is not here — the page
   // reads it from `categories[scarves].from`, the field the cart and
@@ -1237,6 +1257,10 @@ export const stickers3d = {
     "Bring a little piece of Armenia to life. Playful 3D illustrations inspired by Armenia, its places, culture and everyday moments — made to add a little personality wherever you stick them.",
   ],
   cue: "Scroll to surf · click to open",
+  /** the plain layer's cue, where a phone gets no lane and no hover (mobile
+   *  pass, 2026-10-05) — interface words in the same voice as
+   *  toteBags.cueTouch, not her copy */
+  cueTouch: "Tap a sticker to open it",
   /** shown on the opened card */
   open: { series: "The Armenia series", add: "Add to cart", close: "Close", added: "Added to your cart." },
 };

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { brand, categories, delivery, home, ownItemMedia, ownItemWord, scarfDesigns, stickerSheets } from "@/lib/content";
-import { clear, dram, read, remove, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
+import { clear, dram, read, remove, restore, setQty, subscribe, total, unit, type Line } from "@/lib/cart";
 import { OrderingSteps } from "@/components/CategoryView";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
@@ -14,6 +14,10 @@ const ART = artworks as Art[];
 const P = products as Record<string, Shot[]>;
 
 type State = "idle" | "sending" | "sent" | "logged" | "error";
+
+/** the fields a Return can move between: typed ones only — never a radio or
+ *  the consent box — and never the hidden honeypot (tabIndex -1) */
+const TEXT_FIELDS = 'input:not([type="radio"]):not([type="checkbox"]):not([tabindex="-1"]), textarea';
 
 /** what was ordered, frozen at the moment of sending */
 type Receipt = {
@@ -51,12 +55,42 @@ export default function CartView() {
   const [shipId, setShipId] = useState("yerevan");
   const ship = delivery.options.find((o) => o.id === shipId) ?? delivery.options[0];
 
+  // A REMOVAL CAN BE TAKEN BACK (2026-10-05). "−" at a quantity of one, and
+  // Remove, deleted a line silently and for good — the only way back was
+  // the shop — and the pressed button vanished with its row, so focus fell
+  // to <body> (measured at 390x844: activeElement BODY after both). UX laws,
+  // D5 vs correctness: act at once only where the act is reversible. So the
+  // line goes at once, one persistent polite status line names it, and
+  // Undo puts the identical stored line back in its old place for 6 s.
+  const [gone, setGone] = useState<{ line: Line; at: number; label: string } | null>(null);
+  const lapse = useRef<number | undefined>(undefined);
+  const arm = () => {
+    window.clearTimeout(lapse.current);
+    lapse.current = window.setTimeout(() => setGone(null), 6000);
+  };
+  useEffect(() => () => window.clearTimeout(lapse.current), []);
+  // …and the keyboard lands somewhere real once the list has re-rendered:
+  // the first control of the row now at that index (the next row, or the
+  // last one when the last was removed), or the heading when none is left
+  const focusRow = useRef<number | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const headRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     const sync = () => setLines(read());
     sync();
     setMounted(true);
     return subscribe(sync);
   }, []);
+
+  useEffect(() => {
+    const at = focusRow.current;
+    if (at === null) return;
+    focusRow.current = null;
+    const rows = listRef.current?.querySelectorAll<HTMLElement>(".ap-cart__row");
+    const row = rows?.length ? rows[Math.min(at, rows.length - 1)] : null;
+    (row?.querySelector<HTMLElement>("button") ?? headRef.current)?.focus();
+  }, [lines]);
 
   /** the goods alone; delivery is added on top of this, never hidden in it */
   const goods = total(lines);
@@ -122,6 +156,42 @@ export default function CartView() {
     const first = ["name", "email", "phone", "address", "city", "country", "consent"].find((k) => errs[k]);
     if (!first) return;
     (form.querySelector(`[name="${first}"]`) as HTMLElement | null)?.focus();
+  };
+
+  /** take a line out — see `gone`. `l` is the stored object itself, so Undo
+   *  writes back exactly the bytes that were there. */
+  const drop = (l: Line, at: number) => {
+    setGone({ line: l, at, label: lineLabel(l) });
+    focusRow.current = at;
+    remove(l.cat, l.art, l.variant);
+    arm();
+  };
+  const undo = () => {
+    if (!gone) return;
+    window.clearTimeout(lapse.current);
+    focusRow.current = gone.at;
+    restore(gone.line, gone.at);
+    setGone(null);
+  };
+
+  // RETURN MEANS "NEXT" ON A PHONE (2026-10-05). Return in Name submitted the
+  // whole order — the form is noValidate, so it went straight to the consent
+  // check and the page jumped 973px down to that error (measured at 390x844;
+  // UX laws D3: a phone keyboard's return in a form means the next field,
+  // and D6). Every single-line field but the last says enterKeyHint="next",
+  // so the key is labelled for it, and here it does what it says. Under a
+  // coarse pointer only: a desktop keyboard keeps implicit submission
+  // exactly as it was. The twin is in ContactBlock.tsx.
+  const enterNext = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    const t = e.target;
+    if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+    if (!(t instanceof HTMLInputElement) || t.enterKeyHint !== "next") return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    const fields = [...e.currentTarget.querySelectorAll<HTMLElement>(TEXT_FIELDS)];
+    const next = fields[fields.indexOf(t) + 1];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
   };
 
   const send = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -203,6 +273,9 @@ export default function CartView() {
         ].filter(Boolean),
       });
       setState(data.delivered ? "sent" : "logged");
+      // nothing left to take back once the order is on its way
+      window.clearTimeout(lapse.current);
+      setGone(null);
       clear();
       form.reset();
     } catch {
@@ -220,7 +293,8 @@ export default function CartView() {
       {/* rise, not flip — same reason as the gallery title in HomeView.tsx
           (2026-09-15): the per-letter 3D turn tears the first glyph and
           overlaps the rest mid-entrance; this was the only other flip */}
-      <h1 className="ap-h2" data-tfx="rise">
+      {/* tabIndex -1: where focus goes when the last line is removed */}
+      <h1 className="ap-h2" data-tfx="rise" ref={headRef} tabIndex={-1}>
         YOUR SELECTION
       </h1>
     </div>
@@ -320,6 +394,21 @@ export default function CartView() {
     <div className="ap-sec ap-cart">
       {head}
 
+      {/* the removal's status line — always in the page, empty at rest: a
+          live region has to exist before its words change to be heard. It
+          sits before the list in reading order, so from the row that
+          received focus the Undo is a Shift+Tab or two away. */}
+      <div className="ap-cart__undo" role="status" onFocus={() => window.clearTimeout(lapse.current)} onBlur={arm}>
+        {gone && (
+          <p className="ap-dark">
+            <span>Removed: {gone.label}.</span>
+            <button type="button" onClick={undo}>
+              Undo
+            </button>
+          </p>
+        )}
+      </div>
+
       {!lines.length ? (
         <div className="ap-cart__empty">
           <p>Nothing chosen yet.</p>
@@ -329,8 +418,8 @@ export default function CartView() {
         </div>
       ) : (
         <div className="ap-cart__grid">
-          <ul className="ap-cart__list">
-            {lines.map((l) => {
+          <ul className="ap-cart__list" ref={listRef}>
+            {lines.map((l, i) => {
               const t = thumbOf(l);
               return (
                 <li className="ap-cart__row" key={l.cat + (l.art ?? "") + (l.variant ?? "")}>
@@ -346,10 +435,12 @@ export default function CartView() {
                     <p className="ap-cart__unit">{dram(unit(l.cat))} each</p>
                   </div>
                   <div className="ap-cart__qty">
+                    {/* at one, "−" removes the line — the same act as Remove,
+                        so it goes through the same undoable path */}
                     <button
                       type="button"
                       aria-label={`One fewer: ${lineLabel(l)}`}
-                      onClick={() => setQty(l.cat, l.art, l.qty - 1, l.variant)}
+                      onClick={() => (l.qty > 1 ? setQty(l.cat, l.art, l.qty - 1, l.variant) : drop(l, i))}
                     >
                       −
                     </button>
@@ -366,7 +457,7 @@ export default function CartView() {
                   <button
                     type="button"
                     className="ap-cart__rm"
-                    onClick={() => remove(l.cat, l.art, l.variant)}
+                    onClick={() => drop(l, i)}
                     aria-label={`Remove ${lineLabel(l)}`}
                   >
                     Remove
@@ -380,7 +471,7 @@ export default function CartView() {
           <div className="ap-cart__side">
             <OrderingSteps />
 
-            <form className="ap-cart__form" onSubmit={send} noValidate>
+            <form className="ap-cart__form" onSubmit={send} onKeyDown={enterNext} noValidate>
               {/* the sum, itemised, so the delivery charge is never a
                   surprise sitting inside one number */}
               <dl className="ap-cart__sums">
@@ -406,7 +497,7 @@ export default function CartView() {
 
               <label className="ap-field">
                 <span>Name</span>
-                <input name="name" required autoComplete="name" aria-invalid={!!errors.name} />
+                <input name="name" required autoComplete="name" enterKeyHint="next" aria-invalid={!!errors.name} />
                 {errors.name && <em className="ap-contact__warn">{errors.name}</em>}
               </label>
               <label className="ap-field">
@@ -417,6 +508,7 @@ export default function CartView() {
                   required
                   autoComplete="email"
                   inputMode="email"
+                  enterKeyHint="next"
                   aria-invalid={!!errors.email}
                 />
                 {errors.email && <em className="ap-contact__warn">{errors.email}</em>}
@@ -430,6 +522,8 @@ export default function CartView() {
                   autoComplete="tel"
                   inputMode="tel"
                   placeholder="+374 …"
+                  // the last single-line field when no address is asked for
+                  enterKeyHint={ship.address ? "next" : undefined}
                   aria-invalid={!!errors.phone}
                 />
                 {errors.phone && <em className="ap-contact__warn">{errors.phone}</em>}
@@ -465,6 +559,7 @@ export default function CartView() {
                       name="address"
                       required
                       autoComplete="street-address"
+                      enterKeyHint="next"
                       aria-invalid={!!errors.address}
                     />
                     {errors.address && <em className="ap-contact__warn">{errors.address}</em>}
@@ -472,12 +567,18 @@ export default function CartView() {
                   <div className="ap-cart__pair">
                     <label className="ap-field">
                       <span>City</span>
-                      <input name="city" required autoComplete="address-level2" aria-invalid={!!errors.city} />
+                      <input
+                        name="city"
+                        required
+                        autoComplete="address-level2"
+                        enterKeyHint="next"
+                        aria-invalid={!!errors.city}
+                      />
                       {errors.city && <em className="ap-contact__warn">{errors.city}</em>}
                     </label>
                     <label className="ap-field">
                       <span>Postal code</span>
-                      <input name="postcode" autoComplete="postal-code" />
+                      <input name="postcode" autoComplete="postal-code" enterKeyHint="next" />
                     </label>
                   </div>
                   <label className="ap-field">
@@ -500,12 +601,31 @@ export default function CartView() {
               </label>
 
               <label className="ap-field ap-consent">
-                <input type="checkbox" name="consent" required aria-invalid={!!errors.consent} />
+                {/* the error sits outside the label, so it is tied to the box
+                    by id — otherwise a screen reader heard only "invalid" */}
+                <input
+                  type="checkbox"
+                  name="consent"
+                  required
+                  aria-invalid={!!errors.consent}
+                  aria-describedby={errors.consent ? "ap-consent-err" : undefined}
+                />
+                {/* A NEW TAB FOR THE SMALL PRINT (2026-10-05): in the same tab,
+                    coming back from /privacy re-mounted this form empty — the
+                    name, phone and address typed so far were gone (UX laws
+                    D1, M4). The words on the page are unchanged. */}
                 <span>
-                  {home.contact.consent} — <Link href="/privacy">privacy</Link>
+                  {home.contact.consentOrder} —{" "}
+                  <Link href="/privacy" target="_blank" rel="noopener">
+                    privacy<span className="ap-sr"> (opens in a new tab)</span>
+                  </Link>
                 </span>
               </label>
-              {errors.consent && <em className="ap-contact__warn">{errors.consent}</em>}
+              {errors.consent && (
+                <em id="ap-consent-err" className="ap-contact__warn">
+                  {errors.consent}
+                </em>
+              )}
 
               {/* the server's "cart is empty" case — possible when another tab
                   cleared the cart between render and submit */}
@@ -521,7 +641,11 @@ export default function CartView() {
                 </p>
               )}
 
-              <button className="ap-btn" type="submit" disabled={state === "sending"}>
+              {/* aria-disabled, not disabled (2026-10-05): a disabled button
+                  drops the focus it holds, so a buyer who pressed Send was
+                  left on <body> when the error line arrived. `send` already
+                  returns early while a request is in flight. */}
+              <button className="ap-btn" type="submit" aria-disabled={state === "sending" ? true : undefined}>
                 {state === "sending" ? "Sending…" : "Send this order"}
               </button>
             </form>

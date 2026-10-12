@@ -191,12 +191,14 @@ export default function KeychainSection({
         onPointerCancel={wallUp}
       >
         <ul className="ap-kc__track" ref={track}>
-          {items.map((k) => (
-            <KeychainCard key={k.id} item={k} wall={wall} live={live} />
+          {/* `idx`: only the first three — the cards in view on arrival —
+              ask for high fetch priority (KeychainCard.tsx, 2026-10-05) */}
+          {items.map((k, i) => (
+            <KeychainCard key={k.id} item={k} wall={wall} live={live} idx={i} />
           ))}
           {/* the wrap copy — the circle's other half, pixels only */}
-          {items.map((k) => (
-            <KeychainCard key={`g-${k.id}`} item={k} wall={wall} live={live} ghost />
+          {items.map((k, i) => (
+            <KeychainCard key={`g-${k.id}`} item={k} wall={wall} live={live} ghost idx={items.length + i} />
           ))}
         </ul>
         {live && (
@@ -227,8 +229,22 @@ export default function KeychainSection({
         {items.map((k) => (
           <li key={k.id} className="ap-kc__rackcell">
             <img src={k.thumb} alt={`${k.title} — acrylic keychain by Arpine Baroyan`} width={k.w} height={k.h} loading="lazy" decoding="async" />
+            {/* the keychain in the name, after the visible words, as on the
+                wall's own buttons (2026-10-05).
+                AND ITS PRICE, read off the line under it (2026-10-05 repair,
+                MICROCOPY, screen readers only). The wall and the rack are the
+                same 24 keychains, so a screen reader's list of buttons held
+                every «Add to cart: Keychain no. 01» twice — 48 names, 24
+                distinct, at 390 and at 1440 — with nothing to say which was
+                which. The rack's button now carries the price its own card
+                prints («Keychain no. 01 · 1,500 ֏»), so each of the 48 names
+                is unique and the visible label still begins the name. No new
+                words: only what the card already shows. */}
             <button type="button" className="ap-kc__rackadd" onClick={(e) => rackBuy(k.id, e.currentTarget)}>
               {wall.add}
+              <span className="ap-sr">
+                : {k.title}, {dram(KEYCHAIN_PRICE)}
+              </span>
             </button>
             <p className="ap-kc__rackname">
               {k.title} · {dram(KEYCHAIN_PRICE)}

@@ -178,12 +178,17 @@
   transition: opacity 0.3s var(--ease), visibility 0.3s;
   pointer-events: none;
 }
-.ap-cloud__card[aria-pressed="true"]::after {
+.ap-cloud__card[aria-pressed="true"]::after,
+.ap-cloud__card[aria-expanded="true"]::after {
   opacity: 1;
   visibility: visible;
 }
+/* --cream, not --paper (2026-10-05 package): this band is dark in both
+   themes, and --paper turns navy at night — the ring measured 1.19:1 against
+   the band at 390x844 in the dark theme. --cream is --paper's day value, so
+   the day ring is the same pixel. */
 .ap-cloud__card:focus-visible {
-  outline: 2px solid var(--paper);
+  outline: 2px solid var(--cream);
   outline-offset: 3px;
 }
 .ap-cloud__say {
@@ -226,7 +231,22 @@
    it needs scripting, so (scripting: none) never shows one — which leaves
    the desktop panel untouched. Colours mix from --cream and --ink-solid,
    the two tokens that stay put on an always-dark band in both themes. */
+/* The panel's inner sheet (Cloud.tsx, 2026-10-05) holds everything but the
+   ✕ — it exists so the DESKTOP panel can scroll a long note without
+   clipping its own ✕. Everywhere else it is no box at all: its children
+   stay the panel's grid items, exactly as before it existed. */
+.ap-cloud__sheet {
+  display: contents;
+}
 @media (max-width: 860px), (prefers-reduced-motion: reduce) {
+  /* «(The series)» ON THE DARK BAND (2026-10-05 package). Its light-on-dark
+     colour lived only in the moved layer's block below, so on the plain
+     layer the kicker kept --ink-muted, dark on the dark band: 2.30:1 at
+     390x844 (synthesis/v3.json lightCloudKicker). The moved layer's own
+     value, restated here. */
+  .ap-cloud .ap-kicker {
+    color: color-mix(in srgb, var(--cream) 74%, transparent);
+  }
   /* rail, then the panel, then the title block: the panel lands directly
      under the card that opened it instead of below the introduction, where
      a phone reader looking at the rail would never see it arrive. The title
@@ -364,6 +384,26 @@
   .ap-cloud__go:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+}
+/* THE RAIL SETTLES ON A CARD (2026-10-05 package). It scrolled freely and
+   stopped wherever a fling ran out, often with a card cut in half at each
+   edge. Proximity, not mandatory: a long rail of 57 must still fling. The
+   padding matches the plane's own, so a card rests in the gutter.
+   PHONES ONLY (2026-10-05 repair). It sat in the plain-layer block above,
+   whose `(prefers-reduced-motion: reduce)` arm also takes in the desktop —
+   where the approved rail has no snap, and where the card's 84px
+   scroll-margin-top let a pressed card pull the PAGE 255px (measured at
+   1440x900, card 06). The page scroll that brings a chosen card under the
+   bar is phone-only again (Cloud.tsx), and it needs no card margin: html's
+   own 84px scroll-padding-top under 860px (globals.css) clears the bar. */
+@media (max-width: 860px) {
+  .ap-cloud__plane {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--gutter);
+  }
+  .ap-cloud__card {
+    scroll-snap-align: start;
   }
 }
 
@@ -555,13 +595,21 @@
     translate: 0 -50%;
     z-index: 1000;
     width: min(340px, 34vw);
-    display: grid;
-    gap: 7px;
     color: var(--cream);
     animation: ap-cloud-say 0.4s var(--ease) both;
   }
+  /* the panel's grid moved onto the sheet with the scroll (see the cap at
+     the end of this block) — same 7px rhythm, same column */
+  .ap-cloud__sheet {
+    display: grid;
+    gap: 7px;
+  }
   .ap-cloud__no {
     margin: 0;
+    /* clear of the ✕ in the corner, as on the phone panel — "No. 57" is
+       ~110px wide in a 340px panel, so this moves nothing today; it keeps
+       a longer number from ever running under the button */
+    padding-right: 56px;
     font-family: var(--font-display);
     font-size: clamp(1.6rem, 2.6vw, 2.2rem);
     font-weight: 700;
@@ -584,14 +632,25 @@
     margin-top: 10px;
     justify-self: start;
   }
+  /* THE ✕ SITS IN THE PANEL'S TOP-RIGHT CORNER, on the number's row — where
+     the phone panel puts it (2026-10-05). It used to hang 46px ABOVE the
+     panel, and the long-note cap's overflow clipped it away completely:
+     at 1440x900 nobody could see it, and a press at its centre hit the
+     plane behind (elementFromPoint, 1440x900 / 1280x720 / 1886x835). Above
+     the panel was also the one place the fixed bar could cover it: on a
+     1280x600 window that spot measured y 35–73, inside the 84px bar. In the
+     corner it rides with the panel, outside the scrolling sheet, so a long
+     note scrolls under it and it never leaves. 44px, not 38 (UX laws D1).
+     The ring mixes from --cream like the phone's: --paper turns navy at
+     night, and a navy ring on this always-dark band was no ring at all. */
   .ap-cloud__close {
     position: absolute;
     right: 0;
-    top: -46px;
-    width: 38px;
-    height: 38px;
+    top: 0;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
     background: color-mix(in srgb, var(--ink-solid) 55%, transparent);
     backdrop-filter: blur(6px);
     color: var(--cream);
@@ -607,10 +666,14 @@
     gap: 8px;
     margin-top: 4px;
   }
+  /* the pills' and arrows' rings mix from --cream, not --paper (2026-10-05
+     package): the panel sits on the always-dark band, and at night --paper
+     is navy — the rings disappeared into it. By day the two are the same
+     #fcf2e6, so the day panel is the same pixel. */
   .ap-cloud__views button {
     padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
     background: none;
     color: color-mix(in srgb, var(--cream) 78%, transparent);
     font-size: 11px;
@@ -671,7 +734,7 @@
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--paper) 34%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
     background: none;
     color: var(--cream);
     font-size: 14px;
@@ -682,9 +745,16 @@
     background: color-mix(in srgb, var(--ink-solid) 60%, transparent);
   }
   /* Arpine's notes run to three sentences — never let a long one push the
-     CTA off screen */
-  .ap-cloud__info {
-    max-height: 78vh;
+     CTA off screen. On the SHEET, not the panel (2026-10-05): a scroll box
+     clips everything it holds, and the panel holds the ✕.
+     And never taller than the room UNDER the bar: the panel is centred in
+     the frame, so at 78vh alone a 1280x600 window put its top at y 81, under
+     the fixed 84px bar, number row and ✕ included. The second cap keeps
+     the panel 12px clear of the bar top and bottom. At 1440x900, 1280x720
+     and 1886x835 the panel measured 437–494px, under both caps, so nothing
+     moves there; only a short window scrolls the note instead. */
+  .ap-cloud__sheet {
+    max-height: min(78vh, calc(100svh - 2 * (var(--nav-h, 84px) + 12px)));
     overflow: auto;
   }
   @keyframes ap-cloud-say {

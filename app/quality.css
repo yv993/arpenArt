@@ -161,3 +161,248 @@
     flex-shrink: 0;
   }
 }
+
+/* ==========================================================================
+   THE PHONE DRAWER, PITCHED AND PACKED (2026-10-05, leftovers pass)
+   Measured under real phone emulation (mobile + touch + a phone UA, DPR 2):
+   · the eleven shop lines sat at a 36px pitch — a finger 20px under any
+     line's centre landed on the next line (UX laws D1: the 44px floor);
+   · the open drawer was 790px of rows under a 76px bar: 23px more than a
+     390x844 screen, so Cart sat half under the bottom edge; on a 375x553
+     iPhone SE with its toolbars showing, Find in store was cut and Stories,
+     About, Contact, the night switch, the account and the cart were all
+     below the fold, behind a scroll nothing announced.
+   Every row is 44px now, and the drawer is ~40% shorter:
+   · the shop lines are a grid of 44px cells — three across on a 360–430
+     phone, two on a 320, more on a phone held sideways — with «Available
+     soon» set UNDER its line instead of beside it, so a cell only needs
+     the longer of the two (84px, «3D stickers»);
+   · the night switch, the account and the cart share one row, and that row
+     keeps to the bottom edge while anything above it scrolls (D1: the edge
+     is where the thumb already is; M6: the cart, the end of the list, is
+     the item people come back for). Cart sits at the row's right end, as
+     it does at the end of the desktop bar;
+   · from 640px wide (a phone on its side, a tablet) the four section links
+     and that row share one line, in the desktop bar's own order.
+   The look is the drawer's own — paper, the same type, the same indent under
+   SHOP; only the arrangement changed. The rows are grid items placed in
+   source order, so the reading order, the Tab order and the eye agree. */
+.ap-nav__util {
+  /* no box of its own on the desktop bar: the three stay the row's items */
+  display: contents;
+}
+@media (max-width: 860px) {
+  .ap-nav__links[data-open] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    align-content: start;
+    gap: 0;
+    padding: 6px var(--gutter) 0;
+    /* the drawer ends at the screen's bottom edge as it is NOW: dvh follows
+       a phone's toolbars where svh assumes they are showing (the page is
+       locked while the drawer is open, so the toolbars cannot move under
+       it); svh stays as the fallback */
+    max-height: calc(100svh - 100%);
+    max-height: calc(100dvh - 100%);
+  }
+  /* SHOP and the four sections: one 44px row each, the word as wide as
+     itself (the drawing underline stays under the word, not the screen) */
+  .ap-nav__links > a,
+  .ap-nav__shop > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+  }
+  /* the underline sat 5px under the word on the desktop bar; in a 44px row
+     `-5px` put it 19px under — back to the bar's 5px */
+  .ap-nav__links > a::after,
+  .ap-nav__shop > a::after,
+  .ap-nav__util .ap-nav__cart::after {
+    bottom: 6px;
+  }
+  .ap-nav__links[data-open] > .ap-nav__shop {
+    justify-self: stretch;
+  }
+  /* (0,4,0) ON PURPOSE. The desktop bar opens this list with
+     `.ap-nav__shop:hover .ap-nav__menu { display: block }` (0,3,0), and a
+     finger on a phone IS a hover for the length of a tap: at (0,2,0) the
+     grid collapsed back to a single column between touchstart and click,
+     and a tap on «T-Shirts» (x 319) clicked «Postcards» — measured, it
+     navigated to /shop/postcards. */
+  .ap-nav__links[data-open] .ap-nav__shop .ap-nav__menu {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    column-gap: 12px;
+    /* 6px under the grid: the gap to Find in store measures 32px of air
+       against 26px between the lines inside it — the list reads as SHOP's
+       own group (G0), and the 14px indent says the same (G5) */
+    padding: 0 0 6px 14px;
+  }
+  .ap-nav__links .ap-nav__menu li {
+    min-width: 0;
+  }
+  .ap-nav__links .ap-nav__menu li a {
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+    white-space: normal;
+  }
+  /* «Available soon» hangs under its line like a caption, OUT of the flow:
+     stacked in the flow it lifted its line 9px above the plain lines beside
+     it, and a row read as two baselines. Here every line in a row shares one
+     centre, and the caption sits in the cell's lower third (30–41px of 44),
+     6px under its own line and 21px clear of the next row's. */
+  .ap-nav__links .ap-nav__menu small {
+    position: absolute;
+    left: 0;
+    top: calc(50% + 8px);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  /* the night switch · the account · the cart */
+  .ap-nav__links .ap-nav__util {
+    justify-self: stretch;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* full-bleed across the drawer, so its paper covers whatever scrolls
+       beneath it and its hairline runs edge to edge like the drawer's own */
+    margin: 6px calc(-1 * var(--gutter)) 0;
+    padding: 4px var(--gutter) 8px;
+    background: var(--paper);
+    border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+  .ap-nav__util .ap-nav__acct {
+    margin-right: 0;
+  }
+  /* 44 wide here, not the bar's 34: side by side with the account, a finger
+     20px right of the switch's centre landed on the account icon (their hit
+     boxes met 6px short of the midpoint) */
+  .ap-nav__util .ap-nav__theme {
+    min-width: 44px;
+  }
+  .ap-nav__util .ap-nav__cart {
+    min-height: 44px;
+    margin-left: auto;
+  }
+}
+@media (min-width: 640px) and (max-width: 860px) {
+  .ap-nav__links[data-open] {
+    grid-template-columns: repeat(4, max-content) minmax(0, 1fr);
+    column-gap: 26px;
+    align-items: center;
+    padding-bottom: 8px;
+  }
+  .ap-nav__links[data-open] > .ap-nav__shop {
+    grid-column: 1 / -1;
+  }
+  /* one line with the four sections: no bar of its own to keep */
+  .ap-nav__links .ap-nav__util {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    background: none;
+  }
+}
+/* YOU ARE HERE, AND THE PAGE STEPS BACK (2026-10-05, mobile pass P1).
+   · The drawer listed every page and never said which one was open (UX laws
+     M4): Chrome.tsx puts aria-current="page" on the matching link, and here
+     it reads as the site's own hover state held still — indigo-ink with an
+     underline (ink-on-paper is 7.4:1 by day, 6.4:1 at night). The desktop
+     bar keeps its look: this is the phone drawer's rule only.
+   · The open drawer ended at y 548 of 844 over a page at full strength, so
+     the page below competed with the list (G8). A spread shadow dims it to
+     the drawer's edges; it is paint, not a box, so a tap outside still lands
+     and still light-dismisses the drawer. The clip keeps it off the bar. */
+@media (max-width: 860px) {
+  .ap-nav__links [aria-current="page"] {
+    color: var(--indigo-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 6px;
+  }
+  .ap-nav__links[data-open] {
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--ink-solid) 38%, transparent);
+    clip-path: inset(0 -100vmax -100vmax -100vmax);
+  }
+}
+/* NO SCRIPTS ON A PHONE: THE SECTIONS STAND IN THE BAR (2026-10-05). Menu is
+   a button that only a script opens, so with scripting off a phone could not
+   reach Stories, About, Contact or Find in store from any inner page — the
+   footer carries only the legal links (measured at 390x844: burger shown,
+   0 section links reachable). Here the burger goes and the links sit in the
+   bar as a wrapped row; the bar is taken out of `fixed` so the taller row
+   pushes the page down instead of covering its top. The shop's eleven lines
+   stay behind SHOP (the /shop page lists them all), and the drawer's night
+   switch and second cart go too — the switch needs a script, and the bar
+   already shows the cart. */
+@media (scripting: none) and (max-width: 860px) {
+  .ap-nav {
+    position: relative;
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .ap-nav__burger {
+    display: none;
+  }
+  .ap-nav__links,
+  .ap-nav__links[data-open] {
+    position: static;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 22px;
+    row-gap: 0;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  /* (0,4,0): a tap is a hover, and the desktop bar opens the list on
+     `.ap-nav__shop:hover .ap-nav__menu` (0,3,0) */
+  .ap-nav .ap-nav__links .ap-nav__shop .ap-nav__menu,
+  .ap-nav__links .ap-nav__caret,
+  .ap-nav__util .ap-nav__theme,
+  .ap-nav__util .ap-nav__cart {
+    display: none;
+  }
+  .ap-nav__links .ap-nav__util {
+    display: contents;
+  }
+}
+
+/* ==========================================================================
+   NO SCRIPTS, NO BROWSER CONTROLS ON SCENERY (no-JS repair, 2026-10-05).
+   A <video> without `controls` may still get the browser's own when
+   scripting is off (the HTML spec allows it; Chromium and WebKit do it).
+   Measured on the home: the hero at 390x844 wore ▶, "0:00", mute,
+   fullscreen and ⋮ over Arpine's painting — it has no source at that width
+   (its sources are media-gated), so the bar offered a film that does not
+   exist. Every <video> on the site that wants controls asks for them with
+   the attribute; the rest are scenery, and here they stay scenery: the
+   poster, or the muted loop where a source matches. The film cards do not
+   rely on this (selector.css paints their poster instead — the pseudo-
+   element is engine-specific); the hero and the account page's film do.
+   The stories' films ask for `controls` and keep them.
+   One pseudo-element per rule: an unknown one would void a shared list. */
+@media (scripting: none) {
+  video:not([controls])::-webkit-media-controls {
+    /* !important: the UA's own sheet styles this panel, and some engines
+       only yield it to an important declaration */
+    display: none !important;
+  }
+  video:not([controls])::-webkit-media-controls-start-playback-button {
+    display: none !important;
+  }
+}

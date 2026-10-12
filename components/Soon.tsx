@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { soon } from "@/lib/content";
+import { loopTab } from "@/lib/tabLoop";
 
 // ============================================================================
 // AVAILABLE SOON — the small window a not-yet-open line opens instead of a
@@ -17,7 +18,7 @@ import { soon } from "@/lib/content";
 // tap still lands somewhere honest — the shop index — instead of nowhere.
 //
 // Escape and a click on the veil close it; focus goes to the Close button on
-// open and back to whatever opened it on close.
+// open and back to whatever opened it on close; Tab stays inside (2026-10-05).
 // ============================================================================
 
 const EVENT = "ap:soon";
@@ -54,6 +55,7 @@ export default function SoonModal() {
   const [name, setName] = useState<string | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const closeBtn = useRef<HTMLButtonElement | null>(null);
+  const box = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const on = (e: Event) => {
@@ -69,6 +71,10 @@ export default function SoonModal() {
     closeBtn.current?.focus();
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") setName(null);
+      // TAB STAYS ON CLOSE (2026-10-05): the window's one control, and the
+      // first Tab used to leave for the nav behind the veil — 10 of 10 stops
+      // outside, from the /shop tile and from the phone drawer alike
+      loopTab(e, box.current);
     };
     window.addEventListener("keydown", key);
     return () => {
@@ -80,7 +86,7 @@ export default function SoonModal() {
   if (name === null) return null;
   return (
     <div className="ap-soon" role="dialog" aria-modal="true" aria-labelledby="ap-soon-t" onClick={() => setName(null)}>
-      <div className="ap-soon__box" onClick={(e) => e.stopPropagation()}>
+      <div className="ap-soon__box" ref={box} onClick={(e) => e.stopPropagation()}>
         {name && <p className="ap-kicker">({name})</p>}
         <h2 className="ap-soon__t" id="ap-soon-t">
           {soon.title}

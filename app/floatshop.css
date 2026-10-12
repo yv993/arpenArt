@@ -32,6 +32,16 @@
   letter-spacing: -0.02em;
   text-transform: uppercase;
 }
+/* A SECTION TITLE ON A PHONE IS SECTION-TITLE SIZE (2026-10-05 package). On
+   the plain layer «SHOP» is just this section's H2, and at 7vw it set at
+   44.8px at 390 — half again the 30.4px of every other section's H2 and
+   bigger than the page's own H1 (synthesis/v5.json home390). It takes the
+   .ap-h2 size here. The live room (above 860px) is untouched. */
+@media (max-width: 860px) {
+  .ap-fs__big {
+    font-size: clamp(1.9rem, 4.4vw, 3.9rem);
+  }
+}
 
 /* --------------------------------------------------------------------------
    live: the full-bleed pinned room

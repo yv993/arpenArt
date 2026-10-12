@@ -24,6 +24,22 @@ import { useCallback, useEffect, useState } from "react";
 type Theme = "light" | "dark";
 const KEY = "ap-theme";
 
+/** THE BROWSER'S BAR FOLLOWS A CHOSEN THEME (2026-10-05 package). layout.tsx
+ *  writes one theme-color per OS scheme, which is right while the site
+ *  follows the OS; once the visitor forces the other theme, every
+ *  meta[name=theme-color] takes the page's own ground (the body's computed
+ *  background — the theme's --paper, so no colour is restated here), and
+ *  the server's values come back if no theme is forced. The server's
+ *  content is kept on the element, so restoring needs no copy of it. */
+function paintBar() {
+  const forced = !!document.documentElement.dataset.theme;
+  const ground = forced ? getComputedStyle(document.body).backgroundColor : "";
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    if (m.dataset.os === undefined) m.dataset.os = m.content;
+    m.content = forced ? ground : m.dataset.os;
+  });
+}
+
 export default function ThemeToggle() {
   /** null until mounted — the server has no opinion and must not fake one */
   const [theme, setTheme] = useState<Theme | null>(null);
@@ -31,6 +47,9 @@ export default function ThemeToggle() {
   useEffect(() => {
     const set = document.documentElement.dataset.theme as Theme | undefined;
     setTheme(set ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    // a theme stored from an earlier visit was applied before paint by the
+    // script in layout.tsx; the bar follows it from the first mount
+    paintBar();
   }, []);
 
   /** Follow the OS while the visitor has not chosen — someone who never
@@ -58,6 +77,12 @@ export default function ThemeToggle() {
       return next;
     });
   }, []);
+
+  // after every flip has been committed (React may call the updater above
+  // twice in development, so the DOM write stays out of it)
+  useEffect(() => {
+    if (theme !== null) paintBar();
+  }, [theme]);
 
   const dark = theme === "dark";
 

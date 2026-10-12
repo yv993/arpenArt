@@ -35,6 +35,7 @@
   "id": "vardavar-mockup-4",
   "src": "/stories/s-vardavar-mockup-4.webp",
   "thumb": "/stories/s-vardavar-mockup-4-sm.webp",
+  "md": "/stories/s-vardavar-mockup-4-md.webp",
   "w": 1600,
   "h": 1200,
   "avg": "#b7b7b7"
@@ -59,6 +60,7 @@
   "id": "wishes-mockup-13",
   "src": "/stories/s-wishes-mockup-13.webp",
   "thumb": "/stories/s-wishes-mockup-13-sm.webp",
+  "md": "/stories/s-wishes-mockup-13-md.webp",
   "w": 1600,
   "h": 1067,
   "avg": "#b2b7bb"
@@ -131,6 +133,7 @@
   "id": "interview-7131",
   "src": "/stories/s-interview-7131.webp",
   "thumb": "/stories/s-interview-7131-sm.webp",
+  "md": "/stories/s-interview-7131-md.webp",
   "w": 1600,
   "h": 900,
   "avg": "#7b6059"
@@ -139,6 +142,7 @@
   "id": "akn-photo-01",
   "src": "/stories/s-akn-photo-01.webp",
   "thumb": "/stories/s-akn-photo-01-sm.webp",
+  "md": "/stories/s-akn-photo-01-md.webp",
   "w": 1279,
   "h": 1600,
   "avg": "#3e342e"

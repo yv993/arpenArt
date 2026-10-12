@@ -7,7 +7,9 @@ import { flyToCart } from "@/lib/fly";
 import { scarfDesigns, type Category } from "@/lib/content";
 import products from "@/lib/products.json";
 
-type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
+/** `md`: the 1,080px-wide middle rung, on the three prints only (2026-10-05) —
+ *  see the print's srcSet below */
+type Shot = { id: string; src: string; thumb: string; md?: string; w: number; h: number; alpha: boolean; avg: string };
 const P = products as Record<string, Shot[]>;
 
 // ============================================================================
@@ -32,6 +34,7 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
   const byId = (id: string) => roll.find((s) => s.id === id);
   const [variant, setVariant] = useState<string | undefined>(cat.variants?.options[0]);
   const [added, setAdded] = useState<string | null>(null);
+  const [addedStyle, setAddedStyle] = useState<string | undefined>(undefined);
   const timer = useRef(0);
   const [lb, setLb] = useState<{ d: number; i: number } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -41,10 +44,17 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
   const buy = (id: string, from: HTMLElement) => {
     add(cat.slug, id, 1, variant);
     flyToCart(from.closest("li")?.querySelector("img") ?? null);
+    setAddedStyle(variant);
     setAdded(id);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setAdded((p) => (p === id ? null : p)), 2600);
   };
+
+  // the confirmation names the cut that WENT IN (content.ts `added`) — the
+  // one chosen at the press, not whatever the chips say a second later
+  const addedLine = addedStyle
+    ? scarfDesigns.added.replace("{style}", addedStyle)
+    : scarfDesigns.added.replace(" — {style}", "");
 
   const lbDesign = lb ? scarfDesigns.designs[lb.d] : null;
   const lbShots = lbDesign ? lbDesign.shots.map(byId).filter((s): s is Shot => !!s) : [];
@@ -108,7 +118,16 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
               <figure className="ap-sd__art" style={{ background: print.avg }}>
                 <img
                   src={print.src}
-                  srcSet={`${print.thumb} 700w, ${print.src} ${print.w}w`}
+                  // THE MIDDLE RUNG (2026-10-05): from 700w the ladder went
+                  // straight to the 1,600 master, which every phone took —
+                  // 92vw is 359px at 390, so DPR 2 needs 718 and DPR 3
+                  // 1,076; scarf-01 at 387 KB was the live LCP. The 1,080
+                  // file (201 KB) is a smaller copy of the same print: made
+                  // with sharp from the original the master came from, 1,080
+                  // wide, webp q82 — pair()'s policy in
+                  // scratchpad/redesign-assets.cjs. Only a shot with `md`
+                  // offers the rung, and `md` is always 1,080 wide.
+                  srcSet={`${print.thumb} 700w, ${print.md ? `${print.md} 1080w, ` : ""}${print.src} ${print.w}w`}
                   sizes="(max-width: 860px) 92vw, 48vw"
                   alt={`${d.name} — the printed square, by Arpine Baroyan`}
                   width={print.w}
@@ -143,11 +162,29 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
                 )}
 
                 <div className="ap-sd__act">
-                  <button type="button" className="ap-btn" onClick={(e) => buy(d.id, e.currentTarget)}>
+                  {/* WHAT THIS BUTTON ADDS, BESIDE IT (2026-10-05, mobile
+                      pass). On a phone the page's one Style choice is a
+                      screen or three above the second and third designs —
+                      2,127px above the third's Add at 390x664 — so the cut
+                      and the price are repeated here from the values the
+                      bar already holds, no new words (UX laws M4). Phone
+                      layout only (shop.css); it also describes the button,
+                      for a reader on any screen. */}
+                  <button
+                    type="button"
+                    className="ap-btn"
+                    aria-describedby={variant ? `sd-style-${d.id}` : undefined}
+                    onClick={(e) => buy(d.id, e.currentTarget)}
+                  >
                     {scarfDesigns.add}
                   </button>
+                  {variant && (
+                    <p className="ap-sd__style" id={`sd-style-${d.id}`}>
+                      {variant} · {dram(cat.from)}
+                    </p>
+                  )}
                   <p className="ap-sd__added" role="status">
-                    {added === d.id ? scarfDesigns.added : ""}
+                    {added === d.id ? addedLine : ""}
                   </p>
                 </div>
               </div>

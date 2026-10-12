@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import ArmeniaMap from "./ArmeniaMap";
 import LocationCard from "./LocationCard";
 import MapBoundary from "./MapBoundary";
 // TYPE-ONLY, and it must stay that way: a value import from TownStreet would
@@ -40,6 +39,20 @@ import { categories, stockistPage, type Stockist, type Town } from "@/lib/conten
 // engine is never fetched — and no packet ever reaches the tile host — for a
 // visitor who came to read seven addresses.
 const TownStreet = dynamic(() => import("./TownStreet"), { ssr: false });
+
+/** THE COUNTRY MAP IS A CHUNK OF ITS OWN TOO (2026-10-05). It was a static
+ *  import, so three, @react-three/fiber and drei came down with this page
+ *  for every visitor — window.__THREE__ was set on a 390px phone that never
+ *  mounts it (it lives only under DESKTOP, below). Now the chunk is asked
+ *  for by the render that mounts it, which is the mount effect's own
+ *  `setLive(true)` on a desktop — as early as the old import could have run
+ *  it — and never on a phone or under reduced motion. Until it arrives the
+ *  hold shows the same empty stage it shows before `live`, so the column
+ *  keeps its height and nothing beside it moves. */
+const ArmeniaMap = dynamic(() => import("./ArmeniaMap"), {
+  ssr: false,
+  loading: () => <div className="ap-map__stage ap-map__stage--wait" aria-hidden="true" />,
+});
 
 /** The 3D country map is MOTION: it turns, sways and takes drags, so someone
  *  who asked for less of that should not get it. */
@@ -109,8 +122,10 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
    *  a stranger's coordinates to a third party. */
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
   const [geo, setGeo] = useState<"idle" | "asking" | "denied" | "none">("idle");
-  const [canLocate, setCanLocate] = useState(false);
-  const [canCopy, setCanCopy] = useState(false);
+  /** null until the mount effect has asked the browser — see the near row */
+  const [canLocate, setCanLocate] = useState<boolean | null>(null);
+  /** null until asked, like canLocate — see the copy button */
+  const [canCopy, setCanCopy] = useState<boolean | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   /** the TOWN whose copy failed, not a bare flag — a shared boolean printed the
    *  failure sentence under all six */
@@ -327,9 +342,18 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
 
       {/* WHICH ONE IS NEAREST — the question the page is really asked. The
           coordinates never leave this browser: they sort six numbers here and
-          are not put in any URL. */}
-      {canLocate && (
-        <div className="ap-map__near">
+          are not put in any URL.
+          THE ROW IS IN THE SERVER'S HTML (2026-10-05). It used to be added
+          once the effect had found navigator.geolocation, after hydration,
+          and it pushed the whole directory down by its own height on every
+          load (layout shift 0.076 on a throttled 390x844 load; it did the
+          same on the desktop). Now its box is there from the first paint,
+          held invisible — no focus, no reader — until the browser has been
+          asked, and it is removed only where there is nothing to ask: an
+          insecure context, where the effect finds no geolocation, or no
+          scripting at all (shop.css). */}
+      {canLocate !== false && (
+        <div className="ap-map__near" data-wait={canLocate === null || undefined}>
           <button type="button" className="ap-map__locate" onClick={locate} disabled={geo === "asking"}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="3.4" />
@@ -355,7 +379,13 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
             it. */}
         <div className="ap-map__hold">
           {live ? (
-            <ArmeniaMap towns={list} sel={sel} cue={stockistPage.cue} onPick={pickFromMap} />
+            // a chunk now, so it can fail to arrive (a page left open across
+            // a deploy) — next/dynamic would throw that to app/error.tsx and
+            // take the whole directory with it; it falls back to the empty
+            // stage instead, as on a desktop without WebGL (2026-10-05)
+            <MapBoundary onError={() => setLive(false)}>
+              <ArmeniaMap towns={list} sel={sel} cue={stockistPage.cue} onPick={pickFromMap} />
+            </MapBoundary>
           ) : (
             <div className="ap-map__stage ap-map__stage--wait" aria-hidden="true" />
           )}
@@ -547,23 +577,54 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
                             visitor has just located themselves: filling it
                             would put their coordinates in a URL bound for a
                             third party. OSM asks for the start itself. */}
+                        {/* SEVEN OF EACH, NOW TOLD APART (2026-10-05): a
+                            screen reader's list of links read "Directions to
+                            the door" ×7, "Copy the address" ×7 and "Open a
+                            larger map" ×7. Each carries its shop's name and
+                            street address in a visually hidden tail — the
+                            name alone is not enough, Note Mote has two doors
+                            on Northern Avenue; the visible words are as they
+                            were. */}
                         <a
                           className="ap-map__dir"
                           href={`https://www.openstreetmap.org/directions?from=&to=${s.addressLat},${s.addressLng}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {stockistPage.directions} <span aria-hidden>↗</span>
+                          {stockistPage.directions}
+                          <span className="ap-sr"> of {s.shop}, {s.address}</span> <span aria-hidden>↗</span>
                         </a>
 
-                        {canCopy && (
+                        {canCopy !== false && (
+                          // BOTH FACES ARE ALWAYS LAID OUT, one over the
+                          // other, and only the current one is visible
+                          // (2026-10-05): the label used to be swapped, and
+                          // "Copied ✓" shrank the button from 113 to 52px
+                          // under the finger (390x844), its underline with
+                          // it, and the row around it re-flowed. The cell is
+                          // as wide as the wider face, the resting one. A hidden
+                          // face is out of the accessibility tree too, so
+                          // the name is still the face on screen.
+                          // IN THE SERVER'S HTML, like the near row: added
+                          // after hydration it pushed "Open a larger map"
+                          // onto a second line and every shop card grew 55px
+                          // (layout shift 0.020, throttled 390x844 load).
+                          // Held invisible until the clipboard is known.
                           <button
                             type="button"
-                            className="ap-smap__toggle"
+                            className="ap-smap__toggle ap-smap__copy"
+                            data-wait={canCopy === null || undefined}
                             onClick={() => copy(s, t.town)}
                           >
-                            {copied === s.id ? stockistPage.copied : stockistPage.copyAddress}
-                            <span aria-hidden>{copied === s.id ? "✓" : "⧉"}</span>
+                            <span className="ap-smap__face" data-on={copied !== s.id || undefined}>
+                              {stockistPage.copyAddress}
+                              <span className="ap-sr"> of {s.shop}, {s.address}</span>
+                              <span aria-hidden>⧉</span>
+                            </span>
+                            <span className="ap-smap__face" data-on={copied === s.id || undefined}>
+                              {stockistPage.copied}
+                              <span aria-hidden>✓</span>
+                            </span>
                           </button>
                         )}
 
@@ -577,7 +638,8 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {stockistPage.mapLarger} <span aria-hidden>↗</span>
+                          {stockistPage.mapLarger}
+                          <span className="ap-sr"> of {s.shop}, {s.address}</span> <span aria-hidden>↗</span>
                         </a>
                       </div>
 

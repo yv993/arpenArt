@@ -117,15 +117,33 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
             {(() => {
               const face = (
                 <>
-                  <img
-                    src={c.photo.src}
-                    alt={`${c.name} by Arpine Baroyan`}
-                    width={c.photo.w}
-                    height={c.photo.h}
-                    style={{ background: c.photo.avg }}
-                    loading={idx < 4 ? undefined : "lazy"}
-                    decoding="async"
-                  />
+                  {/* NOT FETCHED WHERE THE STRIP CANNOT SHOW (2026-10-05
+                      package). The strip is display:none on the plain layer,
+                      but its first four photographs are eager — so /shop on
+                      a phone downloaded 664 KB of full-size tiles
+                      (tile-postcards.webp 363 KB, scarves 121, cups 106,
+                      hoodies 74) at 177ms, ahead of the grid's own first
+                      card, the page's LCP (synthesis/v3.json shop; live LCP
+                      7.9s). On the plain layer's media — narrow, reduced
+                      motion, no scripting — the source is a 1x1 GIF inlined
+                      as data: no request. The desktop matches none of them
+                      and keeps its eager first four. display: contents so
+                      `.ap-xg__go img` lays out exactly as before. */}
+                  <picture style={{ display: "contents" }}>
+                    <source
+                      media="(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)"
+                      srcSet="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                    />
+                    <img
+                      src={c.photo.src}
+                      alt={`${c.name} by Arpine Baroyan`}
+                      width={c.photo.w}
+                      height={c.photo.h}
+                      style={{ background: c.photo.avg }}
+                      loading={idx < 4 ? undefined : "lazy"}
+                      decoding="async"
+                    />
+                  </picture>
                   <span className="ap-xg__veil" aria-hidden="true" style={{ opacity: DIM_REST }} />
                   <span className="ap-xg__say">
                     <strong>{c.name}</strong>

@@ -218,7 +218,16 @@ export default function StickerFolders({
       add(slug, undefined, 1, name);
       // the picture the buyer is looking at is the one that flies
       const card = decks.current.get(sheetId)?.[1] ?? decks.current.get(sheetId)?.[0];
-      flyToCart(card?.querySelector("img") ?? null);
+      let pic: HTMLElement | null = card?.querySelector("img") ?? null;
+      // ON THE PLAIN LAYER THAT IS THE ROW, NOT THE FOLDER (2026-10-05
+      // repair): the stage is display:none there, so its card measured 0x0
+      // and a phone's «Add this sheet» flew nothing (0 frames at 390 and
+      // 360). The row's middle picture is the same print (`three` puts it
+      // second), the one just above the button.
+      if (!pic?.getBoundingClientRect().width) {
+        pic = root.current?.querySelector<HTMLElement>(`[data-sheet="${sheetId}"] .ap-sf__plain li:nth-child(2) img`) ?? null;
+      }
+      flyToCart(pic);
       setAdded(sheetId);
       if (addTimer.current) window.clearTimeout(addTimer.current);
       addTimer.current = window.setTimeout(() => setAdded(null), 2600);
@@ -334,33 +343,20 @@ export default function StickerFolders({
                 </button>
               </div>
 
-              {/* ---- price and buy, under every folder ------------------
-                  OUTSIDE the stage on purpose: the stage is aria-hidden on
-                  the plain layer and its cards are dragged about, and a
-                  purchase control must never live somewhere a gesture can
-                  throw it. This row renders in BOTH layers, so a phone can
-                  buy a sheet exactly as a desktop can. */}
-              <div className="ap-sf__buy">
-                <p className="ap-sf__price">
-                  <span className="ap-sf__pname">{sheet.name}</span>
-                  <strong>{dram(price)}</strong>
-                </p>
-                <button type="button" className="ap-btn ap-sf__add" onClick={() => buy(sheet.id, sheet.name)}>
-                  {stickerSheets.add}
-                </button>
-                <p className="ap-sf__added" role="status">
-                  {added === sheet.id ? stickerSheets.added : ""}
-                </p>
-              </div>
-
               {/* ---- the plain layer: the same three pictures as a row ----
                    This is the whole content for phones, reduced motion and
                    no-JS — real images, not an empty stage. */}
               <div className="ap-sf__plain">
                 {/* h2, not h3: on the plain layer these follow the page's h1
-                    directly (the audit read h1 → h3 on phones) */}
+                    directly (the audit read h1 → h3 on phones).
+                    THE COMMA IS FOR THE EAR (2026-10-05): the name and the
+                    spec are two spans the eye separates by a gap, and the
+                    heading's accessible name ran them together — "Sheet
+                    01158 × 200 mm" (measured in the AX tree). Visually
+                    hidden, so the line looks exactly as it did. */}
                 <h2 className="ap-sf__plainname">
-                  {sheet.name} <span>{stickerSheets.spec}</span>
+                  {sheet.name}
+                  <span className="ap-sr">,</span> <span>{stickerSheets.spec}</span>
                 </h2>
                 <ul>
                   {three.map((s, i) => (
@@ -387,6 +383,41 @@ export default function StickerFolders({
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              {/* ---- price and buy, under every folder ------------------
+                  OUTSIDE the stage on purpose: the stage is aria-hidden on
+                  the plain layer and its cards are dragged about, and a
+                  purchase control must never live somewhere a gesture can
+                  throw it. This row renders in BOTH layers, so a phone can
+                  buy a sheet exactly as a desktop can.
+                  AFTER THE PLAIN PICTURES, NOT BEFORE (2026-10-05, mobile
+                  pass). It used to sit between the stage and the plain
+                  block, which on the plain layer put each sheet's price and
+                  «Add this sheet» ABOVE that sheet's own heading — 0px from
+                  it, and 32px under the PREVIOUS sheet's photos (measured at
+                  390x844 on all five gaps), so the button under Sheet 01's
+                  pictures added Sheet 02 (UX laws G0: proximity decides what
+                  a button belongs to). On the live layer the plain block is
+                  display:none, so the desktop still reads stage → buy.
+                  The price line describes its button: six identical «Add
+                  this sheet» labels are told apart by the sheet they buy. */}
+              <div className="ap-sf__buy">
+                <p className="ap-sf__price" id={`sf-price-${sheet.id}`}>
+                  <span className="ap-sf__pname">{sheet.name}</span>
+                  <strong>{dram(price)}</strong>
+                </p>
+                <button
+                  type="button"
+                  className="ap-btn ap-sf__add"
+                  aria-describedby={`sf-price-${sheet.id}`}
+                  onClick={() => buy(sheet.id, sheet.name)}
+                >
+                  {stickerSheets.add}
+                </button>
+                <p className="ap-sf__added" role="status">
+                  {added === sheet.id ? stickerSheets.added : ""}
+                </p>
               </div>
             </li>
           );

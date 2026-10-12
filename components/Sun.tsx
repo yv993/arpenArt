@@ -629,10 +629,25 @@ export default function Sun() {
   return (
     <>
       <div className="ap-sun" ref={wrap} aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element -- positioned by
-            transform against measured hero geometry; next/image's own wrapper
-            fights that, and this is one small decorative cutout */}
-        <img ref={img} className="ap-sun__disc" src="/hero/sun.webp" alt="" width={IMG_W} height={IMG_H} />
+        {/* THE SUN IS NOT FETCHED WHERE IT NEVER FLIES (2026-10-05 package).
+            Only the desktop moved layer draws it (the effect above returns
+            at once otherwise), yet every phone downloaded the 166 KB cutout
+            at 262ms, in the same batch as the hero poster it competes with
+            (synthesis/v1.json homeRes). <picture> decides before a byte is
+            requested: under the effect's own gate's complement — narrow,
+            reduced motion, or no scripting to fly it — the source is a 1x1
+            transparent GIF inlined as data, so there is no request at all.
+            display: contents keeps the <img> laid out exactly as before. */}
+        <picture style={{ display: "contents" }}>
+          <source
+            media="(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)"
+            srcSet="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- positioned by
+              transform against measured hero geometry; next/image's own wrapper
+              fights that, and this is one small decorative cutout */}
+          <img ref={img} className="ap-sun__disc" src="/hero/sun.webp" alt="" width={IMG_W} height={IMG_H} />
+        </picture>
       </div>
       {/* her, copied live out of the film, over the sun — see the header */}
       <canvas ref={cut} className="ap-sun__her" aria-hidden="true" />

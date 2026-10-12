@@ -61,10 +61,14 @@ export default function KeychainCard({
   wall,
   live,
   ghost = false,
+  idx = 0,
 }: {
   item: Keychain;
   wall: KeychainWall;
   live: boolean;
+  /** where the card stands on the wall — the first three are the ones in
+   *  view when the page opens, and only they ask to be fetched first */
+  idx?: number;
   /** the wrap copy on the carousel: visually identical, invisible to AT —
    *  a screen reader must meet each keychain once, not twice */
   ghost?: boolean;
@@ -169,7 +173,12 @@ export default function KeychainCard({
                 hero — lazy-loading them deferred the largest paint on the
                 route's own showcase. The card renders at ~193px, so the
                 560px thumb serves 1x screens and the full file only ships
-                to dense displays; the old markup sent 361×820 to everyone. */}
+                to dense displays; the old markup sent 361×820 to everyone.
+                HIGH PRIORITY FOR THE FIRST THREE ONLY (2026-10-05): all 48
+                (24 + the 24 wrap copies) carried fetchpriority=high, and a
+                priority everyone has is nobody's — the live route's LCP
+                measured 10.3 s. Still eager, not lazy: the desktop wall is
+                a drag carousel whose next cards must already be there. */}
             <img
               ref={img}
               src={item.src}
@@ -179,7 +188,7 @@ export default function KeychainCard({
               width={item.w}
               height={item.h}
               decoding="async"
-              fetchPriority="high"
+              fetchPriority={idx < 3 ? "high" : "auto"}
               draggable={false}
             />
             {/* the light that runs across the acrylic as it turns */}
@@ -193,8 +202,13 @@ export default function KeychainCard({
       {/* the buy rides WITH the card now: on a carousel the wall moves, so a
           separate button row could not stay under its keychain */}
       <div className="ap-kc__buy">
+        {/* the keychain rides in the button's NAME, after the visible words
+            (2026-10-05): 24 identical «Add to cart» were indistinguishable
+            in a screen reader's list of buttons. Label-in-name holds — the
+            name starts with what the eye reads. */}
         <button type="button" className="ap-btn ap-kc__add" onClick={buy} tabIndex={ghost ? -1 : undefined}>
           {wall.add}
+          <span className="ap-sr">: {item.title}</span>
         </button>
         <p className="ap-kc__name">{item.title}</p>
         <p className="ap-kc__price">{dram(KEYCHAIN_PRICE)}</p>

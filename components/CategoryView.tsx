@@ -578,7 +578,12 @@ export default function CategoryView({
                 // `.ap-cv__hero--face`, a token rather than an inline colour so
                 // it follows the theme.
                 <figure className="ap-cv__hero ap-cv__hero--face">
+                  {/* the flight's source too (2026-10-05 repair): once a card
+                      is picked this is the picture in the frame, and with the
+                      ref only on the photograph below, «Add to cart» threw
+                      nothing — 0 flight frames at 390 and at 1440 */}
                   <img
+                    ref={heroImg}
                     key={shownFace.key}
                     src={shownFace.src}
                     alt={`${shownFace.label} by Arpine Baroyan`}

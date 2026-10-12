@@ -202,7 +202,32 @@
   /* the camera. Long throw: these are small objects seen from across a room. */
   perspective: 1100px;
   perspective-origin: 50% 30%;
-  touch-action: pan-y; /* a horizontal drag turns it; a vertical one scrolls */
+}
+/* a horizontal drag turns it; a vertical one scrolls — ON THE LIVE LAYER
+   ONLY (2026-10-05, mobile pass). The turn only runs when live
+   (KeychainCard.tsx), but `pan-y` was set for everyone: on a phone's plain
+   rail a sideways swipe on a picture — 64% of the rail's height — moved the
+   rail 0px (measured at 390x844, starting at x 120 and x 260), while the
+   same swipe on the buy strip moved it 225px. The plain rail now scrolls
+   from anywhere on it; the desktop wall (live, measured at 1440) is as it
+   was. */
+.ap-kc[data-live] .ap-kc__hang {
+  touch-action: pan-y;
+}
+/* THE PLAIN RAIL SETTLES ON A KEYCHAIN (2026-10-05): a thumb-flung strip of
+   132px cells stopped wherever momentum ran out, usually across a picture.
+   `proximity`, not `mandatory`: a slow drag can still rest between two. The
+   wrap copies never display here and take no part.
+   PHONES ONLY (2026-10-05 repair): `:not([data-live])` is also the desktop
+   under reduced motion, whose approved rail scrolls freely — measured
+   scroll-snap-type x there at 1440x900. */
+@media (max-width: 860px) {
+  .ap-kc:not([data-live]) .ap-kc__rail {
+    scroll-snap-type: x proximity;
+  }
+  .ap-kc:not([data-live]) .ap-kc__cell:not([data-ghost]) {
+    scroll-snap-align: start;
+  }
 }
 
 /* the pool of light this particular picture throws on the wall below it */
@@ -438,6 +463,22 @@
 }
 .ap-kc__rackcell .ap-kc__added {
   color: #6b5f58;
+}
+/* THE RACK'S TYPE AT NIGHT (2026-10-05, mobile pass). The two colours above
+   are the approved day ones, pinned to a pale card that the 2026-09-15 pass
+   turned into var(--paper) — navy after dark — so every name, «Keychain
+   no. 01 · 1,500 ֏» to no. 24, measured 1.57:1 (p10 1.53) against its
+   sampled ground at 390x844. The day keeps its colours; at night the type
+   takes the page's own muted ink (6.4:1 on the night paper). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ap-kc__rackname,
+  :root:not([data-theme="light"]) .ap-kc__rackcell .ap-kc__added {
+    color: var(--ink-muted);
+  }
+}
+:root[data-theme="dark"] .ap-kc__rackname,
+:root[data-theme="dark"] .ap-kc__rackcell .ap-kc__added {
+  color: var(--ink-muted);
 }
 
 /* ---- the plain layer --------------------------------------------------- */

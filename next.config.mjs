@@ -73,6 +73,30 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // HER PICTURES AND FILMS MAY BE KEPT FOR A DAY (2026-10-05). /public is
+      // served with `public, max-age=0, must-revalidate` by default, so a
+      // returning phone asked again for every image and film on every page
+      // (measured on the live site). A day fresh, then a week of serving the
+      // copy it has while it checks in the background. NOT `immutable`, and
+      // not a year: these names are not hashed, and the client replaces
+      // pictures under the same name — a changed photograph reaches everyone
+      // within a day, and the next visit after that. Production only, like
+      // the CSP: on the dev server a picture swapped on disk must show on the
+      // next reload, not tomorrow. The folders are the ones /public holds;
+      // /_next/static keeps Next's own year-long immutable header.
+      // `:path+`, NOT `:path*`: two of these folders share their name with a
+      // page — /stories and /cart — and `*` also matches the bare folder, so
+      // it handed those two HTML pages a day-long cache (tested with Next's
+      // own matcher, next/dist/shared/lib/router/utils/path-match): a deploy
+      // would not have reached a returning visitor's cart for a day.
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              source: "/(art|products|stories|studio|hero|globe|auth|brand|cart|stockists|map)/:path+",
+              headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+            },
+          ]
+        : []),
       {
         source: "/(.*)",
         headers: [

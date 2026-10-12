@@ -399,8 +399,13 @@ export default function MagnetFridge({
               </button>
               <div className="ap-mf__buy">
                 <p className="ap-mf__name">Magnet no. {s.id}</p>
+                {/* the magnet rides in the button's NAME, after the visible
+                    words (2026-10-05): 35 identical «Add to cart» could not be
+                    told apart in a screen reader's list of buttons. The
+                    name still starts with the label the eye reads. */}
                 <button type="button" className="ap-btn ap-mf__add" onClick={(e) => buy(s.id, e.currentTarget)}>
                   {magnetFridge.add}
+                  <span className="ap-sr">: Magnet no. {s.id}</span>
                 </button>
                 <p className="ap-mf__added" role="status">
                   {added === s.id ? magnetFridge.added : ""}

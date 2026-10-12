@@ -48,6 +48,11 @@ export async function POST(req: Request) {
   if (name.length < 2) errors.name = "Please give a name.";
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.email = "That email does not look right.";
   if (message.length < 8) errors.message = "A sentence or two is enough.";
+  // the consent box, checked here too (2026-10-05): the form sends
+  // `consent: true` only once it is ticked, and before this date the route
+  // never asked — an unticked message from any client was accepted. The
+  // sentence is the form's own, so either check reads the same.
+  if (body.consent !== true) errors.consent = "Please tick the box so Arpine may reply to you.";
   if (Object.keys(errors).length) return NextResponse.json({ ok: false, errors }, { status: 422 });
 
   const text = `ArpenArt enquiry\n\n${name} <${email}>\n\n${message}`;

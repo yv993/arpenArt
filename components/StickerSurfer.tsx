@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { stickers3d } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
+import { loopTab } from "@/lib/tabLoop";
 
 // ============================================================================
 // THE 3D STICKER LANE — 48 domed stickers flown past on a receding diagonal.
@@ -104,6 +105,7 @@ export default function StickerSurfer({
   const swell = useRef<number[]>([]);
   const addTimer = useRef<number | null>(null);
   const opener = useRef<HTMLElement | null>(null);
+  const dialog = useRef<HTMLDivElement | null>(null);
 
   const N = shots.length;
 
@@ -207,6 +209,9 @@ export default function StickerSurfer({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
+      // the first Tab after Close used to leave for the footer behind the
+      // scrim (measured 2026-10-05, 390x844) — lib/tabLoop.ts
+      loopTab(e, dialog.current);
     };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -294,6 +299,16 @@ export default function StickerSurfer({
           <p className="ap-s3__price">
             <strong>{dram(price)}</strong> each
           </p>
+          {/* THE TAP CUE (2026-10-05, mobile pass). 48 cards, no visible Add,
+              and the only hint — the lane's «Scroll to surf · click to open»
+              — is the live layer's and never shows on a phone: nothing said a
+              tap opens the buy window (UX laws D9). Said once, before the
+              first card, in the tote page's own words; shown only where a
+              phone or a touch screen reads this layer (shop.css).
+              aria-hidden: each card's own name already ends in «open». */}
+          <p className="ap-s3__cuetouch" aria-hidden="true">
+            {stickers3d.cueTouch}
+          </p>
         </div>
         <ul className="ap-s3__grid">
           {shots.map((s) => (
@@ -314,9 +329,20 @@ export default function StickerSurfer({
 
       {/* ---- the picked design, in the middle, with a way to buy it ---- */}
       {open && (
-        <div className="ap-s3__open" role="dialog" aria-modal="true" aria-label={`3D sticker no. ${open.id}`}>
-          {/* the ground closes it; the panel stops the press getting there */}
-          <button type="button" className="ap-s3__scrim" onClick={close} aria-label={stickers3d.open.close} />
+        <div className="ap-s3__open" role="dialog" aria-modal="true" aria-label={`3D sticker no. ${open.id}`} ref={dialog}>
+          {/* the ground closes it; the panel stops the press getting there.
+              OUT OF THE TAB ORDER AND THE TREE (2026-10-05): it was a second
+              focusable «Close» before the real one — the AX tree read two —
+              and the first Tab stop of the window. A press on it still
+              closes; the keyboard has Escape and the panel's own Close. */}
+          <button
+            type="button"
+            className="ap-s3__scrim"
+            onClick={close}
+            aria-label={stickers3d.open.close}
+            tabIndex={-1}
+            aria-hidden="true"
+          />
           <div className="ap-s3__panel">
             <img className="ap-s3__bigimg" src={open.src} alt={`3D sticker no. ${open.id} by Arpine Baroyan`} />
             <div className="ap-s3__meta">

@@ -73,6 +73,20 @@
   position: absolute;
   inset: 0;
 }
+/* THE HAND HOLDS ON A SMALL PHONE (2026-10-05, mobile pass). Seven 64px
+   cards overlapping by 16 need 336px of line; a 360 phone has 324 inside
+   its gutters, so the seventh card wrapped to a line of its own (its top at
+   230 against ~110 for the rest, measured) and at 320 the fan broke 5 + 2 —
+   two shapes where there should be one (UX laws G7). Below 375 the cards
+   scale with the screen (15.5vw: 56px at 360, 50 at 320) with a 14px
+   overlap, and the seven fit. 375 and up keep today's 64px exactly; the
+   moved layer (≥861px) never sees this rule. */
+@media (max-width: 374px) {
+  .ap-mh__card:nth-child(-n + 7) {
+    width: 15.5vw;
+    margin: 0 -7px 22px;
+  }
+}
 
 .ap-mh__intro {
   display: none; /* the plain layer goes straight to the point */

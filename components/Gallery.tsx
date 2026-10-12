@@ -1,14 +1,26 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Canvas } from "@react-three/fiber";
-import { CAMERA_Z, ParticleSphere, newSpin } from "./ParticleSphere";
+import { newSpin } from "./sphereSpin";
 import { SoonLink, openSoon } from "./Soon";
 import globeShots from "@/lib/globe.json";
 import { categories, globe, home, priceList, soon } from "@/lib/content";
 import { dram } from "@/lib/cart";
+import { FX_MEDIA } from "@/lib/textfx";
+
+/** THREE.JS OFF THE CRITICAL PATH (2026-10-05 package, done 2026-10-07):
+ *  the Canvas and the sphere are their own chunk, requested only when the
+ *  canvas mounts (`live`, below). Measured before, at 390x844 and scrollY 0:
+ *  window.__THREE__ "171" and WebGLRenderer in the home route's page.js —
+ *  three evaluated on every phone that opened the home, two screens above
+ *  the gallery. `ssr: false` because a WebGL canvas has nothing to render on
+ *  the server; it never did (it mounted from an effect). */
+const GlobeCanvas = dynamic(() => import("./GlobeCanvas"), { ssr: false });
+/** the same chunk, for the idle-time warm-up on the desktop moved layer */
+const warmGlobe = () => import("./GlobeCanvas");
 
 // The sphere used to hold the 57 illustrations, then every photograph of
 // every piece for sale (client 2026-08-06) — sixty cards, and she found it
@@ -27,6 +39,9 @@ type Card = Shot & {
   soonName?: string;
   /** her price for a line the shop does not carry yet (priceList) */
   price?: number;
+  /** the line has options to set on its page (its `variants`: the postcard
+   *  format, the scarf cut) rather than fixed pieces to pick from */
+  choose?: boolean;
 };
 const G = globeShots as Shot[];
 
@@ -38,7 +53,7 @@ const CARDS: Card[] = globe.flatMap((g) => {
     if (!cat) return [];
     return [
       cat.status === "open"
-        ? { ...shot, name: cat.name, blurb: cat.blurb, href: `/shop/${cat.slug}` }
+        ? { ...shot, name: cat.name, blurb: cat.blurb, href: `/shop/${cat.slug}`, choose: !!cat.variants }
         : { ...shot, name: cat.name, blurb: cat.blurb, soonName: cat.name },
     ];
   }
@@ -46,6 +61,8 @@ const CARDS: Card[] = globe.flatMap((g) => {
   if (!line) return [];
   return [{ ...shot, name: line.name, blurb: home.gallery.soonNote, soonName: line.name, price: line.from }];
 });
+/** built once: the canvas chunk receives the same array on every render */
+const IMAGES = CARDS.map((c) => c.src);
 
 /** A full drag across the canvas turns the sphere most of the way round,
  *  measured against the element so it feels identical at any width. */
@@ -100,6 +117,27 @@ export default function Gallery() {
   // grab/release — twice per gesture — touches state.
   const spin = useRef(newSpin());
   const last = useRef({ x: 0, y: 0, sens: 0.004, sx: 0, sy: 0, id: -1, captured: false });
+
+  // THE DESKTOP KEEPS ITS TIMING. On the moved layer the sphere's chunk is
+  // fetched in idle time right after hydration — long before a 1440 reader
+  // has scrolled the ~2,800px to the gallery — so the canvas mounts as soon
+  // as `live` turns true, as it did when three shipped in the page chunk.
+  // Phones (and reduced motion) never warm it: they load it when the
+  // gallery comes near, or never.
+  useEffect(() => {
+    if (!window.matchMedia(FX_MEDIA).matches) return;
+    const warm = () => {
+      warmGlobe().catch(() => {});
+    };
+    // Safari has no requestIdleCallback; the type says it always exists
+    const idle = window.requestIdleCallback as typeof window.requestIdleCallback | undefined;
+    if (idle) {
+      const id = window.requestIdleCallback(warm, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = window.setTimeout(warm, 1200);
+    return () => window.clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -174,13 +212,32 @@ export default function Gallery() {
     setDragging(false);
   }, []);
 
+  // PUTTING THE PICTURE BACK RETURNS FOCUS TO THE SPHERE (2026-10-05
+  // package). The ✕ is removed with the panel it belongs to, so pressing it
+  // dropped focus on <body> (measured at 390x844: document.activeElement was
+  // BODY after the ✕), and a keyboard or switch user restarted from the top
+  // of the page. Escape now works from anywhere inside the gallery — the
+  // canvas, the ✕ or the buy link — where before it was heard only on the
+  // canvas. preventScroll: on a phone the canvas is mostly on screen when
+  // the panel is open, and the page must not jump under the finger.
+  const canvasEl = useRef<HTMLDivElement | null>(null);
+  const putBack = useCallback(() => {
+    setChosen(null);
+    canvasEl.current?.focus({ preventScroll: true });
+  }, []);
+  const onEscape = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "Escape" || chosenRef.current === null) return;
+      e.preventDefault();
+      putBack();
+    },
+    [putBack],
+  );
+
   // A drag-only control is unusable without a pointer. The arrows nudge the
   // same numbers the drag writes, so the sphere behaves identically either way.
+  // (Escape is the wrapper's now — see onEscape above.)
   const onKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      setChosen(null);
-      return;
-    }
     const s = spin.current;
     const nudge: Record<string, () => void> = {
       ArrowLeft: () => (s.yaw -= KEY_STEP),
@@ -196,19 +253,23 @@ export default function Gallery() {
     go();
   }, []);
 
-  const images = CARDS.map((c) => c.src);
   const card = chosen !== null ? CARDS[chosen] : null;
+  const onPointerMissed = useCallback(() => setChosen(null), []);
 
   return (
-    <div className="ap-gal" ref={host}>
+    <div className="ap-gal" ref={host} onKeyDown={onEscape}>
       {ok ? (
         <>
           <div
             className="ap-gal__canvas"
+            ref={canvasEl}
             data-drag={dragging || undefined}
             tabIndex={0}
             role="group"
-            aria-label="The shop as a turning sphere. Drag it or use the arrow keys to look around; click a piece to bring it forward, click it again to open it, Escape puts it back."
+            // MICROCOPY (2026-10-05 package): «click» → «press». A phone
+            // reader taps and a keyboard reader presses; "click" named the
+            // one input this control is least often operated with.
+            aria-label="The shop as a turning sphere. Drag it or use the arrow keys to look around; press a piece to bring it forward, press it again to open it, Escape puts it back."
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -216,16 +277,13 @@ export default function Gallery() {
             onKeyDown={onKey}
           >
             {live && (
-              <Canvas
-                camera={{ position: [0, 0, CAMERA_Z], fov: 50 }}
-                dpr={[1, 1.6]}
-                gl={{ antialias: true, alpha: true }}
-                onPointerMissed={() => setChosen(null)}
-              >
-                <Suspense fallback={null}>
-                  <ParticleSphere images={images} spin={spin} chosenRef={chosenRef} onPick={onPick} />
-                </Suspense>
-              </Canvas>
+              <GlobeCanvas
+                images={IMAGES}
+                spin={spin}
+                chosenRef={chosenRef}
+                onPick={onPick}
+                onPointerMissed={onPointerMissed}
+              />
             )}
           </div>
 
@@ -255,7 +313,12 @@ export default function Gallery() {
                     <Link className="ap-btn ap-gal__buy" href={card.href}>
                       Buy it <span aria-hidden>→</span>
                     </Link>
-                    <p className="ap-gal__note">{home.gallery.buyNote}</p>
+                    {/* LINE-AWARE (2026-10-05 package): "choose the
+                        illustration and the options" was said under every
+                        open line, and only the lines with options to set
+                        (postcards, scarves) have any; a magnet, a keychain
+                        or a sticker sheet is a fixed piece you pick. */}
+                    <p className="ap-gal__note">{card.choose ? home.gallery.buyNote.choose : home.gallery.buyNote.pick}</p>
                   </>
                 ) : (
                   <SoonLink className="ap-btn ap-gal__buy" name={card.soonName ?? card.name}>
@@ -266,7 +329,7 @@ export default function Gallery() {
               <button
                 type="button"
                 className="ap-gal__close"
-                onClick={() => setChosen(null)}
+                onClick={putBack}
                 aria-label="Put the picture back"
               >
                 ✕

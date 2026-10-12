@@ -215,6 +215,24 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+/* ANCHORS AND FOCUS LAND UNDER THE BAR, NOT BEHIND IT (2026-10-05). The
+   site had no scroll-padding, so everything the browser scrolls to — a
+   #hash, scrollIntoView, the element keyboard focus moves to — was put at
+   y 0, behind the fixed 76px bar: "Find the nearest town" (located at
+   Gyumri, 390x664) parked the Dilijan card at top 0 with its heading under
+   the bar; a /stories index jump put «365 WISHES» kicker and title at y 2
+   and 34; Shift+Tab on /cart left "Remove" (4-48) fully covered (WCAG
+   2.4.11). 84px is the bar's clearance this site already uses
+   (`.ap-cloud__card`'s scroll-margin, which cloud.css hands over to this
+   rule on phones so the two do not add up). Phones and tablets only: the
+   desktop's anchors are driven by its own scroll code and stay as they
+   were. scrollTo() with coordinates ignores this; nothing here relies on
+   that. */
+@media (max-width: 860px) {
+  html {
+    scroll-padding-top: 84px;
+  }
+}
 body {
   margin: 0;
   background: var(--paper);
@@ -236,6 +254,30 @@ main {
   background: var(--paper);
   background-image: var(--page-wash);
   background-repeat: no-repeat;
+}
+/* THE FOOTER WAITS BELOW THE FOLD ON A PHONE (2026-10-05). On the plain layer
+   the footer is in flow right after <main>, so on any page whose content
+   arrives after first paint it was painted up the screen and then shoved
+   down: /cart with five lines, iPhone 390x844 on a slow profile, measured
+   CLS 0.526 on the live site — the footer drawn at y 335 under the
+   pre-mount heading, then pushed off when CartView mounted (its big line
+   was even the page's LCP). With <main> at least one small-viewport tall
+   the footer starts below the fold, so that push happens off-screen, where
+   it is not a visible shift. It also closes the 11px paper strip that sat
+   under the footer on the 404 and the short shop pages. The desktop's
+   FootReveal curtain is untouched: it lives above 860px and on
+   html[data-footfx].
+   NOT WITHOUT SCRIPTS (2026-10-05 repair): data-footfx is never written then,
+   so this matched — and on a streamed route <main> holds only the hidden
+   splash while the page arrives after it, so the floor was a blank first
+   screen (bar at y 844 at 390x844). layout.tsx's <noscript> style resets it,
+   rather than a `(scripting: enabled)` term here: a browser that does not
+   know that feature would read the whole query as false and lose the CLS
+   fix with scripts ON. */
+@media (max-width: 860px) {
+  html:not([data-footfx]) #main {
+    min-height: 100svh;
+  }
 }
 /* PAPER GRAIN. Her work is gouache on paper and the site's ground is flat
    sRGB — a whisper of noise over everything gives the screen back a tooth.
@@ -312,6 +354,30 @@ select {
   font: inherit;
   color: inherit;
 }
+/* 16PX ON A PHONE, OR SAFARI ZOOMS (2026-10-05). `font: inherit` hands every
+   field the body's clamp(), and on a phone that resolves to 15.5px — measured
+   at 390x844 on all 13 cart fields, the contact form and the account email.
+   iOS Safari zooms the whole page in on focusing any field under 16px, so the
+   order form jumped and had to be pinched back on every tap (the zoom itself
+   is Safari's and cannot be emulated in Chromium; it follows from that rule).
+   Phones only: the desktop fields keep the body size they were set in. NOT
+   `maximum-scale` — that would take pinch-zoom away from everyone. */
+@media (max-width: 860px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+/* PLACEHOLDERS IN THE MUTED INK (2026-10-05). Left to the browser they drew
+   in #757575: 4.16:1 on the paper by day and 3.55:1 on the night field
+   (measured on the cart's phone field) — under the 4.5:1 a hint needs. The
+   muted ink is the site's own quiet text, 5.5:1 by day and 6.4:1 at night.
+   opacity: 1 because Firefox fades whatever colour it is given. */
+::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
+}
 
 /* one visible focus treatment everywhere — indigo clears 7.48:1 on paper.
    --indigo-ink, not --indigo: the pigment keeps its value after dark while
@@ -321,6 +387,14 @@ select {
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid var(--indigo-ink);
   outline-offset: 3px;
+}
+/* THE RING'S CORNER, AT NO SPECIFICITY (2026-10-05 package). It sat in the
+   rule above at (0,1,0) and came after every imported sheet, so it beat any
+   single-class border-radius declared there — a round control turned square
+   the moment the keyboard reached it (the cloud's ✕: 50% at rest, 3px under
+   focus; leftovers/cloud/after/1440x900-light-keyboard-focus.png). Inside
+   :where() it only fills in for an element that has no corner of its own. */
+:where(a, button, input, textarea, select, [tabindex]):where(:focus-visible) {
   border-radius: 3px;
 }
 :where(.ap-dark) :where(a, button, [tabindex]):focus-visible {
@@ -962,6 +1036,36 @@ select {
   max-width: 74ch;
   margin-bottom: clamp(38px, 6vh, 76px);
 }
+/* ONE SECTION'S AIR BETWEEN THE SHOP AND THE FILMS (2026-10-05 package). On
+   a phone the shop's list and «In motion» share the same paper, and the two
+   sections' paddings stacked into 219px of nothing at 390x844 (109.72 +
+   109.72) — a gap that reads as the end of the page. 56 + 56 still parts
+   two sections clearly; the other section pairs keep the full clamp (they
+   change ground, which does the separating). Home only: #shop and #studio
+   are HomeView's. */
+@media (max-width: 860px) {
+  #shop:has(+ #studio) {
+    padding-bottom: 56px;
+  }
+  #shop + #studio {
+    padding-top: 56px;
+  }
+  /* …AND BETWEEN THE FILMS AND THE FOOTER (2026-10-05 repair). Under the
+     reels the strip's own bottom padding (6vh) and the section's (13vh)
+     stacked into 160px of empty paper at 390x844 (50.64 + 109.72), making
+     «In motion» 911px. The section's 56 — the same air as above it — is
+     the whole gap now: 806px, and from its top to the reels' foot it is
+     751px, inside the 768px a 390x844 screen shows under the bar, so
+     heading and a whole film are seen at once. Nothing in it shrinks: a
+     smaller reel would have to be ~183px wide to bring the section to
+     640px, and at 174px «Two pomegranates» already ran out of its card. */
+  #studio {
+    padding-bottom: 56px;
+  }
+  #studio .ap-isel {
+    padding-bottom: 0;
+  }
+}
 .ap-sec--gal {
   /* night air instead of a flat plate: a whisper of sky glow high on the
      left, and the band settling darker toward its foot */
@@ -1049,6 +1153,27 @@ select {
     margin-top: 8px;
   }
 }
+/* PHONES: THE LABEL GOES UNDER THE PICTURE, ON THE BAND (2026-10-05
+   package). Centred over the canvas, `left: 50%` with a −50% translate
+   resolved the panel's shrink-to-fit width against half the gallery, so a
+   picked piece's label came out 177x226 at 390x844 and lay ON the product
+   photograph with no ground of its own — "Wooden bracelets", the price and
+   the note printed across the bracelets (measured 1.92:1 at the 10th
+   percentile for the name, 2.06:1 for the price; UX laws G8). In flow it
+   follows the canvas in the DOM, so it lands under the sphere on the navy
+   band, full width. The shift is the reader's own tap, which CLS excludes.
+   `translate: none` is safe: GSAP never touches this panel. */
+@media (max-width: 860px) {
+  .ap-gal__info {
+    position: static;
+    translate: none;
+    left: auto;
+    bottom: auto;
+    margin: 14px var(--gutter) 0;
+    max-width: none;
+    pointer-events: auto;
+  }
+}
 .ap-gal__close {
   position: absolute;
   top: 14px;
@@ -1057,7 +1182,10 @@ select {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  /* --cream, not --paper (2026-10-05 package): the band is dark in both
+     themes and --paper is navy at night, which erased this ring (seen at
+     390x844, dark); by day the two are the same #fcf2e6 */
+  border: 1px solid color-mix(in srgb, var(--cream) 45%, transparent);
   color: var(--cream);
   font-size: 15px;
   line-height: 1;
@@ -1065,6 +1193,25 @@ select {
 }
 .ap-gal__close:hover {
   border-color: var(--cream);
+}
+/* 44, NOT 42, UNDER A FINGER (2026-10-05 package; UX laws D1): the ✕ was
+   the one control in the gallery under the house's 44px floor. */
+@media (max-width: 860px), (pointer: coarse) {
+  .ap-gal__close {
+    width: 44px;
+    height: 44px;
+  }
+}
+/* …and on a phone it moves to the canvas's foot, right above the label it
+   closes. At the top of a 420px canvas it sat ~400px from that label (D1's
+   distance; G0 — a control reads as part of what it is near), and with the
+   gallery scrolled to its start it was under the fixed bar (y 14–56 against
+   a 76px bar at 390x844). The top is the canvas's own height clamp (the
+   rule below) less the button and the same 14px inset. */
+@media (max-width: 860px) {
+  .ap-gal__close {
+    top: calc(clamp(420px, min(92vh, 88vw), 1040px) - 58px);
+  }
 }
 .ap-gal__canvas {
   /* THE BALL IS AS TALL AS THE CANVAS (the camera's fov is vertical), so the
@@ -1085,8 +1232,12 @@ select {
   /* a drag that starts on the canvas must not select the headings above it */
   user-select: none;
 }
+/* --cream, not --paper (2026-10-05 package): the gallery band is dark in both
+   themes, and --paper turns navy at night — the ring measured 1.35:1 against
+   the band at 1440 and vanished. --cream is --paper's own day value, so the
+   day ring is the same pixel. */
 .ap-gal__canvas:focus-visible {
-  outline: 2px solid var(--paper);
+  outline: 2px solid var(--cream);
   outline-offset: -6px;
   border-radius: 4px;
 }
@@ -1247,8 +1398,83 @@ select {
   color: var(--ink-muted);
   max-width: 40ch;
 }
-.ap-cat[data-soon] a {
+/* ONLY THE PICTURE STEPS BACK (2026-10-05 package). The fade sat on the whole
+   link, so it faded live text: «Available soon» measured 2.88:1 and the
+   blurbs 3.07:1 on the paper by day, 3.53–3.87:1 at night (the 4.5:1 floor;
+   synthesis/v3.json, re-measured at 390x844). The picture keeps the 0.72
+   that says "not yet"; the words are back at full --ink-muted. A contrast fix
+   at every width, so the desktop grid changes too (its text only). */
+.ap-cat[data-soon] a .ap-cat__fig {
   opacity: 0.72;
+}
+/* PHONES: THE FOUR LINES THAT ARE NOT OPEN YET PAIR UP (2026-10-05 package).
+   In one column they ran 1,479–1,495px of cards nobody can buy, between
+   Scarves and Stickers (UX laws M3, D0). Two to a row, in HER order and with
+   every word: an open line keeps the full width, so the grid lays the four
+   consecutive soon cards two by two and the reading order is the DOM order.
+   Their name and «Available soon» stack inside the half-width card (one row
+   of both measured wider than the 167px column).
+   594px is where the grid's own auto-fill (260px cards, 20px gap, inside the
+   4.6vw gutters) drops to ONE column; a tablet keeps its two-up grid. */
+@media (max-width: 860px) {
+  .ap-cats {
+    /* G0: twice the largest gap inside a card. The title's row to the blurb
+       is 21px (8px padding, 1px rule, 12px gap), and the cards stood 20px
+       apart, so each blurb read as the caption of the picture below it. */
+    row-gap: 44px;
+  }
+}
+@media (max-width: 594px) {
+  .ap-cats {
+    /* minmax(0, …) (2026-10-05 repair, 200% text): a bare `1fr` floors at
+       its longest unbreakable run, and «Available soon» (nowrap) at twice
+       the size widened both columns to 216px, the home and /shop to 452+ */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .ap-cats > .ap-cat:not([data-soon]) {
+    grid-column: 1 / -1;
+  }
+  .ap-cats > .ap-cat[data-soon] .ap-cat__row {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  /* at the normal size it still sets on one line in the 167px card */
+  .ap-cat__from.is-soon {
+    white-space: normal;
+  }
+}
+
+/* TEXT AT 200% KEEPS THE PHONE'S WIDTH (2026-10-05 repair, WCAG 1.4.4 /
+   1.4.10). With every font size doubled at 390x844 (and again with the
+   browser's own text size doubled) the page grew to 497px on /, 477 on
+   /shop, 405 on /shop/stickers, 512 on /stories, 449 on /contact and 435 on
+   a five-line /cart: single words of her titles — ILLUSTRATIONS,
+   COLLECTION, COMMISSIONS, CONVERSATION, TSARAPATUM — no longer fit a line,
+   and a heading cannot shrink below its longest word. `anywhere` breaks a
+   word ONLY when it alone overflows the line, so at the normal size not one
+   title changes (no word is that long at 320, the narrowest width checked).
+   The text-FX runner never splits titles below 861px, so these boxes hold
+   plain text here. The cloud's two title lines are nowrap by her
+   instruction; they may wrap only where one would otherwise run off the
+   screen. A delivery option's middle track gets a 0 floor for the same
+   reason (its nowrap price + «International» pushed the cart's form wider
+   than the phone). */
+@media (max-width: 860px) {
+  .ap-h2,
+  .ap-hero__title,
+  .ap-mh__title {
+    overflow-wrap: anywhere;
+  }
+  .ap-cloud__tl {
+    white-space: normal;
+  }
+  .ap-ship__opt {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .ap-ship__opt strong,
+  .ap-ship__opt em {
+    overflow-wrap: anywhere;
+  }
 }
 
 /* --- about -------------------------------------------------------------- */
@@ -1273,6 +1499,20 @@ select {
 .ap-about__say p {
   color: var(--ink-muted);
 }
+/* HER BIOGRAPHY AT NIGHT (2026-10-05 package). The night pair --ink-muted on
+   --paper-3 is 4.52:1 on paper — and the grain over the page lifts the
+   rendered ground enough to sink it: sampled at 390x844, 4.20:1 median and
+   4.07:1 at the 10th percentile, every paragraph. Seven parts ink to three
+   of the muted ink keeps it quieter than the page's body text and clears
+   4.5:1 on the rendered pixels. Night only; the day text is untouched. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ap-about__say p {
+    color: color-mix(in srgb, var(--ink) 70%, var(--ink-muted));
+  }
+}
+:root[data-theme="dark"] .ap-about__say p {
+  color: color-mix(in srgb, var(--ink) 70%, var(--ink-muted));
+}
 /* The fact list (.ap-about__facts — Based in / Studied at / Solo exhibitions /
    Member of) was removed with its rules on the client's word, change 3.pdf
    p10, 2026-10-01. The link style below outlived it: /about no longer prints
@@ -1286,6 +1526,21 @@ select {
   color: var(--indigo-ink);
   border-bottom: 1px solid currentColor;
   padding-bottom: 2px;
+}
+/* A LONG ADDRESS BREAKS INSTEAD OF WIDENING THE PAGE (2026-10-05). Her email
+   is one 22-character word, letter-spaced in capitals on /contact, and with
+   the phone's text at 200% (every font-size doubled, 390x844) that word
+   alone was 401px: the contact column could not shrink below it and the
+   page grew to 449px wide — a sideways scroll on every line (WCAG 1.4.4 /
+   1.4.10). The footer's copy of it did the same on every page (399px), and
+   the one inside /privacy's last paragraph there (396px) — so every mailto
+   link takes it, along with the link style it wears on /contact.
+   `anywhere`, not `break-word`: only `anywhere` lowers the word's
+   min-content, which is what lets the grid column narrow. At ordinary
+   sizes the address fits its line and nothing moves. */
+.ap-about__link,
+a[href^="mailto:"] {
+  overflow-wrap: anywhere;
 }
 .ap-about__fig {
   border-radius: 5px;
@@ -1384,6 +1639,19 @@ select {
   }
   .ap-hero__title {
     text-align: left;
+    /* THE PAGE'S TITLE OUTRANKS ITS SECTIONS (2026-10-05 package). On a
+       phone this H1 resolved to 30.4px — the same as every section H2 —
+       while the shop room's «SHOP» stood at 44.8px, so the hierarchy read
+       upside down (synthesis/v5.json home390). 36px at 390 is 18% over the
+       H2s, past the ~10% a difference needs to read as one (UX laws G9);
+       «ILLUSTRATING», the longest word, still sets in 270px at 36px inside
+       the 284px a 320px screen leaves. */
+    font-size: clamp(2.25rem, 5.2vw, 2.5rem);
+    /* her two lines stay hers (each is its own block span); balance only
+       evens the wrap INSIDE the second, which left «ARMENIA» alone on the
+       last line at 375, 360 and 320. Set on the title box — TextFX never
+       splits it on this layer, and the property inherits into the spans. */
+    text-wrap: balance;
   }
   .ap-hero__card {
     justify-items: start;
@@ -1391,6 +1659,34 @@ select {
   }
   .ap-hero__hint {
     display: none;
+  }
+}
+/* A PHONE ON ITS SIDE: THE PAINTING AND ITS WORDS SIDE BY SIDE (2026-10-05
+   package). Stacked, the 844px-wide painting stood 475px tall in a 390px
+   screen, so the H1 started at y 577 and «See the shop» ended at 786 — the
+   first screen was the picture alone (synthesis/v5.json land). Capping the
+   picture at 55svh, as briefed, still left the H1 at 317 and the button at
+   526, below the fold (measured on this page). So here the stage becomes two
+   columns: her painting, capped to the screen under the 56px landscape bar,
+   on the left; the title, sentence and button on the right, on the same
+   indigo ground — every element and every style as in portrait, only laid
+   out for a short, wide screen. Measured at 844x390: H1 top 106, button
+   bottom 356. Landscape only, so a short portrait screen keeps the stack. */
+@media (max-width: 860px) and (max-height: 500px) and (orientation: landscape) {
+  .ap-hero__stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    min-height: 100svh;
+    padding-top: 76px;
+  }
+  .ap-hero__img {
+    max-height: calc(100svh - 76px);
+    align-self: center;
+  }
+  .ap-hero__type {
+    align-content: center;
+    padding: 10px var(--gutter) 14px 18px;
   }
 }
 
@@ -1502,21 +1798,31 @@ select {
   textarea {
     min-height: 96px;
   }
-  /* THE CONSENT BOX. 13x13 is not a target, it is a dare. The box keeps its
-     drawn size — a huge tick would look wrong — and gains reach with padding
-     and a negative margin, so the label beside it does not move. */
+  /* THE CONSENT BOX. 13x13 is not a target, it is a dare. The box is drawn
+     at 22px — a huge tick would look wrong — and its 44px reach is the
+     LABEL around it (the label rule below), never the box itself.
+     NO PADDING, NO NEGATIVE MARGIN (2026-10-05). This used to be content-box
+     + 11px padding + an 11px negative margin, meant to make 22 + 2x11 a
+     44px box. Chromium ignores padding on a checkbox or radio (computed
+     0px, the box measured 22x22), so all the margin did was pull every box
+     11px out of its column: the delivery radios at x 25 against the
+     fieldset's 36, the contact consent box at x 7 — into the page gutter —
+     each one touching its own label's first letter (UX laws G0, G5).
+     Padding 0 is said out loud so an engine that WOULD honour it lays out
+     the same. `flex: none` because a wrapping label squeezed the box to
+     18-20px at 320 and 390 wide. --indigo-ink rather than the pigment: the
+     same #374897 by day, and at night a checked box or radio in the pigment
+     would sit 1.6:1 on the navy form, where the lit one measured 5.35:1
+     (pixels sampled at 390x844). One size and one ink on both forms —
+     /contact's box was 13px beside /cart's 22. */
   input[type="checkbox"],
   input[type="radio"] {
-    /* content-box ON PURPOSE. The global reset is border-box, so padding grew
-       the reach by nothing at all — the box still measured 22x22. Switching
-       the model here makes 22 + 2x11 a real 44px target while the drawn tick
-       stays 22px. */
-    box-sizing: content-box;
     width: 22px;
     height: 22px;
-    padding: 11px;
-    margin: -11px;
-    background-clip: content-box;
+    padding: 0;
+    margin: 0;
+    flex: none;
+    accent-color: var(--indigo-ink);
   }
   /* inline text links: the same type, a box a finger can find */
   .ap-foot a,
@@ -1547,6 +1853,16 @@ select {
     align-items: center;
     min-height: 44px;
   }
+  /* …except a delivery option, which is a three-column grid (radio · service
+     · price, shop.css .ap-ship__opt). The flex above out-ranked that grid
+     (0,1,2 over 0,1,0), so on every touch phone the four prices sat wherever
+     each service's text happened to end — right edges at 352, 269, 282 and
+     354 at 390 wide (2026-10-05). Restating the grid at a higher rank puts
+     the prices back in one column; the 44px floor above still applies. */
+  label.ap-ship__opt:has(input[type="radio"]) {
+    display: grid;
+    align-items: start;
+  }
   /* a row of actions must not have its items overlap once they are 44px
      tall. 2px did not do it: the −11px block margins above buy each link's
      height back, so a wrapped row laid out 22px tall and the next row's
@@ -1555,5 +1871,62 @@ select {
      22px between rows lays the boxes edge to edge. */
   .ap-map__acts {
     gap: 22px 16px;
+  }
+}
+
+/* ==========================================================================
+   A PRESS YOU CAN FEEL (2026-10-05 package). On a touch screen a tap on a
+   button drew Android's blue tap square (rgba(51,181,229,.4), measured at
+   390x844) and otherwise nothing until the next page arrived — no sign the
+   press registered within the 400ms a response needs (UX laws D5). Under
+   (hover: none) the browser's square goes and the control itself answers:
+   it gives a little under the finger, 0.97 in 160ms on a fast-out curve,
+   and springs back on release. Under reduced motion it answers in colour
+   instead — the hover's darker indigo — and does not move.
+   `transform`, never the individual `scale` property (the GSAP trap): no
+   GSAP tween targets any of these controls (checked 2026-10-07).
+   The hover lift is cancelled here too: on a phone :hover sticks after a
+   tap, which left a button standing 2px proud until the next touch.
+   ========================================================================== */
+@media (hover: none) {
+  .ap-btn,
+  .ap-gal__close,
+  .ap-cloud__close,
+  .ap-cloud__nav button,
+  .ap-cloud__views button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ap-btn:hover {
+    transform: none;
+  }
+}
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  .ap-btn,
+  .ap-gal__close,
+  .ap-cloud__close,
+  .ap-cloud__nav button,
+  .ap-cloud__views button {
+    transition:
+      transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      background 240ms var(--ease),
+      color 240ms var(--ease);
+  }
+  .ap-btn:not([disabled]):active,
+  .ap-gal__close:active,
+  .ap-cloud__close:active,
+  .ap-cloud__nav button:active,
+  .ap-cloud__views button:active {
+    transform: scale(0.97);
+  }
+}
+@media (hover: none) and (prefers-reduced-motion: reduce) {
+  .ap-btn:not([disabled]):active {
+    background: var(--ink-indigo) linear-gradient(135deg, var(--indigo) 0%, var(--ink-indigo) 60%, #131c33 125%);
+  }
+  .ap-gal__close:active,
+  .ap-cloud__close:active,
+  .ap-cloud__nav button:active,
+  .ap-cloud__views button:active {
+    background: color-mix(in srgb, var(--cream) 18%, transparent);
   }
 }

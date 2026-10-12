@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { add, dram, unit } from "@/lib/cart";
@@ -132,6 +132,23 @@ export default function Cloud({
 }) {
   const root = useRef<HTMLDivElement | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
+  /** the PLAIN layer (phones, reduced motion): a card there opens the panel
+   *  under the rail — a disclosure, not a picture growing in place — so it
+   *  is named and stated as one (2026-10-05 package). False on the server
+   *  and on the desktop moved layer, whose card stays exactly as it was. */
+  const [plain, setPlain] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(DESKTOP);
+    const read = () => setPlain(!m.matches);
+    read();
+    m.addEventListener("change", read);
+    return () => m.removeEventListener("change", read);
+  }, []);
+  const infoId = useId();
+  /** "No. n" — where focus goes when a card on the plain layer opens it */
+  const noRef = useRef<HTMLParagraphElement | null>(null);
+  /** set by a card press (not by ‹ ›, whose own button keeps focus) */
+  const focusNo = useRef(false);
   // every picture opens on its front; the switcher below the note changes it
   const [view, setView] = useState<View>("front");
   /** the page mid-turn. Forward: the OLD face rides on top, turning away,
@@ -384,26 +401,51 @@ export default function Cloud({
   // that card can be screens away sideways; its caption and the face the
   // panel's Front · Back · Printed switch to are drawn ON the card, so
   // pressing Back changed a picture nobody could see (measured at 390x844:
-  // card 12 off the right edge while its panel said "Back"). The rail slides
-  // the chosen card to its middle — sideways only, the page never moves.
+  // card 12 off the right edge while its panel said "Back").
+  // AND THE PAGE FOLLOWS THE CARD (2026-10-05 package). Sideways only was not
+  // enough: pressing card 05 at 390x844 left its card at y 316 and the
+  // panel's Add to cart at y 1052 — below the fold — and after → the new card
+  // was wherever the rail had scrolled to, under the bar. Now the chosen card
+  // comes to rest under the bar (its scroll-margin-top in cloud.css is the
+  // bar's 84px) and at the start of the rail (its snap point), which puts
+  // the card, its note and Add on one screen. "start", not "nearest": a card
+  // already fully on screen at y 316 would not move, and Add would stay
+  // below the fold. Instant under reduced motion.
+  // THE PAGE MOVES ON A PHONE ONLY (2026-10-05 repair). The plain layer is
+  // also the desktop under reduced motion, and there the page scroll pulled
+  // the page 255px when card 06 was pressed at 1440x900 — the approved
+  // desktop rail slides sideways and the page stays put, so at 861px and up
+  // it is the old sideways centring again, unchanged.
   useEffect(() => {
+    // read and clear in one go: a press that CLOSED the panel, or one on the
+    // desktop, must not leave the flag set for the next ‹ ›
+    const wantFocus = focusNo.current;
+    focusNo.current = false;
     const el = root.current;
     if (!chosen || !el || window.matchMedia(DESKTOP).matches) return;
-    const plane = el.querySelector<HTMLElement>(".ap-cloud__plane");
     const card = el.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${chosen}"]`);
-    if (!plane || !card) return;
-    const pr = plane.getBoundingClientRect();
-    const cr = card.getBoundingClientRect();
-    plane.scrollBy({
-      left: cr.left + cr.width / 2 - (pr.left + pr.width / 2),
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    });
+    if (!card) return;
+    const behavior: ScrollBehavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    if (window.matchMedia("(max-width: 860px)").matches) {
+      card.scrollIntoView({ block: "start", inline: "start", behavior });
+    } else {
+      const plane = el.querySelector<HTMLElement>(".ap-cloud__plane");
+      if (plane) {
+        const pr = plane.getBoundingClientRect();
+        const cr = card.getBoundingClientRect();
+        plane.scrollBy({ left: cr.left + cr.width / 2 - (pr.left + pr.width / 2), behavior });
+      }
+    }
+    // a card press hands focus to the panel's "No. n", so a screen reader
+    // lands on what opened; preventScroll — the page is already moving
+    if (wantFocus) noRef.current?.focus({ preventScroll: true });
   }, [chosen]);
 
   /** Press a card to open it, press it again to put it back. With no drag to
    *  distinguish this from, onClick is the whole of it — pointer and keyboard
    *  alike. */
   const choose = useCallback((id: string) => {
+    focusNo.current = true;
     setChosen((cur) => (cur === id ? null : id));
   }, []);
 
@@ -437,8 +479,19 @@ export default function Cloud({
               // the caption under a chosen card. Only facts we actually have:
               // the number and the series. No invented titles or mediums.
               data-caption={`No. ${p.id} — the Armenia series`}
-              aria-pressed={chosen === p.id}
-              aria-label={`Illustration number ${p.id}. Press to view it larger.`}
+              // THE PLAIN LAYER'S CARD IS A DISCLOSURE (2026-10-05 package):
+              // it opens the panel under the rail rather than viewing the
+              // picture larger, so it says expanded/collapsed and points at
+              // that panel. MICROCOPY: "view it larger" → "see its details"
+              // there. The desktop card is untouched: pressed, same name.
+              aria-pressed={plain ? undefined : chosen === p.id}
+              aria-expanded={plain ? chosen === p.id : undefined}
+              aria-controls={plain && chosen === p.id ? infoId : undefined}
+              aria-label={
+                plain
+                  ? `Illustration number ${p.id}. Press to see its details.`
+                  : `Illustration number ${p.id}. Press to view it larger.`
+              }
               onClick={() => choose(p.id)}
               style={
                 {
@@ -529,69 +582,87 @@ export default function Cloud({
             a note yet (23/25/34) keep the series body. ‹ › browse the whole
             series without closing — the plane flies to each one. */}
         {chosen && (
-          <div className="ap-cloud__info" role="status">
-            <p className="ap-cloud__no">No. {chosen}</p>
-            <p className="ap-cloud__series">{pick.line}</p>
-            {(items.find((a) => a.id === chosen)?.text ?? pick.body).split("\n").map((t) => (
-              <p className="ap-cloud__body" key={t.slice(0, 24)}>
-                {t}
+          // NO role=status ON THE PLAIN LAYER (2026-10-05 package): the
+          // whole panel — note, faces, price, buttons — was read out on every
+          // change. Focus moves to "No. n" when a card opens it, and only
+          // that line is live, so ‹ › announce the new number. The desktop
+          // panel keeps its status role, as it was.
+          <div className="ap-cloud__info" id={infoId} role={plain ? undefined : "status"}>
+            {/* THE SHEET SCROLLS, THE PANEL DOES NOT (2026-10-05). On the
+                desktop cloud the long-note cap (max-height + overflow) sat on
+                the panel itself, so it clipped its own ✕ — which hung 46px
+                above the panel's top edge: invisible, and a press at its
+                centre landed on the plane at 1440x900, 1280x720 and 1886x835
+                (measured with elementFromPoint). The cap lives on this inner
+                sheet now and the ✕ is its sibling, so it stays in its corner
+                while a long note scrolls. On the plain layer the sheet is
+                `display: contents` and the panel's grid is what it was. */}
+            <div className="ap-cloud__sheet">
+              <p className="ap-cloud__no" ref={noRef} tabIndex={-1} aria-live={plain ? "polite" : undefined}>
+                No. {chosen}
               </p>
-            ))}
-            {(() => {
-              const art = items.find((a) => a.id === chosen);
-              if (!art?.back && !art?.mock) return null;
-              return (
-                <div className="ap-cloud__views" role="group" aria-label="Faces of this picture">
-                  <button type="button" aria-pressed={view === "front"} onClick={() => switchView("front", art)}>
-                    Front
-                  </button>
-                  {art.back && (
-                    <button type="button" aria-pressed={view === "back"} onClick={() => switchView("back", art)}>
-                      Back
+              <p className="ap-cloud__series">{pick.line}</p>
+              {(items.find((a) => a.id === chosen)?.text ?? pick.body).split("\n").map((t) => (
+                <p className="ap-cloud__body" key={t.slice(0, 24)}>
+                  {t}
+                </p>
+              ))}
+              {(() => {
+                const art = items.find((a) => a.id === chosen);
+                if (!art?.back && !art?.mock) return null;
+                return (
+                  <div className="ap-cloud__views" role="group" aria-label="Faces of this picture">
+                    <button type="button" aria-pressed={view === "front"} onClick={() => switchView("front", art)}>
+                      Front
                     </button>
-                  )}
-                  {art.mock && (
-                    <button type="button" aria-pressed={view === "mock"} onClick={() => switchView("mock", art)}>
-                      Printed
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-            <div className="ap-cloud__nav">
-              <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
-                ←
-              </button>
-              <span aria-hidden="true">
-                {items.findIndex((a) => a.id === chosen) + 1} / {items.length}
-              </span>
-              <button type="button" onClick={() => step(1)} aria-label="Next picture">
-                →
-              </button>
-            </div>
-            {/* buy this card without leaving the cloud — UNLESS it is one the
-                client took out of the postcard catalogue (change 3.pdf p2,
-                2026-10-01: nos. 23 and 25, `withheldArt` in content.ts). The
-                picture stays in the cloud to be looked at — her note removes
-                a postcard, not a picture — but this button writes a
-                "postcards" line to the cart, i.e. it is a second door into
-                the very catalogue she closed, so for those two neither the
-                card's price nor the button is offered. The way to the shop
-                stays. */}
-            {!notACard && (
-              <p className="ap-cloud__price">
-                <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
-              </p>
-            )}
-            <div className="ap-cloud__buy">
-              {!notACard && (
-                <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
-                  {added ? "Added ✓" : "Add to cart"}
+                    {art.back && (
+                      <button type="button" aria-pressed={view === "back"} onClick={() => switchView("back", art)}>
+                        Back
+                      </button>
+                    )}
+                    {art.mock && (
+                      <button type="button" aria-pressed={view === "mock"} onClick={() => switchView("mock", art)}>
+                        Printed
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+              <div className="ap-cloud__nav">
+                <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
+                  ←
                 </button>
+                <span aria-hidden="true">
+                  {items.findIndex((a) => a.id === chosen) + 1} / {items.length}
+                </span>
+                <button type="button" onClick={() => step(1)} aria-label="Next picture">
+                  →
+                </button>
+              </div>
+              {/* buy this card without leaving the cloud — UNLESS it is one the
+                  client took out of the postcard catalogue (change 3.pdf p2,
+                  2026-10-01: nos. 23 and 25, `withheldArt` in content.ts). The
+                  picture stays in the cloud to be looked at — her note removes
+                  a postcard, not a picture — but this button writes a
+                  "postcards" line to the cart, i.e. it is a second door into
+                  the very catalogue she closed, so for those two neither the
+                  card's price nor the button is offered. The way to the shop
+                  stays. */}
+              {!notACard && (
+                <p className="ap-cloud__price">
+                  <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
+                </p>
               )}
-              <Link className="ap-cloud__go" href="/shop/postcards">
-                {pick.cta} <span aria-hidden>→</span>
-              </Link>
+              <div className="ap-cloud__buy">
+                {!notACard && (
+                  <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
+                    {added ? "Added ✓" : "Add to cart"}
+                  </button>
+                )}
+                <Link className="ap-cloud__go" href="/shop/postcards">
+                  {pick.cta} <span aria-hidden>→</span>
+                </Link>
+              </div>
             </div>
             <button
               type="button"

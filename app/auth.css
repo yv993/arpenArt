@@ -107,6 +107,16 @@
 .ap-auth__ghost:hover {
   color: var(--ink);
 }
+/* "Create an account" is the one way to the other panel, and on a phone it
+   measured 112x22 (2026-10-05) — half the house's 44px floor (UX laws D1).
+   The box grows; the words stay the same underlined 13.5px in their line. */
+@media (max-width: 860px) {
+  .ap-auth__swap button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
 
 /* the "or" rule: a centred caption sitting on a hairline */
 .ap-auth__rule {

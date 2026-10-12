@@ -64,6 +64,17 @@
   height: 100%;
   object-fit: cover;
 }
+/* the film's still, under it (Selector.tsx, 2026-10-05 package): the lazy
+   <img> that replaced the eager poster attribute. Out of flow, so the
+   <video> keeps the box; the video, positioned and later in the source,
+   paints over it as soon as it has a frame. */
+.ap-isel__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 /* THE BED IS GONE (client 2026-08-10). An open panel used to be a wide
    rectangle, so a 9:16 film had to sit `contain`ed in the middle of it on a
@@ -129,9 +140,80 @@
   color: color-mix(in srgb, #fff 74%, transparent);
 }
 
+/* --indigo-ink, not the --indigo pigment (2026-10-05 package): the strip
+   sits on the page's paper, which goes navy at night, and the pigment ring
+   measured 1.96:1 against it at 390 and 1440. --indigo-ink is the same
+   #374897 by day and her indigo re-lit at night. */
 .ap-isel__panel:focus-visible {
-  outline: 2px solid var(--indigo);
+  outline: 2px solid var(--indigo-ink);
   outline-offset: 3px;
+}
+
+/* the badge's two glyphs: ▶ everywhere by default; the pause only where a
+   finger is the pointer (below) */
+.ap-isel__g-pause {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   PHONES: ONE ROW YOU SWIPE (2026-10-05 package). Stacked, the fifteen
+   reels at 266x473 ran from 6,986 to 14,216px of a 14,819px home page at
+   390x844 — half the page was this section (synthesis/v1.json; UX laws M2,
+   S1). Every film and every title stays; they stand side by side in one
+   swipeable row instead, a card and a peek of the next, snapping to the
+   middle. Full-bleed like the series rail above it: the row runs to the
+   screen's edges and its padding keeps the first and last cards in the
+   gutter, on the heading's line. overscroll contain: a swipe past the last film must not become
+   the browser's back gesture. The desktop strip is not touched (this is
+   narrower than its 861px gate, with or without reduced motion).
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .ap-isel__strip {
+    grid-auto-flow: column;
+    /* the middle term is the plain layer's own height cap (56svh of a 9:16
+       film, the base rule above) — so a short phone (375x553 with its
+       toolbars) still sees a whole reel, not 466px of one.
+       A 208px FLOOR (2026-10-05 repair). Held sideways, that cap made the
+       reels 123px wide at 844x390 and 118 at 667x375, and her titles and
+       lines ran out of the card's right edge: 12 of 15 cut at 844x390, 14
+       at 667x375 («Two pomegranates» by 65px, «The church on the hill»
+       pushed out of the top), and «pomegranates» by 14px even at 375x553
+       (174px). At 208 the label has the room its longest word needs. In
+       landscape the 370px reel is then a little taller than the 334px under
+       the bar — a short scroll, which costs less than cutting her words.
+       Portrait 360–430 is untouched (233–262px, over the floor). */
+    grid-auto-columns: clamp(208px, min(72vw, calc(56svh * 0.5625)), 262px);
+    align-items: start;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    overscroll-behavior-x: contain;
+    /* out through BOTH gutters — the section's and .ap-isel's own — to the
+       screen's edges; the first card then starts on the heading's line */
+    width: auto;
+    margin-inline: calc(var(--gutter) * -2);
+    padding: 4px var(--gutter) 8px;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .ap-isel__panel {
+    width: auto;
+    /* the stacked card's auto margins would keep it from filling its column
+       (it shrank to its 4px of border: everything inside is absolute) */
+    margin-inline: 0;
+    scroll-snap-align: center;
+  }
+}
+/* the open film's badge says what a press does: ❚❚ while it runs, ▶ once
+   paused — on a phone or any screen without hover. The desktop keeps the ▶
+   until the client has answered (the press toggles there too). */
+@media (max-width: 860px), (hover: none) {
+  .ap-isel__panel[data-playing] .ap-isel__g-play {
+    display: none;
+  }
+  .ap-isel__panel[data-playing] .ap-isel__g-pause {
+    display: block;
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -223,14 +305,18 @@
   }
 
   /* the picture sits zoomed in until its panel opens, then settles back —
-     a transform, so it composites rather than repainting a background */
+     a transform, so it composites rather than repainting a background.
+     The still under each film (2026-10-05 package) zooms with it: it stands
+     in for the poster the <video> used to draw inside this same box. */
   .ap-isel__img,
-  .ap-isel__vid {
+  .ap-isel__vid,
+  .ap-isel__still {
     transform: scale(1.2);
     transition: transform 0.7s var(--ease);
   }
   .ap-isel__panel[data-on] .ap-isel__img,
-  .ap-isel__panel[data-on] .ap-isel__vid {
+  .ap-isel__panel[data-on] .ap-isel__vid,
+  .ap-isel__panel[data-on] .ap-isel__still {
     transform: scale(1);
   }
 
@@ -274,6 +360,25 @@
     gap: clamp(10px, 1.2vw, 16px);
   }
 }
+/* …and at every width, the films are their posters (no-JS repair,
+   2026-10-05). With scripting off the browser may draw its own controls on
+   a <video> that asked for none — Chromium does, and measured at 1440 and at
+   390 every card wore a play button over its own ▶ badge, "0:00", a ⋮ menu
+   and a timeline through its title. Only Selector.tsx can play these, so
+   without it the <video> goes and its poster (--still, set on the media box)
+   is the card's ground: the same picture the poster attribute showed, at
+   the same cover crop, in every engine — no UA pseudo-element involved. */
+@media (scripting: none) {
+  .ap-isel__vid,
+  .ap-isel__still {
+    /* the still <img> too (2026-10-05 package): this path stays exactly
+       what it was — the --still ground, nothing over it */
+    display: none;
+  }
+  .ap-isel__media {
+    background: var(--still, none) center / cover no-repeat;
+  }
+}
 
 @keyframes ap-isel-in {
   to {
@@ -289,6 +394,7 @@
   .ap-isel__panel,
   .ap-isel__img,
   .ap-isel__vid,
+  .ap-isel__still,
   .ap-isel__scrim,
   .ap-isel__info {
     transition: none;
@@ -300,7 +406,8 @@
       transform: none;
     }
     .ap-isel__img,
-    .ap-isel__vid {
+    .ap-isel__vid,
+    .ap-isel__still {
       transform: none;
     }
   }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { origin } from "@/lib/site";
+import { indexable, origin } from "@/lib/site";
 import Chrome from "@/components/Chrome";
 import Link from "next/link";
 import CategoryView, { CategorySpec, OrderingSteps } from "@/components/CategoryView";
@@ -23,7 +23,7 @@ import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
 import type { Keychain } from "@/types/keychain";
-import { brand, categories, keychainWall, lookbooks, morphs, overtures, withheldArt } from "@/lib/content";
+import { brand, categories, keychainWall, lookbooks, morphs, overtures, soon, withheldArt } from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
@@ -59,8 +59,15 @@ export const dynamicParams = false; // unknown slugs are a real 404, not a soft 
 
 // (structured data below wants absolute URLs: `origin` comes from lib/site.ts)
 
+// THE "AVAILABLE SOON" LINES HAVE A PAGE AT THEIR ADDRESS (2026-10-05). Their
+// tiles open the small Available Soon window and never navigate (client,
+// change.pdf p8), but the address still exists for anyone who has it — a
+// shared or typed /shop/cups — and it answered "NOT HERE" under the home
+// page's title, about a line the site itself announces. So the soon lines are built too, and say what the window
+// says: her notice, the line's name, the way to the shop. Not indexed, and
+// no Product markup: there is nothing to buy there yet.
 export function generateStaticParams() {
-  return categories.filter((c) => c.status === "open").map((c) => ({ slug: c.slug }));
+  return categories.map((c) => ({ slug: c.slug }));
 }
 
 export async function generateMetadata({
@@ -71,13 +78,36 @@ export async function generateMetadata({
   const { slug } = await params;
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return {};
+  if (cat.status !== "open") {
+    // never indexed; links followed exactly as the layout says (a robots
+    // object replaces the layout's whole, so `follow` is restated)
+    return { title: `${cat.name} — ${soon.tile}`, description: soon.copy, robots: { index: false, follow: indexable } };
+  }
   return { title: cat.name, description: cat.blurb, alternates: { canonical: `/shop/${cat.slug}` } };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const cat = categories.find((c) => c.slug === slug);
-  if (!cat || cat.status !== "open") notFound();
+  if (!cat) notFound();
+  if (cat.status !== "open") {
+    return (
+      <>
+        <Chrome />
+        <div className="ap-sec ap-shop">
+          <div className="ap-sec__head">
+            {/* the same three lines the Available Soon window prints */}
+            <p className="ap-kicker">({cat.name})</p>
+            <h1 className="ap-h2">{soon.title}</h1>
+            <p className="ap-lede">{soon.copy}</p>
+          </div>
+          <Link className="ap-btn" href="/shop">
+            Go to the shop
+          </Link>
+        </div>
+      </>
+    );
+  }
 
   // A lookbook only appears where the photography exists and content.ts names
   // a reading order for it. Any id in that order which is not in the manifest
