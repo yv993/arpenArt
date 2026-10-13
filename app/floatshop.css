@@ -78,6 +78,36 @@
   display: block;
   position: absolute;
   inset: 0;
+  /* THE ROOM CAN BE TAKEN HOLD OF (Vardan 2026-10-13: «this part must be
+     draggable, user can grab and move» — the handlers are in FloatShop.tsx).
+     The open hand says so before anyone tries; a card that opens keeps the
+     pointing finger, and the hand closes while it has the room. The cursor
+     is set HERE and not on <body>, where the cards write theirs: the canvas
+     inherits from its nearest ancestor that has one, which is this. */
+  cursor: grab;
+  /* a finger's sideways drag turns the room; up and down stays the page's,
+     so a touch screen can still scroll past a room one screen tall — and so
+     does the pinch: `pan-y` alone withholds pinch-zoom for every touch that
+     lands here, and this is a whole screen (the same trap as the photo
+     viewer's picture, shop.css). pan-x stays out, which is what hands the
+     sideways drag to the script. */
+  touch-action: pan-y pinch-zoom;
+  /* a press that starts a drag must not start a text selection */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ap-fs[data-live] .ap-fs__stage[data-over] {
+  cursor: pointer;
+}
+.ap-fs[data-drag] .ap-fs__stage,
+.ap-fs[data-drag] .ap-fs__stage[data-over] {
+  cursor: grabbing;
+}
+/* while the room is in a hand, dragging across the name in the middle or
+   the word in the corner must not paint them selected */
+.ap-fs[data-drag] {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* The section says what it IS at the top of the room and stays there

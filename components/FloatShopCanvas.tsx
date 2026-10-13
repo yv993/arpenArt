@@ -30,7 +30,30 @@ const TURN = Math.PI * 2;
 /** Each card's SCREEN spot for the wheel gate — centre and projected
  *  half-height, in canvas pixels. FloatShop reads these to decide whether a
  *  wheel is on the pictures (see SPOT_PAD there). */
-export type Spot = { x: number; y: number; r: number };
+export type Spot = {
+  x: number;
+  y: number;
+  r: number;
+  /** HOW THIS CARD ANSWERS A TURN, for the grab (2026-10-13): pixels of
+   *  sideways screen travel per radian the rig turns, signed. Positive on the
+   *  near side of the ring (the card goes the way the near side goes),
+   *  negative round the back, and zero at the silhouette, where a turning
+   *  card is moving straight toward or away from the eye. FloatShop divides a
+   *  hand's travel by this to keep the card it took under that hand. */
+  g: number;
+};
+
+/** What a GRAB hands the frame loop (2026-10-13 — see the handlers in
+ *  FloatShop.tsx). `v` is the room's own speed in TURNS PER SECOND, carried
+ *  out of a release as a throw and bled off here; `held` is true while a
+ *  hand has the room, and nothing but that hand may turn it then. */
+export type RoomSpin = { v: number; held: boolean };
+/** The sketch's idle ROTATION_SPEED_Y (0.0005/frame ≈ 0.03 rad/s). */
+const IDLE = 0.03;
+/** How fast a throw dies, per second: speed falls to 1/e in ~0.4s, so a
+ *  brisk flick (half a turn a second) coasts about two cards further and a
+ *  hard one never more than two thirds of the way round. */
+const FRICTION = 2.4;
 const TAN_HALF_FOV = Math.tan((50 * Math.PI) / 360); // the Canvas below is fov 50
 const SPOT_V = new THREE.Vector3();
 
@@ -94,6 +117,7 @@ function Card({
   view,
   spots,
   onPick,
+  onPress,
   onHover,
 }: {
   cat: FloatCat;
@@ -102,6 +126,8 @@ function Card({
   view: React.RefObject<number>;
   spots: React.RefObject<Spot[]>;
   onPick: (c: FloatCat) => void;
+  /** a press landed on this card: its index, and which pointer event it was */
+  onPress: (i: number, pointerId: number, timeStamp: number) => void;
   onHover: (c: FloatCat | null) => void;
 }) {
   const group = useRef<THREE.Group>(null);
@@ -151,8 +177,17 @@ function Card({
     // with distance, so a near card claims a wider circle than a far one)
     g.getWorldPosition(SPOT_V);
     const dist = SPOT_V.distanceTo(state.camera.position);
+    const spot = (spots.current[index] ??= { x: 0, y: 0, r: 0, g: 0 });
+    // The card's sideways screen travel per radian of rig turn (see Spot.g).
+    // The camera looks straight down −z from (0, 0, cz), so a point (x, ·, z)
+    // lands at screen x = k · x / (cz − z), k = (height / 2) / tan(fov / 2).
+    // The rig turns about the world's y axis, which carries the point by
+    // (dx, dz) = (z, −x) per radian; differentiate and that is
+    // k · (z · (cz − z) − x²) / (cz − z)². Taken BEFORE project() below,
+    // which overwrites the vector.
+    const depth = Math.max(0.01, state.camera.position.z - SPOT_V.z);
+    spot.g = ((state.size.height / 2 / TAN_HALF_FOV) * (SPOT_V.z * depth - SPOT_V.x * SPOT_V.x)) / (depth * depth);
     SPOT_V.project(state.camera);
-    const spot = (spots.current[index] ??= { x: 0, y: 0, r: 0 });
     spot.x = ((SPOT_V.x + 1) / 2) * state.size.width;
     spot.y = ((1 - SPOT_V.y) / 2) * state.size.height;
     spot.r = ((size[1] / 2) * s * (state.size.height / 2)) / Math.max(0.01, dist * TAN_HALF_FOV);
@@ -177,6 +212,16 @@ function Card({
         hovered.current = false;
         onHover(null);
         document.body.style.cursor = "";
+      }}
+      // WHICH CARD A PRESS IS ON, for the grab (2026-10-13). r3f raycasts
+      // every pointerdown, nearest hit first; stopPropagation keeps a card
+      // behind this one from answering too. FloatShop matches the pointer
+      // and the timestamp against its own pointerdown, which runs after
+      // this (r3f listens on its div, inside the stage) — so a finger, which
+      // has no hover before it lands, is told its card as surely as a mouse.
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onPress(index, e.pointerId, e.nativeEvent.timeStamp);
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -208,29 +253,57 @@ function Scene({
   cats,
   view,
   scrollP,
+  spin,
   spots,
   onPick,
+  onPress,
   onHover,
   onFocus,
 }: {
   cats: FloatCat[];
   view: React.RefObject<number>;
   scrollP: React.RefObject<number>;
+  spin: React.RefObject<RoomSpin>;
   spots: React.RefObject<Spot[]>;
   onPick: (c: FloatCat) => void;
+  /** a press landed on this card: its index, and which pointer event it was */
+  onPress: (i: number, pointerId: number, timeStamp: number) => void;
   onHover: (c: FloatCat | null) => void;
   /** which card currently holds the centre — the one nearest the camera */
   onFocus: (i: number) => void;
 }) {
   const rig = useRef<THREE.Group>(null);
   const lastFocus = useRef(-1);
+  /** the idle drift, summed here instead of read off the clock so that it can
+   *  STOP while a hand holds the room: at 0.03 rad/s the near card slid ~22px
+   *  a second out from under a pointer that was holding it still */
+  const idle = useRef(0);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const g = rig.current;
     if (!g) return;
-    // scroll turns the room; the sketch's idle ROTATION_SPEED_Y (0.0005/frame
-    // ≈ 0.03 rad/s) keeps it turning gently even when nobody scrolls
-    const rotY = -(scrollP.current ?? 0) * TURN - state.clock.elapsedTime * 0.03;
+    // a tab that was hidden comes back with one enormous delta; nothing here
+    // should jump for it (a tenth of a second is still a whole frame on a
+    // machine that manages ten a second, so a slow one is not slowed further)
+    const dt = Math.min(delta, 0.1);
+    const sp = spin.current;
+    if (!sp.held) {
+      // nobody is holding it: the gentle idle turn, plus whatever a release
+      // threw into it, bleeding off (friction, never a hard stop)
+      idle.current += dt * IDLE;
+      if (sp.v) {
+        const p = (scrollP.current ?? 0) + sp.v * dt;
+        scrollP.current = p - Math.floor(p);
+        sp.v *= Math.exp(-dt * FRICTION);
+        // let it die well below the idle drift it hands over to (0.03
+        // rad/s is 0.0048 turns/s): cut at 0.004 the last frame took away a
+        // speed as large as the drift itself, a visible step
+        if (Math.abs(sp.v) < 0.0004) sp.v = 0;
+      }
+    }
+    // the wheel, a drag and a throw all write the same `scrollP`, a wrapped
+    // fraction of a turn; the idle drift rides on top of it
+    const rotY = -(scrollP.current ?? 0) * TURN - idle.current;
     g.rotation.y = rotY;
 
     // Which card is at the CENTRE POSITION — i.e. nearest the camera. Solved
@@ -265,7 +338,7 @@ function Scene({
       <group rotation={[0.3, 0, 0]}>
         <Haze />
         {cats.map((c, i) => (
-          <Card key={c.slug} cat={c} index={i} total={cats.length} view={view} spots={spots} onPick={onPick} onHover={onHover} />
+          <Card key={c.slug} cat={c} index={i} total={cats.length} view={view} spots={spots} onPick={onPick} onPress={onPress} onHover={onHover} />
         ))}
       </group>
     </group>
@@ -276,23 +349,28 @@ export default function FloatShopCanvas({
   cats,
   view,
   scrollP,
+  spin,
   spots,
   onPick,
+  onPress,
   onHover,
   onFocus,
 }: {
   cats: FloatCat[];
   view: React.RefObject<number>;
   scrollP: React.RefObject<number>;
+  spin: React.RefObject<RoomSpin>;
   spots: React.RefObject<Spot[]>;
   onPick: (c: FloatCat) => void;
+  /** a press landed on this card: its index, and which pointer event it was */
+  onPress: (i: number, pointerId: number, timeStamp: number) => void;
   onHover: (c: FloatCat | null) => void;
   onFocus: (i: number) => void;
 }) {
   return (
     <Canvas camera={{ position: [0, 0, 13.4], fov: 50 }} dpr={[1, 1.6]} gl={{ antialias: true, alpha: true }}>
       <Suspense fallback={null}>
-        <Scene cats={cats} view={view} scrollP={scrollP} spots={spots} onPick={onPick} onHover={onHover} onFocus={onFocus} />
+        <Scene cats={cats} view={view} scrollP={scrollP} spin={spin} spots={spots} onPick={onPick} onPress={onPress} onHover={onHover} onFocus={onFocus} />
       </Suspense>
     </Canvas>
   );
