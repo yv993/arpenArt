@@ -243,7 +243,9 @@ export default function StickerSurfer({
       {/* ---- the lane (live layer only) ---- */}
       <div className="ap-s3__scene" ref={scene} onPointerMove={onMove} onPointerLeave={onLeave}>
         <div className="ap-s3__head">
-          <p className="ap-kicker">{stickers3d.kicker}</p>
+          {/* no kicker since 2026-10-12 (client, change 4.pdf p6: «(DOMED)»
+              circled, «հանենք սա») — on both layers; the title opens the
+              head and nothing holds the kicker's line */}
           <H className="ap-h2" data-tfx="rise">
             {stickers3d.title}
           </H>
@@ -287,7 +289,6 @@ export default function StickerSurfer({
       {/* ---- the plain layer: all 48, openable and buyable without the lane */}
       <div className="ap-s3__plain">
         <div className="ap-sec__head">
-          <p className="ap-kicker">{stickers3d.kicker}</p>
           {/* the same level as the lane's heading: on a phone the lane is
               display:none, and this WAS an h2 — the page had no h1 there */}
           <H className="ap-h2">{stickers3d.title}</H>

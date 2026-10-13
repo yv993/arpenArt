@@ -33,6 +33,21 @@
   display: grid;
   gap: 16px;
 }
+/* HER SUBTITLE IN THE TITLE'S SERIF (client, change 4.pdf p15, 2026-10-12:
+   «սա գրենք էս վերևի սերիոտ ձևով» — write this the way the serif above is).
+   «Exhibitions, interviews, collaborations and stories from Arpen Art.» was
+   the body sans at 16.7px; it takes the display face at a modest size and
+   keeps the colour it had (the ink it inherits — rgb(35,40,52) by day, the
+   cream at night; measured before the change). Both layers: this rule is
+   outside [data-stack], and the stack's own margin rule below still applies.
+   The kicker that stood above the title is gone from the markup
+   (StoriesView.tsx), so the title moves up by itself — no gap to close. */
+.ap-st__cover-say .ap-lede {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.45vw, 1.42rem);
+  line-height: 1.32;
+  text-wrap: pretty;
+}
 .ap-st__index {
   list-style: none;
   margin: 8px 0 0;

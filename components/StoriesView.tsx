@@ -406,7 +406,10 @@ export default function StoriesView() {
         <header className="ap-st__cover">
           <div className="ap-st__sheet">
             <div className="ap-st__cover-say">
-              <p className="ap-kicker">{stories.kicker}</p>
+              {/* the kicker «(Studio stories)» is gone and the title takes its
+                  place (client, change 4.pdf p15, 2026-10-12: «սա հանենք»);
+                  the subtitle under it is set in the display serif now —
+                  stories.css, `.ap-st__cover-say .ap-lede` */}
               {/* every letter arrives cut in two and seams shut */}
               <h1 className="ap-h2 ap-st__h1" id="ap-st-title" data-tfx="cut">
                 {stories.title}

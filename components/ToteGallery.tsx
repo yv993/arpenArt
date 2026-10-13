@@ -152,7 +152,9 @@ export default function ToteGallery({
   return (
     <section className="ap-tg" aria-labelledby="ap-tg-title">
       <div className="ap-tg__head">
-        <p className="ap-kicker">{toteBags.kicker}</p>
+        {/* no kicker since 2026-10-12 (client, change 4.pdf p10: «(TOTE
+            BAGS)» circled, «սա հանենք») — the title and her paragraph are
+            the head's one row, straight under the crumb */}
         {/* ONE SPAN PER LINE, each revealed by the text-FX runner on its own
             and the second a beat behind — the same model as the shop and
             series titles. The stylesheet makes them blocks with a DIRECT-CHILD
@@ -329,8 +331,8 @@ export default function ToteGallery({
             <div className="ap-tgq__buy">
               <div className="ap-tgq__facts">
                 <p className="ap-tgq__price">{dram(price)}</p>
-                {/* the two facts the cards' badges already carry, lifted from
-                    the category's spec rows — nothing new is claimed here */}
+                {/* the two facts the cards' badges already carry — the
+                    lookbook caption's own words; nothing new is claimed here */}
                 <p className="ap-tgq__spec">{toteBags.badges.join(" · ")}</p>
               </div>
               <div className="ap-tgq__act">

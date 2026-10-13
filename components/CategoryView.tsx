@@ -382,36 +382,16 @@ const boxVars = (b: [number, number, number, number]) =>
 const CHOOSES_DESIGN = new Set(["postcards", "cups", "plates", "puzzles"]);
 
 
-/** The product's trust rows. Exported for the same reason OrderingSteps is:
- *  /shop/stickers no longer renders this view (it sells six sheets from
- *  StickerFolders instead), and a second hand-written copy of these lines is
- *  exactly how a returns policy starts saying two different things. */
-export function CategorySpec({ cat }: { cat: Category }) {
-  return (
-    <dl className="ap-cv__spec">
-      <div>
-        <dt>Made by</dt>
-        <dd>Arpine Baroyan, in Yerevan</dd>
-      </div>
-      <div>
-        <dt>Artwork</dt>
-        <dd>Original illustration from the Armenia series</dd>
-      </div>
-      {/* the per-category facts from content.ts — each one either already
-          stated elsewhere on the site or a process truth */}
-      {cat.spec?.map((s) => (
-        <div key={s.k}>
-          <dt>{s.k}</dt>
-          <dd>{s.v}</dd>
-        </div>
-      ))}
-      <div>
-        <dt>Prices</dt>
-        <dd>Shown before shipping. Final figures confirmed on the order.</dd>
-      </div>
-    </dl>
-  );
-}
+/** THE SPEC ROWS ARE GONE (client, change 4.pdf p3–p11, 2026-10-12). A
+ *  `CategorySpec` <dl> — MADE BY / ARTWORK / the category's own rows (paper,
+ *  size, material, finish) / PRODUCTION / SHIPPING / RETURNS / PRICES — was
+ *  exported from here and rendered under the buy button below and under
+ *  every bespoke line's ordering steps, until she circled it on each of the
+ *  seven shop pages, the postcards' included (p4: «փոստքարտերի էջից սա
+ *  հանենք»). It went with its `.ap-cv__spec` rules and, in content.ts, the
+ *  `Category.spec` field, the shared `processSpec` rows and every line's own
+ *  rows; the returns wording it carried still stands where it binds, on
+ *  /terms, and the ordering flow is OrderingSteps, kept. */
 
 /** The "how ordering works" strip. It lives here but renders on the cart page
  *  too — one component, so the two tellings of the flow can never drift. */
@@ -884,8 +864,6 @@ export default function CategoryView({
           </div>
 
           {cat.status === "open" && <OrderingSteps />}
-
-          <CategorySpec cat={cat} />
         </div>
       </div>
     </div>

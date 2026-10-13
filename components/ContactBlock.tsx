@@ -19,7 +19,15 @@ export default function ContactBlock({
 }) {
   const [state, setState] = useState<State>("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  /** what was typed, kept when the site could not deliver it — see `send` */
+  const [kept, setKept] = useState<{ name: string; email: string; message: string } | null>(null);
   const Title = heading;
+
+  /** her address with the visitor's message prefilled, for the mail app —
+   *  the same subject the route itself sends under, so her inbox reads the
+   *  same either way */
+  const mailtoWith = (k: { name: string; email: string; message: string }) =>
+    `mailto:${brand.email}?subject=${encodeURIComponent(`Enquiry from ${k.name}`)}&body=${encodeURIComponent(`${k.message}\n\n${k.name} <${k.email}>`)}`;
 
   // put the keyboard where the fix is — the first field rejected, in the
   // order they appear in the form (the cart's focusFirst, CartView.tsx)
@@ -76,8 +84,20 @@ export default function ContactBlock({
         setState("error");
         return;
       }
-      setState(data.delivered ? "sent" : "logged");
-      form.reset();
+      if (data.delivered) {
+        setState("sent");
+        form.reset();
+        return;
+      }
+      // NOT DELIVERED (client, change 4.pdf p16, 2026-10-12: «իմ մեյլին նամակ
+      // կգա՞» — will a letter reach my mail?). The route only logged it (no
+      // webhook or Resend configured), so the page must not pretend: the
+      // typed message stays in the form, and the line under it carries the
+      // same text into the visitor's own mail app, addressed to her. The
+      // form.reset() this branch used to share with success wiped the one
+      // copy the visitor had.
+      setKept({ name: get("name"), email: get("email"), message: get("message") });
+      setState("logged");
     } catch {
       setState("error");
     }
@@ -186,6 +206,13 @@ export default function ContactBlock({
             <p className="ap-contact__warn" role="alert">
               {state === "logged" ? home.contact.logged : home.contact.failed}{" "}
               <a href={`mailto:${brand.email}`}>{brand.email}</a>
+              {/* the message, prefilled, so no enquiry is lost (p16) */}
+              {state === "logged" && kept && (
+                <>
+                  {" — "}
+                  <a href={mailtoWith(kept)}>{home.contact.mailApp}</a>
+                </>
+              )}
             </p>
           )}
 

@@ -154,7 +154,9 @@ export default function Socials() {
             {...(s.href.startsWith("mailto:") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
             aria-label={
               s.href.startsWith("mailto:")
-                ? `${s.label} — write to ${s.href.slice(7)}`
+                // the address only: the href carries a ?subject= since
+                // 2026-10-12 (content.ts) and a reader should not hear it
+                ? `${s.label} — write to ${s.href.slice(7).split("?")[0]}`
                 : s.pending
                   ? `${s.label} — opens ${s.label} in a new tab; Arpine's own profile is not linked yet`
                   : `${s.label} — opens in a new tab`

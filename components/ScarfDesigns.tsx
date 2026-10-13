@@ -63,12 +63,13 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
     <section className="ap-sd" aria-labelledby="ap-sd-title">
       {/* THE LEAD SITS BESIDE THE TITLE (client, change 3.pdf p7, 2026-10-01,
           circling the paragraph under the title: «էս էլ բերել հիմնական
-          տեքստի կողքը» — bring this one, too, beside the main text). Same
-          three elements in the same order — the kicker, the title, her
-          paragraph — so a phone, a reader and a crawler meet them exactly as
-          before; the two columns are the stylesheet's (`.ap-sd__head`). */}
+          տեքստի կողքը» — bring this one, too, beside the main text). The
+          title and her paragraph, in that order, so a phone, a reader and a
+          crawler meet them exactly as before; the two columns are the
+          stylesheet's (`.ap-sd__head`). THE KICKER «(On silk)» that opened
+          the head is gone (change 4.pdf p3, 2026-10-12: «հանենք սա») and the
+          title took its row — nothing stands between the crumb and it. */}
       <div className="ap-sec__head ap-sd__head">
-        <p className="ap-kicker">{scarfDesigns.kicker}</p>
         <H className="ap-h2 ap-sd__title" id="ap-sd-title" data-tfx="rise">
           {scarfDesigns.title}
         </H>

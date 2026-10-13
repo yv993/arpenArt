@@ -10,9 +10,15 @@ import { loopTab } from "@/lib/tabLoop";
 // EXTRACTED from ShopStrip (2026-08-23), which had the only copy of it. The
 // sticker sheets needed the same thing — "images must become bigger when user
 // click in images" — and a second lightbox in one codebase is how two dialogs
-// start disagreeing about which key closes them. Same reason OrderingSteps and
-// CategorySpec are shared. The `ap-xg__*` class names come with it rather than
-// being renamed, so /shop keeps its stylesheet untouched.
+// start disagreeing about which key closes them. Same reason OrderingSteps is
+// shared. The `ap-xg__*` class names come with it rather than being renamed,
+// so /shop keeps its stylesheet untouched.
+//
+// It once took an `arriving` flag that held the picture invisible while a
+// fridge magnet's pixels flew in to land on it (MagnetFridge). The fridge
+// scene left on 2026-10-12 (client, change 4.pdf p8–p9) and no caller was
+// left to set the flag, so the prop and shop.css's `[data-arriving]` rule
+// went with it.
 //
 // The behaviour it already had, kept exactly: Escape and a press on the ground
 // close it, the arrows and the arrow KEYS move through the set, focus goes to
@@ -34,7 +40,6 @@ export default function PhotoLightbox({
   alt,
   opener,
   footer,
-  arriving = false,
 }: {
   shots: LbShot[];
   i: number;
@@ -47,13 +52,6 @@ export default function PhotoLightbox({
   /** what had focus before this opened — it gets it back */
   opener?: HTMLElement | null;
   footer?: ReactNode;
-  /** Something is still FLYING here and will land on this dialog's picture
-   *  (the fridge magnets do this). While it is true the picture is held
-   *  invisible and its pop animation suppressed, so the traveller can arrive
-   *  onto the exact pixels it will become — the chrome around it still fades
-   *  in, which is what makes the ground darken while the magnet is on its
-   *  way. Callers that open the ordinary way never pass it. */
-  arriving?: boolean;
 }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -130,7 +128,6 @@ export default function PhotoLightbox({
     <div
       ref={rootRef}
       className="ap-xg__lb"
-      data-arriving={arriving || undefined}
       role="dialog"
       aria-modal="true"
       aria-label={label}

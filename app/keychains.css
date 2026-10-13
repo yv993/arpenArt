@@ -53,12 +53,12 @@
   margin: 0 auto clamp(48px, 7vh, 84px);
   text-align: center;
 }
-.ap-kc .ap-kicker {
-  color: var(--kc-on-dark-soft);
-}
+/* no `.ap-kc .ap-kicker` rule any more: the «(On your keys)» line left the
+   head on 2026-10-12 (client, change 4.pdf p7), and the 6px that parted the
+   title from it goes with it — the title opens the head. */
 .ap-kc__title {
   color: var(--kc-on-dark);
-  margin: 6px 0 18px;
+  margin: 0 0 18px;
 }
 .ap-kc .ap-lede {
   color: var(--kc-on-dark-soft);

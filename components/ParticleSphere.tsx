@@ -32,7 +32,22 @@ const ROTATION_SPEED_Y = 0.0005;
  *  size grows as the count falls so the ball keeps roughly the same share
  *  of its surface under pictures — sixteen cards at 4.4 cover ~30%, sixty
  *  at 2.6 covered ~40% — capped where the crown would leave the frame
- *  (CAMERA_Z below is measured for 4.4). */
+ *  (CAMERA_Z below is measured for 4.4). Her twenty-six (2026-10-12, change
+ *  4.pdf p2: «so it is not so sparse») land at 3.95 — the same ~40% of the
+ *  surface the sixty covered, which is the formula doing its job.
+ *  MEASURED, NOT ASSUMED (review, 2026-10-12): the lattice's nearest
+ *  neighbours sit 5.45 units apart (6.74 for the 17 at 4.4), so no two
+ *  boxes meet in 3D — but ON SCREEN they stack, as they always did.
+ *  Sweeping yaw and pitch at the 1440 canvas, 1.7 front-hemisphere box
+ *  pairs overlap per frame with the 17 and 4.3 with the 26 — one pair in
+ *  ~78 either way, the rate per pair is unchanged and there are 2.4× the
+ *  pairs — and 3.4% → 6.3% of the front cards' projected area lies under
+ *  another card (verify/globe-review/lattice.cjs, verify/globe-fix/
+ *  lattice-area.cjs). Kept at 3.95 on purpose: she asked for density; 3.6
+ *  would bring the pairs only to 3.4 while cutting every card 18% below
+ *  today's, and the sphere reads in the captures. The crown stays round:
+ *  the worst corner of a full lattice projects at 83.3% of the half-height
+ *  against 84.3% today. */
 const imageSize = (n: number) => Math.min(4.4, Math.max(2.6, 2.6 * Math.sqrt(60 / Math.max(1, n))));
 
 /** How far the sphere may be tipped, in radians. Past about this the lattice
@@ -60,6 +75,34 @@ function fibonacciSphere(n: number, radius: number) {
     pts.push(new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r).multiplyScalar(radius));
   }
   return pts;
+}
+
+/** THE SLOTS ARE DEALT, NOT FILLED IN ORDER (review of change 4.pdf p2,
+ *  2026-10-12). The lattice runs from the north pole (slot 0) to the south
+ *  (slot n−1), and `images` is her folder order with each new batch
+ *  appended — so the nine she sent on 2026-10-12 all landed on the southern
+ *  cap (−20°…−74°, the white T-shirt at the very bottom, never on screen
+ *  at rest: in 100 presses it was not hit once) while her 09-21 set held
+ *  the north. Each card takes the slot whose rank is its van der Corput
+ *  number instead: every prefix of that sequence is spread evenly over
+ *  [0, 1), so the first set stays pole to pole and anything appended falls
+ *  between — the nine now sit from +47° to −62° — and the projected
+ *  overlaps are unchanged (4.33 against 4.31 front pairs per frame,
+ *  verify/globe-fix/lattice-area.cjs). No count is special-cased: the next
+ *  batch spreads the same way. Positions only — the card's index, its
+ *  texture and the panel it opens are untouched. */
+function dealtSlots(n: number): number[] {
+  const vdc = (i: number) => {
+    let v = 0;
+    for (let d = 0.5; i > 0; i >>= 1, d /= 2) if (i & 1) v += d;
+    return v;
+  };
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => vdc(a) - vdc(b));
+  const slot = new Array<number>(n);
+  order.forEach((card, rank) => {
+    slot[card] = rank;
+  });
+  return slot;
 }
 
 function Particles() {
@@ -267,7 +310,9 @@ function Artworks({
 
   const placed = useMemo(() => {
     const pts = fibonacciSphere(images.length, SPHERE_RADIUS);
-    return pts.map((p) => {
+    // card i stands at lattice slot slots[i] — see dealtSlots
+    return dealtSlots(images.length).map((s) => {
+      const p = pts[s];
       // turn each plane to face directly away from the centre
       const m = new THREE.Matrix4();
       m.lookAt(p, p.clone().multiplyScalar(2), new THREE.Vector3(0, 1, 0));

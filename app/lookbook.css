@@ -14,7 +14,14 @@
    ========================================================================== */
 
 .ap-lb {
-  margin-top: clamp(64px, 9vw, 128px);
+  /* TIGHTER ABOVE THE TITLE (client, change 4.pdf p11, 2026-10-12: «տակի
+     մնացածը վերև բերենք քիչ, շատ ա տարածքը» — bring the rest below up a bit,
+     the space is a lot). This was clamp(64px, 9vw, 128px): with the totes'
+     foot padding under it the «(Carried)» kicker opened 200px below the last
+     ordering step at 1440×900, and the kicker itself went on the same note.
+     Measured after: 121px from the steps to the title at 1440×900, 95px at
+     390×844 — one section's air, not a band. */
+  margin-top: clamp(28px, 3.4vw, 50px);
 }
 .ap-lb__head {
   max-width: 62ch;

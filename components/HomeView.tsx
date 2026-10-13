@@ -392,10 +392,12 @@ export default function HomeView() {
 
       {/* ═══ GALLERY ═══════════════════════════════════════════════════════ */}
       <section className="ap-sec ap-sec--gal ap-dark" id="gallery">
-        <div className="ap-sec__head">
-          <p className="ap-kicker" data-rise>
-            {home.gallery.kicker}
-          </p>
+        {/* ONE BAND, TWO COLUMNS (client, change 4.pdf p2, 2026-10-12): the
+            «(Gallery)» kicker is gone («հանենք սա») and her paragraph sits
+            BESIDE the title («տեքստը բերենք կողք ու շատ ազատ տարածք չմնա»)
+            so the globe can come up under a compact head — .ap-gal__head in
+            globals.css, the totes' and scarves' head pattern. */}
+        <div className="ap-sec__head ap-gal__head">
           {/* RISE, NOT FLIP (Vardan 2026-09-15, screenshot of this title:
               «when I go to this section the word is messed and after a
               second becomes correct»). Frames captured at 150/350/600 ms

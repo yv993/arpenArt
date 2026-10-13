@@ -27,9 +27,12 @@ const warmGlobe = () => import("./GlobeCanvas");
 // every piece for sale (client 2026-08-06) — sixty cards, and she found it
 // crowded. It holds HER OWN SET now (client, change.pdf p3, 2026-09-21: «the
 // pictures are far too many — put only the pictures of this folder, remove
-// the rest»): sixteen cut-outs, one line each, in the order of her folder.
+// the rest»): sixteen cut-outs, one line each, in the order of her folder —
+// and NINE MORE since 2026-10-12 (client, change 4.pdf p2: «add a few more
+// pictures to the globe so it is not so sparse»), twenty-six in all.
 // `globe` in content.ts says which line each one shows; lib/globe.json holds
-// the files and their measured sizes.
+// the files and their measured sizes. Nothing here counts them: the grid,
+// the sphere's card size and its lattice all follow the array's length.
 type Shot = { id: string; src: string; w: number; h: number; avg: string };
 type Card = Shot & {
   name: string;

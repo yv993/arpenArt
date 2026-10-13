@@ -1,75 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 // ============================================================================
-// SIGN IN / CREATE ACCOUNT — the split-screen pattern from the supplied
-// component, rebuilt on this project's own stack.
+// SIGN IN / CREATE ACCOUNT — one centred column of text and two fields.
 //
-// WHAT WAS PORTED: the anatomy. Form column beside a full-bleed picture, one
-// panel swapping to the other in place, the toggle line under the button, a
-// divider, and the typewriter quote standing at the foot of the picture.
+// IT WAS A SPLIT SCREEN until 2026-10-12: the form beside a full-bleed column
+// with her films (Dream 17 / Dream 21, 2026-09-15) and a typewritten quote at
+// their foot. The client took that column away (change 4.pdf p17: «արի հանենք
+// սա / սա էլ բերենք կենտրոն, թող մենակ տեքստերը լինի էս էջում» — let's remove
+// this, bring this to the centre, let only the texts be on this page). So the
+// films, their posters, the quotes and the typewriter are gone with it; what
+// is left is the form column, centred on the page (app/auth.css). The two
+// films are kept under imgss/redesign-2026-10-12/verify/pages/old/auth/.
 //
-// WHAT WAS NOT, and why — the supplied file imports Radix, class-variance-
-// authority, clsx, tailwind-merge and lucide, and is written in Tailwind
-// classes. This site has nine runtime dependencies, no UI kit and no
-// Tailwind; the whole interface is hand-written CSS on a palette measured
-// from Arpine's paintings. Five packages plus a CSS framework for one page
-// would cost more than the page is worth, so the design is reproduced in
-// app/auth.css instead. The typewriter is ~20 lines below.
-//
-// THE PASSWORD FIELD AND THE GOOGLE BUTTON ARE GONE, and that is the honest
-// part rather than a shortcut. This shop has no database: nowhere to store a
-// password hash, no user table to look one up in, and no OAuth client. A
-// password box that accepts a password and drops it, or a Google button that
-// logs to the console, is a working-looking control that cannot work. The
-// mechanism here is a signed magic link, which needs no storage at all — see
-// lib/server/auth.ts.
+// THE PASSWORD FIELD AND THE GOOGLE BUTTON ARE NOT HERE, and that is the
+// honest part rather than a shortcut. This shop has no database: nowhere to
+// store a password hash, no user table to look one up in, and no OAuth
+// client. A password box that accepts a password and drops it, or a Google
+// button that logs to the console, is a working-looking control that cannot
+// work. The mechanism here is a signed magic link, which needs no storage at
+// all — see lib/server/auth.ts.
 // ============================================================================
-
-/** The supplied component's Typewriter, minus the dependency: same props
- *  that mattered (text, speed), same trailing cursor. Reduced motion gets
- *  the finished line immediately — an unstoppable animated sentence is
- *  exactly what that preference is about. */
-function Typewriter({ text, speed = 46 }: { text: string; speed?: number }) {
-  const [n, setN] = useState(0);
-  const still = useRef(false);
-
-  useEffect(() => {
-    still.current =
-      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (still.current) {
-      setN(text.length);
-      return;
-    }
-    setN(0);
-    let i = 0;
-    const id = window.setInterval(() => {
-      i += 1;
-      setN(i);
-      if (i >= text.length) window.clearInterval(id);
-    }, speed);
-    return () => window.clearInterval(id);
-  }, [text, speed]);
-
-  return (
-    <>
-      {text.slice(0, n)}
-      {!still.current && n < text.length && <span className="ap-auth__caret" aria-hidden="true" />}
-    </>
-  );
-}
 
 type Panel = "in" | "up";
 
-const COPY: Record<Panel, { title: string; sub: string; cta: string; swap: string; swapCta: string; quote: string }> = {
+const COPY: Record<Panel, { title: string; sub: string; cta: string; swap: string; swapCta: string }> = {
   in: {
     title: "Sign in",
     sub: "Enter your email and we will send you a link. No password to remember.",
     cta: "Email me a link",
     swap: "First time here?",
     swapCta: "Create an account",
-    quote: "Welcome back. The pictures have been waiting.",
   },
   up: {
     title: "Create an account",
@@ -77,45 +39,11 @@ const COPY: Record<Panel, { title: string; sub: string; cta: string; swap: strin
     cta: "Create my account",
     swap: "Already have an account?",
     swapCta: "Sign in",
-    quote: "A new chapter, drawn by hand.",
   },
-};
-
-/** THE PANEL'S FILMS (client, change.pdf p16, 2026-09-15: «the right panel
- *  becomes a moving animation» — Vardan sent two the same evening, «one for
- *  sign up, one for sign in», in that order: Dream 17 → creating an account,
- *  Dream 21 → signing in). Her 4K portrait renders, transcoded to H.264 with
- *  the audio track dropped — sign-up 810×1440 at crf 27 (1.6 MB for 23 s),
- *  sign-in 720×1280 at crf 30 (2.4 MB for 15 s: its rain is noise, and noise
- *  does not compress; at 810/27 it was 5 MB). The poster is each film's own
- *  frame at 1.5 s. Originals: imgss/redesign-2026-09-15/video/auth/. */
-const FILM: Record<Panel, { src: string; poster: string }> = {
-  in: { src: "/auth/signin.mp4", poster: "/auth/signin.webp" },
-  up: { src: "/auth/signup.mp4", poster: "/auth/signup.webp" },
 };
 
 export default function AuthUI({ ready, notice }: { ready: boolean; notice?: string }) {
   const [panel, setPanel] = useState<Panel>("in");
-  /** a looping film IS motion: under reduced motion the poster stands alone */
-  const [motionOff, setMotionOff] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const read = () => setMotionOff(m.matches);
-    read();
-    m.addEventListener("change", read);
-    return () => m.removeEventListener("change", read);
-  }, []);
-  /** React renders no `muted` ATTRIBUTE into the server HTML (it sets the
-   *  property on hydration), and Chrome decides autoplay from the markup it
-   *  parsed — so the first, server-rendered film could be refused as an
-   *  unmuted autoplay and never start. The ref mutes it and asks again the
-   *  moment the element exists; the catch is for policies that still say no,
-   *  where the poster simply stands. */
-  const armFilm = (v: HTMLVideoElement | null) => {
-    if (!v) return;
-    v.muted = true;
-    v.play().catch(() => {});
-  };
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<{ delivered: boolean } | null>(null);
   const [error, setError] = useState("");
@@ -255,50 +183,6 @@ export default function AuthUI({ ready, notice }: { ready: boolean; notice?: str
             </>
           )}
         </div>
-      </div>
-
-      {/* THE PICTURE MOVES. Her own films, not a stock interior: the supplied
-          design used a furniture photograph because it was a generic
-          template, and the whole point of this shop is that the artwork is
-          the product. Keyed by panel, so switching between signing in and
-          creating an account mounts a FRESH <video> with autoPlay on it —
-          an autoplay attribute flipped on an element that is already
-          mounted starts nothing (the trap Selector.tsx documents). */}
-      <div className="ap-auth__art" data-panel={panel}>
-        <figure>
-          {motionOff ? (
-            <img src={FILM[panel].poster} alt="" aria-hidden="true" decoding="async" />
-          ) : (
-            // THE FILM ONLY WHERE ITS COLUMN EXISTS (2026-10-05 package). The
-            // picture column is display:none below 861px (auth.css), but the
-            // <video src> still loaded and played: /account at 390x844
-            // downloaded all of signin.mp4 (2.39 MB) into a 0px box, and the
-            // create-account view added signup.mp4 (1.53 MB). A media-gated
-            // <source> — the trick the hero's video uses — resolves before a
-            // byte moves: a phone matches no source (NETWORK_NO_SOURCE), the
-            // desktop matches this one and plays exactly as before.
-            <video
-              key={panel}
-              ref={armFilm}
-              poster={FILM[panel].poster}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-hidden="true"
-            >
-              <source src={FILM[panel].src} type="video/mp4" media="(min-width: 861px)" />
-            </video>
-          )}
-        </figure>
-        <blockquote className="ap-auth__quote">
-          <p>
-            “<Typewriter key={copy.quote} text={copy.quote} />”
-          </p>
-          {/* the "— Arpine Baroyan" cite is gone (client, change.pdf p16,
-              2026-09-15: «delete my name») — the line stands unsigned */}
-        </blockquote>
       </div>
     </div>
   );

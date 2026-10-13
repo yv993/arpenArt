@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { indexable, origin } from "@/lib/site";
 import Chrome from "@/components/Chrome";
 import Link from "next/link";
-import CategoryView, { CategorySpec, OrderingSteps } from "@/components/CategoryView";
+import CategoryView, { OrderingSteps } from "@/components/CategoryView";
 // One route serves eight product pages, so GSAP + ScrollTrigger ride along on
 // all of them even though only the photographed ones render a lookbook —
 // /shop/[slug] went from 110 kB to 159 kB First Load. next/dynamic was tried
@@ -189,8 +189,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           its 57-illustration picker were all asking a question that no longer
           has an answer here. The folders are the product; the buying moved
           into them. What is deliberately KEPT is the scaffolding that is not
-          about choosing: the breadcrumb, the heading, the price floor, how
-          ordering works, and the spec rows that carry the returns wording. */}
+          about choosing: the breadcrumb, the heading, the price floor and how
+          ordering works. (The spec rows that used to follow the steps left
+          every shop page on 2026-10-12 — see the foot below.) */}
       {cat.slug === "stickers" ? (
         <>
           <div className="ap-cv">
@@ -210,9 +211,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <StickerFolders shots={P.stickers ?? []} slug={cat.slug} price={cat.from} heading="h1" />
 
           <div className="ap-cv">
+            {/* HOW ORDERING WORKS, ALONE (2026-10-12). The MADE BY … PRICES
+                panel (CategorySpec) stood under these steps on every bespoke
+                line, and under the buy button on the postcards, until the
+                client circled it on each page — change 4.pdf p3–p11, «սա էլ
+                հանենք». Nothing holds its place: the steps sit where they
+                sat and the page ends after them. Same on the five feet
+                below. */}
             <div className="ap-sheets__foot">
               <OrderingSteps />
-              <CategorySpec cat={cat} />
             </div>
           </div>
         </>
@@ -234,14 +241,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="ap-cv">
             <div className="ap-sheets__foot">
               <OrderingSteps />
-              <CategorySpec cat={cat} />
             </div>
           </div>
         </>
       ) : cat.slug === "magnets" ? (
-        /* The fourth bespoke line: thirty-five fixed magnets, staged on the
-           client's own fridge render, every one opening big in the shared
-           lightbox. Same scaffolding as the sheets, the lane and the wall. */
+        /* The fourth bespoke line: thirty-five fixed magnets in one arranged
+           grid, every one opening big in the shared lightbox. The fridge
+           render that staged them above the grid is gone (client, change
+           4.pdf p8–p9, 2026-10-12 — MagnetFridge.tsx says what left with it).
+           Same scaffolding as the sheets, the lane and the wall. */
         <>
           <div className="ap-cv">
             <nav className="ap-crumb" aria-label="Breadcrumb">
@@ -256,7 +264,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="ap-cv">
             <div className="ap-sheets__foot">
               <OrderingSteps />
-              <CategorySpec cat={cat} />
             </div>
           </div>
         </>
@@ -264,9 +271,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         /* THREE FIXED DESIGNS since the client's 2026-09-15 drop (change.pdf
            p10): the print, its photographs and her words per design, each with
            its own buy button. Same scaffolding as the sheets and the wall —
-           breadcrumb, the section carrying the h1, then how ordering works
-           and the spec rows. The generic view's roll and 57-picker asked a
-           question this line no longer has. */
+           breadcrumb, the section carrying the h1, then how ordering works.
+           The generic view's roll and 57-picker asked a question this line
+           no longer has. */
         <>
           {/* the crumb rides on the section's own clearance, as on /shop/totes
               — `.ap-sd__top` in shop.css for why */}
@@ -283,7 +290,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="ap-cv">
             <div className="ap-sheets__foot">
               <OrderingSteps />
-              <CategorySpec cat={cat} />
             </div>
           </div>
         </>
@@ -292,7 +298,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
            objects, each a finished thing, so there is nothing for the 57-
            illustration picker to ask. Same scaffolding as the sheets and the
            lane — breadcrumb, then the wall carrying the h1, then how ordering
-           works and the spec rows. */
+           works. */
         <>
           <div className="ap-cv">
             <nav className="ap-crumb" aria-label="Breadcrumb">
@@ -307,7 +313,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="ap-cv">
             <div className="ap-sheets__foot">
               <OrderingSteps />
-              <CategorySpec cat={cat} />
             </div>
           </div>
         </>
@@ -322,10 +327,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
            and the scarves did before it: each card opens that bag's window,
            and the window is where it is bought (p4).
            KEPT, because none of it was about choosing an illustration: the
-           breadcrumb, how ordering works, and the spec rows that carry the
-           material, the made-to-order and the returns wording. The crumb and
-           the foot use the gallery's own wrappers rather than `.ap-cv` — see
-           `.ap-tg__top` in shop.css for why. */
+           breadcrumb and how ordering works (the spec rows that stood beside
+           the steps went with every other page's on 2026-10-12 — change
+           4.pdf p10). The crumb and the foot use the gallery's own wrappers
+           rather than `.ap-cv` — see `.ap-tg__top` in shop.css for why. */
         <>
           <div className="ap-tg__top">
             <nav className="ap-crumb" aria-label="Breadcrumb">
@@ -344,7 +349,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
           <div className="ap-tg__foot">
             <OrderingSteps />
-            <CategorySpec cat={cat} />
           </div>
         </>
       ) : (
@@ -353,7 +357,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {book && shots.length >= 7 && (
         <Lookbook
           shots={shots}
-          kicker={book.kicker}
           title={book.title}
           copy={book.copy}
           caption={book.caption}

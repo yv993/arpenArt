@@ -443,8 +443,9 @@
 }
 
 /* ==========================================================================
-   THE CART'S PLATE (components/CartPlate.tsx) — Botticelli's Primavera behind
-   the cart, with coins crossing from one of Venus's hands to the other.
+   THE CART'S PLATE (components/CartPlate.tsx) — her own painting behind the
+   cart (client, change 4.pdf p18, 2026-10-12; Botticelli's Primavera stood
+   here until then), with coins crossing from her raised hand to the lowered.
 
    EVERYTHING HERE IS GATED ON [data-plate], which only the component's effect
    sets, and which it only sets on desktop with motion allowed. A phone, a
@@ -482,16 +483,23 @@
 .ap-plate[data-on] {
   visibility: visible;
 }
+/* THE FAR PLATE LIVES IN PLATE SPACE TOO (2026-10-13). It used to cover the
+   window by itself (`object-fit: cover`, enlarged ×1.38 by its camera); it is
+   now her whole painting laid in the same 1600×1000 box as the figure, under
+   the same transform, so the two are one picture at rest — the component
+   gives it its left, top and width (FAR in CartPlate.tsx). `max-width: none`
+   because the picture is WIDER than the box on purpose (her painting runs on
+   past the plate window on both sides) and the reset's `img { max-width:
+   100% }` would squeeze it back to 1600. */
 .ap-plate__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 50%;
+  position: absolute;
+  max-width: none;
+  height: auto;
 }
 
 /* IN FRONT OF THE TITLE, behind the line items. See the layer table in
    CartPlate.tsx — this is the layer that makes the giant word pass behind
-   Venus, which is the whole look of the reference. */
+   her figure, which is the whole look of the reference. */
 .ap-plate__front {
   position: fixed;
   inset: 0;
@@ -503,9 +511,10 @@
 .ap-plate[data-on] ~ .ap-plate__front {
   visibility: visible;
 }
-/* PLATE SPACE: a 1600x1000 box the effect lays exactly over the drawn
-   painting. Everything inside is written in the painting's own pixels, so a
-   coin at (620,380) is on Venus's raised hand at every window size. */
+/* PLATE SPACE: a 1600x1000 box the effect lays over the window, once in each
+   layer. Everything inside is written in the painting's own pixels, so a
+   coin at (602,452) is in her raised hand at every window size (HAND_A in
+   CartPlate.tsx; Venus's was (620,380) until change 4.pdf p18). */
 .ap-plate__space {
   position: absolute;
   left: 0;
@@ -587,8 +596,8 @@
 
 /* ---- the cart, once the plate is behind it ------------------------------- */
 /* NO z-index HERE, deliberately. A stacking context on .ap-cart would trap its
-   children beneath .ap-plate__front (z 2) and Venus would be painted over the
-   line items. The two children are numbered individually instead: the head at
+   children beneath .ap-plate__front (z 2) and her figure would be painted over
+   the line items. The two children are numbered individually instead: the head at
    1 so the cut-out figure covers it, the grid at 3 so nothing covers that. */
 .ap-cart[data-plate] {
   position: relative;
@@ -617,7 +626,9 @@
   /* SIZED SO THE LAST LETTER CLEARS HER (client 2026-08-11). At 9.4vw the word
      ran to x=762 while the cut-out figure starts at x=510, so the N of
      SELECTION was behind her mantle — the layering trick was eating the word
-     rather than framing it. 5.2vw ends the line at ~499, just clear. */
+     rather than framing it. 5.2vw ends the line at ~499, just clear. Her own
+     cut-out (2026-10-12) was cropped so its fingertips begin at plate x≈568
+     — screen 511 at 1440 — so the same size still clears her. */
   font-size: clamp(2.4rem, 5.2vw, 5.4rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
@@ -1063,29 +1074,11 @@
   color: var(--ink-muted);
   min-height: 1.2em;
 }
-.ap-cv__spec {
-  display: grid;
-  gap: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-  padding-top: 16px;
-  margin-top: 6px;
-  font-size: 0.92em;
-}
-.ap-cv__spec div {
-  display: grid;
-  grid-template-columns: 7.5rem 1fr;
-  gap: 10px;
-}
-.ap-cv__spec dt {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  padding-top: 2px;
-}
-.ap-cv__spec dd {
-  margin: 0;
-}
+/* THE SPEC ROWS ARE GONE (client, change 4.pdf p3–p11, 2026-10-12): the
+   MADE BY / ARTWORK / … / PRICES <dl> under the buy button and under every
+   bespoke line's ordering steps was circled on each shop page — «սա էլ
+   հանենք». `.ap-cv__spec` and CategorySpec left with it; the steps above it
+   stand where they stood, nothing holds the panel's place. */
 
 .ap-cart__grid {
   display: grid;
@@ -2560,15 +2553,9 @@
   border-radius: 5px;
   animation: ap-xg-pop 0.3s var(--ease) 1;
 }
-/* A TRAVELLER IS STILL ON ITS WAY HERE. The dialog lays out and its chrome
-   fades in, but the picture is held back — the thing flying in from the page
-   lands on exactly these pixels and becomes them, so the two must never both
-   be visible. The pop is suppressed as well: it would fight the arrival's own
-   easing at the very moment they swap. */
-.ap-xg__lb[data-arriving] .ap-xg__stage img {
-  opacity: 0;
-  animation: none;
-}
+/* `.ap-xg__lb[data-arriving]` — which held this picture invisible while a
+   fridge magnet flew in to land on it — left on 2026-10-12 with the fridge
+   scene (client, change 4.pdf p8–p9); nothing sets the attribute any more. */
 @keyframes ap-xg-pop {
   from {
     opacity: 0;
@@ -3220,14 +3207,14 @@ html[data-footfx] .ap-foot {
   display: block;
 }
 
-/* ---- the sheets page: heading, buy rows, and the trust block ------------
+/* ---- the sheets page: heading, buy rows, and the ordering steps ---------
    /shop/stickers stopped using .ap-cv__grid on 2026-08-19 — it sells six
    fixed sheets now, not one object with a chosen illustration — so the
-   heading and the ordering/spec block stand on their own here instead of
-   riding in the buy panel's column. */
-/* the same measure the buy panel keeps, so the ordering steps and the spec
-   rows read at the width they were designed for rather than stretching the
-   full page */
+   heading and the ordering block stand on their own here instead of riding
+   in the buy panel's column. The spec rows that shared this foot with the
+   steps left on 2026-10-12 (change 4.pdf p3–p11); the foot is the steps. */
+/* the same measure the buy panel keeps, so the ordering steps read at the
+   width they were designed for rather than stretching the full page */
 /* .ap-cv itself carries NO horizontal padding — the gutter lives on
    .ap-cv__grid, which this page does not use — so these blocks bring their
    own or they sit flush against the window edge. */
@@ -3665,7 +3652,11 @@ html[data-footfx] .ap-foot {
 /* THE HEAD IS TWO COLUMNS (client, change 3.pdf p6, 2026-10-01: «2 տողով
    սարքել էս տեքստը» on the title, «էս էլ բերել կողքը» on the paragraph). The
    title keeps its own width — two lines that do not wrap — and the copy takes
-   what is left, set against the right edge. The kicker spans both.
+   what is left, set against the right edge. THE KICKER ROW ABOVE THEM IS
+   GONE (client, change 4.pdf p10, 2026-10-12: «(TOTE BAGS)» circled, «սա
+   հանենք»): the head is this one row now, straight under the breadcrumb's
+   own margin, and the rule that spanned the kicker across both columns went
+   with it.
 
    WHO SITS WHERE, VERTICALLY: the title is pinned to the TOP of its row and
    the copy to the FOOT, each on its own (align-self) — never the row as a
@@ -3685,10 +3676,6 @@ html[data-footfx] .ap-foot {
   row-gap: 14px;
   align-items: start;
   margin-bottom: clamp(26px, 4vh, 48px);
-}
-.ap-tg__head .ap-kicker {
-  grid-column: 1 / -1;
-  margin: 0;
 }
 .ap-tg__title {
   margin: 0;
@@ -4058,31 +4045,24 @@ html[data-footfx] .ap-foot {
   }
 }
 
-/* ---- under the gallery: how ordering works + the spec rows ---------------
+/* ---- under the gallery: how ordering works -------------------------------
    What is left of the buy panel that came off this page (change 3.pdf p5,
-   2026-10-01): not the picker, not the big picture — the two blocks that are
-   about ORDERING, which is as true of four bags as it was of fifty-seven
-   prints. In the panel they were stacked in a narrow column beside the
-   picture; on their own under a full-width row they sit side by side, each
-   under the same hairline, and stack again on a phone. */
+   2026-10-01): the one block that is about ORDERING, which is as true of
+   four bags as it was of fifty-seven prints. It shared this foot with the
+   spec rows, two columns under one hairline, until 2026-10-12, when the
+   client circled that panel on every shop page (change 4.pdf p10: «սա էլ
+   հանենք»). One block does not want a two-column grid — the steps would
+   have sat in a half-empty 1180px row — so the foot takes the siblings'
+   measure instead: the 62ch the sheets', the wall's and the scarves' feet
+   keep, under the same hairline, with the padding it had. */
 .ap-tg__foot {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-  gap: clamp(28px, 5vw, 84px);
-  align-items: start;
-  max-width: 1180px;
+  max-width: 62ch;
   padding: clamp(34px, 6vh, 70px) var(--gutter) clamp(48px, 8vh, 96px);
 }
-.ap-tg__foot .ap-how,
-.ap-tg__foot .ap-cv__spec {
+.ap-tg__foot .ap-how {
   margin-top: 0;
   padding-top: 16px;
   border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-}
-@media (max-width: 860px) {
-  .ap-tg__foot {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* ---- the bag's window (components/ToteGallery.tsx) -----------------------
@@ -4655,15 +4635,17 @@ html[data-footfx] .ap-foot {
    themselves go to one column — the head is the plain stack again.
 
    WHO SITS WHERE, VERTICALLY — the totes head's model (`.ap-tg__head`): the
-   kicker on a row of its own across both columns, then the title pinned to
-   the TOP of the second row and her paragraph to its FOOT, each on its own
-   (align-self), never the row as a whole. The first cut had the paragraph
-   spanning both rows and sent the spare height ABOVE the kicker, so wherever
-   the paragraph outgrew the title (four lines against two at 861px) the
-   kicker and the title dropped away from the breadcrumb together — the same
-   hole the totes had already closed. Pinned apart, a taller paragraph leaves
-   the title under its kicker and runs on beside it; a shorter one keeps its
-   foot on the title's foot. */
+   title pinned to the TOP of the row and her paragraph to its FOOT, each on
+   its own (align-self), never the row as a whole. The first cut had the
+   paragraph spanning two rows and sent the spare height ABOVE the kicker that
+   then opened the head, so wherever the paragraph outgrew the title (four
+   lines against two at 861px) the kicker and the title dropped away from the
+   breadcrumb together — the same hole the totes had already closed. Pinned
+   apart, a taller paragraph leaves the title at the top and runs on beside
+   it; a shorter one keeps its foot on the title's foot.
+   THE KICKER ROW IS GONE (client, change 4.pdf p3, 2026-10-12: «(ON SILK)»
+   circled, «հանենք սա»): the head is the one row, title and paragraph, and
+   the rule that spanned the kicker across both columns went with it. */
 .ap-sd .ap-sec__head,
 .ap-sd__bar {
   display: grid;
@@ -4676,9 +4658,6 @@ html[data-footfx] .ap-foot {
   row-gap: 14px;
   align-items: start;
   margin-bottom: 0;
-}
-.ap-sd .ap-sec__head .ap-kicker {
-  grid-column: 1 / -1;
 }
 /* her paragraph's foot on the title's foot — no optical nudge needed: where
    the paragraph is the shorter side (1440 and 1920px) the two last baselines

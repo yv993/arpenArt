@@ -45,14 +45,12 @@ const TILES = [
 
 export default function Lookbook({
   shots,
-  kicker,
   title,
   copy,
   caption,
   alt,
 }: {
   shots: Shot[];
-  kicker: string;
   title: string;
   copy: string;
   /** one short line, shown over the dark ground midway through the zoom */
@@ -122,7 +120,9 @@ export default function Lookbook({
   return (
     <div className="ap-lb" ref={root}>
       <div className="ap-lb__head">
-        <p className="ap-kicker">{kicker}</p>
+        {/* no kicker since 2026-10-12 (client, change 4.pdf p11: «(CARRIED)»
+            circled, «հանենք սա») — the title opens the head; the space above
+            it is lookbook.css's `.ap-lb` margin, tightened on the same note */}
         <h2 className="ap-h2">{title}</h2>
         <p className="ap-lede">{copy}</p>
       </div>

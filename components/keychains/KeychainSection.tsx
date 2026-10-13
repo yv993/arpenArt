@@ -69,9 +69,13 @@ export default function KeychainSection({
   const sliding = useRef(false);
 
   useEffect(() => {
-    // no `(scripting: enabled)` here — inside an effect it is a tautology, and
-    // on browsers without the `scripting` media feature the unknown query is
-    // `not all` and would kill the live layer. See MagnetFridge.tsx.
+    // no `(scripting: enabled)` here — inside a running effect it is a
+    // tautology, and on browsers that predate the `scripting` media feature
+    // (Safari <17, Chrome <120) the unknown query parses to `not all` and
+    // would switch the live layer off for exactly the users it was meant to
+    // serve. The feature's real home is CSS, where a no-JS visitor needs the
+    // fallback. (This note lived in MagnetFridge.tsx until its own gate left
+    // with the fridge on 2026-10-12.)
     if (typeof window === "undefined") return;
     if (!window.matchMedia(GATE).matches) return;
     setLive(true);
@@ -168,7 +172,8 @@ export default function KeychainSection({
       <div className="ap-kc__room" aria-hidden />
 
       <div className="ap-kc__head">
-        <p className="ap-kicker">{wall.kicker}</p>
+        {/* no kicker since 2026-10-12 (client, change 4.pdf p7: «(ON YOUR
+            KEYS)» circled, «հանենք սա») — the title opens the head */}
         <H className="ap-h2 ap-kc__title" id="ap-kc-title" data-tfx="rise">
           {wall.title}
         </H>

@@ -18,6 +18,7 @@ whatever it finds):
 | `tic-dilijan.*`          | TIC — Dilijan Tourist Information Center         |
 | `nrani.*`                | Nrani — Dilijan                                  |
 | `crafts-of-armenia.*`    | Crafts of Armenia — Garni                        |
+| `apricot.*`              | APRICOT gift store — Buzand st., Yerevan (added 2026-10-12, change 4.pdf p13) |
 
 Then run:
 

@@ -71,14 +71,15 @@ Lenis, the text effects — lives behind one shared gate:
 honest static page: phones, no-JS visitors, crawlers, screen readers and anyone preferring
 reduced motion get that page as-is, not a broken half of the animated one.
 
-**The 3D relief map** (`components/ArmeniaMap.tsx`). Armenia in real relief: the outline (with
-enclave holes and the exclave) comes from geoBoundaries, elevation from SRTM via AWS terrain
-tiles baked into `public/map/height.png`, and the surface from Landsat imagery baked into
-`public/map/relief.webp` — the lake, forests and bare volcanic west are photographed, not
-drawn. All three rasters were reprojected at bake time onto one equirectangular grid over the
-same bbox the vector border uses (pasted unprojected, Lake Sevan would slide kilometres against
-the border). Nothing is fetched at runtime; the production CSP in `next.config.mjs` is
-self-only apart from the one street-map tile host.
+**The 3D relief map** (`components/ArmeniaMap.tsx`). Armenia in real relief, wearing Arpine's
+own painted map since 2026-10-12: elevation is SRTM via AWS terrain tiles baked into
+`public/map/height.png`; the surface (`public/map/relief.webp`) and the country's cut
+(`public/map/mask.png`) are her painting, fitted to the real border by a six-parameter affine
+(`scratchpad/assets-1012-map.cjs` — median edge error about 1.9 km, 9.4 km at the southern tip,
+where her outline is shorter than the real one; she painted neither the enclaves nor the
+exclave). The town pins are placed from their true coordinates on the same equirectangular
+grid, so they land on her provinces. Nothing is fetched at runtime; the production CSP in
+`next.config.mjs` is self-only apart from the one street-map tile host.
 
 **Live product mockups** (`components/CardPrint.tsx`, `components/MugPrint.tsx`). The chosen
 illustration is printed *into* the product photographs in the browser. Cards: each card's four
@@ -98,12 +99,12 @@ sentence moves to `aria-label` so a screen reader never hears the alphabet soup.
 
 ## Data provenance
 
-- **Armenia outline** — [geoBoundaries](https://www.geoboundaries.org/) gbOpen ARM ADM0
-  (simplified), enclaves and exclave preserved.
+- **Map painting and outline** — Arpine Baroyan's own painted map of Armenia, baked into
+  `public/map/relief.webp` and `public/map/mask.png`.
+- **Map frame** — [geoBoundaries](https://www.geoboundaries.org/) gbOpen ARM ADM0, used for the
+  bounding box the painting and the pins share.
 - **Elevation** — SRTM (NASA/USGS, public domain) via AWS terrain tiles, baked into
   `public/map/height.png`.
-- **Surface imagery** — Landsat WELD (NASA GIBS, public domain), baked into
-  `public/map/relief.webp`.
 - **Street map tiles** — [OpenFreeMap](https://openfreemap.org/), the site's only third party,
   loaded only if the visitor opens the map on `/find-in-store`. Chosen deliberately over the
   usual defaults: CARTO's basemaps require an Enterprise licence for commercial use, and OSM's

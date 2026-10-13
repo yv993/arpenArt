@@ -255,7 +255,8 @@ export default function StickerFolders({
       aria-label={`${stickerSheets.title} — sticker sheets`}
     >
       <div className="ap-sec__head">
-        <p className="ap-kicker">{stickerSheets.kicker}</p>
+        {/* no kicker since 2026-10-12 (client, change 4.pdf p5: «(THE
+            SHEETS)» circled, «հանենք սա») — the title opens the head */}
         {heading === "h1" ? (
           <h1 className="ap-h2" data-tfx="rise">
             {stickerSheets.title}

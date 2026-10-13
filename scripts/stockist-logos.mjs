@@ -26,6 +26,11 @@ const WANTED = [
   "tic-dilijan",
   "nrani",
   "crafts-of-armenia",
+  // APRICOT gift store, 7/10 Buzand st., Yerevan (client, change 4.pdf p13,
+  // 2026-10-12). Her file is a 1080² JPG: cream mark on a TERRACOTTA field,
+  // so the corner test below reads a colour, not packaging, and the tile is
+  // kept whole — the same rule that keeps Made by Armenia's orange tile.
+  "apricot",
 ];
 
 const SRC = [".png", ".jpg", ".jpeg", ".webp"];

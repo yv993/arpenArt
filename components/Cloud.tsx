@@ -215,17 +215,35 @@ export default function Cloud({
     [view],
   );
 
-  // THE DRAG IS GONE (client 2026-08-06). It took the pointer-capture dance
-  // with it — the capture-on-frame trick, the down-card ref, the click slop,
-  // the timestamp guard against double-toggling, and the throw's friction and
-  // rest thresholds — because all of it existed only to tell a drag from a
-  // click. A card is now simply a button you press.
-  // Checked before removing it, since a cloud you cannot move is a cloud whose
-  // far side is unreachable: all 57 cards are on screen at rest at 1440×900
-  // (spread x −34…1441 against a 1440 frame), so nothing is stranded.
-  // `pan` survives for one job only: sliding the plane so a picked card lands
-  // in the middle instead of opening half off the edge.
+  // THE DRAG IS BACK (client, change 4.pdf p1, 2026-10-12: «Էն ժամանակ լինում
+  // էր քլիք անել վրա ու շարժել, հիմա չի լինում» — "back then you could click
+  // on it and move it, now you can't"). She had asked it removed on
+  // 2026-08-06, and with it went the pointer-capture dance, the click slop,
+  // the timestamp guard and the throw's friction; the new note wins, so all
+  // of that is rebuilt below (inside the DESKTOP match, so the phone rail —
+  // a native horizontal scroller since the 2026-10-05 pass — never sees it):
+  //   · a press that travels under SLOP px is a CLICK and reaches the card's
+  //     own onClick untouched (nothing is captured until the slop is passed,
+  //     so the browser still delivers the click to the card);
+  //   · past the slop the FRAME captures the pointer and the plane follows
+  //     the hand; the click the browser then fires lands on the frame, and
+  //     `dragEndAt` makes both the frame's click-away and a card's onClick
+  //     ignore it;
+  //   · on release the plane coasts with the hand's last velocity under
+  //     friction, inside a SOFT LIMIT: a free range big enough to bring the
+  //     far side of the plane on screen (plus a quarter-screen of play, since
+  //     at 1440 the whole scatter already fits), a rubber band beyond it,
+  //     and a spring back to the range at rest — the plane cannot be thrown
+  //     away to nowhere.
+  // `pan` is the plane's translation; `rest` is where the hand last left it,
+  // which is where the plane returns when a picked card is put back.
   const pan = useRef({ x: 0, y: 0 });
+  const rest = useRef({ x: 0, y: 0 });
+  /** the throw: on while coasting / springing back; px per second */
+  const fling = useRef({ on: false, vx: 0, vy: 0 });
+  /** performance.now() of the last drag's release — the click that the
+   *  browser fires right after it must not open or close anything */
+  const dragEndAt = useRef(0);
   const planeRef = useRef<HTMLElement | null>(null);
   /** Mirror of `chosen` for the flight loop — a 60fps tick cannot read state. */
   const chosenRef = useRef<string | null>(null);
@@ -275,8 +293,205 @@ export default function Cloud({
         };
       });
 
+      // ---- the DRAG and the THROW (restored 2026-10-12, change 4.pdf p1) --
+      const frame = el.querySelector<HTMLElement>(".ap-cloud__frame");
+      /** a press travelling less than this is a click (UX laws: ~6px slop) */
+      const SLOP = 6;
+      /** the free range of the pan, in plane px, and the play beyond it */
+      let lo = { x: 0, y: 0 };
+      let hi = { x: 0, y: 0 };
+      let play = { x: 0, y: 0 };
+      /** the cards' box in the frame at pan 0 — from their --x/--y/--w
+       *  against the plane, so the float plays no part — sets the range: far
+       *  enough that the farthest card can be brought 6% inside the frame's
+       *  edge, never so far that the whole scatter leaves the screen, plus a
+       *  quarter-screen of play each way so the cloud can always be moved
+       *  (at 1440×900 the scatter already fits the frame, and without the
+       *  play there would be nothing to drag). */
+      const measureBounds = () => {
+        if (!frame) return;
+        const fr = frame.getBoundingClientRect();
+        const pr = plane.getBoundingClientRect();
+        let L = Infinity;
+        let R = -Infinity;
+        let T = Infinity;
+        let B = -Infinity;
+        for (const c of cards) {
+          const x = (parseFloat(c.style.getPropertyValue("--x")) / 100) * pr.width;
+          const y = (parseFloat(c.style.getPropertyValue("--y")) / 100) * pr.height;
+          const r = c.getBoundingClientRect();
+          const cx = pr.left - pan.current.x - fr.left + x;
+          const cy = pr.top - pan.current.y - fr.top + y;
+          L = Math.min(L, cx - r.width / 2);
+          R = Math.max(R, cx + r.width / 2);
+          T = Math.min(T, cy - r.height / 2);
+          B = Math.max(B, cy + r.height / 2);
+        }
+        if (!Number.isFinite(L)) return;
+        const mx = fr.width * 0.06;
+        const my = fr.height * 0.06;
+        play = { x: fr.width * 0.25, y: fr.height * 0.22 };
+        lo = { x: Math.min(0, fr.width - mx - R) - play.x, y: Math.min(0, fr.height - my - B) - play.y };
+        hi = { x: Math.max(0, mx - L) + play.x, y: Math.max(0, my - T) + play.y };
+      };
+      /** the rubber band: past the free range the plane follows the hand at
+       *  a third of its travel, and never more than 60% of the play beyond */
+      const rubber = (v: number, a: number, b: number, p: number) =>
+        v < a ? a - Math.min(p * 0.6, (a - v) * 0.3) : v > b ? b + Math.min(p * 0.6, (v - b) * 0.3) : v;
+      type Sample = { x: number; y: number; t: number };
+      let down: { id: number; x: number; y: number; t: number; px: number; py: number; dragging: boolean; samples: Sample[] } | null = null;
+      let dirty = false;
+
+      const onDown = (e: PointerEvent) => {
+        if (!frame) return;
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        // the info panel's own controls (and its scrolling sheet) keep the
+        // pointer; so does anything outside the plane's room
+        if ((e.target as HTMLElement).closest(".ap-cloud__info")) return;
+        // a press takes over from whatever was moving the plane — a throw
+        // still coasting, or the centring tween of a picked card
+        gsap.killTweensOf(pan.current);
+        fling.current.on = false;
+        fling.current.vx = 0;
+        fling.current.vy = 0;
+        // A NEW PRESS CLEARS THE LAST DRAG'S GUARD (review fix, 2026-10-12).
+        // The click the guard exists for is the one the browser fires at the
+        // END of a drag, and it always arrives before the next pointerdown;
+        // left as a bare time window it also swallowed a clean press on a
+        // card made within 400ms of the release — drag, then click the card
+        // now under the hand: nothing opened (measured: a press 300ms after
+        // a drag chose nothing, 420ms chose the card).
+        dragEndAt.current = 0;
+        measureBounds();
+        down = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp, px: pan.current.x, py: pan.current.y, dragging: false, samples: [] };
+      };
+      const onMove = (e: PointerEvent) => {
+        if (!frame || !down || e.pointerId !== down.id) return;
+        // NO BUTTON, NO PRESS (review fix, 2026-10-12). Until the slop is
+        // passed nothing is captured, so a press that leaves the frame
+        // before 6px of travel — a few px under the nav bar, released on
+        // the bar — never showed the frame its release: `down` stayed set,
+        // and from then on every bare mouse move over the frame panned the
+        // plane with the cursor stuck at `grabbing` (measured at 1440×900:
+        // 14 hover moves carried the plane 290×286px). A hover-capable
+        // pointer that reports no primary button is not pressing; a touch
+        // always is while it is in contact.
+        if (e.pointerType !== "touch" && !(e.buttons & 1)) {
+          if (down.dragging) onUp(e);
+          else down = null;
+          return;
+        }
+        const dx = e.clientX - down.x;
+        const dy = e.clientY - down.y;
+        if (!down.dragging) {
+          // the click/drag decision: travel past the slop, or a press held
+          // a third of a second that has started to move — never a tap
+          const dist = Math.hypot(dx, dy);
+          if (dist < SLOP && !(e.timeStamp - down.t > 300 && dist >= 2)) return;
+          down.dragging = true;
+          // CAPTURE ON THE FRAME, AND ONLY NOW: captured at pointerdown, the
+          // browser would fire the following click at the frame instead of
+          // the card, and a clean press could never open a picture
+          try {
+            frame.setPointerCapture(e.pointerId);
+          } catch {
+            /* a pointer already gone (pen lifted between events) — the move still counts */
+          }
+          frame.dataset.drag = "";
+        }
+        pan.current.x = rubber(down.px + dx, lo.x, hi.x, play.x);
+        pan.current.y = rubber(down.py + dy, lo.y, hi.y, play.y);
+        dirty = true;
+        down.samples.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+        if (down.samples.length > 8) down.samples.shift();
+      };
+      const onUp = (e: PointerEvent) => {
+        if (!frame || !down || e.pointerId !== down.id) return;
+        const was = down;
+        down = null;
+        // the hand is off whatever happened: never leave the grabbing
+        // cursor behind (review fix, 2026-10-12)
+        delete frame.dataset.drag;
+        // a clean press: the click the browser fires next opens (or puts
+        // back) the card, exactly as a keyboard press would
+        if (!was.dragging) return;
+        if (frame.hasPointerCapture(e.pointerId)) frame.releasePointerCapture(e.pointerId);
+        dragEndAt.current = performance.now();
+        // the hand's velocity over its last ~100ms, in px/s, capped — a
+        // cancelled pointer (the page took the touch for a scroll) throws
+        // nothing
+        const f = fling.current;
+        f.vx = 0;
+        f.vy = 0;
+        if (e.type !== "pointercancel") {
+          const recent = was.samples.filter((s) => e.timeStamp - s.t <= 100);
+          const first = recent[0];
+          if (first && e.timeStamp - first.t > 8) {
+            const dt = (e.timeStamp - first.t) / 1000;
+            const cap = 2600;
+            f.vx = Math.max(-cap, Math.min(cap, (e.clientX - first.x) / dt));
+            f.vy = Math.max(-cap, Math.min(cap, (e.clientY - first.y) / dt));
+          }
+        }
+        // on, even at rest: the integration below also springs the plane
+        // back into its range and records where it came to rest
+        f.on = true;
+      };
+      /** the throw's integration, one step per ticker frame: coast under
+       *  friction, spring back into the free range, and stop at a threshold
+       *  — the plane never drifts forever and never stays outside. */
+      const coast = () => {
+        const f = fling.current;
+        const dt = Math.min(0.05, gsap.ticker.deltaRatio(60) / 60);
+        // friction: the velocity keeps ~7% less per 60fps frame, whatever
+        // the real frame rate
+        const keep = Math.pow(0.013, dt);
+        f.vx *= keep;
+        f.vy *= keep;
+        pan.current.x += f.vx * dt;
+        pan.current.y += f.vy * dt;
+        let settled = Math.abs(f.vx) < 6 && Math.abs(f.vy) < 6;
+        const axis = (k: "x" | "y") => {
+          const v = pan.current[k];
+          const edge = v < lo[k] ? lo[k] : v > hi[k] ? hi[k] : null;
+          if (edge === null) return;
+          // the spring: close most of the gap each frame and bleed the
+          // velocity that carried it out, so it eases home without a bounce
+          const gap = edge - v;
+          pan.current[k] = Math.abs(gap) < 0.5 ? edge : v + gap * Math.min(1, 9 * dt);
+          f[k === "x" ? "vx" : "vy"] *= 0.7;
+          if (Math.abs(gap) >= 0.5) settled = false;
+        };
+        axis("x");
+        axis("y");
+        dirty = true;
+        if (settled) {
+          f.on = false;
+          f.vx = 0;
+          f.vy = 0;
+          rest.current = { x: pan.current.x, y: pan.current.y };
+        }
+      };
+      if (frame) {
+        frame.addEventListener("pointerdown", onDown);
+        frame.addEventListener("pointermove", onMove);
+      }
+      // THE RELEASE IS HEARD ANYWHERE (review fix, 2026-10-12): a press
+      // under the slop is not captured, so one released over the nav bar
+      // or past the window's bottom edge ended nowhere and the next hover
+      // dragged the plane. Both events bubble from the frame to here, so
+      // the captured case is the same path as before — onUp ignores a
+      // pointer it is not holding.
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+
       const tick = () => {
         const t = gsap.ticker.time;
+        if (fling.current.on) coast();
+        if (dirty) {
+          dirty = false;
+          write();
+        }
         for (const f of flight) {
           // A chosen card STOPS — eased to a standstill, then NOT WRITTEN
           // AT ALL. The old 0.25 damping kept writing a new transform every
@@ -301,15 +516,35 @@ export default function Cloud({
           f.setY(Math.cos(t * f.fy + f.ph * 1.7) * f.ay * f.w);
           f.setR(Math.sin(t * f.fr + f.ph) * f.ar * f.w);
         }
-        // the throw's inertia integration lived here and went with the drag;
-        // the plane only moves now under the centring tween, which writes
-        // itself through onUpdate
+        // the plane itself moved above, before the cards: the throw's
+        // integration (coast) and the drag's pending write; the centring
+        // tween of a picked card writes itself through onUpdate
       };
       gsap.ticker.add(tick);
 
       return () => {
         gsap.ticker.remove(tick);
         gsap.killTweensOf([cards, pan.current]);
+        if (frame) {
+          frame.removeEventListener("pointerdown", onDown);
+          frame.removeEventListener("pointermove", onMove);
+          delete frame.dataset.drag;
+        }
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+        down = null;
+        fling.current.on = false;
+        // THE PAN DOES NOT OUTLIVE THE LAYER (review fix, 2026-10-12). The
+        // drag writes the plane's transform from event handlers, outside
+        // this context, so matchMedia's own revert never saw it: a 300px
+        // drag at 1440, then a window under 861px, left the plain rail's
+        // plane at -300px with its first cards off the left edge (measured
+        // at 800×900). The rail starts from zero, as it always did.
+        pan.current.x = 0;
+        pan.current.y = 0;
+        rest.current.x = 0;
+        rest.current.y = 0;
+        gsap.set(plane, { clearProps: "transform" });
       };
     });
 
@@ -365,6 +600,11 @@ export default function Cloud({
     });
     if (say) gsap.to(say, { autoAlpha: card ? 0 : 1, duration: 0.35 });
 
+    // the centring tween owns the plane now: a throw still coasting would
+    // fight it frame by frame (drag restored 2026-10-12)
+    fling.current.on = false;
+    fling.current.vx = 0;
+    fling.current.vy = 0;
     if (card) {
       // bring it to the middle of the frame by panning the shared plane
       const r = card.getBoundingClientRect();
@@ -375,9 +615,11 @@ export default function Cloud({
       const dy = f.top + f.height / 2 - (r.top + r.height / 2);
       gsap.to(pan.current, { x: pan.current.x + dx, y: pan.current.y + dy, duration: 0.6, ease: "power3.out", onUpdate: write });
     } else {
-      // nothing chosen: the plane goes back where it started, or the cloud
-      // drifts a little further off-centre with every pick
-      gsap.to(pan.current, { x: 0, y: 0, duration: 0.6, ease: "power3.out", onUpdate: write });
+      // nothing chosen: the plane goes back to where the hand last left it
+      // (`rest` — the origin until the first drag), or the cloud drifts a
+      // little further off-centre with every pick. Not to 0,0 any more: with
+      // the drag back (2026-10-12) that would undo the reader's own pan.
+      gsap.to(pan.current, { x: rest.current.x, y: rest.current.y, duration: 0.6, ease: "power3.out", onUpdate: write });
     }
 
     const onKey = (e: KeyboardEvent) => {
@@ -441,33 +683,64 @@ export default function Cloud({
     if (wantFocus) noRef.current?.focus({ preventScroll: true });
   }, [chosen]);
 
-  /** Press a card to open it, press it again to put it back. With no drag to
-   *  distinguish this from, onClick is the whole of it — pointer and keyboard
-   *  alike. */
+  /** Press a card to open it, press it again to put it back — pointer and
+   *  keyboard alike, through onClick. The one click that is NOT a press is
+   *  the one the browser fires at the end of a drag (2026-10-12): a drag is
+   *  never a choice, so a click inside a beat of a drag's release is let go. */
   const choose = useCallback((id: string) => {
+    if (performance.now() - dragEndAt.current < 400) return;
     focusNo.current = true;
     setChosen((cur) => (cur === id ? null : id));
   }, []);
 
   return (
-    // No `data-nosun` here any more: this section is an opaque stacking
-    // context at z 2 (globals.css) and the flying sun (components/Sun.tsx)
-    // is under it from the moment the curtain rises — it SETS behind this
-    // wall of pictures rather than fading out over it. The client's 2026-08-10
-    // note (no sun showing between the cards) still holds; the cards simply
-    // cover it now.
+    // No `data-nosun` here: this section is an opaque stacking context at
+    // z 2 (globals.css) and the flying sun (components/Sun.tsx) is under it
+    // from the moment the curtain rises. THE SUN SHOWS IN HERE ALL THE SAME
+    // (client, change 4.pdf p1, 2026-10-12: «արևը էս հատվածի տակով ա
+    // անցնում, հնարավոր ա երևա արևը էս բաժնում էլ» — the sun passes under this
+    // part; could it show in this section too): .ap-cloud__sun below is a
+    // TWIN of the disc, laid inside the section over its dark ground and
+    // under the frame — so under the title and under every card — and
+    // Sun.tsx writes it the same place, size and opacity it writes the real
+    // one, every frame. Where the section covers the screen the twin is
+    // seen; where it does not, the real sun is; the two meet at the
+    // curtain's edge without a jump, and nothing of the hero shows through.
+    // Her 2026-08-10 note (no sun between the cards) still holds: the
+    // journey's cloud keys keep the disc in the right margin, clear of
+    // every card's box at rest (measured — see Sun.tsx PATH), and the
+    // z-order means it can never cover one in any case.
     <section className="ap-cloud ap-dark" ref={root} aria-label={title.join(" ")}>
+      <div className="ap-cloud__sun" aria-hidden="true">
+        {/* the same <picture> gate as Sun.tsx: where the sun never flies —
+            narrow, reduced motion, no scripting — the source is a 1×1 data
+            GIF and nothing is fetched (2026-10-05 package rule) */}
+        <picture style={{ display: "contents" }}>
+          <source
+            media="(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)"
+            srcSet="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- driven by
+              transform from Sun.tsx's measured journey, like the real disc */}
+          <img className="ap-cloud__sun-disc" src="/hero/sun.webp" alt="" width={879} height={830} />
+        </picture>
+      </div>
       <div
         className="ap-cloud__frame"
         data-chosen={chosen || undefined}
-        // Click-away to close. It used to be a branch inside the drag's
-        // pointer-up — "a clean press on the ground puts one back" — and went
-        // out with the drag, leaving the ✕ and Escape as the only ways back.
-        // A press on a card or on the panel is that element's business.
+        // Click-away to close: "a clean press on the ground puts one back".
+        // A press on a card or on the panel is that element's business, and
+        // the click the browser fires at the end of a DRAG (it lands here,
+        // on the capturing frame) is not a press at all — see dragEndAt.
         onClick={(e) => {
+          if (performance.now() - dragEndAt.current < 400) return;
           const t = e.target as HTMLElement;
           if (!t.closest(".ap-cloud__card") && !t.closest(".ap-cloud__info")) setChosen(null);
         }}
+        // a drag that starts on a picture must pan the plane, not lift the
+        // picture's bitmap out of the page (the native image drag fires
+        // dragstart and cancels the pointer stream mid-gesture)
+        onDragStart={(e) => e.preventDefault()}
       >
         <div className="ap-cloud__plane">
           {placed.map((p) => (
@@ -503,7 +776,7 @@ export default function Cloud({
                 } as React.CSSProperties
               }
             >
-              <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" />
+              <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" draggable={false} />
               {/* the chosen card shows the selected face — front print, the
                   postcard's back, or the printed mockup — and CHANGES FACE
                   LIKE A BOOK PAGE (client 2026-08-12): forward turns the

@@ -1,32 +1,20 @@
 /* ==========================================================================
    SIGN IN / CREATE ACCOUNT (components/AuthUI.tsx)
 
-   The supplied component's anatomy in this site's own CSS: a form column
-   beside a full-bleed picture, the picture's foot fading into the page so
-   the quote can stand on it, and one panel swapping to the other in place.
-
-   Two columns only where there is room for two. Below 861px the picture is
-   dropped rather than stacked: a decorative half-screen above a form is a
-   phone scrolling past art to reach the one field it came for.
+   One column of text and two fields, centred on the page — the same box on
+   a phone and a desktop, where it used to stand beside a full-bleed picture.
+   THE PICTURE COLUMN IS GONE (client, change 4.pdf p17, 2026-10-12: «արի
+   հանենք սա / սա էլ բերենք կենտրոն, թող մենակ տեքստերը լինի էս էջում»): the
+   films, the fade at their foot, the quote and its typewriter caret left
+   with it. The grid below is one track at every width; `place-items:
+   center` on the form column puts the box in the middle of the screen's
+   height as well as its width (measured: the box's top at 241px at 1440×900
+   before and after — only its left moved, from 272 to the centre).
    ========================================================================== */
 .ap-auth {
   display: grid;
   grid-template-columns: 1fr;
   min-height: 100svh;
-}
-@media (min-width: 861px) {
-  .ap-auth {
-    /* THE ART COLUMN IS THE FILM'S OWN SHAPE (Vardan 2026-09-15, screenshot
-       of the sign-in film with the woman's feet and the wave's crest cut
-       off: «change size, it must all illustration seen»). Both films are
-       9:16 portraits; a half-screen column is nearly square, and `cover`
-       had to lose the top and bottom of every frame to fill it. So the
-       column is as wide as a 9:16 frame of the viewport's height — and no
-       wider than half the screen on a very tall window — and the film is
-       `contain`ed in it, which on a box of its own ratio is the whole
-       picture edge to edge, no bands, no blur. The form takes the rest. */
-    grid-template-columns: minmax(0, 1fr) min(50%, calc(100svh * 9 / 16));
-  }
 }
 
 /* ---- the form column --------------------------------------------------- */
@@ -155,96 +143,6 @@
   gap: 12px;
   justify-items: center;
   text-align: center;
-}
-
-/* ---- the picture column ------------------------------------------------- */
-.ap-auth__art {
-  display: none;
-  position: relative;
-  overflow: hidden;
-  background: var(--paper-3);
-}
-@media (min-width: 861px) {
-  .ap-auth__art {
-    display: block;
-    /* exactly one screen tall, so with the column width above the box IS
-       the film's ratio; it stays put while a form taller than the screen
-       (the create-account one on a short window) scrolls beside it */
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    align-self: start;
-  }
-}
-.ap-auth__art figure {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-}
-.ap-auth__art img,
-.ap-auth__art video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* contain, never cover: the whole illustration, always — the column is
-     cut to the film's ratio above, so this costs no bands on desktop */
-  object-fit: contain;
-  object-position: center;
-}
-/* the picture's foot dissolves into the page, which is what lets the quote
-   sit ON the artwork instead of in a box laid over it */
-.ap-auth__art::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 46%;
-  background: linear-gradient(to top, var(--paper) 4%, color-mix(in srgb, var(--paper) 62%, transparent) 46%, transparent);
-  pointer-events: none;
-}
-.ap-auth__quote {
-  position: absolute;
-  inset: auto 0 0;
-  z-index: 1;
-  margin: 0;
-  padding: 0 clamp(24px, 4vw, 56px) clamp(28px, 5vh, 54px);
-  text-align: center;
-}
-.ap-auth__quote p {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-  line-height: 1.35;
-  color: var(--ink);
-  text-wrap: balance;
-}
-.ap-auth__quote cite {
-  font-family: var(--font-ui);
-  font-style: normal;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-/* the typewriter's cursor — a caret rather than a text glyph, so it cannot
-   be selected or read out as punctuation */
-.ap-auth__caret {
-  display: inline-block;
-  width: 1px;
-  height: 1em;
-  margin-left: 2px;
-  translate: 0 0.12em;
-  background: currentColor;
-  animation: ap-auth-blink 1s steps(1, end) infinite;
-}
-@keyframes ap-auth-blink {
-  50% {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ap-auth__caret {
-    animation: none;
-  }
 }
 
 /* ---- the signed-in panel ------------------------------------------------ */

@@ -8,8 +8,10 @@ import { useEffect, useRef } from "react";
 // Arpine's own sun (public/hero/sun.webp, pulled out of her 2026-09-21 PDF at
 // native resolution) starts small over the hills in the right part of the
 // film hero, clear of her, and then scrolls away: it lifts, drifts, drops
-// and sets behind the rising curtain, then travels down behind the whole
-// page until it settles into the footer.
+// into the right margin as the series' curtain rises — and stays in sight
+// across that section through a twin disc laid inside it (Cloud.tsx; client,
+// change 4.pdf p1, 2026-10-12) — then travels down behind the whole page
+// until it settles into the footer.
 //
 // IF IT EVER CROSSES HER, SHE STAYS IN FRONT — a real layer, not a cut. The
 // film is one flat picture, so "behind her" has to be built: her own
@@ -88,14 +90,32 @@ const PATH: Key[] = [
   // whole disc under the nav bar (76px) — and only then drifts on
   { p: 0.03, x: 0, y: 0.22, s: 1, o: 1, hx: true, home: true },
   { p: 0.08, x: 0.82, y: 0.3, s: 0.96, o: 1 }, // → a little right and down
-  { p: 0.15, x: 0.84, y: 0.66, s: 0.8, o: 0.85 }, // → down, and it sets behind the curtain
+  // THE CLOUD LEG, REDRAWN (client, change 4.pdf p1, 2026-10-12: the sun
+  // should show in the series section too). It used to drop to (0.84, 0.66)
+  // at 0.15 and set behind the rising curtain, crossing the frame to
+  // (0.2, 0.34) by 0.34 unseen. Now the section shows it (the twin disc in
+  // Cloud.tsx), so where it travels there matters, and her 2026-08-10 note
+  // («no sun between the cards») fixes it: the cards' REST scatter spans
+  // 18.9%–82.7% of the frame's width at every size (measured 1440×900,
+  // 1280×720, 1886×835, 1024×768 — verify/cloud/*-geom.json), so the sun
+  // keeps to the RIGHT MARGIN, small enough to fit it: at 0.935 of the width
+  // and 0.45 of the journey size its whole box (rays included, and a 40px
+  // float margin on every card) overlaps no card in any frame of the
+  // section's pass, and it is inside the section on ≥70% of the frames the
+  // section is on screen (sim.mjs replays these keys over the measured
+  // geometry). It shrinks and slides right while the hero is still dimming
+  // (0.08→0.19), before the first cards rise to its height, then drifts up
+  // the margin at a quarter of the scroll's speed — far away, as a sun is —
+  // and leaves for the gallery as the section goes.
+  { p: 0.15, x: 0.9, y: 0.58, s: 0.55, o: 0.6 }, // → down and right, receding
   // OPACITY IS TUNED TO WHAT IT CROSSES, and it has to be. The sun is pale
   // yellow: against the dark bands (the cloud and the gallery) a third of it
   // is plenty and more would glare, but the same value over cream paper is
   // invisible — measured at p=0.80, where 0.41 left nothing on screen at all.
   // So it is held low through the dark sections and lifted through the light
   // ones, which is also what a sun crossing a sky would do.
-  { p: 0.34, x: 0.2, y: 0.34, s: 0.66, o: 0.4 }, // cloud — dark
+  { p: 0.19, x: 0.935, y: 0.6, s: 0.45, o: 0.42 }, // cloud — in the right margin
+  { p: 0.41, x: 0.935, y: 0.3, s: 0.45, o: 0.4 }, // cloud — up the margin as it leaves
   { p: 0.55, x: 0.74, y: 0.6, s: 0.6, o: 0.34 }, // gallery — dark
   { p: 0.76, x: 0.22, y: 0.3, s: 0.7, o: 0.66 }, // shop — paper
   { p: 0.93, x: 0.58, y: 0.78, s: 0.9, o: 0.82 }, // studio — paper
@@ -238,6 +258,20 @@ export default function Sun() {
     // here (see the two Frames above)
     const art: Frame = hero.tagName === "VIDEO" ? FILM : STILL;
     const video = hero.tagName === "VIDEO" ? (hero as HTMLVideoElement) : null;
+
+    // ---- the sun's twin inside the cloud section ----------------------------
+    // (client, change 4.pdf p1, 2026-10-12.) The series section is an opaque
+    // stacking context above this fixed sun, so the sun could not show
+    // there. Cloud.tsx lays a second disc INSIDE that section, under its
+    // frame, and draw() below writes it the real disc's place (shifted by
+    // the section's own position on screen), size and opacity — one sun,
+    // seen through two layers, meeting at the curtain's edge without a jump.
+    const cloud = document.querySelector<HTMLElement>(".ap-cloud");
+    const twin = cloud?.querySelector<HTMLImageElement>(".ap-cloud__sun-disc") ?? null;
+    /** the section's document top and height, re-read with the hero */
+    let cloudTop = 0;
+    let cloudLeft = 0;
+    let cloudH = 0;
 
     // ---- her layer -----------------------------------------------------------
     let me: Her | null = null;
@@ -433,6 +467,14 @@ export default function Sun() {
       home = { x: frame.l + art.cx * frame.k, y: frame.t + art.cy * frame.k, w: art.sunW * frame.k };
       el.style.width = `${home.w}px`;
       el.style.height = `${(IMG_H / IMG_W) * home.w}px`;
+      if (twin && cloud) {
+        twin.style.width = el.style.width;
+        twin.style.height = el.style.height;
+        const cr = cloud.getBoundingClientRect();
+        cloudTop = cr.top + window.scrollY;
+        cloudLeft = cr.left;
+        cloudH = cr.height;
+      }
 
       const heroSec = hero.closest<HTMLElement>(".ap-hero");
       // half a screen before the picture is gone: by then it is mostly
@@ -571,6 +613,18 @@ export default function Sun() {
       const overHer = hit || (!me && !keyFailed && p < PATH[2].p);
       const hidden = overHer && !ready;
       el.style.opacity = hidden ? "0" : String(o * (1 - ease(veil)));
+      // the twin: the same disc in the cloud section's own coordinates,
+      // written only while the section is on screen (it is clipped to the
+      // section, so off screen it could not show anyway)
+      if (twin) {
+        const top = cloudTop - window.scrollY;
+        const on = top < window.innerHeight && top + cloudH > 0;
+        twin.style.visibility = on ? "visible" : "hidden";
+        if (on) {
+          twin.style.transform = `translate3d(${x - home.w / 2 - cloudLeft}px, ${y - h / 2 - top}px, 0) scale(${s})`;
+          twin.style.opacity = el.style.opacity;
+        }
+      }
       // it was held invisible until the key had been read (a few hundred
       // ms); when it first shows it dawns rather than pops. A one-off
       // animation, so the scroll-driven opacity written inline above is

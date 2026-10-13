@@ -44,5 +44,9 @@ export const newSpin = (): Spin => ({ yaw: 0, pitch: 0, vYaw: 0, vPitch: 0, drag
  *  right for the sixty small cards; the size of the ball on screen comes
  *  from the canvas, .ap-gal__canvas in globals.css, which takes most of the
  *  viewport). The lattice is full, on the half-step formula so no card sits
- *  exactly on a pole (that one lies flat and reads as nothing). */
+ *  exactly on a pole (that one lies flat and reads as nothing). Re-measured
+ *  2026-10-12 for her twenty-six cards at 3.95 (change 4.pdf p2): the worst
+ *  corner over every yaw and the full pitch range is 83.4% — the same margin
+ *  as the sixteen, because the smaller card gives back what the fuller
+ *  lattice takes. */
 export const CAMERA_Z = 26;

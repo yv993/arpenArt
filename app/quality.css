@@ -10,8 +10,10 @@
    Four bespoke sections switched their whole layout on `data-live`, which a
    client effect sets after hydration: the plain grid painted first, then
    was swapped for the stage. Measured CLS: 3D stickers 0.87 (a 100svh lane
-   appearing), magnets 0.29 (the fridge render), sticker sheets 0.14 (three
-   280–340px stages), the store map 0.26 (the map column mounting). The
+   appearing), magnets 0.29 (the fridge render — one layer and no scene since
+   2026-10-12, client change 4.pdf p8–p9, so its rule is gone from here),
+   sticker sheets 0.14 (three 280–340px stages), the store map 0.26 (the map
+   column mounting). The
    media condition the effects test is written here as CSS, so the geometry
    the effect will want is the geometry the server render already has —
    the trick the hero and the cloud already use with `scripting: enabled`.
@@ -50,16 +52,6 @@
   }
   .ap-s3 .ap-s3__plain {
     display: none;
-  }
-  /* the fridge — MagnetFridge's GATE */
-  .ap-mf .ap-mf__scene {
-    display: block;
-    position: relative;
-    max-width: 880px;
-    margin: 0 auto clamp(56px, 8vh, 96px);
-    border-radius: 10px;
-    overflow: hidden;
-    isolation: isolate;
   }
 }
 /* the store map's column: FindInStore renders the hold on the server with

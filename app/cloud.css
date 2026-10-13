@@ -26,6 +26,12 @@
   background: var(--ink-solid);
   color: var(--cream);
 }
+/* the sun's twin exists only in the moved layer (its block below); on the
+   plain layer — phones, reduced motion, no scripting — there is no flying
+   sun to twin, and the 1×1 placeholder must not take a line of its own */
+.ap-cloud__sun {
+  display: none;
+}
 
 /* --------------------------------------------------------------------------
    1. PLAIN — a swipeable rail
@@ -197,18 +203,15 @@
   display: grid;
   gap: 14px;
 }
-/* THE SERIES TITLE TAKES THE CLIENT'S REFERENCE TREATMENT (2026-08-12):
-   a bold grotesque rather than the display serif, and smaller. Karla is
-   already loaded as a variable font, so real 700 costs nothing and no new
-   family enters the build. Scoped to the cloud — .ap-h2 is the site's
-   shared heading and every other section keeps the serif. */
-.ap-cloud__say .ap-h2 {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: clamp(1.25rem, 4.4vw, 1.7rem);
-  line-height: 1.2;
-  letter-spacing: 0.005em;
-}
+/* THE SERIES TITLE IS THE SITE'S TITLE AGAIN (client, change 4.pdf p1,
+   2026-10-12: «Տառատեսակը փոխել մյուսների պես՝ էս նույն ֆոնտը» — change the
+   font like the others', this same font — with a serif «Postcards» sample).
+   It had taken a bold grotesque (Montserrat 700, 30px) at her 2026-08-12
+   reference; the new note wins. So there is NO override here any more: the
+   shared .ap-h2 (globals.css) sets Fraunces 600 at clamp(1.9rem, 4.4vw,
+   3.9rem), 1.02 leading, -0.02em tracking, and because this section is
+   .ap-dark the title carries the paper run — exactly the gallery's «THE
+   WORLD OF ARPEN ART». The two lines (.ap-cloud__tl) stay as they were. */
 /* the title's two lines (change.pdf p2, 2026-09-21): one block each, and
    a line never wraps inside itself — "A JOURNEY THROUGH" is one line by her
    instruction, not by whatever width the box has */
@@ -411,13 +414,67 @@
    2. MOVED — the pinned frame and its plane
    -------------------------------------------------------------------------- */
 @media (scripting: enabled) and (min-width: 861px) and (prefers-reduced-motion: no-preference) {
-  /* The grab/grabbing cursors and the touch-action guard went with the drag
-     (client 2026-08-06). Nothing here takes a gesture any more, so the frame
-     no longer has to fight the page for the wheel or claim the pointer. */
+  /* THE FRAME TAKES THE HAND AGAIN (client, change 4.pdf p1, 2026-10-12 —
+     the drag is restored in Cloud.tsx). The open hand says the plane moves;
+     while it moves nothing in the frame may be selected (a drag that starts
+     on the title would otherwise paint a selection across it), and the info
+     panel's text is given back below. `pan-y`, not `none`: on a touch
+     screen wide enough for this layer a vertical swipe must still scroll
+     the page — only the sideways gesture is the frame's. */
   .ap-cloud__frame {
     position: relative;
     height: 100svh;
     overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+  }
+  .ap-cloud__frame[data-drag],
+  .ap-cloud__frame[data-drag] .ap-cloud__card {
+    cursor: grabbing;
+  }
+  .ap-cloud__info {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: auto;
+  }
+  /* the pictures' bitmaps never lift out of the page: a drag over one pans */
+  .ap-cloud__card img {
+    -webkit-user-drag: none;
+  }
+
+  /* THE SUN'S TWIN (client, change 4.pdf p1, 2026-10-12 — see Cloud.tsx).
+     A layer the size of the section, clipped to it, UNDER the frame: the
+     global rule lifts every section child to z 1 (globals.css, so section
+     content rides above the flying sun), and this must sit beneath that —
+     hence the three-class selector, which outweighs it, and z 0. The glow
+     is the real disc's (globals.css .ap-sun), so the two halves of one sun
+     match at the curtain's edge. Sun.tsx sizes and places the disc; until
+     it has, the disc is invisible. */
+  .ap > .ap-cloud > .ap-cloud__sun {
+    /* display, SAID OUT LOUD (review fix, 2026-10-12): the base rule above
+       the plain layer hides this wrapper, and this rule set everything but
+       its display — so the twin never rendered in any layer and the sun
+       still set behind the curtain for the whole section (measured: 0 of
+       17 frames sy 960–1920 at 1440×900 showed any sun). The three-class
+       selector outranks the base rule; it only ever needed to say so. */
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    filter: drop-shadow(0 0 42px rgba(239, 171, 35, 0.34));
+  }
+  .ap-cloud__sun-disc {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 50% 50%;
+    opacity: 0;
+    visibility: hidden;
+    will-change: transform, opacity;
   }
 
   /* A vignette over the WHOLE frame rather than a panel behind the words.
@@ -580,8 +637,26 @@
   .ap-cloud__say .ap-lede {
     display: none;
   }
+  /* THE SIZE, AND ONLY THE SIZE, IS HELD BACK (client, change 4.pdf p1,
+     2026-10-12). Family, weight, leading, tracking and the paper run are
+     .ap-h2's; at .ap-h2's full clamp(1.9rem, 4.4vw, 3.9rem) the first line
+     ran into card 43 of the approved scatter — 9×8px over it at rest at
+     1886×835, 4.6px above it at 1280×720 with the card floating ±15.9px —
+     and the title must not collide with the cards' rest layout. The slope
+     is 3.3vw, not 3.5 (review fix, 2026-10-12): at 3.5vw the 1280×720 line
+     box still ran 6.5px into card 43's float box (its capitals' ink cleared
+     by only 4.5px — the comment's "≥9px" was wrong there). Measured at
+     3.3vw against card 43's rest box swept by its own float (ay 15.9px +
+     bank), ink clearance from the first line's baseline: 32.4px at
+     1024×768 (33.8px type), 7.5px at 1280×720 (42.2px), 23.7px at 1440×900
+     (47.5px); at 1886×835 (the 57.6px cap) the line ends 38px left of the
+     card. The LINE BOX still dips 3.5px into the swept box at 1280 — that
+     is the font's descender room, which capitals never use. At rest the
+     card never meets the box at any of the four sizes
+     (verify/cloud/fix/baseline.log). Still two to three times the 30px
+     grotesque it replaces. */
   .ap-cloud__say .ap-h2 {
-    font-size: clamp(1.35rem, 2.1vw, 1.95rem);
+    font-size: clamp(1.9rem, 3.3vw, 3.6rem);
   }
 
   /* ---- what a picked picture says -------------------------------------- */

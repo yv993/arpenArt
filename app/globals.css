@@ -1073,8 +1073,69 @@ select {
   background-image: var(--night-wash);
   color: var(--cream);
 }
-.ap-sec--gal .ap-kicker {
-  color: color-mix(in srgb, var(--cream) 70%, transparent);
+/* THE HEAD IS ONE BAND, TWO COLUMNS (client, change 4.pdf p2, 2026-10-12:
+   «տեքստը բերենք կողք ու շատ ազատ տարածք չմնա, ու տակի գլոբուսն էլ հանենք
+   վերև միքիչ» — bring the text to the side so not much empty space is left,
+   and bring the globe up a little; the «(Gallery)» kicker goes with it,
+   «հանենք սա», so the rule that coloured it is gone too). Measured before,
+   at 1440×900: kicker at 117, title 152–279, her paragraph 295–375 under
+   it, canvas top 429. Now the paragraph stands BESIDE the title, foot on
+   foot — the totes' and scarves' head (shop.css .ap-tg__head, .ap-sd): the
+   title pinned to the row's top and the copy to its foot, each on its own,
+   so where the copy outgrows the two title lines (861–1100px) it runs on
+   beside the title instead of pushing it down. */
+.ap-gal__head {
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: clamp(32px, 6vw, 110px);
+  align-items: start;
+  max-width: none;
+}
+/* HER TWO LINES STAY — «THE WORLD» / «OF ARPEN ART». In a max-content column
+   the title would set on one line and leave the copy a sliver, so the box
+   takes an em measure read off the rendered words (Fraunces 600, −0.02em;
+   imgss/redesign-2026-10-12/verify/globe/measure-title.mjs): «OF ARPEN ART»
+   is 7.08em and «THE WORLD OF» 7.53em, so 7.3em holds exactly these two
+   lines at every size the clamp gives, and .ap-h2's text-wrap: balance
+   picks them. The box only — the text-FX runner nests its own spans inside. */
+.ap-gal__head .ap-h2 {
+  max-width: 7.3em;
+  align-self: start;
+}
+/* AT THE TITLE'S SIDE, NOT THE BAND'S EDGE (review of change 4.pdf p2,
+   2026-10-12). The totes' copy is justify-self: end; here the band's right
+   margin is the SUN'S LANE — Sun.tsx's cloud→gallery leg brings the disc down
+   x 0.83–0.97 of the viewport exactly while this head scrolls in (p 0.42–
+   0.45) — and a paragraph pinned to that edge sits under it for 120–200px of
+   scroll at every desktop width: up to 45% of a text line over the solid
+   disc at 1920×1080, 36% at 1886×835, 27% at 1440×900 (the sweep in
+   imgss/redesign-2026-10-12/verify/globe-fix/before-facts.txt). Moving the
+   sun cannot mend it — a fixed disc meets everything that scrolls through
+   its lane, and the keys proposed only move the meeting (replay.cjs: 16–34%
+   remain) — so the paragraph leaves the lane: beside the title at the column
+   gap its right edge stays left of x 0.81 from 1280px up and the sun passes
+   in open navy. At 1024 the column is the paragraph's own width, so start
+   and end are the same place there. */
+.ap-gal__head .ap-lede {
+  justify-self: start;
+  align-self: end;
+  /* optical, as the totes: the last baseline sits a hair above the capitals'
+     foot otherwise, because the title's line box carries descender room */
+  padding-bottom: 0.4em;
+}
+/* phones and the plain layer: one column in reading order — the title, then
+   her paragraph — the stacked head the mobile pass left, minus the kicker */
+@media (max-width: 860px) {
+  .ap-gal__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ap-gal__head .ap-h2 {
+    max-width: none;
+  }
+  .ap-gal__head .ap-lede {
+    justify-self: start;
+    align-self: start;
+    padding-bottom: 0;
+  }
 }
 
 /* --- gallery ------------------------------------------------------------ */

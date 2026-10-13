@@ -59,6 +59,14 @@ export async function POST(req: Request) {
   const webhook = process.env.CONTACT_WEBHOOK_URL;
   const resend = process.env.RESEND_API_KEY;
   const to = process.env.ORDER_TO_EMAIL;
+  // THE SENDER IS CONFIGURABLE (client, change 4.pdf p16, 2026-10-12: «էս էջը
+  // աշխատելու ա՞ … իմ մեյլին նամակ կգա՞» — will a letter reach my mail?).
+  // Resend's onboarding@resend.dev delivers ONLY to the address that owns
+  // the Resend account; to reach arpenbaroyan@gmail.com from a Resend account
+  // that is not hers, the sender must be an address on a domain verified in
+  // Resend (CONTACT_FROM, e.g. "ArpenArt <contact@arpenart.com>"). Unset,
+  // the onboarding sender is kept — see .env.example.
+  const from = process.env.CONTACT_FROM || "ArpenArt <onboarding@resend.dev>";
   let delivered = false;
 
   try {
@@ -74,7 +82,7 @@ export async function POST(req: Request) {
         method: "POST",
         headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "ArpenArt <onboarding@resend.dev>",
+          from,
           to: [to],
           reply_to: email,
           subject: `Enquiry from ${name}`,

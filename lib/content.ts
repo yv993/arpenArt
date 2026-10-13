@@ -5,6 +5,8 @@
 // prices, shipping, contact — and is written so one edit here fixes the whole
 // site. No placeholder is ever presented to a visitor as if it were confirmed.
 
+import type { KeychainWall } from "@/types/keychain";
+
 export const brand = {
   name: "ArpenArt",
   artist: "Arpine Baroyan",
@@ -97,11 +99,14 @@ export type Category = {
    *  format. Only present where the existing copy already supports the split;
    *  a category without one simply renders no picker. */
   variants?: { label: string; options: string[] };
-  /** Facts for the trust block under the buy button. Every line here is
-   *  either already stated elsewhere on the site or describes the real
-   *  process — nothing is a claim only Arpine could verify. Unknown
-   *  dimensions and materials are OMITTED, never guessed. */
-  spec?: { k: string; v: string }[];
+  // NO `spec` ROWS SINCE 2026-10-12 (client, change 4.pdf p3–p11). Each line
+  // carried PAPER / SIZE / MATERIAL / FINISH rows plus three shared process
+  // rows, and CategoryView rendered them as the MADE BY / … / PRICES panel
+  // under the buy button and under every bespoke page's ordering steps. She
+  // circled that panel on all seven shop pages, the postcards' included (p4:
+  // «փոստքարտերի էջից սա հանենք»), so the panel, its CSS and these rows left
+  // together — a field nothing renders would only start to drift. The
+  // returns wording the rows carried stands where it binds, on /terms.
 };
 
 /** CATEGORIES WHOSE CART `art` ID NAMES THE CATEGORY'S OWN ITEM, not one of
@@ -161,16 +166,6 @@ export const withheldArt: Record<string, readonly string[]> = {
   postcards: ["23", "25"],
 };
 
-// The process rows every open category shares, stated once so the story can
-// never drift between pages. These describe the REAL flow only: an order here
-// is a request, nothing is charged on the site, and Arpine confirms price and
-// postage herself before anything is made or sent (see /terms).
-const processSpec: { k: string; v: string }[] = [
-  { k: "Production", v: "Made to order — Arpine confirms timing when she confirms your order." },
-  { k: "Shipping", v: "Ships from Yerevan, Armenia — postage is confirmed before you pay anything." },
-  { k: "Returns", v: "An order here is a request, not a purchase — nothing is made, charged or sent until Arpine confirms it with you." },
-];
-
 export const categories: Category[] = [
   {
     slug: "postcards",
@@ -187,11 +182,6 @@ export const categories: Category[] = [
     // "Sold singly or as a set" is already the blurb's promise — the picker
     // only lets the buyer say which of the two they meant.
     variants: { label: "Format", options: ["Single card", "Full series set"] },
-    spec: [
-      { k: "Paper", v: "Heavy uncoated card" },
-      { k: "Size", v: "A5" },
-      ...processSpec,
-    ],
   },
   {
     slug: "scarves",
@@ -204,9 +194,6 @@ export const categories: Category[] = [
     status: "open",
     // the blurb already names the two cuts; the picker repeats them, no more
     variants: { label: "Style", options: ["Silk square", "Bandana"] },
-    spec: [{ k: "Material", v: "Silk" }, ...processSpec],
-    // PLACEHOLDER-shaped gap: the square's dimensions are Arpine's to supply —
-    // the spec stays silent rather than guessing a number.
   },
   {
     slug: "hoodies",
@@ -224,12 +211,6 @@ export const categories: Category[] = [
     // garment sizes, not product claims — the one choice a hoodie order
     // cannot be placed without
     variants: { label: "Size", options: ["S", "M", "L", "XL"] },
-    spec: [
-      { k: "Finish", v: "Painted by hand in Yerevan — no two are identical" },
-      ...processSpec,
-    ],
-    // PLACEHOLDER-shaped gap: fabric composition and a size chart are
-    // Arpine's to supply; until then the spec carries no fabric row.
   },
   {
     slug: "cups",
@@ -238,7 +219,6 @@ export const categories: Category[] = [
     media: "mugs",
     from: 5500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
-    spec: [{ k: "Care", v: "Glazed and dishwasher-safe" }, ...processSpec],
   },
   {
     slug: "plates",
@@ -247,8 +227,6 @@ export const categories: Category[] = [
     media: "plates",
     from: 7500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
-    // "decorative" is the blurb's own word — no food-safety claim is made
-    spec: [{ k: "Use", v: "Decorative" }, ...processSpec],
   },
   {
     slug: "puzzles",
@@ -257,9 +235,6 @@ export const categories: Category[] = [
     media: "puzzles",
     from: 8500,
     status: "soon", // change.pdf p8 — Available Soon window, no page yet
-    // PLACEHOLDER-shaped gap: piece count and finished size are Arpine's to
-    // supply — the spec carries only the process rows rather than a guess.
-    spec: [...processSpec],
   },
   {
     slug: "stickers",
@@ -276,11 +251,6 @@ export const categories: Category[] = [
     // /api/order able to re-price a sheet from its own copy of this table.
     from: 1800,
     status: "open",
-    spec: [
-      { k: "Sheet", v: "158 × 200 mm · 20 stickers" },
-      { k: "Finish", v: "Matte and weatherproof" },
-      ...processSpec,
-    ],
   },
   {
     slug: "3d-stickers",
@@ -293,10 +263,6 @@ export const categories: Category[] = [
     // overcharged for a week.
     from: 500,
     status: "open",
-    spec: [
-      { k: "Finish", v: "Domed resin over print, on a carded backing" },
-      ...processSpec,
-    ],
   },
   {
     slug: "keychains",
@@ -309,10 +275,6 @@ export const categories: Category[] = [
     // typed by hand any more.
     from: 1500,
     status: "open",
-    spec: [
-      { k: "Finish", v: "Clear acrylic case on a split ring" },
-      ...processSpec,
-    ],
   },
   {
     slug: "magnets",
@@ -323,10 +285,6 @@ export const categories: Category[] = [
     // her 2026-09-21 list («մագնիս 1500»).
     from: 1500,
     status: "open",
-    spec: [
-      { k: "Finish", v: "Print in a clear acrylic frame magnet" },
-      ...processSpec,
-    ],
   },
   {
     slug: "totes",
@@ -345,12 +303,6 @@ export const categories: Category[] = [
     // p5): the choose-an-illustration panel that used to sit under them is
     // gone from this line, and a bag is bought from the window its card opens.
     status: "open",
-    // both rows repeat the tote lookbook's caption, word for word
-    spec: [
-      { k: "Material", v: "Natural cotton" },
-      { k: "Printing", v: "Printed in Yerevan" },
-      ...processSpec,
-    ],
   },
   // SKIRTS REMOVED 2026-08-24 (client: "remove skirts section in shop"). It was
   // the only `status: "soon"` line — a card promising a garment that has never
@@ -423,6 +375,26 @@ export const globe: { id: string; slug?: string; list?: keyof typeof priceList }
   // 01 (the shared white card dominates the pixels); the magnets themselves
   // — the centre 30% — differ by 28–33/255. Compare the product, not the card.
   { id: "17", slug: "magnets" },
+  // NINE MORE (client, change 4.pdf p2, 2026-10-12: «գլոբուսիկի մեջ նկարներ
+  // ավելացնենք մի քանի հատ էլ, որ նոսր չլինի շատ» — add a few more so it is
+  // not so sparse), her Drive folder «new add», in the brief's order; cut by
+  // scratchpad/assets-1012-globe.cjs. Each line was checked against the
+  // shop's own pictures before its slug was written: 18 = keychain-18's
+  // «ԴԻԼԻՋԱՆ» monument, 19 = keychain-21's «Dilijan» house, 20 = magnet-28
+  // (café by the Opera), 21 = magnet-29 (the woman and the wave), 22 and
+  // 23 = sticker sheets stickers-04 and stickers-10, 24 and 25 = flat A6
+  // postcards (the balloon over Ararat; the woman at the window café),
+  // 26 = the white «More than a moment» T-shirt — the `hoodies` slug is the
+  // line the shop calls T-Shirts.
+  { id: "18", slug: "keychains" },
+  { id: "19", slug: "keychains" },
+  { id: "20", slug: "magnets" },
+  { id: "21", slug: "magnets" },
+  { id: "22", slug: "stickers" },
+  { id: "23", slug: "stickers" },
+  { id: "24", slug: "postcards" },
+  { id: "25", slug: "postcards" },
+  { id: "26", slug: "hoodies" },
 ];
 
 /** THE RIBBON'S WORDS (client, change.pdf p2, 2026-09-15) — verbatim, her
@@ -522,7 +494,11 @@ export const socials: Array<{
 }> = [
   { label: "Instagram", href: "https://www.instagram.com/arpen_art/", icon: "instagram" },
   { label: "Telegram", href: "https://t.me/", icon: "telegram", pending: true },
-  { label: "Email", href: `mailto:${brand.email}`, icon: "mail" },
+  // WITH A SUBJECT (client, change 4.pdf p16, 2026-10-12: «սա կարա բացվի էն
+  // ստանդարտ մեյլ գրելու պատուհանից, որ անգամ ինձ ուղղվի՞» — the envelope
+  // opens the standard mail window addressed to me? It did; the subject is
+  // added «so it lands right» in her inbox). Site copy, not hers.
+  { label: "Email", href: `mailto:${brand.email}?subject=${encodeURIComponent("Enquiry from the ArpenArt site")}`, icon: "mail" },
 ];
 
 export const delivery = {
@@ -607,6 +583,9 @@ export type DeliveryOption = (typeof delivery.options)[number];
 //                         number. This is the northern one (the Noyan Aygi
 //                         courtyard). NEEDS HER CONFIRMATION.
 // The other four are exact building matches and are not flagged.
+// 2026-10-12 (change 4.pdf p13–14): APRICOT gift store joined Yerevan — eight
+// shops now — with an exact house-number geocode, and the Dilijan list was
+// reordered to put the TIC first. See the entries.
 //
 // SHAPE: this list is SHOPS, not towns. It used to be one row per town, which
 // stopped being true the moment Yerevan came back with three. Towns are
@@ -700,8 +679,52 @@ export const stockists: Stockist[] = [
     logo: "note-mote",
     lines: [],
   },
+  {
+    // APRICOT (client, change 4.pdf p13, 2026-10-12): «Ավելացնում ենք նոր
+    // խանութ» — «APRICOT gift store», «7/10 buzand st.», her spelling of the
+    // name and the street kept. FOURTH in Yerevan: she said "add", not
+    // "first", so it follows Made by Armenia and the two Note Mote.
+    // THE ARMENIAN LINE IS NOT HERS. She sent only the Latin address; this is
+    // the street's established Armenian form (OSM names the road «Փավստոս
+    // Բուզանդի փողոց»), filled because the field is required and the card
+    // prints it first for the taxi driver. Ask her to confirm or replace it.
+    // COORDINATES: OSM Nominatim, 2026-10-12, query «7/10 Buzand Street,
+    // Yerevan» → node/9856061931 «7/10, Փավստոս Բուզանդի փողոց, Կենտրոն,
+    // Երևան, 0010», 40.1794599 / 44.5122542. The HOUSE NUMBER itself resolved
+    // (type "house"), so the pin is exact and carries no `approx`.
+    // «Buzand», CAPITALISED (2026-10-13). Her note reads «7/10 buzand st.»,
+    // typed in passing; Vardan's plan for this round writes it «7/10 Buzand
+    // st.». A street is a proper name and an address is a fact, not her copy:
+    // lower-case on a public card, beside «Arami Street» and «Northern
+    // Avenue», reads as our typo, and this field is also the copy-to-clipboard
+    // string and the JSON-LD streetAddress. Her «st.» and «gift store» stay.
+    id: "apricot",
+    shop: "APRICOT gift store",
+    townId: "yerevan",
+    addressAm: "Բուզանդի փողոց 7/10",
+    address: "7/10 Buzand st.",
+    addressLat: 40.1794599,
+    addressLng: 44.5122542,
+    logo: "apricot",
+    lines: [],
+  },
 
   // --- DILIJAN (Tavush) ----------------------------------------------------
+  // TIC FIRST (client, change 4.pdf p14, 2026-10-12): «Դիլիջանի բաժնում 1-ին
+  // խանութը թող լինի TIC-ը». The other two keep their previous order behind
+  // it. The pin's arrival opens the first shop's street map, so from the
+  // country map Dilijan now lands on the TIC as well.
+  {
+    id: "tic-dilijan",
+    shop: "Dilijan Tourist Information Center",
+    townId: "dilijan",
+    addressAm: "Մաքսիմ Գորկու փող. 15/2",
+    address: "15/2 Maxim Gorky Street",
+    addressLat: 40.739310,
+    addressLng: 44.862473,
+    logo: "tic-dilijan",
+    lines: [],
+  },
   {
     id: "anyutis",
     shop: "Anyut Is",
@@ -714,17 +737,6 @@ export const stockists: Stockist[] = [
     // flagged dark from the name alone, before the file arrived — which would
     // have painted black on black. Look at a mark before deciding its ground.
     logo: "anyutis",
-    lines: [],
-  },
-  {
-    id: "tic-dilijan",
-    shop: "Dilijan Tourist Information Center",
-    townId: "dilijan",
-    addressAm: "Մաքսիմ Գորկու փող. 15/2",
-    address: "15/2 Maxim Gorky Street",
-    addressLat: 40.739310,
-    addressLng: 44.862473,
-    logo: "tic-dilijan",
     lines: [],
   },
   {
@@ -766,7 +778,7 @@ const TOWN_META: Omit<Town, "shops">[] = [
 
 /** Towns WITH shops, derived. A town nobody stocks simply does not appear —
  *  there is no "coming soon" state any more, because there is nothing to
- *  promise: she is in seven shops and the page can just say so. */
+ *  promise: she is in eight shops (2026-10-12) and the page can just say so. */
 export const towns: Town[] = TOWN_META.map((t) => ({
   ...t,
   shops: stockists.filter((s) => s.townId === t.id),
@@ -833,8 +845,16 @@ export const stockistPage = {
    *  the accessibility tree — and a hint saying "open the street map" would be
    *  read out to exactly the phone and no-JS visitors who have no control to
    *  open it with. They get the OSM link instead. */
-  /** open data must say where it came from */
-  credit: "Outline: geoBoundaries (ADM0/ADM1) · Lake Sevan: Natural Earth. Simplified for drawing.",
+  /** Credit must name what is actually drawn. Since 2026-10-12 (client,
+   *  change 4.pdf p12) the picture AND the outline cut are her painted map —
+   *  public/map/relief.webp and mask.png are baked from it — so the old line
+   *  («Outline: geoBoundaries (ADM0/ADM1) · Lake Sevan: Natural Earth») had
+   *  become a false attribution of her artwork: the ADM1 provinces and the
+   *  Natural Earth lake in lib/armenia.json are no longer rendered at all.
+   *  What is still open data: the SRTM heights the relief rises with, and the
+   *  geoBoundaries bbox every raster and pin is placed in. UI microcopy
+   *  change, reported as such. */
+  credit: "Map painting: Arpine Baroyan · relief heights: SRTM (NASA/USGS) · frame: geoBoundaries (ADM0).",
 };
 
 // ---------------------------------------------------------------------------
@@ -875,7 +895,9 @@ export const home = {
   // 2026-08-06), so the copy had to follow: "every picture in the series" was
   // describing what is no longer up there.
   gallery: {
-    kicker: "(Gallery)",
+    // NO KICKER (client, change 4.pdf p2, 2026-10-12: «հանենք սա» circled on
+    // «(Gallery)»). The title is the band's first line now; HomeView renders
+    // no element for it, so nothing is left where it stood.
     // HER WORDS (client, change.pdf p3, 2026-09-15) — verbatim. The old lead
     // carried the "drag to spin" instruction; that now lives only in the
     // canvas's accessible name.
@@ -1047,8 +1069,14 @@ export const home = {
     send: "Send",
     sending: "Sending…",
     ok: "Thank you — your message is on its way.",
-    logged:
-      "Your message was received but email delivery is not configured yet. Please also reach out directly:",
+    // NOT DELIVERED (client, change 4.pdf p16, 2026-10-12: «իմ մեյլին նամակ
+    // կգա՞»). Until the Vercel variables are set the route only logs the
+    // message, and the old line («was received … please also reach out»)
+    // read as a success; this one says it did not go out from the site and
+    // hands the typed message to the visitor's mail app (ContactBlock.tsx).
+    // Site copy, not hers.
+    logged: "Your message could not be sent from the site yet. Please send it to Arpine directly:",
+    mailApp: "Open in your mail app",
     failed: "That did not send. Please try again, or reach out directly:",
     fields: { name: "Name", email: "Email", message: "What can Arpine help with?" },
     consent: "I agree to be contacted about this enquiry",
@@ -1076,7 +1104,8 @@ export const home = {
 // and the third lands in the one tall slot, so a portrait shot belongs there.
 // ---------------------------------------------------------------------------
 export type Lookbook = {
-  kicker: string;
+  // no `kicker` since 2026-10-12 (client, change 4.pdf p11: «(CARRIED)»
+  // circled on the tote lookbook, «հանենք սա») — the title opens the head
   title: string;
   copy: string;
   /** one short line, shown midway through the zoom — keep it factual */
@@ -1114,7 +1143,7 @@ export const morphs: Record<string, { intro: string[]; cue: string; title: strin
 // scarves roll, flat print first, then the wall, the rail, the worn/folded one.
 // ---------------------------------------------------------------------------
 export const scarfDesigns = {
-  kicker: "(On silk)",
+  // no kicker since 2026-10-12 (client, change 4.pdf p3: «(ON SILK)» circled)
   title: "A Little Armenia to Take With You",
   copy:
     "Each scarf brings together a different story from Armenia — its mountains, cities, people, memories and dreams. Wear it as a colorful reminder of a place that stays close to the heart.",
@@ -1173,12 +1202,13 @@ export const scarfDesigns = {
 // `shots` are ids in products.json's stickers roll, print first.
 // ---------------------------------------------------------------------------
 export const stickerSheets = {
-  kicker: "(The sheets)",
+  // no kicker since 2026-10-12 (client, change 4.pdf p5: «(THE SHEETS)» circled)
   // HER WORDS, 2026-08-23. She also named what the six sheets ARE, which
   // nothing here had said: a set is "a group of illustrations connected by a
   // common story, place, feeling or idea" — they are themed, not six
   // arbitrary twenties. The size and count she left out are not lost; they
-  // are the spec row on every folder and in the category's spec table.
+  // are the `spec` line on every folder below (the category's spec table
+  // that also carried them left on 2026-10-12, change 4.pdf p5).
   title: "STICKER COLLECTION",
   copy: [
     "A collection of stories, one sticker at a time.",
@@ -1217,8 +1247,10 @@ export const stickerSheets = {
 // the text file that arrived with the twenty-four photographs, unedited. The
 // cue and the pill are mine: they are instructions for the pointer, not claims
 // about the product, which is the only kind of copy this file writes for her.
+// `satisfies` binds this to the type the section reads, so a field the type
+// drops cannot linger here unread — the «(On your keys)» kicker did exactly
+// that after it left the page (client, change 4.pdf p7, 2026-10-12).
 export const keychainWall = {
-  kicker: "(On your keys)",
   title: "Little Stories to Carry",
   copy: [
     "Small illustrations, big memories. Each Arpen Art keychain brings a little piece of Armenia with you — from familiar Yerevan scenes to colorful places and stories inspired by Armenian culture.",
@@ -1227,27 +1259,25 @@ export const keychainWall = {
   grab: "Drag to rotate",
   add: "Add to cart",
   added: "Added to your cart.",
-};
+} satisfies KeychainWall;
 
 // HER WORDS, 2026-08-31 — title and paragraph from the text file in the magnet
-// drop, unedited. The cue is mine (an instruction, not a claim).
+// drop, unedited. `all`, `add` and `added` are interface words (labels, not
+// claims). The «(On the fridge)» kicker, the «Click a magnet…» cue and the
+// reserved door slot's «coming» left with the fridge scene they belonged to
+// (client, change 4.pdf p8–p9, 2026-10-12 — MagnetFridge.tsx).
 export const magnetFridge = {
-  kicker: "(On the fridge)",
   title: "Little Pieces of Armenia",
   copy: [
     "Bring a little piece of Armenia to your home. Each Arpen Art magnet features an original illustration inspired by Armenian places, landscapes, culture and everyday moments — a small keepsake to remember Armenia by.",
   ],
-  cue: "Click a magnet to see it up close",
   all: "The whole set",
   add: "Add to cart",
   added: "Added to your cart.",
-  /** under a reserved door slot's name — a design announced but not yet
-   *  delivered as artwork; the frame is empty on purpose */
-  soon: "coming",
 };
 
 export const stickers3d = {
-  kicker: "(Domed)",
+  // no kicker since 2026-10-12 (client, change 4.pdf p6: «(DOMED)» circled)
   // HER WORDS, 2026-08-23 — heading and body both. What was here before was
   // mine ("Forty-eight, on a loop") and it described the LANE; hers describes
   // the product, which is what a shop page is for. The instruction the old
@@ -1274,12 +1304,14 @@ export const stickers3d = {
 //
 // No invented names again: the bags arrived as four numbered folders, so a
 // card says "No. 01" and the series, exactly as the artworks and the 3D
-// stickers do. The badges are not decoration either — both are lifted from
-// the category's own spec rows, so they cannot start claiming something the
-// product page does not.
+// stickers do. The badges are not decoration either — both repeat the tote
+// lookbook's caption below («Natural cotton · printed in Yerevan») word for
+// word, so they cannot start claiming something the page does not. (They
+// used to be read against the category's spec rows too; those left on
+// 2026-10-12, change 4.pdf p10.)
 // ---------------------------------------------------------------------------
 export const toteBags = {
-  kicker: "(Tote bags)",
+  // no kicker since 2026-10-12 (client, change 4.pdf p10: «(TOTE BAGS)» circled)
   // HER TWO LINES (client, change 3.pdf p6, 2026-10-01: «2 տողով սարքել էս
   // տեքստը» — "make this text two lines", with the break drawn after the
   // comma). One entry per line, the way `about.title` and the series title
@@ -1371,7 +1403,8 @@ export type Story = {
 };
 
 export const stories = {
-  kicker: "(Studio stories)",
+  // the kicker «(Studio stories)» is gone (client, change 4.pdf p15,
+  // 2026-10-12: «սա հանենք») — the title stands first on the cover
   title: "STUDIO STORIES",
   copy: "Exhibitions, interviews, collaborations and stories from Arpen Art.",
   watch: "Watch the feature",
@@ -1614,7 +1647,6 @@ export const stories = {
 
 export const lookbooks: Record<string, Lookbook> = {
   totes: {
-    kicker: "(Carried)",
     title: "THE WHOLE SERIES, OVER ONE SHOULDER",
     copy:
       "Natural cotton, the stamp grid printed large enough to read across a street. Photographed around Yerevan and up in the mountains.",

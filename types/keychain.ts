@@ -49,7 +49,8 @@ export type Keychain = {
 
 /** What a keychain page/section needs beyond the items themselves. */
 export type KeychainWall = {
-  kicker: string;
+  /* no `kicker` since 2026-10-12 — the «(On your keys)» line above the title
+     left the page (client, change 4.pdf p7) */
   title: string;
   /** her paragraphs, verbatim */
   copy: string[];

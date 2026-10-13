@@ -12,16 +12,38 @@ import type { Town } from "@/lib/content";
 // THE MAP — Armenia as it actually is, now in RELIEF (client 2026-08-12,
 // from a physical-map reference: real mountains, real imagery, Sevan dark).
 //
-// Everything is REAL open data, vendored at build time so nothing is fetched
-// at runtime (the site's CSP is self-only anyway):
-//   outline + enclaves   geoBoundaries gbOpen ARM ADM0 (simplified) — the
-//                        enclave holes and the exclave stay, because leaving
-//                        them out would be redrawing a border
+// The ground is REAL open data, vendored at build time so nothing is fetched
+// at runtime (the site's CSP is self-only anyway); the picture on it is hers:
+//   grid                 geoBoundaries gbOpen ARM ADM0 (simplified) sets the
+//                        bbox every raster and every pin is placed in. Until
+//                        2026-10-12 it also drew the outline and the shadow.
 //   elevation            SRTM (NASA/USGS, public domain) via AWS terrain
 //                        tiles, baked into /map/height.png
-//   surface              Landsat imagery (NASA/USGS, public domain) baked
-//                        into /map/relief.jpg — the lake, the forests and
-//                        the bare volcanic west are photographed, not drawn
+//   surface              HER PAINTED MAP (client, change 4.pdf p12,
+//                        2026-10-12: «փոխում ենք քարտեզը, դնում ենք սա») baked
+//                        into /map/relief.webp — each province its own
+//                        landscape, Sevan light blue. It replaced the Landsat
+//                        plate that stood here from 2026-08-13.
+//   outline cut          /map/mask.png is HER outline too, since the same
+//                        date. scratchpad/assets-1012-map.cjs fitted her alpha
+//                        into the grid against the real border (6-parameter
+//                        affine: rotation −0.70°, IoU 0.926, median 1.6 km
+//                        off, max 8.7 km at the Syunik tip where her tail is
+//                        shorter), then shrank that fit 1.2 % and shifted it
+//                        9 / 6 texels so her paint stays inside the grid —
+//                        the bbox has no padding and the free fit ran 6.6
+//                        texels past its west edge (shipped: IoU 0.918,
+//                        median 1.85 km, max 9.4 km; the shrink is anchored
+//                        on Yerevan's pin, which sits 4 of her px inside the
+//                        yellow patch she gave the city and keeps exactly
+//                        that room) — and resampled both rasters through
+//                        that one transform. Cut by the real border instead, her paint
+//                        would be shaved on one side and padded with filler
+//                        on the other; cut by her own outline, mesh, alpha and
+//                        picture agree exactly. THE PINS NEVER MOVED: they are
+//                        placed from true lat/lng, and Yerevan, Dilijan and
+//                        Garni each land inside the province she painted them
+//                        in (checked numerically in that script).
 //
 // THE THREE RASTERS SHARE ONE GRID: equirectangular over the SAME bbox the
 // vector border uses, rows linear in latitude. The mercator tiles both
@@ -57,9 +79,6 @@ const EXAGGERATION = 5.5;
 const ELEV_MIN = terrain.elevMin as number;
 const ELEV_MAX = terrain.elevMax as number;
 
-type Ring = [number, number][];
-type Part = { outer: Ring; holes: Ring[] };
-
 const BB = geo.bbox as [number, number, number, number];
 const LNG0 = (BB[0] + BB[2]) / 2;
 const LAT0 = (BB[1] + BB[3]) / 2;
@@ -72,14 +91,6 @@ const SCALE =
 export function project(lng: number, lat: number): [number, number] {
   return [(lng - LNG0) * KX * SCALE, -(lat - LAT0) * SCALE];
 }
-
-const toShape = (p: Part) => {
-  const s = new THREE.Shape(p.outer.map(([x, y]) => new THREE.Vector2(...project(x, y))));
-  for (const h of p.holes) {
-    s.holes.push(new THREE.Path(h.map(([x, y]) => new THREE.Vector2(...project(x, y)))));
-  }
-  return s;
-};
 
 // ---------------------------------------------------------------------------
 // THE RELIEF. /map/height.png is real SRTM elevation and /map/mask.png is the
@@ -125,8 +136,15 @@ function useHeightField(): HeightField | null {
       if (dead) return;
       setHf({ h: he.v, m: ma.v, w: he.w, rows: he.h });
     });
-    // no catch on purpose: if the rasters ever fail the map keeps its shadow
-    // and pins render flat — verified below by gating on hf
+    // no catch: a failed raster leaves hf null for good, and everything that
+    // is gated on hf below — the relief AND the pins — simply never mounts.
+    // (Comment corrected 2026-10-12: it used to promise that "the map keeps
+    // its shadow and pins render flat", which stopped being true the day the
+    // shadow became a plane cut by this same mask — see Country. The shadow
+    // fetches /map/mask.png through the loader inside the Scene's Suspense,
+    // so a failed MASK throws to FindInStore's MapBoundary and the stage goes
+    // empty; a failed height.png alone leaves the shadow standing with no
+    // relief and no pins on it.)
     return () => {
       dead = true;
     };
@@ -184,7 +202,17 @@ function Terrain({ hf }: { hf: HeightField }) {
         // dragon teeth all down the Araks valley. Sliding vertices down over
         // the mask's own 2-texel transition band hangs one continuous
         // curtain instead.
-        const m = sample(hf.m, hf.w, hf.rows, uf, vf);
+        // THE GRID'S OWN RIM IS ALWAYS OUTSIDE (review fix, 2026-10-12). The
+        // bbox hugs the country with no padding, so wherever the mask reached
+        // the first or last row or column the curtain had nothing to descend
+        // to and the mesh stood open there — nine rows on the old satellite
+        // plate's west edge and five columns on its south, more on the first
+        // bake of her painting before the fit was constrained to keep her
+        // paint inside (scratchpad/assets-1012-map.cjs, MARGIN). Forcing
+        // the rim vertices down closes the model on all four sides whatever
+        // a future raster does at its edges.
+        const rim = c === 0 || c === cols || r === 0 || r === rows;
+        const m = rim ? 0 : sample(hf.m, hf.w, hf.rows, uf, vf);
         const k = Math.min(Math.max((m - 0.25) / 0.5, 0), 1);
         const s = k * k * (3 - 2 * k);
         const y = BASE + (TOP + sample(hf.h, hf.w, hf.rows, uf, vf) * exag - BASE) * s;
@@ -239,19 +267,35 @@ function Terrain({ hf }: { hf: HeightField }) {
 }
 
 function Country({ hf }: { hf: HeightField | null }) {
-  const shadow = useMemo(() => {
-    const shapes = (geo.country as Part[]).map(toShape);
-    // the country's own silhouette, flattened and darkened underneath — a
-    // drop shadow that costs one draw call instead of a shadow map
-    const s = new THREE.ShapeGeometry(shapes);
-    s.rotateX(Math.PI / 2);
-    return s;
-  }, []);
+  // THE SHADOW IS CUT BY THE SAME MASK AS THE RELIEF (2026-10-12). It used to
+  // be the vector border flattened and darkened underneath, which was right
+  // while the relief was cut by that border. The cut is her painted outline
+  // now (client, change 4.pdf p12), up to 9 km off the vector line at the
+  // Syunik tip — and a vector shadow offset south-east, exactly where her
+  // tail falls short, stuck out from under it like a second, darker country.
+  // One plane over the grid's bbox, alpha from /map/mask.png (the loader
+  // caches by URL, so Terrain's own request is the same fetch): silhouette
+  // and shadow come from one outline. Still one draw call, no shadow map.
+  const alpha = useLoader(THREE.TextureLoader, "/map/mask.png");
+  // the plane's +Y (v = 1) turns to −Z, north, which is where the grid's
+  // first row is — the same v the terrain's uv assigns to it
+  const size = useMemo(
+    () => [(BB[2] - BB[0]) * KX * SCALE, (BB[3] - BB[1]) * SCALE] as const,
+    [],
+  );
 
   return (
     <group>
-      <mesh geometry={shadow} position={[0.12, TOP - 0.44, 0.16]}>
-        <meshBasicMaterial color="#0d1526" transparent opacity={0.45} side={THREE.DoubleSide} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.12, TOP - 0.44, 0.16]}>
+        <planeGeometry args={[size[0], size[1]]} />
+        <meshBasicMaterial
+          color="#0d1526"
+          transparent
+          opacity={0.45}
+          alphaMap={alpha}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
       </mesh>
       {hf && <Terrain hf={hf} />}
     </group>
@@ -437,8 +481,11 @@ export default function ArmeniaMap({
     captured: boolean;
     el: HTMLDivElement | null;
   }>({ x: 0, start: 0, sens: 0.006, id: 0, captured: false, el: null });
-  // decoded outside the Canvas: the rasters are plain <img> work, and the
-  // shadow renders immediately while they arrive
+  // decoded outside the Canvas: the rasters are plain <img> work. Nothing
+  // leads them any more — since 2026-10-12 the shadow is cut by the same
+  // mask (Country) and appears when that one 60 kB texture resolves, a fetch
+  // Terrain then reuses from the loader cache; a failure of it ends in
+  // MapBoundary, not in a shadow-only map (see useHeightField).
   const hf = useHeightField();
 
   // POINTER CAPTURE IS DEFERRED UNTIL THE HAND ACTUALLY MOVES. Capturing on
