@@ -1642,6 +1642,67 @@ a[href^="mailto:"] {
   object-fit: cover;
   object-position: 62% 45%;
 }
+/* HER PHOTOGRAPH ARRIVES BEHIND A CURTAIN (2026-10-14 — the motion is in
+   AboutView.tsx, under the same name). The curtain is a flat panel in the
+   colour the page is NOT — the site's dark slate on the cream day page, its
+   cream on the navy night page — under the picture; both are opened by a
+   clip-path wipe, the curtain a beat ahead. Without scripts, and for a reader
+   who asked for less motion, it lies behind the opaque photograph and is
+   never seen. */
+.ap-about__curtain {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-solid);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ap-about__curtain {
+    background: var(--cream);
+  }
+}
+:root[data-theme="dark"] .ap-about__curtain {
+  background: var(--cream);
+}
+.ap-about__pic {
+  position: relative;
+}
+/* SHUT FROM THE FIRST PAINT, on the moved layer only. On a desktop the
+   photograph is in the first screen, and a curtain set up by the script
+   would come after the browser had already painted the photograph: seen,
+   taken away, then drawn back. html[data-footfx] is written before the first
+   paint by layout.tsx's inline script, only on desktop with motion allowed
+   and only when scripts run, so a phone, a reduced-motion reader and a no-JS
+   visitor are never held. The script marks the frame data-curtain once it
+   has taken over. ap-curtain-park is the failsafe: if no script has come in
+   four seconds (a failed bundle, a stalled phone on wifi), the photograph
+   opens by itself and stays open — AboutView reads that and draws no
+   curtain over it. Keep the 4s equal to PARK_MS there. */
+html[data-footfx] .ap-about__fig:not([data-curtain]) .ap-about__curtain,
+html[data-footfx] .ap-about__fig:not([data-curtain]) .ap-about__pic {
+  clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+}
+/* the failsafe opens the PICTURE only: the curtain stays shut behind it, or
+   its slate would show for the moment the photograph takes to decode */
+html[data-footfx] .ap-about__fig:not([data-curtain]) .ap-about__pic {
+  animation: ap-curtain-park 1ms 4s forwards;
+}
+@keyframes ap-curtain-park {
+  to {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}
+/* on paper the photograph is simply there: a page printed mid-reveal kept it
+   clipped, and with background graphics on the curtain printed as a slab */
+@media print {
+  .ap-about__curtain {
+    display: none;
+  }
+  .ap-about__pic {
+    clip-path: none !important;
+  }
+  .ap-about__fig img {
+    transform: none !important;
+  }
+}
 /* SHORT TWO-COLUMN WINDOWS — a large phone on its side (932×430), a desktop
    window dragged short. Under 528px of height the sum above stops closing:
    80px of sticky offset + the 420px floor + the 28px margin IS 528, so the
@@ -1655,7 +1716,8 @@ a[href^="mailto:"] {
    in the same place. (2026-10-01, review of her new photograph.) */
 @media (max-height: 527px) {
   .ap-about__fig {
-    position: static;
+    /* relative, not static: the frame must stay the curtain's box (below) */
+    position: relative;
   }
 }
 
@@ -1664,7 +1726,11 @@ a[href^="mailto:"] {
     grid-template-columns: 1fr;
   }
   .ap-about__fig {
-    position: static;
+    /* relative, not static (2026-10-14): the curtain inside is absolutely
+       placed, and a static frame handed it <body> for a box — a slate slab
+       the size of the screen over her name and biography, for good with
+       reduced motion or no scripts */
+    position: relative;
     /* one column: the photograph follows the biography, so it takes the
        biography's measure (.ap-about__say is 60ch) — on a tablet a
        full-bleed 3:4 portrait would be a 930px wall under a 550px text
