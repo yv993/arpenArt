@@ -469,6 +469,29 @@
   transform-style: preserve-3d;
   will-change: transform;
 }
+/* THE PLATE ENDS WHERE THE PAGE DOES (see the note above the markup in
+   CartPlate.tsx). Each fixed layer stands in a box that fills <main> and
+   clips: a clip-path box clips its fixed children, and it scrolls with main
+   on the compositor, so the painting stops at main's lower edge on every
+   frame and the footer is revealed under it as on every other page. The
+   boxes carry the layers' places in the stack (0 under the title, 2 over
+   it); main must be their containing block even where FootReveal has not
+   positioned it (a window widened into the gate after load). */
+.ap-plate__clip {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0);
+  pointer-events: none;
+}
+.ap-plate__clip--far {
+  z-index: 0;
+}
+.ap-plate__clip--front {
+  z-index: 2;
+}
+#main:has(.ap-plate__clip) {
+  position: relative;
+}
 .ap-plate {
   position: fixed;
   inset: 0;
@@ -479,6 +502,13 @@
   /* the component reveals it once it has measured; until then a half-placed
      coin would flash in the corner */
   visibility: hidden;
+  /* WHILE THE PAINTING IS ON ITS WAY (2026-10-13): the cart is dressed for
+     the plate the moment the scene mounts — cream title, no paper behind it
+     — and the painting arrives a second or three later on a slow line. On
+     bare paper that title was invisible (1.05:1). The ground is the
+     painting's own mean colour, so the cream reads at once and the painting
+     simply lands on it. */
+  background: rgb(43, 61, 53);
 }
 .ap-plate[data-on] {
   visibility: visible;
@@ -508,7 +538,7 @@
   pointer-events: none;
   visibility: hidden;
 }
-.ap-plate[data-on] ~ .ap-plate__front {
+.ap-plate__front[data-on] {
   visibility: visible;
 }
 /* PLATE SPACE: a 1600x1000 box the effect lays over the window, once in each
@@ -612,8 +642,16 @@
   align-content: end;
   padding-bottom: clamp(24px, 5vh, 54px);
 }
+/* THE KICKER GETS THE TITLE'S HELP (2026-10-13). At 78% cream and with no
+   shadow it measured 2.25:1 at 1440×900, where her painting puts a patch of
+   pale sky behind it — 72% of its strokes under 3:1. Full cream, and a
+   shadow the size of the letters, as the title has. */
 .ap-cart[data-plate] .ap-sec__head .ap-kicker {
-  color: color-mix(in srgb, var(--cream) 78%, transparent);
+  color: #f4ece0;
+  text-shadow:
+    0 0 3px rgba(0, 0, 0, 0.55),
+    0 0 6px rgba(0, 0, 0, 0.6),
+    0 1px 14px rgba(0, 0, 0, 0.8);
 }
 .ap-cart[data-plate] .ap-sec__head .ap-h2 {
   /* cream, not white — the live page's word is warm against a night sky, and

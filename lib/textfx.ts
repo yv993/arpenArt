@@ -16,6 +16,17 @@
 /** The same gate every moved layer on this site uses. */
 export const FX_MEDIA = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 
+/** "The ground under a heading has changed — sample its run again."
+ *  A split heading carries its run as a flat colour on every letter, taken
+ *  from the gradient the heading declared WHEN IT WAS PAINTED (TextFX,
+ *  paintSlices). The runner re-samples by itself when the theme moves; this
+ *  event is for a ground that changes any other way. Today that is the
+ *  cart's plate (components/CartPlate.tsx): it follows its media query, so a
+ *  window narrowed under 861px drops the painting from behind a title whose
+ *  letters were painted cream for it — cream on paper, until re-sampled.
+ *  Dispatched on window; anyone may send it. */
+export const REPAINT = "arpenart:repaint";
+
 /** Armenian capitals — the pool DECIPHER settles out of. The series is
  *  Armenia; the names arrive from its own alphabet. */
 export const POOL = "ԱԲԳԴԵԶԷԹԺԻԽԾԿՀՄՆՇՈՊՍՎՏՐՑՔ";

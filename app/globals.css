@@ -468,8 +468,13 @@ select {
      The result was indigo-on-Botticelli: the exact "crashed text" in the
      client's first screenshot (2026-08-13). The colour was never the fix;
      the RUN is. */
+  /* …AND ONLY ITS TITLE (2026-10-13): the rule read `.ap-cart[data-plate]
+     .ap-h2` and so also caught the ending's «Order received», which
+     stands on the PAPER panel — cream to marigold on cream, 1.15:1, the
+     first two letters invisible, on the one screen that says the order
+     went through. It had been so since the plate arrived. */
   .ap-sec--gal .ap-h2,
-  .ap-cart[data-plate] .ap-h2,
+  .ap-cart[data-plate] .ap-sec__head .ap-h2,
   .ap-dark .ap-h2 {
     --tfx-grad: var(--grad-paper);
     background: var(--grad-paper);

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FX_MEDIA, POOL, settle, splitChars, unsplit } from "@/lib/textfx";
+import { FX_MEDIA, POOL, REPAINT, settle, splitChars, unsplit } from "@/lib/textfx";
 
 // ============================================================================
 // The one runner for every [data-tfx] heading on the site. It is mounted at
@@ -319,9 +319,12 @@ export default function TextFX() {
     themeAttr.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     const osTheme = window.matchMedia("(prefers-color-scheme: dark)");
     osTheme.addEventListener("change", repaint);
+    // …or when a component changes the ground itself — see REPAINT
+    window.addEventListener(REPAINT, repaint);
     cleanups.push(() => {
       themeAttr.disconnect();
       osTheme.removeEventListener("change", repaint);
+      window.removeEventListener(REPAINT, repaint);
       painted.clear();
     });
 

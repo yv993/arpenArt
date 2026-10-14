@@ -1,11 +1,14 @@
 // THE CART'S PLATE, HER OWN PAINTING (client, change 4.pdf p18, 2026-10-12:
 // «նկարը փոխենք, կոպեկներդ նույն ձևով» — change the picture, the coins the
-// same way). Builds the three files components/CartPlate.tsx draws:
+// same way). Builds the two files components/CartPlate.tsx draws:
 //
 //   public/cart/plate.webp      the far plate: HER WHOLE PAINTING with her
-//   public/cart/plate-sm.webp   figure painted out of it (see THE CLEAN PLATE)
+//                               figure painted out of it (see THE CLEAN PLATE)
 //   public/cart/figure.webp     her figure cut out, with alpha — the front
 //                               layer the title passes behind (was venus.webp)
+//
+// (plate-sm.webp, a half-size candidate, went 2026-10-13: the plate only
+// mounts from 861px up, where the browser never once chose it.)
 //
 // from imgss/redesign-2026-10-12/drive/cart/IMG_7665.png (1973×809, RGBA with
 // EVERY pixel opaque — her file carries no cut-out, so the figure is cut here).
@@ -33,8 +36,9 @@
 //   · the far plate is her painting AT ITS OWN SCALE, in register with the
 //     cut-out, and what covers the camera's sway is MORE OF HER PAINTING, not
 //     an enlargement: 153 source px of it lie left of the plate window and
-//     526 right of it (the file is 1973 wide, the window 1294), and above and
-//     below, where she painted nothing more, the edge rows are mirrored;
+//     526 right of it (the file is 1973 wide, the window 1294), and above,
+//     below and to the LEFT, where she painted nothing more, the edge is
+//     mirrored (see PAD_T / PAD_B / PAD_L);
 //   · her figure is PAINTED OUT rather than blotted: every pixel under her
 //     (grown 14px) takes the leaf on the other side of her outline, mirrored
 //     across the nearest point of it — foliage continuing behind her. Only a
@@ -72,9 +76,36 @@ const CROP = { x: 153, y: 0, w: 1294, h: 809 };
 const SX = PLATE_W / CROP.w; // 1.2365
 const SY = PLATE_H / CROP.h; // 1.2361
 /** mirrored rows above and below her painting, in plate px — the scene is
- *  dropped ~10% of the window under the nav, and the camera pitches */
-const PAD_T = 190;
+ *  dropped ~10% of the window under the nav, and the camera pitches.
+ *  260 above since 2026-10-13 (it was 190): projected through the camera's
+ *  real extremes, 190 fell short in short windows (1280×600) and in very
+ *  large ones (2560×1440). */
+const PAD_T = 260;
 const PAD_B = 110;
+/** mirrored COLUMNS left of her painting, in plate px (2026-10-13). Her
+ *  picture has 189 plate px left of the plate window and 651 right of it; in
+ *  a wide, short window the scene is smaller than "cover" (so her raised arm
+ *  clears the cart's panel) and the left 189 ran out — with the pointer in a
+ *  corner the yawed plane's left edge came inside the window and the page's
+ *  paper showed beside it (a 27px wedge at 1920×940). 360 more lets the
+ *  scene stay centred up to 2560 wide; they are seen only as the camera
+ *  turns, and at rest in windows beyond that. */
+const PAD_L = 360;
+/** THE MIRRORED MARGINS ARE SOFTENED (2026-10-13, a checker: «a second
+ *  identical trunk, a butterfly column of leaves down the axis»). A clean
+ *  reflection reads as one the moment it is seen. Every mirrored pixel is
+ *  mixed with a blurred, darker copy — beginning a little INSIDE her
+ *  painting (SOFT_IN px), a third of the way there at the seam, whole a
+ *  short way out (SOFT_OUT px) — so the two sides of the axis no longer
+ *  match, and what the camera's turn uncovers past
+ *  her painting reads as leaves falling into shade and out of focus, not as
+ *  her painting folded over. */
+const SOFT_BLUR = 8;
+const SOFT_DARK = 0.55;
+const SOFT_IN = 40;
+const SOFT_OUT = 70;
+/** white export columns at the left edge of her file — see where they are read */
+const WHITE_L = 2;
 /** her hands, in HER pixels — measured on 4× gridded crops of the file
  *  (verify/orch/shots/z-src-hand-grid.png): A = the middle of the raised
  *  right hand, where the coins leave it (the first build's 657,360 was on
@@ -249,6 +280,14 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const H = meta.height;
   console.log(`source ${W}×${H} ${meta.channels}ch alpha=${meta.hasAlpha}`);
   const { data } = await sharp(SRC).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  // HER FILE'S FIRST TWO COLUMNS ARE WHITE — an export border, column means
+  // 255 / 253 against 73 beside them (measured 2026-10-13). At the far left
+  // of the far plate it drew a pale hairline down the painting's edge, and
+  // mirrored (PAD_L) it would stand as a white line in the leaves. They take
+  // the first painted column; nothing of her picture is lost.
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < WHITE_L; x++)
+      for (let c = 0; c < 3; c++) data[(y * W + x) * 3 + c] = data[(y * W + WHITE_L) * 3 + c];
 
   // ---- 1. the mask ------------------------------------------------------
   const raw = new Uint8Array(W * H);
@@ -382,7 +421,8 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   }
   await sharp(filled, { raw: { width: W, height: H, channels: 3 } }).png().toFile(`${DBG}/clean-plate-source.png`);
 
-  // the far plate: the whole picture at plate scale, mirrored above and below
+  // the far plate: the whole picture at plate scale, mirrored above, below
+  // and to the left
   const farW = Math.round(W * SX);
   const padL = Math.round(CROP.x * SX);
   const farBody = await sharp(filled, { raw: { width: W, height: H, channels: 3 } })
@@ -398,17 +438,32 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   // `.linear(f)` is a straight multiply of the sRGB values, so the greyscale
   // mean scales by exactly f; `.modulate({ brightness })` scales LAB L*,
   // which took the plate to a mean of 35 for a nominal ×0.73
-  const far = await sharp(farBody)
-    .extend({ top: PAD_T, bottom: PAD_B, left: 0, right: 0, extendWith: "mirror" })
+  const sharpFar = await sharp(farBody)
+    .extend({ top: PAD_T, bottom: PAD_B, left: PAD_L, right: 0, extendWith: "mirror" })
     .linear(dark, 0)
-    .png()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const FW = sharpFar.info.width;
+  const FH = sharpFar.info.height;
+  const FC = sharpFar.info.channels;
+  const shade = await sharp(sharpFar.data, { raw: { width: FW, height: FH, channels: FC } })
+    .blur(SOFT_BLUR)
+    .linear(SOFT_DARK, 0)
+    .raw()
     .toBuffer();
-  const fm0 = await sharp(far).metadata();
+  const mixed = Buffer.from(sharpFar.data);
+  // d: how far past the seam (negative: inside her painting)
+  const ramp = (d) => Math.min(1, Math.max(0, (d + SOFT_IN) / (SOFT_IN + SOFT_OUT)));
+  for (let y = 0; y < FH; y++)
+    for (let x = 0; x < FW; x++) {
+      const w = Math.max(ramp(PAD_L - x), ramp(PAD_T - y), ramp(y - (FH - PAD_B) + 1));
+      if (!w) continue;
+      const i = (y * FW + x) * FC;
+      for (let c = 0; c < 3; c++) mixed[i + c] = Math.round(sharpFar.data[i + c] * (1 - w) + shade[i + c] * w);
+    }
+  const far = await sharp(mixed, { raw: { width: FW, height: FH, channels: FC } }).png().toBuffer();
   await sharp(far).webp({ quality: 78, effort: 5 }).toFile(`${OUT}/plate.webp`);
-  await sharp(far)
-    .resize(Math.round(fm0.width / 2), Math.round(fm0.height / 2), { kernel: "lanczos3" })
-    .webp({ quality: 78, effort: 5 })
-    .toFile(`${OUT}/plate-sm.webp`);
+  if (fs.existsSync(`${OUT}/plate-sm.webp`)) fs.unlinkSync(`${OUT}/plate-sm.webp`);
   const mean1 = (await sharp(`${OUT}/plate.webp`).greyscale().stats()).channels[0].mean;
 
   // ---- 4. the numbers the component takes -------------------------------
@@ -418,15 +473,14 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const kb = (f) => (fs.statSync(f).size / 1024).toFixed(0) + " KB";
   const fm = await sharp(figFile).metadata();
   const pm = await sharp(`${OUT}/plate.webp`).metadata();
-  const sm = await sharp(`${OUT}/plate-sm.webp`).metadata();
-  const farBox = { x: -padL, y: -PAD_T, w: pm.width, h: pm.height };
-  console.log(`plate.webp ${pm.width}×${pm.height} ${kb(`${OUT}/plate.webp`)}, plate-sm.webp ${sm.width}×${sm.height} ${kb(`${OUT}/plate-sm.webp`)} — leaves and sky ${bgMean.toFixed(1)} → ×${dark.toFixed(3)} → whole plate mean ${mean1.toFixed(1)}; paint-out reaches ${deepest.toFixed(0)}px deep`);
+  const farBox = { x: -padL - PAD_L, y: -PAD_T, w: pm.width, h: pm.height };
+  console.log(`plate.webp ${pm.width}×${pm.height} ${kb(`${OUT}/plate.webp`)} — leaves and sky ${bgMean.toFixed(1)} → ×${dark.toFixed(3)} → whole plate mean ${mean1.toFixed(1)}; paint-out reaches ${deepest.toFixed(0)}px deep`);
   console.log(`figure.webp ${fm.width}×${fm.height} ${kb(figFile)}`);
-  console.log(`FAR = ${JSON.stringify(farBox)}   (plate px: real painting ${padL} left of the plate and ${pm.width - padL - PLATE_W} right of it, ${PAD_T} mirrored above, ${PAD_B} below)`);
+  console.log(`FAR = ${JSON.stringify(farBox)}   (plate px: real painting ${padL} left of the plate and ${pm.width - PAD_L - padL - PLATE_W} right of it; mirrored: ${PAD_L} further left, ${PAD_T} above, ${PAD_B} below)`);
   console.log(`FIG = ${JSON.stringify(fig)}  (cut-out ${fm.width}×${fm.height} shown at width ${fig.w})`);
   console.log(`HAND_A = [${A}]  HAND_B = [${B}]   (plate px; source ${HAND_A_SRC} / ${HAND_B_SRC}, crop x ${CROP.x}, ×${SX.toFixed(4)})`);
   console.log(`check: fingertips source x 612 → plate ${Math.round((612 - CROP.x) * SX)}; crown source y ${by0} → plate ${Math.round(by0 * SY)}`);
-  fs.writeFileSync(`${DBG}/numbers.json`, JSON.stringify({ crop: CROP, sx: SX, sy: SY, fig, far: farBox, handA: A, handB: B, cutout: [fm.width, fm.height], bbox: [bx0, by0, bw, bh], bgMean: [bgMean, bgMean * dark], plateMean: mean1, dark }, null, 1));
+  fs.writeFileSync(`${DBG}/numbers.json`, JSON.stringify({ crop: CROP, sx: SX, sy: SY, fig, far: farBox, pad: { left: PAD_L, top: PAD_T, bottom: PAD_B }, handA: A, handB: B, cutout: [fm.width, fm.height], bbox: [bx0, by0, bw, bh], bgMean: [bgMean, bgMean * dark], plateMean: mean1, dark }, null, 1));
 })().catch((e) => {
   console.error(e);
   process.exit(1);
