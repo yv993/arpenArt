@@ -575,6 +575,18 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
     if (hit) clear = p + 0.0025;
   }
   console.log(`COIN_CLEAR = ${clear.toFixed(4)}   (the throw's p at which a coin's disc has left her hand)`);
+  // THE FILES' VERSIONS (2026-10-14). /cart/* may be kept by a browser for a
+  // day and then served stale for a week while it checks (next.config.mjs),
+  // and these two files are not hashed — but CartPlate.tsx lays them out with
+  // numbers that belong to exactly these pixels (FIG, FAR, COIN_IN). A
+  // returning visitor got the new layout around yesterday's picture: the
+  // mitten hand after the fingers were mended, Botticelli's grove under her
+  // cut-out after her painting replaced it. The component asks for each file
+  // with ?v=<the first 10 hex of its own sha1>, so a new picture is a new
+  // address.
+  const crypto = require("crypto");
+  const ver = (f) => crypto.createHash("sha1").update(fs.readFileSync(f)).digest("hex").slice(0, 10);
+  console.log(`ART_V = { far: "${ver(`${OUT}/plate.webp`)}", fig: "${ver(figFile)}" }   (sha1 of each file — the ?v= of its URL)`);
   fs.writeFileSync(`${DBG}/numbers.json`, JSON.stringify({ crop: CROP, sx: SX, sy: SY, fig, far: farBox, pad: { left: PAD_L, top: PAD_T, bottom: PAD_B }, handA: A, handB: B, cutout: [fm.width, fm.height], bbox: [bx0, by0, bw, bh], bgMean: [bgMean, bgMean * dark], plateMean: mean1, dark }, null, 1));
 })().catch((e) => {
   console.error(e);

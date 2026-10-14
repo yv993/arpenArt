@@ -90,6 +90,17 @@ const FIG = { x: 563, y: 9, w: 851 };
  *  in over the next stretch, just above her fingertips: tossed from the
  *  hand, not painted on it. */
 const COIN_IN = [0.065, 0.1];
+/** EACH FILE IS ASKED FOR BY ITS OWN VERSION (2026-10-14). /cart/* may be
+ *  kept by a browser for a day and then served stale for a week while it
+ *  checks (next.config.mjs) — right for her pictures, wrong here, because the
+ *  numbers above belong to exactly these pixels. When the fingers were
+ *  mended, a returning visitor got the new layout around yesterday's
+ *  cut-out (the mitten hand, set 9px off); and anyone who had opened the
+ *  cart before her painting arrived would have had Botticelli's grove behind
+ *  her. The asset script prints these (the first 10 hex of each file's
+ *  sha1): a new picture is a new address, so the page and its pictures can
+ *  never be from two different days. */
+const ART_V = { far: "d77536e7e3", fig: "f60e9bf7d7" };
 /** THE FAR PLATE, in plate pixels (the asset script prints it): her WHOLE
  *  painting at the plate's own scale — 189px of it lie left of the plate
  *  window and 651 right of it. Where she painted no more it is mirrored:
@@ -605,7 +616,7 @@ export default function CartPlate() {
         <div className="ap-plate__space" ref={farSpace}>
         <img
           className="ap-plate__img"
-          src="/cart/plate.webp"
+          src={`/cart/plate.webp?v=${ART_V.far}`}
           alt=""
           width={FAR.w}
           height={FAR.h}
@@ -637,7 +648,7 @@ export default function CartPlate() {
               the title passes behind her; 1376×1604 is the file's own size */}
           <img
             className="ap-plate__fig"
-            src="/cart/figure.webp"
+            src={`/cart/figure.webp?v=${ART_V.fig}`}
             alt=""
             width={1376}
             height={1604}
