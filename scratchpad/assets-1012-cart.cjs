@@ -113,6 +113,20 @@ const WHITE_L = 2;
  *  the bottom edge of the frame */
 const HAND_A_SRC = [640, 366];
 const HAND_B_SRC = [1133, 767];
+/** her raised hand and forearm, in HER pixels, and a point on her palm —
+ *  where the hand's own mask and edge are used (see HER RAISED HAND) */
+const HAND_BOX = { x: 590, y: 280, w: 190, h: 230 };
+const HAND_SEED = [650, 385];
+const HAND_BLUR = 1.6;
+/** a pixel of her hand counts as skin (for the rim's colour) from this mean
+ *  value up — her skin is 136-195, the marks she painted on it 89-124 */
+const HAND_SKIN = 135;
+const HAND_FEATHER = 12;
+/** the coins' throw, from CartPlate.tsx (CTRL, the coin's 34px box and its
+ *  largest own size and nearness) — only to print where a coin has cleared
+ *  her fingers, see the end */
+const CTRL = [840, -300];
+const COIN_R = 17 * (0.78 + 10 / 22);
 /** where the flood fill starts: her face */
 const SEED = [985, 120];
 /** the opening radius — drops branches up to 2r+1 px wide; her fingers are ~30px */
@@ -307,6 +321,25 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   // only the piece still connected to her face
   const grown = component(mask, W, H, SEED[0], SEED[1]);
   fillSmallHoles(grown, W, H, 4000);
+  // HER RAISED HAND, FROM THE PLAIN COLOUR MASK (2026-10-14 — Vardan, on a
+  // crop of it: «improve hand fingers»). The opening that drops the branches
+  // drops anything narrower than 2·OPEN_R+1 px, and her fingertips taper
+  // below that: the regrown edge could only reach OPEN_R+1 px back from what
+  // survived, so the top finger ended in a flat cut and the two fingers on
+  // the left lost their tips. Around the hand the ground is dark leaves and
+  // no branch touches her, so there the plain colour mask is the right one:
+  // the piece of it connected to her palm is added back. Finger gaps are
+  // leaf-coloured, so they stay open; the hole fill has already run, so a gap
+  // the new tips close into a pocket stays open too.
+  {
+    const { x: hx, y: hy, w: hw, h: hh } = HAND_BOX;
+    const box = new Uint8Array(W * H);
+    for (let y = hy; y < hy + hh; y++) for (let x = hx; x < hx + hw; x++) box[y * W + x] = raw[y * W + x];
+    const hand = component(box, W, H, HAND_SEED[0], HAND_SEED[1]);
+    let added = 0;
+    for (let i = 0; i < W * H; i++) if (hand[i] && !grown[i]) (grown[i] = 255), added++;
+    console.log(`hand: ${added}px of fingertip given back from the plain colour mask`);
+  }
   await sharp(Buffer.from(grown), { raw: { width: W, height: H, channels: 1 } }).png().toFile(`${DBG}/mask.png`);
 
   let bx0 = W, by0 = H, bx1 = -1, by1 = -1, n = 0;
@@ -330,13 +363,32 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const notInside = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) notInside[i] = inside[i] ? 0 : 255;
   const toIn = nearestClear(notInside, W, H);
+  // In her raised hand the rim takes its colour from the nearest SKIN pixel
+  // inside her, not merely the nearest inside pixel (2026-10-14): the top
+  // fingertip is barely wider than the erosion, the only pixels left inside
+  // it are the dark mark she painted there, and copied outward they made a
+  // dark cap of the whole tip. Her mark stays where she painted it.
+  const inHand = (x, y) => x >= HAND_BOX.x && x < HAND_BOX.x + HAND_BOX.w && y >= HAND_BOX.y && y < HAND_BOX.y + HAND_BOX.h;
+  const notSkin = new Uint8Array(W * H).fill(255);
+  for (let y = HAND_BOX.y; y < HAND_BOX.y + HAND_BOX.h; y++)
+    for (let x = HAND_BOX.x; x < HAND_BOX.x + HAND_BOX.w; x++) {
+      const i = y * W + x;
+      if (inside[i] && (data[i * 3] + data[i * 3 + 1] + data[i * 3 + 2]) / 3 >= HAND_SKIN) notSkin[i] = 0;
+    }
+  const toSkin = nearestClear(notSkin, W, H);
   const clean = Buffer.alloc(W * H * 3);
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
       let s = i;
-      // only near her: beyond 6px the colour is never shown (alpha is 0)
-      if (notInside[i] && Math.abs(toIn.dx[i]) < 7 && Math.abs(toIn.dy[i]) < 7) s = (y + toIn.dy[i]) * W + (x + toIn.dx[i]);
+      // only near her: beyond 6px the colour is never shown (alpha is 0) —
+      // except in her raised hand, where a fingertip is thinner than the
+      // erosion and its nearest safe pixel lies further down the finger
+      if (notInside[i]) {
+        const t = inHand(x, y) ? toSkin : toIn;
+        const reach = inHand(x, y) ? 15 : 7;
+        if (Math.abs(t.dx[i]) < reach && Math.abs(t.dy[i]) < reach) s = (y + t.dy[i]) * W + (x + t.dx[i]);
+      }
       clean[i * 3] = data[s * 3];
       clean[i * 3 + 1] = data[s * 3 + 1];
       clean[i * 3 + 2] = data[s * 3 + 2];
@@ -360,6 +412,20 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
     .raw()
     .toBuffer({ resolveWithObject: true });
   if (ai.channels !== 1) throw new Error(`alpha has ${ai.channels} channels`);
+  // THE HAND'S EDGE IS DRAWN FINER (2026-10-14). The figure's blur of 2.2 at
+  // ×2 smooths away the mask's stairs, and also closes any gap narrower than
+  // about two of her pixels and rounds a fingertip: between her fingers that
+  // made a mitten. Inside HAND_BOX the mask is enlarged by Lanczos and
+  // blurred by HAND_BLUR only, with a knee centred on the edge itself; the
+  // two are cross-faded over HAND_FEATHER px at the box's edge.
+  const { data: aHand } = await sharp(Buffer.from(grown), { raw: { width: W, height: H, channels: 1 } })
+    .extract({ left: bx0, top: by0, width: bw, height: bh })
+    .resize(uw, uh, { kernel: "lanczos3", fit: "fill" })
+    .blur(HAND_BLUR)
+    .toColourspace("b-w")
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const hb = { x0: (HAND_BOX.x - bx0) * UP, y0: (HAND_BOX.y - by0) * UP, x1: (HAND_BOX.x + HAND_BOX.w - bx0) * UP, y1: (HAND_BOX.y + HAND_BOX.h - by0) * UP };
   const rgba = Buffer.alloc(uw * uh * 4);
   for (let i = 0; i < uw * uh; i++) {
     rgba[i * 4] = rgbUp[i * 3];
@@ -367,7 +433,13 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
     rgba[i * 4 + 2] = rgbUp[i * 3 + 2];
     // the knee: the blur's ±4px ramp squeezed to about a pixel and a half,
     // centred a hair inside the mask's own edge (0.54, not 0.5)
-    rgba[i * 4 + 3] = Math.round(clamp((aUp[i] / 255 - 0.54) * 3.2 + 0.5, 0, 1) * 255);
+    const soft = clamp((aUp[i] / 255 - 0.54) * 3.2 + 0.5, 0, 1);
+    const x = i % uw;
+    const y = (i - x) / uw;
+    const inBox = Math.min(x - hb.x0, hb.x1 - x, y - hb.y0, hb.y1 - y);
+    const w = clamp(inBox / (HAND_FEATHER * UP), 0, 1);
+    const fine = w ? clamp((aHand[i] / 255 - 0.5) * 3 + 0.5, 0, 1) : 0;
+    rgba[i * 4 + 3] = Math.round((soft * (1 - w) + fine * w) * 255);
   }
   const figFile = `${OUT}/figure.webp`;
   await sharp(rgba, { raw: { width: uw, height: uh, channels: 4 } }).webp({ quality: 86, alphaQuality: 100, effort: 5 }).toFile(figFile);
@@ -480,6 +552,29 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   console.log(`FIG = ${JSON.stringify(fig)}  (cut-out ${fm.width}×${fm.height} shown at width ${fig.w})`);
   console.log(`HAND_A = [${A}]  HAND_B = [${B}]   (plate px; source ${HAND_A_SRC} / ${HAND_B_SRC}, crop x ${CROP.x}, ×${SX.toFixed(4)})`);
   console.log(`check: fingertips source x 612 → plate ${Math.round((612 - CROP.x) * SX)}; crown source y ${by0} → plate ${Math.round(by0 * SY)}`);
+  // WHERE A COIN HAS CLEARED HER FINGERS (2026-10-14). The coins fade in as
+  // they leave her palm, and the first stretch of the throw crosses her
+  // fingers: half a coin's gold over her skin read as an orange smudge on
+  // the fingertips. The component keeps a coin unseen until the coin's
+  // whole disc (at its largest size) is clear of her — this is where.
+  let clear = 0;
+  for (let p = 0; p <= 0.5; p += 0.0025) {
+    const u = 1 - p;
+    const cx = u * u * A[0] + 2 * u * p * CTRL[0] + p * p * B[0];
+    const cy = u * u * A[1] + 2 * u * p * CTRL[1] + p * p * B[1];
+    const r = COIN_R * (1 + Math.sin(Math.PI * p) * 0.22);
+    let hit = false;
+    for (let dy = -r; dy <= r && !hit; dy += 1)
+      for (let dx = -r; dx <= r && !hit; dx += 1) {
+        if (dx * dx + dy * dy > r * r) continue;
+        const fx = Math.round(((cx + dx - fig.x) * uw) / fig.w);
+        const fy = Math.round(((cy + dy - fig.y) * uw) / fig.w);
+        if (fx < 0 || fy < 0 || fx >= uw || fy >= uh) continue;
+        if (rgba[(fy * uw + fx) * 4 + 3] > 25) hit = true;
+      }
+    if (hit) clear = p + 0.0025;
+  }
+  console.log(`COIN_CLEAR = ${clear.toFixed(4)}   (the throw's p at which a coin's disc has left her hand)`);
   fs.writeFileSync(`${DBG}/numbers.json`, JSON.stringify({ crop: CROP, sx: SX, sy: SY, fig, far: farBox, pad: { left: PAD_L, top: PAD_T, bottom: PAD_B }, handA: A, handB: B, cutout: [fm.width, fm.height], bbox: [bx0, by0, bw, bh], bgMean: [bgMean, bgMean * dark], plateMean: mean1, dark }, null, 1));
 })().catch((e) => {
   console.error(e);

@@ -74,10 +74,22 @@ const HAND_A = [602, 452];
 const HAND_B = [1212, 948];
 /** Where the cut-out figure sits in the plate, and how wide — the cut-out's
  *  bbox through the same crop arithmetic (the asset script prints it). The
- *  file is 1360×1604, twice her own pixels, so the browser only ever scales
+ *  file is 1376×1604, twice her own pixels, so the browser only ever scales
  *  it down. Her crown is at y 9: her file has no sky above her head, which
- *  is why `measure` below anchors the plate to the top of the window. */
-const FIG = { x: 572, y: 9, w: 841 };
+ *  is why `measure` below anchors the plate to the top of the window. x is
+ *  563 since 2026-10-14: her fingertips were given back to the cut-out (the
+ *  asset script, HER RAISED HAND), and the leftmost one is the bbox's edge.
+ *  `measure` keeps the title's end clear of exactly this x. */
+const FIG = { x: 563, y: 9, w: 851 };
+/** THE COINS APPEAR ONCE THEY HAVE CLEARED HER FINGERS (2026-10-14 — Vardan,
+ *  on a crop of her hand: «improve hand fingers»). A coin used to fade in
+ *  from the middle of her palm, so for the first stretch of the throw half
+ *  a coin's gold lay over her fingers — an orange smudge on the fingertips.
+ *  Now it is unseen until its whole disc, at its largest, has left her hand
+ *  (the asset script prints that point of the throw, COIN_CLEAR) and fades
+ *  in over the next stretch, just above her fingertips: tossed from the
+ *  hand, not painted on it. */
+const COIN_IN = [0.065, 0.1];
 /** THE FAR PLATE, in plate pixels (the asset script prints it): her WHOLE
  *  painting at the plate's own scale — 189px of it lie left of the plate
  *  window and 651 right of it. Where she painted no more it is mirrored:
@@ -93,7 +105,7 @@ const REAL_L = 189;
 const FACE_R = 1100;
 /** the lowest skin of her raised forearm, plate y — what should stay above
  *  the cart's panel; see `measure`. Read off the cut-out file (its row 968
- *  → 9 + 968·841/1360 = 607.6). It was 580, where the forearm's outline
+ *  → 9 + 968·851/1376 = 607.7). It was 580, where the forearm's outline
  *  meets the cloak, and the last of the forearm went under the panel. */
 const ARM_Y = 608;
 /** The throw's control point, in plate pixels — ABOVE the top of the plate on
@@ -525,9 +537,10 @@ export default function CartPlate() {
         const near = 1 + Math.sin(Math.PI * p) * 0.22;
         // a handful of coins, not a machine: each its own size and lean
         const own = 0.78 + ((i * 37) % 11) / 22;
-        // leaves the palm and arrives in the other hand rather than popping
-        // into being mid-air
-        const fade = Math.min(1, Math.sin(Math.PI * p) * 3.2);
+        // appears above her fingers (COIN_IN) and fades as it drops toward
+        // the lowered hand, rather than popping into being mid-air
+        const rise = Math.min(1, Math.max(0, (p - COIN_IN[0]) / (COIN_IN[1] - COIN_IN[0])));
+        const fade = p < 0.5 ? rise * rise * (3 - 2 * rise) : Math.min(1, Math.sin(Math.PI * p) * 3.2);
         const c = coins[i];
         c.style.transform = `translate3d(${x}px, ${y}px, 0) rotateZ(${((i * 23) % 40) - 20}deg) rotateX(${spin}deg) scale(${near * own})`;
         c.style.opacity = String(fade);
@@ -621,12 +634,12 @@ export default function CartPlate() {
           </svg>
 
           {/* her figure, cut out of her own picture (change 4.pdf p18), so
-              the title passes behind her; 1360×1604 is the file's own size */}
+              the title passes behind her; 1376×1604 is the file's own size */}
           <img
             className="ap-plate__fig"
             src="/cart/figure.webp"
             alt=""
-            width={1360}
+            width={1376}
             height={1604}
             style={{ left: FIG.x, top: FIG.y, width: FIG.w }}
             decoding="async"
