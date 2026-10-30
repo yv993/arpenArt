@@ -890,6 +890,31 @@ export const home = {
     pickBody:
       "One of the fifty-seven original illustrations, painted in Yerevan. Every piece in the shop is printed, painted or glazed from one of them.",
     pickCta: "See them in the shop",
+    /** THE PUZZLE's words (2026-10-29 — interface microcopy, the site's
+     *  voice, NOT hers; Vardan asked for the puzzle, not for words). Only a
+     *  picture with pieces in lib/puzzles.ts shows the button. `{…}` slots
+     *  are filled by Puzzle.tsx. The numbers a piece is called by follow the
+     *  scatter, never the board, so no sentence here gives the answer. */
+    puzzle: {
+      cta: "Play the puzzle",
+      title: "Puzzle",
+      // names both ways in sight (review, 2026-10-29: it said only «Drag»)
+      hint: "Drag each piece to its place — or tap it, then tap its place",
+      keysShort: "Enter picks up · arrows move it · Enter sets it down",
+      again: "Scatter again",
+      replay: "Play again",
+      back: "Back to the picture",
+      done: "Complete — in {time}",
+      keys: "Each piece is a button. Press Enter to pick one up, the arrow keys to move it over the picture, and Enter to set it down; Escape puts it back. A piece can also be tapped, then tapped into its place on the picture.",
+      picked: "Piece {k} picked up — row {r}, column {c}.",
+      at: "Row {r}, column {c}.",
+      placed: "In place — {n} of {total}.",
+      miss: "Not its place — it stays loose.",
+      putBack: "Put back.",
+      piece: "Piece {k} of {total}",
+      inPlace: "Piece {k}, in place",
+      complete: "Complete — all {total} pieces in place, in {time}.",
+    },
   },
   // The sphere turned from the 57 illustrations to the SHOP (client
   // 2026-08-06), so the copy had to follow: "every picture in the series" was

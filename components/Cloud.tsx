@@ -6,6 +6,29 @@ import gsap from "gsap";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { withheldArt } from "@/lib/content";
+import dynamic from "next/dynamic";
+import { puzzles } from "@/lib/puzzles";
+import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
+import MapBoundary from "./MapBoundary";
+
+// THE PUZZLE COMES WHEN IT IS ASKED FOR: its code is not in the home page's
+// first load (nothing needs it until «Play the puzzle» is pressed), and it
+// sits in a MapBoundary below, so a chunk that is gone after a deploy (a tab
+// left open across one) fails alone — back to the picture — instead of
+// throwing to app/error.tsx and taking the whole home page with it (the
+// same reason GlobeCanvas and the store map sit in one).
+const Puzzle = dynamic(() => import("./Puzzle"), { ssr: false });
+
+/** a jigsaw piece, the panel's sign for «Play the puzzle» (one tab out on
+ *  top and right, a blank on the bottom and left) */
+const PieceIcon = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <path
+      fill="currentColor"
+      d="M3 4h3.2a1.8 1.8 0 1 1 3.6 0H13v3.2a1.8 1.8 0 1 1 0 3.6V14H9.8a1.8 1.8 0 1 0-3.6 0H3v-3.2a1.8 1.8 0 1 0 0-3.6V4z"
+    />
+  </svg>
+);
 
 type Art = {
   id: string;
@@ -120,9 +143,13 @@ export default function Cloud({
   title,
   copy,
   pick,
+  puzzle,
 }: {
   /** what a chosen picture says — see home.strip in lib/content.ts */
   pick: { line: string; body: string; cta: string };
+  /** the puzzle's interface words (home.strip.puzzle) — a picture with
+   *  pieces in lib/puzzles.ts offers «Play the puzzle» in its panel */
+  puzzle: PuzzleCopy;
   items: Art[];
   kicker: string;
   /** the title's LINES — the break is the client's (change.pdf p2,
@@ -156,9 +183,48 @@ export default function Cloud({
    *  top, while the old one holds beneath until it is covered. */
   type Face = { src?: string; w?: number; h?: number };
   const [page, setPage] = useState<{ over: Face; under?: Face; dir: 1 | -1 } | null>(null);
+
+  // THE PUZZLE (Vardan, 2026-10-29). A picture with pieces (lib/puzzles.ts —
+  // No. 05 today) offers «Play the puzzle» in its panel. On the desktop
+  // moved layer the cloud's own frame becomes the room: the cards fade out,
+  // the panel steps aside, the plane's drag and the panel's keys stand down
+  // (`playingRef`), and the puzzle's bar brings the picture back. On the
+  // plain layer it opens as a window over the page. Leaving keeps the game
+  // (`puzzleMemory`), so coming back finds the pieces where they were left.
+  const [playing, setPlaying] = useState(false);
+  const playingRef = useRef(false);
+  playingRef.current = playing;
+  const puzzleMemory = useRef<Record<string, PuzzleSaved | undefined>>({});
+  const playBtn = useRef<HTMLButtonElement | null>(null);
+  const wasPlaying = useRef(false);
+  const startPuzzle = useCallback(() => {
+    // the desktop room is the frame: bring the whole of it on screen first,
+    // or the board can open half under the fold
+    const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
+    if (frame && window.matchMedia(DESKTOP).matches) {
+      const top = frame.getBoundingClientRect().top;
+      if (Math.abs(top) > 2) window.scrollTo({ top: window.scrollY + top, behavior: "smooth" });
+    }
+    setPlaying(true);
+  }, []);
+  const stopPuzzle = useCallback(() => setPlaying(false), []);
+  // the way back lands on the button that opened it
+  useEffect(() => {
+    // …but only when focus was in the puzzle (it is on <body> once the
+    // puzzle's pieces are gone) or still in the cloud — never pulled out of
+    // somewhere else the reader has gone (review, 2026-10-29)
+    if (wasPlaying.current && !playing)
+      requestAnimationFrame(() => {
+        const a = document.activeElement;
+        if (!a || a === document.body || root.current?.contains(a)) playBtn.current?.focus({ preventScroll: true });
+      });
+    wasPlaying.current = playing;
+  }, [playing]);
+
   useEffect(() => {
     setView("front");
     setPage(null);
+    setPlaying(false);
     // warm the picture's other faces the moment it opens, so the first
     // switch doesn't have to wait on the network
     const art = chosen ? items.find((a) => a.id === chosen) : undefined;
@@ -348,6 +414,9 @@ export default function Cloud({
         // the info panel's own controls (and its scrolling sheet) keep the
         // pointer; so does anything outside the plane's room
         if ((e.target as HTMLElement).closest(".ap-cloud__info")) return;
+        // while the puzzle is out the frame is its room: a press there moves
+        // a piece, never the hidden plane (2026-10-29)
+        if (playingRef.current || (e.target as HTMLElement).closest(".ap-pz, .ap-pz__bar")) return;
         // a press takes over from whatever was moving the plane — a throw
         // still coasting, or the centring tween of a picked card
         gsap.killTweensOf(pan.current);
@@ -492,7 +561,12 @@ export default function Cloud({
           dirty = false;
           write();
         }
-        for (const f of flight) {
+        // THE HIDDEN CLOUD RESTS (review, 2026-10-29): under the puzzle the
+        // plane is invisible, and writing ~35 cards' transforms every frame
+        // was most of the frame's style work. The clock runs on, so when
+        // «Back to the picture» fades the plane in, the cards are simply
+        // further along their paths — the step happens at opacity 0.
+        if (!playingRef.current) for (const f of flight) {
           // A chosen card STOPS — eased to a standstill, then NOT WRITTEN
           // AT ALL. The old 0.25 damping kept writing a new transform every
           // frame, and a perpetually-animating transform keeps the card on
@@ -574,7 +648,24 @@ export default function Cloud({
     const el = root.current;
     // On the plain rail the caption CSS does the whole job; the dim / grow /
     // pan choreography is desktop-and-full-motion only.
-    if (!el || !window.matchMedia(DESKTOP).matches) return;
+    if (!el) return;
+    // CROSSING TO THE PLAIN LAYER WITH A PICTURE OPEN (review, 2026-10-29 —
+    // older than the puzzle): the desktop branch below had written opacity
+    // and width onto every card and hidden the title, and the rail kept all
+    // of it — every card at 0.16 and the open one at 3.6× its width. On the
+    // plain layer those inline styles go; back on the desktop the branch
+    // runs again (this effect follows `plain`) and re-grows the open card.
+    if (!window.matchMedia(DESKTOP).matches) {
+      const cards = el.querySelectorAll<HTMLElement>(".ap-cloud__card");
+      gsap.killTweensOf(cards);
+      gsap.set(cards, { clearProps: "opacity,width" });
+      const say = el.querySelector<HTMLElement>(".ap-cloud__say");
+      if (say) {
+        gsap.killTweensOf(say);
+        gsap.set(say, { clearProps: "opacity,visibility" });
+      }
+      return;
+    }
     const cards = gsap.utils.toArray<HTMLElement>(".ap-cloud__card", el);
     const say = el.querySelector<HTMLElement>(".ap-cloud__say");
     const card = chosen ? cards.find((c) => c.dataset.id === chosen) : undefined;
@@ -623,6 +714,9 @@ export default function Cloud({
     }
 
     const onKey = (e: KeyboardEvent) => {
+      // the puzzle has the keys while it is out: its Escape leaves the
+      // puzzle (not the picture), its arrows move a piece (not the series)
+      if (playingRef.current) return;
       if (e.key === "Escape") setChosen(null);
       if (!chosenRef.current) return;
       if (e.key === "ArrowRight") {
@@ -636,7 +730,7 @@ export default function Cloud({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chosen, write, step]);
+  }, [chosen, write, step, plain]);
 
   // THE RAIL FOLLOWS THE PANEL — plain layer only (phone repair pass,
   // 2026-10-05). ‹ › in the panel choose the next picture, and on the rail
@@ -728,11 +822,14 @@ export default function Cloud({
       <div
         className="ap-cloud__frame"
         data-chosen={chosen || undefined}
+        data-puzzle={playing && !plain ? "" : undefined}
         // Click-away to close: "a clean press on the ground puts one back".
         // A press on a card or on the panel is that element's business, and
         // the click the browser fires at the end of a DRAG (it lands here,
         // on the capturing frame) is not a press at all — see dragEndAt.
+        // Nor is any press while the puzzle is out: the room is the frame.
         onClick={(e) => {
+          if (playingRef.current) return;
           if (performance.now() - dragEndAt.current < 400) return;
           const t = e.target as HTMLElement;
           if (!t.closest(".ap-cloud__card") && !t.closest(".ap-cloud__info")) setChosen(null);
@@ -854,7 +951,8 @@ export default function Cloud({
             note for it (client files 2026-08-11). The three pictures without
             a note yet (23/25/34) keep the series body. ‹ › browse the whole
             series without closing — the plane flies to each one. */}
-        {chosen && (
+        {/* the desktop panel steps aside while the puzzle has the frame */}
+        {chosen && !(playing && !plain) && (
           // NO role=status ON THE PLAIN LAYER (2026-10-05 package): the
           // whole panel — note, faces, price, buttons — was read out on every
           // change. Focus moves to "No. n" when a card opens it, and only
@@ -901,6 +999,12 @@ export default function Cloud({
                   </div>
                 );
               })()}
+              {puzzles[chosen] && (
+                <button type="button" className="ap-cloud__play" ref={playBtn} onClick={startPuzzle}>
+                  <PieceIcon />
+                  {puzzle.cta}
+                </button>
+              )}
               <div className="ap-cloud__nav">
                 <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
                   ←
@@ -946,6 +1050,22 @@ export default function Cloud({
               ✕
             </button>
           </div>
+        )}
+
+        {/* the puzzle: in the frame on the desktop moved layer, as a window
+            everywhere else (a portal — it lies over the page, not the rail) */}
+        {playing && chosen && puzzles[chosen] && (
+          <MapBoundary onError={stopPuzzle}>
+            <Puzzle
+              key={plain ? "sheet" : "inline"}
+              set={puzzles[chosen]}
+              mode={plain ? "sheet" : "inline"}
+              label={`No. ${chosen}`}
+              copy={puzzle}
+              memory={puzzleMemory}
+              onExit={stopPuzzle}
+            />
+          </MapBoundary>
         )}
       </div>
     </section>

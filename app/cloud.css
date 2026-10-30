@@ -530,6 +530,40 @@
   .ap-cloud__frame[data-chosen]::after {
     opacity: 0.35;
   }
+  /* THE PUZZLE HAS THE FRAME (2026-10-29, Puzzle.tsx / puzzle.css). The
+     cards fade out of the room — every one, the opened picture too: its
+     pieces are about to be scattered across the same space — and come back
+     when the bar's «Back to the picture» is pressed. The plane is the one
+     element faded, so the cards' own transforms (the float, the chosen
+     card's grown width) are untouched and resume exactly. No grab hand:
+     nothing here pans while the puzzle is out. */
+  .ap-cloud__plane {
+    transition: opacity 0.35s var(--ease);
+  }
+  .ap-cloud__frame[data-puzzle] {
+    cursor: default;
+  }
+  .ap-cloud__frame[data-puzzle] .ap-cloud__plane {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.35s var(--ease),
+      visibility 0s linear 0.35s;
+  }
+  .ap-cloud__frame[data-puzzle]::after {
+    opacity: 0.6;
+  }
+  /* …and the sun's twin goes with them (review, 2026-10-29): her rule is no
+     sun between the cards (2026-08-10), and the pieces are cards here — one
+     lay across the disc at 1440×900. The twin sits BEFORE the frame, so the
+     frame's attribute reaches it through :has(). The real sun is under the
+     opaque section, so nothing shows in its place. */
+  .ap > .ap-cloud > .ap-cloud__sun {
+    transition: opacity 0.35s var(--ease);
+  }
+  .ap > .ap-cloud:has(> .ap-cloud__frame[data-puzzle]) > .ap-cloud__sun {
+    opacity: 0;
+  }
 
   /* .ap-dark only fixes focus rings — every dark band sets its own type
      colours, and --ink-muted on --ink is 1.5:1. */

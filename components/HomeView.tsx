@@ -363,6 +363,7 @@ export default function HomeView() {
         title={home.strip.title}
         copy={home.strip.copy}
         pick={{ line: home.strip.pickLine, body: home.strip.pickBody, cta: home.strip.pickCta }}
+        puzzle={home.strip.puzzle}
       />
 
       {/* ═══ RIBBON — the awning between the series and the gallery ════════

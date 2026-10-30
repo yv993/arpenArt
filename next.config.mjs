@@ -89,10 +89,12 @@ const nextConfig = {
       // it handed those two HTML pages a day-long cache (tested with Next's
       // own matcher, next/dist/shared/lib/router/utils/path-match): a deploy
       // would not have reached a returning visitor's cart for a day.
+      // /puzzle (2026-10-29) is asked for by `?v=` (lib/puzzles.json), so a
+      // replaced piece can never meet yesterday's board in this cache.
       ...(process.env.NODE_ENV === "production"
         ? [
             {
-              source: "/(art|products|stories|studio|hero|globe|auth|brand|cart|stockists|map)/:path+",
+              source: "/(art|products|stories|studio|hero|globe|auth|brand|cart|stockists|map|puzzle)/:path+",
               headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
             },
           ]
