@@ -102,10 +102,17 @@
 .ap-pz[data-ready] .ap-pz__piece {
   opacity: 1;
 }
-.ap-pz__piece img {
+/* his piece's file, or a cut piece's canvas: either fills its button. The
+   canvas holds the picture's own pixels; without this it kept that size and
+   sat in the button's corner wherever a small picture is shown larger
+   (Nos. 23/25/34 on a desktop: pieces at 56–78% of their places, and a press
+   on the bare part still took the piece — review, 2026-10-30) */
+.ap-pz__piece img,
+.ap-pz__piece canvas {
   display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
   pointer-events: none;
   -webkit-user-drag: none;
   -webkit-touch-callout: none;

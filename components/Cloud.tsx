@@ -213,6 +213,18 @@ export default function Cloud({
     // …but only when focus was in the puzzle (it is on <body> once the
     // puzzle's pieces are gone) or still in the cloud — never pulled out of
     // somewhere else the reader has gone (review, 2026-10-29)
+    // THE TITLE GOES WHILE A PUZZLE IS OUT (review, 2026-10-30): a picture
+    // filtered out of the cloud has no card, so choosing it leaves the title
+    // up — and the deal laid pieces across «A JOURNEY THROUGH ARMENIA». On
+    // the way back the title is what the choice says (hidden while a card
+    // is open). The desktop room only: the plain layer's window covers it.
+    const el = root.current;
+    const say = el?.querySelector<HTMLElement>(".ap-cloud__say");
+    if (el && say && (playing || wasPlaying.current) && window.matchMedia(DESKTOP).matches) {
+      const id = chosenRef.current;
+      const card = id ? el.querySelector(`.ap-cloud__card[data-id="${id}"]`) : null;
+      gsap.to(say, { autoAlpha: playing || card ? 0 : 1, duration: playing ? 0.25 : 0.35 });
+    }
     if (wasPlaying.current && !playing)
       requestAnimationFrame(() => {
         const a = document.activeElement;
@@ -226,9 +238,11 @@ export default function Cloud({
     setPage(null);
     setPlaying(false);
     // warm the picture's other faces the moment it opens, so the first
-    // switch doesn't have to wait on the network
+    // switch doesn't have to wait on the network — and its front, the file
+    // its puzzle is cut from: a picture with no card in the cloud (filtered
+    // out) has not loaded it, and «Play» waited on it (review, 2026-10-30)
     const art = chosen ? items.find((a) => a.id === chosen) : undefined;
-    [art?.back, art?.mock].forEach((s) => {
+    [art?.lg ?? art?.src, art?.back, art?.mock].forEach((s) => {
       if (s) new Image().src = s;
     });
   }, [chosen, items]);
@@ -689,7 +703,8 @@ export default function Cloud({
       });
       c.style.zIndex = isIt ? "600" : c.style.getPropertyValue("--z");
     });
-    if (say) gsap.to(say, { autoAlpha: card ? 0 : 1, duration: 0.35 });
+    // (and while a puzzle is out — back on the desktop mid-game, see above)
+    if (say) gsap.to(say, { autoAlpha: card || playingRef.current ? 0 : 1, duration: 0.35 });
 
     // the centring tween owns the plane now: a throw still coasting would
     // fight it frame by frame (drag restored 2026-10-12)
@@ -999,12 +1014,13 @@ export default function Cloud({
                   </div>
                 );
               })()}
-              {puzzles[chosen] && (
-                <button type="button" className="ap-cloud__play" ref={playBtn} onClick={startPuzzle}>
-                  <PieceIcon />
-                  {puzzle.cta}
-                </button>
-              )}
+              {/* EVERY PICTURE PLAYS (2026-10-29, «use same logic for other
+                  images»): No. 05 with the pieces he cut, every other one cut
+                  in the browser with his knob (lib/puzzleCut.ts) */}
+              <button type="button" className="ap-cloud__play" ref={playBtn} onClick={startPuzzle}>
+                <PieceIcon />
+                {puzzle.cta}
+              </button>
               <div className="ap-cloud__nav">
                 <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
                   ←
@@ -1054,19 +1070,28 @@ export default function Cloud({
 
         {/* the puzzle: in the frame on the desktop moved layer, as a window
             everywhere else (a portal — it lies over the page, not the rail) */}
-        {playing && chosen && puzzles[chosen] && (
-          <MapBoundary onError={stopPuzzle}>
-            <Puzzle
-              key={plain ? "sheet" : "inline"}
-              set={puzzles[chosen]}
-              mode={plain ? "sheet" : "inline"}
-              label={`No. ${chosen}`}
-              copy={puzzle}
-              memory={puzzleMemory}
-              onExit={stopPuzzle}
-            />
-          </MapBoundary>
-        )}
+        {playing &&
+          chosen &&
+          (() => {
+            const a = items.find((x) => x.id === chosen);
+            if (!a) return null;
+            return (
+              <MapBoundary onError={stopPuzzle}>
+                <Puzzle
+                  key={plain ? "sheet" : "inline"}
+                  set={puzzles[chosen]}
+                  // the picture the open card already shows — so its file is
+                  // already in the cache when a cut puzzle draws from it
+                  art={{ id: a.id, src: a.lg ?? a.src, w: a.lgW ?? a.w, h: a.lgH ?? a.h }}
+                  mode={plain ? "sheet" : "inline"}
+                  label={`No. ${chosen}`}
+                  copy={puzzle}
+                  memory={puzzleMemory}
+                  onExit={stopPuzzle}
+                />
+              </MapBoundary>
+            );
+          })()}
       </div>
     </section>
   );

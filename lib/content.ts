@@ -911,6 +911,7 @@ export const home = {
       placed: "In place — {n} of {total}.",
       miss: "Not its place — it stays loose.",
       putBack: "Put back.",
+      failed: "The picture didn’t load — go back and try again.",
       piece: "Piece {k} of {total}",
       inPlace: "Piece {k}, in place",
       complete: "Complete — all {total} pieces in place, in {time}.",

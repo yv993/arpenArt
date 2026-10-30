@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import type { PuzzleSet } from "@/lib/puzzles";
+import { cutPuzzle, piecePath, type CutArt } from "@/lib/puzzleCut";
 import { loopTab } from "@/lib/tabLoop";
 
 // ============================================================================
@@ -64,6 +65,8 @@ export type PuzzleCopy = {
   placed: string;
   miss: string;
   putBack: string;
+  /** the picture would not load: said in the bar, with the way back */
+  failed: string;
   piece: string;
   inPlace: string;
   complete: string;
@@ -105,7 +108,9 @@ const REACH = 24 / 110;
 
 // ---- the room --------------------------------------------------------------
 type Slot = { x: number; y: number };
-type Lay = { W: number; H: number; c: number; s: number; bx: number; by: number; slots: Slot[] };
+/** c: the larger side of a cell, CSS px; cw × ch: a cell, CSS px; s: CSS px
+ *  per source px */
+type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number; bx: number; by: number; slots: Slot[] };
 
 /** Candidate resting places for pieces, a grid spread evenly over the room,
  *  minus everything that would lie on (or touch) the board. A piece is at
@@ -130,10 +135,17 @@ function gen(W: number, H: number, c: number, bx: number, by: number, bw: number
 
 /** The biggest board for which every piece still has a place of its own
  *  off it. Wide rooms put the board in the middle with the pieces all round
- *  (the cloud's own composition); tall ones put it on top, pieces below. */
+ *  (the cloud's own composition); tall ones put it on top, pieces below.
+ *  `c` is the LARGER side of a cell in CSS px (margins and reach are counted
+ *  in it); a cut picture's cells may be a little taller than wide, so the
+ *  board is cols × cw by rows × ch. */
 function layout(W: number, H: number, set: PuzzleSet): Lay {
   const { cols, rows } = set;
   const N = set.pieces.length;
+  const big = Math.max(set.cw, set.ch);
+  /** CSS px per source px, for a board that is `fw` of the room wide and
+   *  `fh` of it tall at most */
+  const fit = (fw: number, fh: number) => Math.min(fw / (cols * set.cw), fh / (rows * set.ch));
   // A WIDE ROOM WANTS SLACK: with exactly enough places the deal had no
   // choice — at 1440×900 sixteen of eighteen pieces jammed into a row above
   // the board and a row below, the sides empty (review re-run, 2026-10-29).
@@ -144,31 +156,37 @@ function layout(W: number, H: number, set: PuzzleSet): Lay {
     W / H > 1.25
       ? [["centre", Math.ceil(N * 1.3)], ["centre", N], ["side", N], ["top", N]]
       : [["top", N], ["centre", N], ["side", N]];
+  // A PORTRAIT BOARD may stand taller in the middle (review, 2026-10-30): at
+  // 0.6 of the room's height it was the height, not the places, that held a
+  // 4×5 cut small — 304×430 at 1440×900, with empty bands either side. His
+  // 6×3 board keeps 0.6.
+  const tall = rows > cols ? 0.8 : 0.6;
   for (const [kind, need] of tries) {
-    const cap =
-      kind === "centre"
-        ? Math.min(150, (W * 0.54) / cols, (H * 0.6) / rows)
-        : kind === "top"
-          ? Math.min(150, (W - 24) / cols, (H * 0.44) / rows)
-          : Math.min(150, (W * 0.6) / cols, (H - 24) / rows);
+    const s0 =
+      kind === "centre" ? fit(W * 0.54, H * tall) : kind === "top" ? fit(W - 24, H * 0.44) : fit(W * 0.6, H - 24);
+    const cap = Math.min(150, s0 * big);
     for (let c = Math.floor(cap); c >= 36; c -= 2) {
-      const bw = cols * c;
-      const bh = rows * c;
+      const s = c / big;
+      const bw = cols * set.cw * s;
+      const bh = rows * set.ch * s;
       const bx = kind === "side" ? Math.max(12, W * 0.04) : (W - bw) / 2;
       const by = kind === "top" ? 12 : (H - bh) / 2;
       const slots = gen(W, H, c, bx, by, bw, bh);
-      if (slots.length >= need) return { W, H, c, s: c / set.cell, bx, by, slots };
+      if (slots.length >= need) return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
     }
   }
-  // a room too small for eighteen apart: the board as big as it can be in
-  // the middle, the pieces packed tighter (overlapping) around it
-  const c = Math.max(20, Math.min((W - 24) / cols, (H * 0.5) / rows));
-  const bx = (W - cols * c) / 2;
+  // a room too small for all of them apart: the board as big as it can be
+  // in the middle, the pieces packed tighter (overlapping) around it
+  const s = Math.max(20 / big, fit(W - 24, H * 0.5));
+  const c = s * big;
+  const bw = cols * set.cw * s;
+  const bh = rows * set.ch * s;
+  const bx = (W - bw) / 2;
   const by = 12;
-  let slots = gen(W, H, c, bx, by, cols * c, rows * c, 0.9);
+  let slots = gen(W, H, c, bx, by, bw, bh, 0.9);
   if (!slots.length) slots = [{ x: W / 2, y: H - c }];
   while (slots.length < N) slots = slots.concat(slots.map((p) => ({ x: p.x + c * 0.3, y: p.y + c * 0.3 })));
-  return { W, H, c, s: c / set.cell, bx, by, slots };
+  return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
 }
 
 /** N of the slots, spread round the board (by angle from its centre), with
@@ -176,8 +194,8 @@ function layout(W: number, H: number, set: PuzzleSet): Lay {
 function spread(lay: Lay, N: number, cols: number, rows: number) {
   const { slots } = lay;
   if (slots.length <= N) return shuffle([...slots]);
-  const cx = lay.bx + (cols * lay.c) / 2;
-  const cy = lay.by + (rows * lay.c) / 2;
+  const cx = lay.bx + (cols * lay.cw) / 2;
+  const cy = lay.by + (rows * lay.ch) / 2;
   const s = [...slots].sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
   const step = s.length / N;
   const off = Math.random() * step;
@@ -238,14 +256,18 @@ const makeP = (i: number): P => {
 };
 
 export default function Puzzle({
-  set,
+  set: given,
+  art,
   mode,
   label,
   copy,
   memory,
   onExit,
 }: {
-  set: PuzzleSet;
+  /** his pieces (No. 05); without them the picture is cut here */
+  set?: PuzzleSet;
+  /** the picture itself — what a cut puzzle is drawn from */
+  art: CutArt;
   mode: "inline" | "sheet";
   /** what the picture is called on this site — "No. 05" */
   label: string;
@@ -253,8 +275,24 @@ export default function Puzzle({
   memory: React.MutableRefObject<Record<string, PuzzleSaved | undefined>>;
   onExit: () => void;
 }) {
+  // ONE SET FOR THE LIFE OF THE GAME: his pieces when the picture has them,
+  // else this picture cut with his knob (lib/puzzleCut.ts, deterministic).
+  // A cut set may be cut ONCE more, into fewer pieces, before the game
+  // starts — when the first layout finds the room too small (see the room's
+  // size, below); never after.
+  const [set, setSet] = useState<PuzzleSet>(() => given ?? cutPuzzle(art));
+  const cut = set.kind === "cut";
   const N = set.pieces.length;
   const host = useRef<HTMLDivElement | null>(null);
+  /** a cut picture's pieces are canvases, drawn once the picture is in */
+  const cvs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const [drawn, setDrawn] = useState(!cut);
+  /** the picture would not load, even on a second try */
+  const [failed, setFailed] = useState(false);
+  /** the set whose hit masks are built from outlines (cut sets only) */
+  const masked = useRef<PuzzleSet | null>(null);
+  /** the game has been dealt (or restored): from here the set is fixed */
+  const inited = useRef(false);
   const sheet = useRef<HTMLDivElement | null>(null);
   const bar = useRef<HTMLDivElement | null>(null);
   const els = useRef<(HTMLButtonElement | null)[]>([]);
@@ -274,9 +312,12 @@ export default function Puzzle({
 
   // Tab order and the pieces' spoken numbers follow a shuffle made once per
   // visit, never the board's order (which would read out the answer)
-  const [order] = useState(() => shuffle([...Array(N).keys()]));
+  const [order, setOrder] = useState(() => shuffle([...Array(N).keys()]));
   const rank = useRef<number[]>([]);
-  if (!rank.current.length) order.forEach((i, k) => (rank.current[i] = k + 1));
+  if (rank.current.length !== order.length) {
+    rank.current = [];
+    order.forEach((i, k) => (rank.current[i] = k + 1));
+  }
 
   const [L, setL] = useState<Lay | null>(null);
   const [ready, setReady] = useState(false);
@@ -325,12 +366,12 @@ export default function Puzzle({
   // ---- geometry helpers ----------------------------------------------------
   const home = (l: Lay, i: number) => {
     const pc = set.pieces[i];
-    return { x: l.bx + (pc.c + 0.5) * l.c, y: l.by + (pc.r + 0.5) * l.c };
+    return { x: l.bx + (pc.c + 0.5) * l.cw, y: l.by + (pc.r + 0.5) * l.ch };
   };
   /** the body's centre inside the piece's own box, CSS px at scale s */
   const origin = (i: number, s: number) => {
     const pc = set.pieces[i];
-    return { x: (pc.c * set.cell - pc.x + set.cell / 2) * s, y: (pc.r * set.cell - pc.y + set.cell / 2) * s };
+    return { x: (pc.c * set.cw - pc.x + set.cw / 2) * s, y: (pc.r * set.ch - pc.y + set.ch / 2) * s };
   };
   const mark = () => {
     dirty.current = true;
@@ -404,7 +445,8 @@ export default function Puzzle({
   const scatter = useCallback(
     (fly: boolean) => {
       const l = lay.current;
-      if (!l) return;
+      // nothing to deal before the game is (a cut picture still drawing)
+      if (!l || !ps.current.length) return;
       // ONE DEAL AT A TIME, AND NOTHING LEFT IN A HAND (review, 2026-10-29):
       // «Scatter again» in the opening beat was dealt twice (its own, then
       // the beat's at 0.85s), and a deal under a held piece tweened it out of
@@ -483,6 +525,21 @@ export default function Puzzle({
       // screen, one mid-snap left a placed piece 0.6 cell off its cell)
       if (prev) gsap.getTweensOf(ps.current).forEach((t) => t.progress(1));
       const next = layout(W, H, set);
+      // A SMALL ROOM GETS FEWER, BIGGER PIECES (review, 2026-10-30): on a
+      // 360×640 phone the 4×5 cut came out 38×43 px — under the 44 px a
+      // fingertip needs, where his No. 05 stays at 46. Before the game
+      // starts, a cut picture whose cells would be under 44 px is cut again
+      // into about twelve (3×4: 49×52 there). The layout runs again for it,
+      // with this effect, as the set changes.
+      if (!prev && !inited.current && cut && !given && Math.min(next.cw, next.ch) < 44) {
+        const few = cutPuzzle(art, "few");
+        if (few.pieces.length < N) {
+          setSet(few);
+          setOrder(shuffle([...Array(few.pieces.length).keys()]));
+          setPlaced(Array(few.pieces.length).fill(false));
+          return;
+        }
+      }
       lay.current = next;
       // a placed piece re-seats on the new board; a loose one keeps its place
       // as a fraction of the room — unless the room changed shape, when the
@@ -526,9 +583,14 @@ export default function Puzzle({
   }, []);
 
   // ---- the first layout: restore the last visit, or deal a new game ------
-  const inited = useRef(false);
+  // A CUT PICTURE WAITS FOR ITS PAINT (review, 2026-10-30): dealt on the
+  // layout alone, the 0.85 s "picture first" beat ran while its pieces were
+  // still being drawn — on a picture not yet in the cache it was over before
+  // they showed, and an invisible piece could be picked up. Now nothing is
+  // dealt (and nothing can be taken) until the pieces have their paint; his
+  // pieces are `drawn` from the start, so No. 05 is as it was.
   useEffect(() => {
-    if (!L || inited.current) return;
+    if (!L || !drawn || inited.current) return;
     inited.current = true;
     ps.current = set.pieces.map((_, i) => makeP(i));
     const saved = memory.current[set.art];
@@ -575,7 +637,7 @@ export default function Puzzle({
     // THE CHECK HARNESS'S WINDOW (imgss/puzzle-2026-10-29/check): the moving
     // state, read from outside on the dev server. The build replaces
     // NODE_ENV, so production carries none of it.
-    if (process.env.NODE_ENV !== "production") (window as unknown as { __pz: unknown }).__pz = { ps, lay, still };
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __pz: unknown }).__pz = { ps, lay, still, set };
     mark();
     // shown after the first frame has put every piece where it belongs
     requestAnimationFrame(() => {
@@ -587,7 +649,7 @@ export default function Puzzle({
       target?.focus({ preventScroll: true });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [L]);
+  }, [L, drawn]);
 
   // ---- the frame loop ------------------------------------------------------
   useEffect(() => {
@@ -658,10 +720,12 @@ export default function Puzzle({
   );
 
   // ---- the alpha masks, one per piece, built as its image arrives --------
-  const onImg = (i: number, img: HTMLImageElement) => {
-    if (masks.current[i] || !img.naturalWidth) return;
-    const w = Math.max(8, Math.round(img.naturalWidth / 4));
-    const h = Math.max(8, Math.round(img.naturalHeight / 4));
+  const onImg = (i: number, img: HTMLImageElement | HTMLCanvasElement) => {
+    const nw = img instanceof HTMLCanvasElement ? img.width : img.naturalWidth;
+    const nh = img instanceof HTMLCanvasElement ? img.height : img.naturalHeight;
+    if (masks.current[i] || !nw) return;
+    const w = Math.max(8, Math.round(nw / 4));
+    const h = Math.max(8, Math.round(nh / 4));
     const cv = document.createElement("canvas");
     cv.width = w;
     cv.height = h;
@@ -673,6 +737,103 @@ export default function Puzzle({
     for (let k = 0; k < w * h; k++) a[k] = d[k * 4 + 3];
     masks.current[i] = { w, h, a };
   };
+
+  // A CUT PICTURE'S HIT MASKS come from the outlines alone, filled on one
+  // small canvas the CPU keeps (review, 2026-10-30): read back from the
+  // drawn pieces they were one 85–240 ms task at «Play», nearly all of it
+  // the GPU read-back; filled from piecePath they take a few ms, and they
+  // agree with the read-back to 0.6% of a piece's pixels.
+  const outlineMasks = () => {
+    if (masked.current === set) return;
+    const cv = document.createElement("canvas");
+    const g = cv.getContext("2d", { willReadFrequently: true });
+    if (!g) return;
+    masks.current = [];
+    set.pieces.forEach((pc, i) => {
+      const w = Math.max(8, Math.round(pc.w / 4));
+      const h = Math.max(8, Math.round(pc.h / 4));
+      cv.width = w; // a new size clears it and resets its transform
+      cv.height = h;
+      g.setTransform(w / pc.w, 0, 0, h / pc.h, 0, 0);
+      g.fill(piecePath(set, i));
+      const d = g.getImageData(0, 0, w, h).data;
+      const a = new Uint8Array(w * h);
+      for (let k = 0; k < w * h; k++) a[k] = d[k * 4 + 3];
+      masks.current[i] = { w, h, a };
+    });
+    masked.current = set;
+  };
+
+  // A CUT PICTURE'S PIECES are canvases: when the picture has decoded, each
+  // piece is the picture clipped to its own outline (his knob on every
+  // joint), at the picture's own pixels. The game is dealt only once they
+  // are drawn (the first-layout effect waits for `drawn`). A picture that
+  // will not load is asked for once more, then the room says so and offers
+  // the way back (review: it used to sit as an empty board of invisible,
+  // live pieces).
+  useEffect(() => {
+    if (!cut || !L || drawn || failed) return;
+    let gone = false;
+    let retry = 0;
+    outlineMasks();
+    const draw = (img: HTMLImageElement) => {
+      // the picture's own size may differ from the numbers we were given
+      const kx = img.naturalWidth / set.w;
+      const ky = img.naturalHeight / set.h;
+      set.pieces.forEach((pc, i) => {
+        const cv = cvs.current[i];
+        const g = cv?.getContext("2d");
+        if (!cv || !g) return;
+        g.clearRect(0, 0, cv.width, cv.height);
+        g.save();
+        g.scale(cv.width / pc.w, cv.height / pc.h);
+        g.clip(piecePath(set, i));
+        g.drawImage(img, pc.x * kx, pc.y * ky, pc.w * kx, pc.h * ky, 0, 0, pc.w, pc.h);
+        g.restore();
+      });
+      setDrawn(true);
+    };
+    const load = (n: number) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = set.full.src;
+      const bad = () => {
+        if (gone) return;
+        if (n === 0) retry = window.setTimeout(() => load(1), 1200);
+        else setFailed(true);
+      };
+      const ok = () => {
+        if (gone) return;
+        if (img.naturalWidth) draw(img);
+        else bad();
+      };
+      img.decode().then(ok, () => {
+        if (gone) return;
+        if (img.complete) ok();
+        else {
+          img.addEventListener("load", ok, { once: true });
+          img.addEventListener("error", bad, { once: true });
+        }
+      });
+    };
+    load(0);
+    return () => {
+      gone = true;
+      window.clearTimeout(retry);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cut, L, drawn, failed]);
+
+  // when the picture has failed, focus goes to the way back (it was on the
+  // «Play» button, which is gone while the puzzle is out)
+  useEffect(() => {
+    if (!failed) return;
+    const way =
+      mode === "sheet"
+        ? sheet.current?.querySelector<HTMLButtonElement>(".ap-pz-sheet__x")
+        : bar.current?.querySelector<HTMLButtonElement>("button");
+    way?.focus({ preventScroll: true });
+  }, [failed, mode]);
 
   /** the loose piece whose PAINT is under (x, y), topmost first; -1 if none */
   const hit = (x: number, y: number) => {
@@ -737,7 +898,7 @@ export default function Puzzle({
     if (!l) return;
     const p = ps.current[i];
     const h = home(l, i);
-    if (Math.abs(p.x - h.x) < SNAP * l.c && Math.abs(p.y - h.y) < SNAP * l.c) place(i);
+    if (Math.abs(p.x - h.x) < SNAP * l.cw && Math.abs(p.y - h.y) < SNAP * l.ch) place(i);
     else settle(i);
   };
 
@@ -766,7 +927,8 @@ export default function Puzzle({
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!lay.current || drag.current) return;
+    // nothing to take before the game is dealt (a cut picture still drawing)
+    if (!lay.current || drag.current || !ps.current.length) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if ((e.target as HTMLElement).closest(".ap-pz__bar")) return;
     // IN THE OPENING BEAT every piece lies in its place, and the deal is a
@@ -883,7 +1045,7 @@ export default function Puzzle({
     const l = lay.current;
     if (!k || !l) return;
     const p = ps.current[k.i];
-    gsap.to(p, { x: l.bx + (k.c + 0.5) * l.c, y: l.by + (k.r + 0.5) * l.c, tilt: 0, duration: dur(0.16), ease: "power2.out", onUpdate: mark });
+    gsap.to(p, { x: l.bx + (k.c + 0.5) * l.cw, y: l.by + (k.r + 0.5) * l.ch, tilt: 0, duration: dur(0.16), ease: "power2.out", onUpdate: mark });
   };
   const focusNext = (from: number) => {
     const at = order.indexOf(from);
@@ -898,7 +1060,8 @@ export default function Puzzle({
   };
   const onKey = (i: number) => (e: React.KeyboardEvent) => {
     const l = lay.current;
-    if (!l || ps.current[i]?.placed) return;
+    // not dealt yet (a cut picture still drawing): no piece to move
+    if (!l || !ps.current[i] || ps.current[i].placed) return;
     const k = kbd.current;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -925,8 +1088,8 @@ export default function Puzzle({
       const p = ps.current[i];
       take(p);
       raise(i);
-      const c = clamp(Math.floor((p.x - l.bx) / l.c), 0, set.cols - 1);
-      const r = clamp(Math.floor((p.y - l.by) / l.c), 0, set.rows - 1);
+      const c = clamp(Math.floor((p.x - l.bx) / l.cw), 0, set.cols - 1);
+      const r = clamp(Math.floor((p.y - l.by) / l.ch), 0, set.rows - 1);
       kbd.current = { i, from: { x: p.x, y: p.y, tilt: p.tilt }, r, c };
       gsap.to(p, { lift: 1, duration: dur(0.12), onUpdate: mark });
       toCell();
@@ -1011,15 +1174,17 @@ export default function Puzzle({
   };
 
   const count = placed.filter(Boolean).length;
-  const v = `?v=${set.v}`;
-  const board = L ? { left: L.bx, top: L.by, width: L.c * set.cols, height: L.c * set.rows } : undefined;
+  // a cut picture is the cloud's own file: asked for by its own address, so
+  // it comes from the same cache (no ?v= — that would be a second download)
+  const v = set.v ? `?v=${set.v}` : "";
+  const board = L ? { left: L.bx, top: L.by, width: L.cw * set.cols, height: L.ch * set.rows } : undefined;
 
   const room = (
     <>
       <div
         className="ap-pz"
         data-mode={mode}
-        data-ready={ready || undefined}
+        data-ready={(ready && drawn) || undefined}
         data-done={done || undefined}
         ref={host}
         role="group"
@@ -1037,7 +1202,7 @@ export default function Puzzle({
         <p className="ap-sr" id={keysId}>
           {copy.keys}
         </p>
-        {board && (
+        {board && !failed && (
           <div className="ap-pz__board" style={board} aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element -- the guide: his eighteen, assembled */}
             <img className="ap-pz__ghost" src={set.full.src + v} alt="" width={set.full.w} height={set.full.h} draggable={false} />
@@ -1075,22 +1240,33 @@ export default function Puzzle({
                   if (kbd.current?.i === i) dropKbd(true);
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- his piece, moved by transform */}
-                <img
-                  src={pc.src + v}
-                  alt=""
-                  width={pc.w}
-                  height={pc.h}
-                  draggable={false}
-                  ref={(img) => {
-                    if (img?.complete) onImg(i, img);
-                  }}
-                  onLoad={(e) => onImg(i, e.currentTarget)}
-                />
+                {cut ? (
+                  // the picture clipped to this piece's outline (drawn above)
+                  <canvas
+                    ref={(el) => {
+                      cvs.current[i] = el;
+                    }}
+                    width={Math.max(1, Math.round(pc.w))}
+                    height={Math.max(1, Math.round(pc.h))}
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- his piece, moved by transform
+                  <img
+                    src={pc.src + v}
+                    alt=""
+                    width={pc.w}
+                    height={pc.h}
+                    draggable={false}
+                    ref={(img) => {
+                      if (img?.complete) onImg(i, img);
+                    }}
+                    onLoad={(e) => onImg(i, e.currentTarget)}
+                  />
+                )}
               </button>
             );
           })}
-        {board && (
+        {board && !failed && (
           <div className="ap-pz__whole" style={board} aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element -- the finished picture */}
             <img src={set.full.src + v} alt="" width={set.full.w} height={set.full.h} draggable={false} />
@@ -1101,22 +1277,41 @@ export default function Puzzle({
           {say}
         </p>
       </div>
-      <div className="ap-pz__bar" data-mode={mode} ref={bar}>
-        <p className="ap-pz__count" aria-hidden="true">
-          <strong>{count}</strong> / {N}
-        </p>
-        {done ? (
-          <p className="ap-pz__msg">{fill(copy.done, { time })}</p>
+      {/* A PRESS ON THE BAR LEAVES FOCUS WHERE IT IS (review, 2026-10-30):
+          a mouse press on «Back» took focus off a keyboard-focused piece, so
+          the keys line went, the pill shrank 125 px under the pointer and
+          the release missed the button. Keyboard focus is unaffected. */}
+      <div
+        className="ap-pz__bar"
+        data-mode={mode}
+        ref={bar}
+        onMouseDown={(e) => {
+          if ((e.target as HTMLElement).closest("button")) e.preventDefault();
+        }}
+      >
+        {failed ? (
+          <p className="ap-pz__msg" role="alert">
+            {copy.failed}
+          </p>
         ) : (
-          !count && <p className="ap-pz__msg is-hint">{copy.hint}</p>
+          <>
+            <p className="ap-pz__count" aria-hidden="true">
+              <strong>{count}</strong> / {N}
+            </p>
+            {done ? (
+              <p className="ap-pz__msg">{fill(copy.done, { time })}</p>
+            ) : (
+              !count && <p className="ap-pz__msg is-hint">{copy.hint}</p>
+            )}
+            {/* the keyboard's way, in sight while a piece has keyboard focus
+                (puzzle.css shows it on :focus-visible) — not only in the
+                screen-reader text */}
+            {!done && <p className="ap-pz__msg is-keys">{copy.keysShort}</p>}
+            <button type="button" className="ap-pz__btn" onClick={again}>
+              {done ? copy.replay : copy.again}
+            </button>
+          </>
         )}
-        {/* the keyboard's way, in sight while a piece has keyboard focus
-            (puzzle.css shows it on :focus-visible) — not only in the
-            screen-reader text */}
-        {!done && <p className="ap-pz__msg is-keys">{copy.keysShort}</p>}
-        <button type="button" className="ap-pz__btn" onClick={again}>
-          {done ? copy.replay : copy.again}
-        </button>
         {mode === "inline" && (
           <button type="button" className="ap-pz__btn" onClick={onExit}>
             <span aria-hidden="true">←</span> {copy.back}
