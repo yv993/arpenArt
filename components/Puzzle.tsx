@@ -113,24 +113,45 @@ type Slot = { x: number; y: number };
  *  per source px */
 type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number; bx: number; by: number; slots: Slot[] };
 
-/** Candidate resting places for pieces, a grid spread evenly over the room,
- *  minus everything that would lie on (or touch) the board. A piece is at
- *  most 1.6 cells across with its tabs, so a centre 0.8c from an edge keeps
- *  it whole, and 0.86c from the board keeps its tabs off the guide. */
-function gen(W: number, H: number, c: number, bx: number, by: number, bw: number, bh: number, sp = 1.42) {
+/** Candidate resting places for pieces, in BANDS laid round the board: a
+ *  block of columns to its left and to its right (the room's full height),
+ *  then rows above and below it — each band spread evenly over its own
+ *  space. A piece is at most 1.6 cells across with its tabs, so a centre
+ *  0.8c from an edge keeps it whole, and 0.86c from the board keeps its tabs
+ *  off the guide; neighbours sit 1.18c apart across, 1.08c down.
+ *  BIGGER PIECES (Vardan, 2026-10-31: «image part can be bigger, change in
+ *  all puzzle parts»): the old single grid over the whole room put its
+ *  columns wherever the room's width divided, so the ones that fell in the
+ *  board's margin were lost, and its 1.42c spacing left wide gaps — the
+ *  places ran out long before the room did, and held the board to 70% of
+ *  the room's height at 1920×945. */
+function gen(W: number, H: number, c: number, bx: number, by: number, bw: number, bh: number, sp = 1) {
   const m = (0.8 + REACH) * c;
-  const step = sp * c;
   const avoid = (0.86 + REACH) * c;
-  const nx = Math.max(1, Math.floor((W - 2 * m) / step) + 1);
-  const ny = Math.max(1, Math.floor((H - 2 * m) / step) + 1);
+  const fx = 1.18 * sp;
+  const fy = 1.08 * sp;
   const out: Slot[] = [];
-  for (let iy = 0; iy < ny; iy++)
-    for (let ix = 0; ix < nx; ix++) {
-      const x = nx > 1 ? m + (ix * (W - 2 * m)) / (nx - 1) : W / 2;
-      const y = ny > 1 ? m + (iy * (H - 2 * m)) / (ny - 1) : H / 2;
-      if (x > bx - avoid && x < bx + bw + avoid && y > by - avoid && y < by + bh + avoid) continue;
-      out.push({ x, y });
-    }
+  /** slot centres spread over [x0, x1] × [y0, y1]; false when it has no room */
+  const band = (x0: number, x1: number, y0: number, y1: number) => {
+    if (x1 < x0 - 0.5 || y1 < y0 - 0.5) return false;
+    const nx = Math.max(1, Math.floor((x1 - x0) / (fx * c) + 1e-6) + 1);
+    const ny = Math.max(1, Math.floor((y1 - y0) / (fy * c) + 1e-6) + 1);
+    for (let iy = 0; iy < ny; iy++)
+      for (let ix = 0; ix < nx; ix++)
+        out.push({
+          x: nx > 1 ? x0 + (ix * (x1 - x0)) / (nx - 1) : (x0 + x1) / 2,
+          y: ny > 1 ? y0 + (iy * (y1 - y0)) / (ny - 1) : (y0 + y1) / 2,
+        });
+    return true;
+  };
+  const left = band(m, bx - avoid, m, H - m);
+  const right = band(bx + bw + avoid, W - m, m, H - m);
+  // rows above and below stop a column short of a side band (no piece on
+  // a corner piece); with no band on a side they run to the room's edge
+  const ax0 = left ? bx - avoid + fx * c : m;
+  const ax1 = right ? bx + bw + avoid - fx * c : W - m;
+  band(ax0, ax1, m, by - avoid);
+  band(ax0, ax1, by + bh + avoid, H - m);
   return out;
 }
 
@@ -147,25 +168,24 @@ function layout(W: number, H: number, set: PuzzleSet): Lay {
   /** CSS px per source px, for a board that is `fw` of the room wide and
    *  `fh` of it tall at most */
   const fit = (fw: number, fh: number) => Math.min(fw / (cols * set.cw), fh / (rows * set.ch));
-  // A WIDE ROOM WANTS SLACK: with exactly enough places the deal had no
-  // choice — at 1440×900 sixteen of eighteen pieces jammed into a row above
-  // the board and a row below, the sides empty (review re-run, 2026-10-29).
-  // The middle board is first tried with ~30% spare places, so the deal can
-  // spread round all four sides like the cloud; then with just enough; the
-  // tall (phone) room keeps its pieces as big as they can be.
+  // Wide rooms: the board in the middle, its pieces in bands round it; tall
+  // (phone) rooms: the board on top. Exactly enough places is enough now —
+  // the ~30% spare a wide room used to ask for (2026-10-29: the old grid
+  // jammed 16 of 18 pieces above and below the board) only shrank the
+  // board, since the bands always fill the sides first.
   const tries: Array<["centre" | "side" | "top", number]> =
-    W / H > 1.25
-      ? [["centre", Math.ceil(N * 1.3)], ["centre", N], ["side", N], ["top", N]]
-      : [["top", N], ["centre", N], ["side", N]];
-  // A PORTRAIT BOARD may stand taller in the middle (review, 2026-10-30): at
-  // 0.6 of the room's height it was the height, not the places, that held a
-  // 4×5 cut small — 304×430 at 1440×900, with empty bands either side. His
-  // 6×3 board keeps 0.6.
-  const tall = rows > cols ? 0.8 : 0.6;
+    W / H > 1.25 ? [["centre", N], ["side", N], ["top", N]] : [["top", N], ["centre", N], ["side", N]];
+  // the board's share of the room in the middle: a portrait board up to 0.9
+  // of its height (2026-10-31; 0.8 before, 0.6 at first), his 6×3 up to 0.8
+  // — the places, not these shares, decide the size in most rooms
+  const tall = rows > cols ? 0.9 : 0.8;
   for (const [kind, need] of tries) {
     const s0 =
       kind === "centre" ? fit(W * 0.54, H * tall) : kind === "top" ? fit(W - 24, H * 0.44) : fit(W * 0.6, H - 24);
-    const cap = Math.min(150, s0 * big);
+    // up to 200 px a cell on big screens (150 before); never past 1.75× the
+    // picture's own pixels, so her three small files (Nos. 23/25/34, 299 px
+    // wide) are not blown up softer than the old 150 cap already showed them
+    const cap = Math.min(200, s0 * big, 1.75 * big);
     for (let c = Math.floor(cap); c >= 36; c -= 2) {
       const s = c / big;
       const bw = cols * set.cw * s;
