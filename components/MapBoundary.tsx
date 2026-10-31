@@ -22,7 +22,7 @@ import { Component, type ReactNode } from "react";
 // ============================================================================
 
 export default class MapBoundary extends Component<
-  { onError: () => void; children: ReactNode },
+  { onError: (error?: unknown) => void; children: ReactNode },
   { dead: boolean }
 > {
   state = { dead: false };
@@ -31,10 +31,12 @@ export default class MapBoundary extends Component<
     return { dead: true };
   }
 
-  componentDidCatch() {
+  componentDidCatch(error: unknown) {
     // hands the parent the same flag a maplibre failure sets, so there is one
-    // failure state and one sentence rather than two
-    this.props.onError();
+    // failure state and one sentence rather than two — and the error itself,
+    // for a parent that treats a stale chunk differently (the puzzle reloads
+    // into the new deployment, Cloud.tsx)
+    this.props.onError(error);
   }
 
   render() {

@@ -6,6 +6,7 @@ import gsap from "gsap";
 import type { PuzzleSet } from "@/lib/puzzles";
 import { cutPuzzle, piecePath, type CutArt } from "@/lib/puzzleCut";
 import { loopTab } from "@/lib/tabLoop";
+import { scriptFocus } from "@/lib/modality";
 
 // ============================================================================
 // PUZZLE — a picture from the cloud, played as a jigsaw (Vardan, 2026-10-29:
@@ -646,7 +647,7 @@ export default function Puzzle({
       // order — so a keyboard starts where the game is
       const first = order.find((i) => !ps.current[i]?.placed);
       const target = first !== undefined ? els.current[first] : bar.current?.querySelector("button");
-      target?.focus({ preventScroll: true });
+      target?.focus(scriptFocus());
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [L, drawn]);
@@ -832,7 +833,7 @@ export default function Puzzle({
       mode === "sheet"
         ? sheet.current?.querySelector<HTMLButtonElement>(".ap-pz-sheet__x")
         : bar.current?.querySelector<HTMLButtonElement>("button");
-    way?.focus({ preventScroll: true });
+    way?.focus(scriptFocus());
   }, [failed, mode]);
 
   /** the loose piece whose PAINT is under (x, y), topmost first; -1 if none */
@@ -1052,11 +1053,11 @@ export default function Puzzle({
     for (let s = 1; s <= N; s++) {
       const i = order[(at + s) % N];
       if (!ps.current[i].placed) {
-        els.current[i]?.focus({ preventScroll: true });
+        els.current[i]?.focus(scriptFocus());
         return;
       }
     }
-    bar.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+    bar.current?.querySelector<HTMLButtonElement>("button")?.focus(scriptFocus());
   };
   const onKey = (i: number) => (e: React.KeyboardEvent) => {
     const l = lay.current;

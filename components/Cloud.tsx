@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
 import MapBoundary from "./MapBoundary";
+import { lastKeys, scriptFocus, seedPointer } from "@/lib/modality";
 
 // THE PUZZLE COMES WHEN IT IS ASKED FOR: its code is not in the home page's
 // first load (nothing needs it until «Play the puzzle» is pressed), and it
@@ -136,6 +137,8 @@ function scatter(items: Art[]): Placed[] {
 const VIEW_SCALE = 3.6;
 
 const DESKTOP = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
+/** sessionStorage: the picture whose puzzle a stale-chunk reload reopens */
+const REOPEN = "ap-puzzle-reopen";
 
 export default function Cloud({
   items,
@@ -184,8 +187,9 @@ export default function Cloud({
   type Face = { src?: string; w?: number; h?: number };
   const [page, setPage] = useState<{ over: Face; under?: Face; dir: 1 | -1 } | null>(null);
 
-  // THE PUZZLE (Vardan, 2026-10-29). A picture with pieces (lib/puzzles.ts —
-  // No. 05 today) offers «Play the puzzle» in its panel. On the desktop
+  // THE PUZZLE (Vardan, 2026-10-29). Every picture offers «Play the puzzle»
+  // in its panel — No. 05 with his pieces (lib/puzzles.ts), the rest cut in
+  // the browser with his knob (lib/puzzleCut.ts, 2026-10-30). On the desktop
   // moved layer the cloud's own frame becomes the room: the cards fade out,
   // the panel steps aside, the plane's drag and the panel's keys stand down
   // (`playingRef`), and the puzzle's bar brings the picture back. On the
@@ -197,7 +201,10 @@ export default function Cloud({
   const puzzleMemory = useRef<Record<string, PuzzleSaved | undefined>>({});
   const playBtn = useRef<HTMLButtonElement | null>(null);
   const wasPlaying = useRef(false);
+  /** when Play was last pressed (performance.now) — see puzzleFailed */
+  const playAt = useRef(0);
   const startPuzzle = useCallback(() => {
+    playAt.current = performance.now();
     // the desktop room is the frame: bring the whole of it on screen first,
     // or the board can open half under the fold
     const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
@@ -207,7 +214,166 @@ export default function Cloud({
     }
     setPlaying(true);
   }, []);
-  const stopPuzzle = useCallback(() => setPlaying(false), []);
+  /** the visitor closed the puzzle themselves (Back, ✕, Escape) — see the way back */
+  const exitByHand = useRef(false);
+  const stopPuzzle = useCallback(() => {
+    exitByHand.current = true;
+    setPlaying(false);
+  }, []);
+  // A PAGE OPENED BEFORE A DEPLOY (Vardan, 2026-10-30: «when i click puzzle
+  // didnt showed»): its «Play» asks for the puzzle's file by the OLD build's
+  // name, the new deployment has no such file (no skew protection: the live
+  // HTML carries no dpl= tag), and the boundary below put the picture back —
+  // a click that did nothing. A chunk that will not load now reloads the
+  // page ONCE into the new version and opens the same picture's puzzle
+  // there (`reopen`). Any other error, or a second failure within a
+  // minute, puts the picture back as before — never a reload loop.
+  // NOT EVERY CHUNK FAILURE IS A DEPLOY (review, 2026-10-30): with the
+  // connection gone the error is the same, and a reload would replace the
+  // site with the browser's offline page — so the server is asked first
+  // (any answer, 404 included, means a reload lands on a page; no answer
+  // keeps this one). And only while the visitor still waits on their press:
+  // a hung request fails by webpack's own timeout 120 s later, under a
+  // visitor who has moved on — that one only puts the picture back (the
+  // lazy import keeps its rejection, so their NEXT Play fails at once and
+  // takes the reload then).
+  const reopen = useRef<string | null>(null);
+  /** the puzzle now out came from a stale-chunk reopen (see the way back) */
+  const reopened = useRef(false);
+  /** a picture was chosen by hand since this page loaded (see the reopen) */
+  const handChose = useRef(false);
+  /** the cloud is still on the page: a check that answers after the visitor
+   *  has gone elsewhere must not reload the page they went to (re-check) */
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  /** the guarded reload; false when the guard (or no storage) refuses it */
+  const reloadOnce = useCallback(() => {
+    try {
+      const last = Number(sessionStorage.getItem(`${REOPEN}:at`) || 0);
+      if (Date.now() - last <= 60_000) return false;
+      sessionStorage.setItem(`${REOPEN}:at`, String(Date.now()));
+      sessionStorage.setItem(REOPEN, chosenRef.current ?? "");
+      // the page the note is for: only a reload of THIS address may use it
+      sessionStorage.setItem(`${REOPEN}:href`, location.href.split("#")[0]);
+      // how Play was pressed, so the reopened page treats focus the same
+      sessionStorage.setItem(`${REOPEN}:by`, lastKeys() ? "keys" : "pointer");
+    } catch {
+      return false; // no storage: no guard, so no reload
+    }
+    window.location.reload();
+    return true;
+  }, []);
+  const puzzleFailed = useCallback(
+    (err?: unknown) => {
+      const stale =
+        err instanceof Error &&
+        (err.name === "ChunkLoadError" ||
+          /Loading (CSS )?chunk|dynamically imported module|Importing a module script failed/i.test(err.message));
+      if (stale && navigator.onLine !== false && performance.now() - playAt.current < 15_000) {
+        // webpack's ChunkLoadError carries the address that failed
+        const url = (err as { request?: unknown }).request;
+        // A PRESS OR A KEY WHILE THE SERVER IS ASKED is the visitor moving
+        // on — a link whose page has not arrived yet leaves the cloud
+        // mounted, and the reload swallowed that click (re-check). Then the
+        // picture only comes back; their next Play takes the reload.
+        let acted = false;
+        const act = (e: Event) => {
+          if (!(e instanceof KeyboardEvent && e.repeat)) acted = true;
+        };
+        const kinds = ["pointerdown", "keydown"] as const;
+        kinds.forEach((k) => window.addEventListener(k, act, true));
+        const unhook = () => kinds.forEach((k) => window.removeEventListener(k, act, true));
+        fetch(typeof url === "string" ? url : location.href, {
+          method: "HEAD",
+          cache: "no-store",
+          signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(4000) : undefined,
+        }).then(
+          () => {
+            unhook();
+            // the visitor left (or put the picture away) while it was asked
+            if (!alive.current || !playingRef.current) return;
+            if (acted || !reloadOnce()) setPlaying(false);
+          },
+          () => {
+            unhook();
+            setPlaying(false);
+          },
+        );
+        return;
+      }
+      setPlaying(false);
+    },
+    [reloadOnce],
+  );
+  // …and after that reload: the picture is chosen again and its puzzle
+  // started, once the page has loaded (the browser has put the scroll back;
+  // the cloud's frame is then brought to the top at once).
+  // ONLY ON THE RELOAD THAT WROTE THE NOTE (review): the same address,
+  // reloaded within 10 s of the note — a note left behind by a reload that
+  // never got this far (the visitor went to another page, or reloaded that
+  // one) would otherwise open a puzzle by itself on a later visit home.
+  // AND THE VISITOR'S OWN HAND COMES FIRST: a picture chosen by hand, or a
+  // scroll, before the page has loaded cancels the reopen.
+  useEffect(() => {
+    let id: string | null = null;
+    let ok = false;
+    let by: string | null = null;
+    try {
+      id = sessionStorage.getItem(REOPEN);
+      if (id === null) return; // an ordinary visit: nothing was set
+      by = sessionStorage.getItem(`${REOPEN}:by`);
+      const href = sessionStorage.getItem(`${REOPEN}:href`);
+      // `:at` stays: it is the loop guard
+      for (const k of [REOPEN, `${REOPEN}:by`, `${REOPEN}:href`]) sessionStorage.removeItem(k);
+      const at = Number(sessionStorage.getItem(`${REOPEN}:at`) || 0);
+      const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      ok =
+        nav?.type === "reload" &&
+        nav.name.split("#")[0] === href &&
+        performance.timeOrigin - at < 10_000 &&
+        Date.now() - at < 60_000;
+    } catch {
+      return;
+    }
+    const want = ok && items.some((a) => a.id === id) ? id : null;
+    if (!want) return;
+    if (by === "pointer") seedPointer();
+    let touched = false;
+    const touch = () => {
+      touched = true;
+    };
+    const kinds = ["wheel", "touchmove", "keydown"] as const;
+    kinds.forEach((k) => window.addEventListener(k, touch, { capture: true, passive: true }));
+    const unhook = () => kinds.forEach((k) => window.removeEventListener(k, touch, { capture: true }));
+    let live = true;
+    const go = () =>
+      requestAnimationFrame(() => {
+        unhook();
+        if (!live || touched || handChose.current || chosenRef.current) return;
+        const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
+        if (frame) window.scrollTo({ top: window.scrollY + frame.getBoundingClientRect().top, behavior: "instant" });
+        reopen.current = want;
+        // the layer is read here too: Cloud hydrates at idle priority, so
+        // the mount effect's own read lands after this choice, and a phone
+        // built the desktop room first, then the window (review)
+        setPlain(!window.matchMedia(DESKTOP).matches);
+        setChosen(want);
+      });
+    if (document.readyState === "complete") go();
+    else window.addEventListener("load", go, { once: true });
+    return () => {
+      live = false;
+      unhook();
+      window.removeEventListener("load", go);
+    };
+    // once, on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // the way back lands on the button that opened it
   useEffect(() => {
     // …but only when focus was in the puzzle (it is on <body> once the
@@ -225,11 +391,28 @@ export default function Cloud({
       const card = id ? el.querySelector(`.ap-cloud__card[data-id="${id}"]`) : null;
       gsap.to(say, { autoAlpha: playing || card ? 0 : 1, duration: playing ? 0.25 : 0.35 });
     }
-    if (wasPlaying.current && !playing)
+    if (wasPlaying.current && !playing) {
+      // after a stale-chunk REOPEN the page is where the reload put it (on
+      // a phone, the rail at the top), not where Play was pressed: closing
+      // that puzzle by hand brings Play on screen, centred clear of the
+      // header (review: 360×640). Any other way back leaves the page where
+      // the visitor has it — a 120 s chunk timeout pulled a visitor who had
+      // scrolled on back up (re-check) — and focus is not put on a Play off
+      // screen, where the next Space would press it.
+      const bring = reopened.current && exitByHand.current;
+      reopened.current = false;
+      exitByHand.current = false;
       requestAnimationFrame(() => {
         const a = document.activeElement;
-        if (!a || a === document.body || root.current?.contains(a)) playBtn.current?.focus({ preventScroll: true });
+        const b = playBtn.current;
+        if (!b || !(!a || a === document.body || root.current?.contains(a))) return;
+        const r = b.getBoundingClientRect();
+        const off = r.top < 0 || r.bottom > window.innerHeight;
+        if (off && !bring) return;
+        b.focus(scriptFocus());
+        if (off) b.scrollIntoView({ block: "center", behavior: "instant" });
       });
+    }
     wasPlaying.current = playing;
   }, [playing]);
 
@@ -237,6 +420,15 @@ export default function Cloud({
     setView("front");
     setPage(null);
     setPlaying(false);
+    // chosen again after a stale-chunk reload: straight into its puzzle
+    if (chosen && reopen.current === chosen) {
+      reopen.current = null;
+      reopened.current = true;
+      startPuzzle();
+    } else {
+      reopen.current = null; // any other choice: nothing stays armed
+      if (chosen) handChose.current = true;
+    }
     // warm the picture's other faces the moment it opens, so the first
     // switch doesn't have to wait on the network — and its front, the file
     // its puzzle is cut from: a picture with no card in the cloud (filtered
@@ -580,14 +772,19 @@ export default function Cloud({
         // was most of the frame's style work. The clock runs on, so when
         // «Back to the picture» fades the plane in, the cards are simply
         // further along their paths — the step happens at opacity 0.
-        if (!playingRef.current) for (const f of flight) {
+        for (const f of flight) {
+          const open = !!f.id && f.id === chosenRef.current;
+          // …except the OPEN card, until it is at rest (then frozen: no
+          // writes), so «Back» finds it still even when Play came before
+          // its ease had finished — the stale-chunk reopen (review, 2026-10-30)
+          if (playingRef.current && !open) continue;
           // A chosen card STOPS — eased to a standstill, then NOT WRITTEN
           // AT ALL. The old 0.25 damping kept writing a new transform every
           // frame, and a perpetually-animating transform keeps the card on
           // a conservatively-rasterized compositor layer — the print looked
           // soft at open size no matter how large the file was (measured:
           // 188 Laplacian variance mid-animation vs 478 once static).
-          const target = f.id && f.id === chosenRef.current ? 0 : 1;
+          const target = open ? 0 : 1;
           f.w += (target - f.w) * 0.1;
           if (target === 0 && f.w < 0.01) {
             if (!f.frozen) {
@@ -1076,7 +1273,7 @@ export default function Cloud({
             const a = items.find((x) => x.id === chosen);
             if (!a) return null;
             return (
-              <MapBoundary onError={stopPuzzle}>
+              <MapBoundary onError={puzzleFailed}>
                 <Puzzle
                   key={plain ? "sheet" : "inline"}
                   set={puzzles[chosen]}
