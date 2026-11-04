@@ -49,7 +49,7 @@ jobs:
 
       # Next's own build cache, keyed on the lockfile and the source, so a
       # rebuild only recompiles what changed
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'types/**', 'next.config.mjs') }}
