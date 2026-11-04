@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { magnetFridge } from "@/lib/content";
+import { isSoldOut, magnetFridge } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
@@ -63,13 +63,22 @@ export default function MagnetFridge({
 
   const H = heading;
 
+  /** SOLD OUT (readiness #25, 2026-11-01): a magnet listed in content.ts
+   *  `soldOut` keeps its picture and its window; its buttons read «Sold out».
+   *  The window's button is aria-disabled, not disabled — the arrow keys walk
+   *  to the next magnet while it may hold focus, and a disabled button would
+   *  drop it. */
+  const isSold = (id: string) => isSoldOut(slug, id);
+  const bigSold = big !== null && !!shots[big] && isSold(shots[big].id);
+
   const open = (idx: number, e: React.MouseEvent<HTMLElement>) => {
     bigOpener.current = e.currentTarget;
     setBig(idx);
   };
 
   const buy = (id: string, from?: HTMLElement | null) => {
-    add(slug, id, 1);
+    // add() refuses a sold-out magnet (lib/cart.ts) — no flight, no "Added"
+    if (!add(slug, id, 1)) return;
     // the flight starts from whatever picture of this magnet is on screen —
     // the open lightbox if there is one, otherwise the clicked grid cell's own
     // thumbnail (the caller passes its button). A missed lookup skips the
@@ -126,8 +135,14 @@ export default function MagnetFridge({
                     words (2026-10-05): 35 identical «Add to cart» could not be
                     told apart in a screen reader's list of buttons. The
                     name still starts with the label the eye reads. */}
-                <button type="button" className="ap-btn ap-mf__add" onClick={(e) => buy(s.id, e.currentTarget)}>
-                  {magnetFridge.add}
+                <button
+                  type="button"
+                  className="ap-btn ap-mf__add"
+                  onClick={(e) => buy(s.id, e.currentTarget)}
+                  disabled={isSold(s.id)}
+                  data-sold={isSold(s.id) || undefined}
+                >
+                  {isSold(s.id) ? "Sold out" : magnetFridge.add}
                   <span className="ap-sr">: Magnet no. {s.id}</span>
                 </button>
                 <p className="ap-mf__added" role="status">
@@ -150,8 +165,20 @@ export default function MagnetFridge({
           label={`Magnet no. ${shots[big].id} — ${magnetFridge.title}`}
           alt={(n) => `Magnet no. ${shots[n].id} of ${shots.length}, by Arpine Baroyan`}
           footer={
-            <button type="button" className="ap-btn" onClick={() => buy(shots[big].id)}>
-              {added === shots[big].id ? magnetFridge.added : `${magnetFridge.add} — ${dram(price)}`}
+            <button
+              type="button"
+              className="ap-btn"
+              onClick={() => {
+                if (!bigSold) buy(shots[big].id);
+              }}
+              data-sold={bigSold || undefined}
+              aria-disabled={bigSold || undefined}
+            >
+              {bigSold
+                ? "Sold out"
+                : added === shots[big].id
+                  ? magnetFridge.added
+                  : `${magnetFridge.add} — ${dram(price)}`}
             </button>
           }
         />

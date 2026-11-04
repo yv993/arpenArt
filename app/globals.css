@@ -71,9 +71,14 @@
   /* An accent that has to carry TEXT. Darkened here so they clear 4.5:1 on
      --paper — do not use on tinted surfaces. At night these invert: the
      accents that fail on paper are the ones that pass on a dark ground, and
-     marigold ends up carrying text as painted. */
+     marigold ends up carrying text as painted.
+     TERRACOTTA ONE STEP DARKER (2026-11-02): #b84d19 was 4.61:1 on --paper
+     but carries the cart's and the forms' error lines on --paper-2 (4.40:1)
+     and --paper-3 (3.96:1), under the AA line. #a84515 is 5.38 / 5.13 /
+     4.62:1 on the three papers, 5.95:1 under white type. Night is untouched
+     (--n-terracotta-ink). */
   --marigold-ink: #9b6400;
-  --terracotta-ink: #b84d19;
+  --terracotta-ink: #a84515;
   --indigo-ink: #374897;
 
   --gutter: clamp(18px, 4.6vw, 76px);
@@ -81,7 +86,7 @@
 
   /* --- gradients, from the same measured palette ------------------------
      Ink runs: for DISPLAY TYPE on paper. Every stop clears 4.5:1 on --paper
-     (ink-indigo, indigo 7.4:1, terracotta-ink 4.6:1), so the contrast rule
+     (ink-indigo, indigo 7.4:1, terracotta-ink 5.4:1), so the contrast rule
      above survives the decoration — the warmth only kisses the tail of a
      line, the way terracotta already accents her paintings.
      Paper runs: for display type on the DARK surfaces (marigold on
@@ -274,11 +279,17 @@ main {
    screen (bar at y 844 at 390x844). layout.tsx's <noscript> style resets it,
    rather than a `(scripting: enabled)` term here: a browser that does not
    know that feature would read the whole query as false and lose the CLS
-   fix with scripts ON. */
-@media (max-width: 860px) {
-  html:not([data-footfx]) #main {
-    min-height: 100svh;
-  }
+   fix with scripts ON.
+   AT EVERY WIDTH since 2026-11-02: a desktop that asks for reduced motion
+   has no curtain either (no data-footfx, the same gate), so it had the
+   phone's push without the phone's floor — /cart with lines measured CLS
+   0.447 at 1440, the footer drawn under the pre-mount heading and then
+   shoved off. Where the curtain runs, data-footfx is written before the
+   first paint, so this never matches there. */
+html:not([data-footfx]) #main {
+  /* 100vh first for an engine without svh (LAYOUT-2), as #main:has(> .ap-load) */
+  min-height: 100vh;
+  min-height: 100svh;
 }
 /* PAPER GRAIN. Her work is gouache on paper and the site's ground is flat
    sRGB — a whisper of noise over everything gives the screen back a tooth.
@@ -964,6 +975,30 @@ select {
   .ap-hero__stage {
     position: sticky;
     top: 0;
+  }
+  /* THE PAINTING AND ITS GROUND ARE LAID OUT AT THEIR MOVED-LAYER SIZE FROM
+     THE FIRST PAINT (2026-10-31, readiness #17). Their boxes used to change
+     only when HomeView set [data-x] after hydration: the film from the
+     contained 81/621 to the full-bleed 0/900, the field from -72/846 to
+     -90/1080 (1440x900). The Layout Instability API counted that as a 0.056
+     shift on every desktop cold load — and a visitor saw the painting jump
+     from letterboxed to full-bleed. This media query is the one HomeView's
+     matchMedia passes whenever its script runs, so the values are exactly
+     the [data-x] rules' (kept there too, for a browser that does not know
+     `scripting`); nothing moves when the attribute arrives. */
+  .ap-hero__img {
+    top: 0;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 45%;
+    transform-origin: 50% 50%;
+  }
+  .ap-hero__field {
+    inset: -10% -8%;
+    opacity: 0.72;
+    filter: blur(108px) saturate(1.35);
+    mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
+    -webkit-mask-image: radial-gradient(116% 96% at 50% 46%, #000 42%, transparent 100%);
   }
   .ap-cloud {
     position: relative;
@@ -1849,6 +1884,22 @@ html[data-footfx] .ap-about__fig:not([data-curtain]) .ap-about__pic {
   justify-items: center;
   gap: 22px;
   background: var(--paper);
+}
+/* MAIN KEEPS A SCREEN WHILE THE SHUTTER IS UP (2026-10-31, readiness #17).
+   A cold load streams every route: this splash sits in <main> and the page
+   arrives after the footer, swapped in by React's $RC script. The splash is
+   fixed, so <main> held nothing and was 0px tall — and on the desktop curtain
+   (html[data-footfx]) FootReveal's margin-bottom of one footer height then
+   collapsed THROUGH that empty box (its top and bottom margins touch) and
+   dropped <main> to y 407; the swap pulled it back to 0. Measured on a
+   production build at 1440x900: 0.066 + 0.283 of the home's 0.405 CLS, the
+   same two shifts as the live audit. With a screen's height <main>'s top
+   stays where the page starts and the swap only grows it downward, which is
+   not a shift. All of it is under the shutter, so nothing visible changes.
+   Without scripts layout.tsx's <noscript> forces min-height 0 back. */
+#main:has(> .ap-load) {
+  min-height: 100vh;
+  min-height: 100svh;
 }
 .ap-load__mark {
   font-family: var(--font-display);

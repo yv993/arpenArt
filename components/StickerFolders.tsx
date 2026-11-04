@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
-import { stickerSheets } from "@/lib/content";
+import { isSoldOut, stickerSheets } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
@@ -215,7 +215,8 @@ export default function StickerFolders({
    *  "Sheet 03", not "Stickers ×1" with no way to know which. */
   const buy = useCallback(
     (sheetId: string, name: string) => {
-      add(slug, undefined, 1, name);
+      // add() refuses a sold-out sheet (lib/cart.ts) — no flight, no "Added"
+      if (!add(slug, undefined, 1, name)) return;
       // the picture the buyer is looking at is the one that flies
       const card = decks.current.get(sheetId)?.[1] ?? decks.current.get(sheetId)?.[0];
       let pic: HTMLElement | null = card?.querySelector("img") ?? null;
@@ -238,6 +239,11 @@ export default function StickerFolders({
   /** the opened sheet and its three pictures, at FULL size. Resolved here so
    *  the dialog below stays a single block rather than three lookups inline. */
   const bigSheet = big ? stickerSheets.sheets.find((s) => s.id === big.sheet) : undefined;
+  /** SOLD OUT (readiness #25, 2026-11-01): a sheet is a line's VARIANT
+   *  («Sheet 03»), so that is the name content.ts `soldOut` lists. Its
+   *  folder, pictures and price stay; its buttons read «Sold out». */
+  const sheetSold = (name: string) => isSoldOut(slug, undefined, name);
+  const bigSold = !!bigSheet && sheetSold(bigSheet.name);
   const bigShots = bigSheet
     ? (() => {
         const ordered = bigSheet.shots.map(byId).filter((s): s is Shot => !!s);
@@ -413,8 +419,10 @@ export default function StickerFolders({
                   className="ap-btn ap-sf__add"
                   aria-describedby={`sf-price-${sheet.id}`}
                   onClick={() => buy(sheet.id, sheet.name)}
+                  disabled={sheetSold(sheet.name)}
+                  data-sold={sheetSold(sheet.name) || undefined}
                 >
-                  {stickerSheets.add}
+                  {sheetSold(sheet.name) ? "Sold out" : stickerSheets.add}
                 </button>
                 <p className="ap-sf__added" role="status">
                   {added === sheet.id ? stickerSheets.added : ""}
@@ -450,8 +458,10 @@ export default function StickerFolders({
               type="button"
               className="ap-btn"
               onClick={() => buy(bigSheet.id, bigSheet.name)}
+              disabled={bigSold}
+              data-sold={bigSold || undefined}
             >
-              {stickerSheets.add} — {dram(price)}
+              {bigSold ? "Sold out" : <>{stickerSheets.add} — {dram(price)}</>}
             </button>
           }
         />

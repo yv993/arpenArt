@@ -3,15 +3,12 @@ import Chrome from "@/components/Chrome";
 import StoriesView from "@/components/StoriesView";
 import TextFX from "@/components/TextFX";
 import { brand, stories } from "@/lib/content";
+import { pageMeta } from "@/lib/seo";
 
 // STUDIO STORIES (client, change.pdf p12, 2026-09-21) — the page the new
 // nav word opens. Her heading, her subtitle, her texts: six then, eleven
 // since change 3.pdf p11 (2026-10-01), newest first.
-export const metadata: Metadata = {
-  title: "Studio stories",
-  description: stories.copy,
-  alternates: { canonical: "/stories" },
-};
+export const metadata: Metadata = pageMeta({ title: "Studio stories", description: stories.copy, path: "/stories" });
 
 export default function Page() {
   return (

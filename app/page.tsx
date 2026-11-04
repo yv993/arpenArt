@@ -1,49 +1,21 @@
 import Chrome from "@/components/Chrome";
 import SectionRail from "@/components/SectionRail";
 import HomeView from "@/components/HomeView";
-import { about, brand } from "@/lib/content";
-import { origin } from "@/lib/site";
 import TextFX from "@/components/TextFX";
+import { pageMeta, siteDescription, siteJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 
 // the canonical resolves against metadataBase (lib/site.ts) — written on
-// every indexable page so a shared or tracked URL always points home
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+// every indexable page so a shared or tracked URL always points home; the
+// social card carries og:url too (lib/seo.ts pageMeta)
+export const metadata: Metadata = pageMeta({ description: siteDescription, path: "/" });
 
-// Structured data wants absolute URLs: the public origin from lib/site.ts.
-
-// Who runs this site, in schema.org terms. Every fact is lifted from
-// lib/content.ts — her role, her city, her verifiable artist page — and the
-// placeholder email/phone stay OUT: structured data must not present an
-// unconfirmed contact as real. The three entities share one @graph so search
-// engines read them as one story: the person founded the brand that publishes
-// the site.
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Person",
-      "@id": origin + "/#artist",
-      name: brand.artist,
-      jobTitle: brand.role,
-      address: { "@type": "PostalAddress", addressLocality: "Yerevan", addressCountry: "AM" },
-      sameAs: [about.link.href],
-    },
-    {
-      "@type": "Organization",
-      "@id": origin + "/#org",
-      name: brand.name,
-      founder: { "@id": origin + "/#artist" },
-    },
-    {
-      "@type": "WebSite",
-      "@id": origin + "/#site",
-      name: brand.name,
-      url: origin + "/",
-      publisher: { "@id": origin + "/#org" },
-    },
-  ],
-};
+// Who runs this site, in schema.org terms — Person, Organization and WebSite
+// in one @graph, so search engines read them as one story: the person founded
+// the brand that publishes the site. Built in lib/seo.ts from lib/content.ts
+// facts only (her role, city, email, artist page and confirmed Instagram;
+// the placeholder phone stays out) with absolute URLs from lib/site.ts.
+const jsonLd = siteJsonLd();
 
 export default function Page() {
   return (

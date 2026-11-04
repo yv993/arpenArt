@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authReady, readLink, sessionCookie, sessionToken } from "@/lib/server/auth";
+import { readLink, sessionCookie, sessionToken, signInOn } from "@/lib/server/auth";
 
 // The other end of the emailed link. A GET, because that is what a mail
 // client will follow — so it does nothing destructive, only exchanges a
@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const to = (state: string) => NextResponse.redirect(new URL(`/account?s=${state}`, url.origin));
 
-  if (!authReady()) return to("off");
+  // the same switch as the sign-in form and the nav icon (lib/server/auth.ts)
+  if (!signInOn()) return to("off");
 
   const found = readLink(url.searchParams.get("token") ?? "");
   // one message for expired, tampered and absent alike — the difference is

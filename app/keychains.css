@@ -455,6 +455,18 @@
   background: #ffffff;
   transform: translateY(-1px);
 }
+/* SOLD OUT (readiness #25, 2026-11-01): the rack's own light button, not an
+   .ap-btn, so it keeps its pinned pale fill in both themes and only goes
+   quiet — the muted brown the rack's «Added» line uses (5.6:1 on #f8f4ee),
+   a fainter edge, no lift. The words «Sold out» say it, not the colour. */
+.ap-kc__rackadd[data-sold][disabled],
+.ap-kc__rackadd[data-sold][disabled]:hover {
+  background: #f8f4ee;
+  border-color: rgba(43, 35, 32, 0.2);
+  color: #6b5f58;
+  cursor: not-allowed;
+  transform: none;
+}
 .ap-kc__rackname {
   margin: 0;
   font-size: 12px;

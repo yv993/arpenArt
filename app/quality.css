@@ -45,7 +45,10 @@
   }
   .ap-s3 .ap-s3__scene {
     display: block;
-    position: relative;
+    /* sticky since 2026-10-31 — the hold no longer waits for hydration, and
+       this min-height above is now the scroll room itself (no spacer) */
+    position: sticky;
+    top: 0;
     height: 100svh;
     overflow: hidden;
     isolation: isolate;

@@ -1,0 +1,207 @@
+/* ==========================================================================
+   ORDER FLOW (2026-10-31, readiness audit) — the cart's not-sent ending, the
+   lines whose price Arpine confirms, the sold-out lines, the bot-check box,
+   and the /cart cold load. Everything else about the cart stays in shop.css.
+   Colours and type are the cart's own tokens.
+   IMPORTED BY app/layout.tsx, right after globals.css (2026-11-01, PERF-1),
+   not by the three forms: as a per-component import it shipped as a CSS
+   chunk only some routes had, and the first client navigation to /cart,
+   /contact or /account held the loading shutter ~300 ms while it arrived.
+   Every selector here matches only cart, contact and sign-in markup, and the
+   place in the cascade is the same as before (after globals, so after
+   shop.css). ~3 KB more on routes that had no form.
+   ========================================================================== */
+
+/* ---- /cart cold load: the plate's geometry from the first frame --------
+   The desktop cart measured CLS 0.04–0.10 empty and 0.25 with three lines
+   (1440x900, cache off): the title jumped from y 144 to 482 and the panel
+   from 269 to 689. The cause is not the pre-mount shell but CartPlate: it
+   sets [data-plate] in an effect, and only then does shop.css make the
+   head 62svh tall with the title at its foot. html[data-footfx] is written
+   before the first paint under the SAME gate the plate uses (layout.tsx's
+   inline script: min-width 861px, motion allowed, scripts on), so the head,
+   the title's size and the panel's padding are given here from the start —
+   only the plate's look (painting, cream type, paper panel) waits for it.
+   The query is repeated so a window narrowed later, which unmounts the
+   plate, also drops this. Values mirror shop.css `.ap-cart[data-plate]`. */
+@media (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+  html[data-footfx] .ap-cart > .ap-sec__head {
+    position: relative;
+    z-index: 1;
+    min-height: 62svh;
+    display: grid;
+    align-content: end;
+    padding-bottom: clamp(24px, 5vh, 54px);
+  }
+  html[data-footfx] .ap-cart > .ap-sec__head .ap-h2 {
+    font-size: clamp(2.4rem, 5.2vw, 5.4rem);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    max-width: 12ch;
+  }
+  html[data-footfx] .ap-cart > .ap-cart__grid,
+  html[data-footfx] .ap-cart > .ap-cart__empty,
+  html[data-footfx] .ap-cart > .ap-cart__done {
+    position: relative;
+    z-index: 3;
+    padding: clamp(22px, 3vw, 40px);
+  }
+}
+
+/* ---- a line with no price on the site ("Price confirmed by Arpine") ----- */
+/* the sum column was cut for "1,000 ֏"; the words wrap in a narrow column,
+   quieter than a figure, so they never read as one */
+.ap-cart__sum.ap-of__tbc,
+.ap-cart__receipt li span.ap-of__tbc:last-child {
+  max-width: 9.5em;
+  white-space: normal;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-muted);
+}
+/* each row is its own grid, so a wide sum would pull that row's steppers
+   left of their neighbours': one word a line keeps it as narrow as "1,500 ֏" */
+.ap-cart__sum.ap-of__tbc {
+  width: min-content;
+  font-size: 11px;
+}
+@media (max-width: 860px) {
+  /* on a phone the sum sits under the words, left-aligned, on one line */
+  .ap-cart__sum.ap-of__tbc {
+    width: auto;
+    max-width: none;
+    text-align: left;
+    font-size: 12px;
+  }
+}
+.ap-of__tbcNote {
+  margin-top: -6px;
+}
+
+/* ---- the not-sent ending ------------------------------------------------ */
+/* her address as words, with its own copy button beside it */
+.ap-of__addr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 1.02rem;
+}
+.ap-of__addr span {
+  font-family: var(--font-display);
+  overflow-wrap: anywhere;
+}
+/* the quiet actions: underlined words, a 44px target (UX laws D1) */
+.ap-of__quiet {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--indigo-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ap-of__quiet:hover {
+  color: var(--ink);
+}
+:where(.ap-dark) .ap-of__quiet {
+  color: var(--cream);
+}
+/* shown only when the browser refuses the clipboard */
+.ap-of__text {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.ap-of__text[hidden] {
+  display: none;
+}
+/* the copy buttons' announcement: always in the page, empty at rest */
+.ap-of__said {
+  margin: -6px 0 0;
+  min-height: 1.3em;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+.ap-of__after {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ap-of__after p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+/* ---- the bot check (components/Turnstile.tsx) --------------------------- */
+/* "interaction-only": nothing to see until Cloudflare needs a tick, so it
+   takes no room — the wrapper gives its children to the form's grid (so the
+   BOX is the grid item), and the hidden input is not a box at all.
+   OUT OF THE FLOW UNLESS [data-shown] (2026-11-01, PERF-3 / CLIENT-3).
+   `:empty { display: none }` stopped matching the moment Cloudflare put its
+   0px-tall element in the box, and a 0px grid item still takes a row-gap:
+   Send sat 14px lower on /cart, /contact and /account (28px of air above it
+   against 14). An absolutely positioned grid child takes no track and no
+   gap, and the token still arrives (measured on a production build). It is
+   0px tall while out of the flow; left/right 0 keep it inside its containing
+   block, so it can never widen the page. Turnstile.tsx sets [data-shown]
+   while a challenge is shown, which puts it back in the flow above Send. */
+.ap-ts {
+  display: contents;
+}
+.ap-ts__box:not([data-shown]) {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* ---- a sold-out line (lib/content.ts `soldOut`, readiness #25) ---------- */
+/* said in words on the line itself — the flag after the category's name and
+   the sum — so it never rests on colour; the picture only steps back */
+.ap-of__flag {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  vertical-align: 0.2em;
+  color: var(--terracotta-ink);
+}
+.ap-cart__sum.ap-of__out {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--terracotta-ink);
+}
+.ap-cart__row[data-out] .ap-cart__fig img {
+  opacity: 0.55;
+}
+.ap-cart__qty button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

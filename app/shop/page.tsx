@@ -8,6 +8,7 @@ import { SoonLink } from "@/components/Soon";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
+import { pageMeta, shopDescription } from "@/lib/seo";
 
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
@@ -16,14 +17,10 @@ const ART = artworks as Art[];
 
 // BUILT FROM THE CATALOGUE, not typed: a hand-written list here sat at eight
 // lines while the grid below rendered eleven — every category added after it
-// was silently missing from the shop's own search snippet.
-export const metadata: Metadata = {
-  title: "Shop",
-  description:
-    categories.map((c) => c.name.toLowerCase()).join(", ").replace(/, ([^,]+)$/, " and $1") +
-    " carrying Arpine Baroyan's Armenia illustrations.",
-  alternates: { canonical: "/shop" },
-};
+// was silently missing from the shop's own search snippet. And only the OPEN
+// lines since 2026-10-31 (lib/seo.ts): the snippet listed t-shirts, cups,
+// plates and puzzles, which nobody can buy yet.
+export const metadata: Metadata = pageMeta({ title: "Shop", description: shopDescription, path: "/shop" });
 
 export default function ShopPage() {
   // One panel per category. A line still waiting on its shoot has no

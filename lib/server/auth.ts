@@ -33,6 +33,16 @@ export const SESSION_COOKIE = "ap_session";
  *  gated on this — the page renders an honest notice instead. */
 export const authReady = () => (process.env.AUTH_SECRET ?? "").length >= 16;
 
+/** SIGN-IN IS ON only when it can actually work end to end (readiness #13,
+ *  2026-10-31): a signing secret AND a mail setup that can reach a stranger.
+ *  next.config.mjs computes NEXT_PUBLIC_SIGNIN at build from AUTH_SECRET,
+ *  RESEND_API_KEY and a verified sender; the nav's account icon reads the
+ *  same flag, so the icon, this check, /account and /account/verify can never
+ *  disagree. authReady() alone still guards the signing itself.
+ *  (`process.env.NEXT_PUBLIC_SIGNIN` is written out literally so the build
+ *  inlines it.) */
+export const signInOn = () => authReady() && process.env.NEXT_PUBLIC_SIGNIN === "1";
+
 const secret = () => {
   const s = process.env.AUTH_SECRET ?? "";
   if (s.length < 16) throw new Error("AUTH_SECRET missing or too short");

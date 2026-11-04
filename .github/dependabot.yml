@@ -1,0 +1,50 @@
+# Dependabot: tell us when a dependency moves, without letting a major
+# version arrive as a routine PR.
+#
+# npm, weekly: every minor and patch bump comes as ONE grouped PR, which CI
+# (.github/workflows/ci.yml) builds and smoke-tests before anyone merges it.
+# The packages the site is built around never get a major-version PR — each of
+# those is a deliberate upgrade with its own testing, not a weekly chore
+# (maplibre-gl 6 is already on the list: READINESS.md, P3).
+# `three` and `@types/three` are still 0.x, where every "minor" release
+# (0.171 -> 0.172) is a breaking one, so for them minors are held back too.
+# The type packages follow the runtime they describe: @types/node stays on the
+# engines pin (22.x), @types/react* on react.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: maplibre-gl
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@react-three/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: three
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/three"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

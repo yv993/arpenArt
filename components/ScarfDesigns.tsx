@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import PhotoLightbox from "./PhotoLightbox";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { scarfDesigns, type Category } from "@/lib/content";
+import { isSoldOut, scarfDesigns, type Category } from "@/lib/content";
 import products from "@/lib/products.json";
 
 /** `md`: the 1,080px-wide middle rung, on the three prints only (2026-10-05) —
@@ -42,7 +42,8 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
   const D = heading === "h1" ? "h2" : "h3";
 
   const buy = (id: string, from: HTMLElement) => {
-    add(cat.slug, id, 1, variant);
+    // add() refuses a sold-out scarf (lib/cart.ts) — no flight, no "Added"
+    if (!add(cat.slug, id, 1, variant)) return;
     flyToCart(from.closest("li")?.querySelector("img") ?? null);
     setAddedStyle(variant);
     setAdded(id);
@@ -112,6 +113,11 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
           const shots = d.shots.map(byId).filter((s): s is Shot => !!s);
           const [print, ...rest] = shots;
           if (!print) return null;
+          // SOLD OUT (readiness #25, 2026-11-01): this design in the Style
+          // chosen above — the design's number or the cut itself listed in
+          // content.ts `soldOut`. It follows the chips: switch the cut and
+          // the button comes back if that one is still there.
+          const sold = isSoldOut(cat.slug, d.id, variant);
           return (
             <li className="ap-sd__item" key={d.id}>
               {/* THE PRINT IS THE HERO — the square as she drew it, edge to
@@ -176,8 +182,10 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
                     className="ap-btn"
                     aria-describedby={variant ? `sd-style-${d.id}` : undefined}
                     onClick={(e) => buy(d.id, e.currentTarget)}
+                    disabled={sold}
+                    data-sold={sold || undefined}
                   >
-                    {scarfDesigns.add}
+                    {sold ? "Sold out" : scarfDesigns.add}
                   </button>
                   {variant && (
                     <p className="ap-sd__style" id={`sd-style-${d.id}`}>

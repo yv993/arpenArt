@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { categories } from "@/lib/content";
+import { categories, isSoldOut } from "@/lib/content";
 import type { Keychain, KeychainWall } from "@/types/keychain";
 
 // ============================================================================
@@ -135,8 +135,14 @@ export default function KeychainCard({
     });
   };
 
+  /** SOLD OUT (readiness #25, 2026-11-01): this keychain is listed in
+   *  content.ts `soldOut` — the button reads «Sold out» and is disabled; the
+   *  card, its turn and its price stay */
+  const sold = isSoldOut("keychains", item.id);
+
   const buy = () => {
-    add("keychains", item.id, 1);
+    // add() refuses a sold-out piece (lib/cart.ts) — no flight, no "Added"
+    if (!add("keychains", item.id, 1)) return;
     flyToCart(img.current);
     setAdded(true);
     window.clearTimeout(addedTimer.current);
@@ -178,7 +184,16 @@ export default function KeychainCard({
                 (24 + the 24 wrap copies) carried fetchpriority=high, and a
                 priority everyone has is nobody's — the live route's LCP
                 measured 10.3 s. Still eager, not lazy: the desktop wall is
-                a drag carousel whose next cards must already be there. */}
+                a drag carousel whose next cards must already be there.
+                …BUT ONLY WHERE THE WALL IS LIVE (2026-10-31, readiness
+                #18). On the plain layer (phones, reduced motion, no JS) the
+                wall is a native swipe rail and the wrap copies are
+                display:none, yet all 24 were eager and React hoisted 21 of
+                them as preloads: 54 off-screen images on a slow phone, its
+                LCP keychain sharing the pipe with them (10 s). Off the first
+                three, a card is lazy until `live` arrives — the moment the
+                desktop wall starts, React drops the attribute and the
+                browser fetches them all, before anyone can drag. */}
             <img
               ref={img}
               src={item.src}
@@ -187,6 +202,7 @@ export default function KeychainCard({
               alt={`${item.title} — a clear acrylic keychain of an illustration by Arpine Baroyan`}
               width={item.w}
               height={item.h}
+              loading={live || idx < 3 ? undefined : "lazy"}
               decoding="async"
               fetchPriority={idx < 3 ? "high" : "auto"}
               draggable={false}
@@ -206,8 +222,15 @@ export default function KeychainCard({
             (2026-10-05): 24 identical «Add to cart» were indistinguishable
             in a screen reader's list of buttons. Label-in-name holds — the
             name starts with what the eye reads. */}
-        <button type="button" className="ap-btn ap-kc__add" onClick={buy} tabIndex={ghost ? -1 : undefined}>
-          {wall.add}
+        <button
+          type="button"
+          className="ap-btn ap-kc__add"
+          onClick={buy}
+          tabIndex={ghost ? -1 : undefined}
+          disabled={sold}
+          data-sold={sold || undefined}
+        >
+          {sold ? "Sold out" : wall.add}
           <span className="ap-sr">: {item.title}</span>
         </button>
         <p className="ap-kc__name">{item.title}</p>

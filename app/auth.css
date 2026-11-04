@@ -60,10 +60,29 @@
    out from under the pointer that is about to press it */
 .ap-auth__err {
   margin: 0;
-  min-height: 1.2em;
+  /* two lines held, not one (2026-11-03, LAYOUT4-1): the bot-check words
+     take two, and the centred box grew and moved the button up 7.5 px */
+  min-height: 2.4em;
   font-size: 12.5px;
   line-height: 1.2;
-  color: var(--danger, #b3391a);
+  /* the cart's and contact form's error ink (2026-11-02, LAYOUT-1): --danger
+     was never defined, so its #b3391a fallback stood in both themes — 2.6:1
+     on the night ground. This one is 5.4:1 by day, 6.4:1 at night. */
+  color: var(--terracotta-ink);
+}
+/* her address in a message is a link, and looks like one (shop.css has why) */
+.ap-auth__err a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* …three on a phone (2026-11-03, LAYOUT6-1): under a 390 px box the
+   server's "did not pass" words and the not-sent line take three lines
+   (measured at 390, 375 and 360), so the button still moved 7.5 px. A
+   desktop keeps two, where every message fits them. */
+@media (max-width: 440px) {
+  .ap-auth__err {
+    min-height: 3.6em;
+  }
 }
 .ap-auth__notice {
   margin: 0 0 16px;

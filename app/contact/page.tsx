@@ -3,12 +3,9 @@ import Chrome from "@/components/Chrome";
 import ContactBlock from "@/components/ContactBlock";
 import { brand, home } from "@/lib/content";
 import TextFX from "@/components/TextFX";
+import { pageMeta, personLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: home.contact.copy,
-  alternates: { canonical: "/contact" },
-};
+export const metadata: Metadata = pageMeta({ title: "Contact", description: home.contact.copy, path: "/contact" });
 
 export default function Page() {
   return (
@@ -25,12 +22,8 @@ export default function Page() {
             "@type": "ContactPage",
             name: `Contact ${brand.artist}`,
             description: home.contact.copy,
-            mainEntity: {
-              "@type": "Person",
-              name: brand.artist,
-              email: brand.email,
-              address: { "@type": "PostalAddress", addressLocality: "Yerevan", addressCountry: "AM" },
-            },
+            // the same Person, same @id, as the home page's graph (lib/seo.ts)
+            mainEntity: personLd(),
           }),
         }}
       />

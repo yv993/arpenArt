@@ -1,44 +1,35 @@
-import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
+import { origin as site } from "@/lib/site";
+import { botCheck, caught, clean, intake, reply } from "@/lib/server/intake";
+import { deadlineOf, deliver } from "@/lib/server/mail";
 
 // Zero-dependency contact intake. Same honesty contract as the order route:
 // with no delivery configured it returns delivered:false and the UI offers the
 // artist's email instead of pretending the message went out.
+//
+// THE SENDER (client, change 4.pdf p16, 2026-10-12: «էս էջը աշխատելու ա՞ … իմ
+// մեյլին նամակ կգա՞» — will a letter reach my mail?) is now the shop's one
+// sender, MAIL_FROM, shared with the order and sign-in mail (readiness #2,
+// 2026-10-31); CONTACT_FROM is still honoured as its fallback. Resend's
+// onboarding@resend.dev delivers ONLY to the Resend account's own address, so
+// reaching arpenbaroyan@gmail.com from an account that is not hers needs a
+// sender on a domain verified in Resend — see lib/server/mail.ts.
 
 export const runtime = "nodejs";
-
-const clean = (v: unknown, max = 400) =>
-  String(v ?? "")
-    .replace(/[\u0000-\u001f\u007f]/g, " ")
-    .trim()
-    .slice(0, max);
-
-const hits = new Map<string, { n: number; until: number }>();
-function limited(ip: string) {
-  const now = Date.now();
-  const h = hits.get(ip);
-  if (!h || now > h.until) {
-    hits.set(ip, { n: 1, until: now + 10 * 60_000 });
-    return false;
-  }
-  h.n += 1;
-  return h.n > 6;
-}
+// Worst case: siteverify 16.4 s + (webhook 24.4 ‖ Resend 25.9) = 42.3 s, under
+// the 50 s deadline this limit gives (60 s less a 10 s margin). The deadline
+// is passed down anyway, so a later change to those timeouts cannot push the
+// route past its limit (lib/server/mail.ts, TIME).
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (limited(ip)) {
-    return NextResponse.json({ ok: false, error: "Too many messages. Try again shortly." }, { status: 429 });
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await req.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
-  }
+  const deadline = deadlineOf(maxDuration);
+  const gate = await intake(req, { bucket: "contact", busy: "Too many messages. Try again shortly.", site });
+  if (gate.res) return gate.res;
+  const { body, ip } = gate;
 
   // honeypot — accept, then drop
-  if (clean(body.company)) return NextResponse.json({ ok: true, delivered: false });
+  if (caught(body)) return reply({ ok: true, delivered: false });
 
   const name = clean(body.name, 120);
   const email = clean(body.email, 160);
@@ -53,48 +44,25 @@ export async function POST(req: Request) {
   // never asked — an unticked message from any client was accepted. The
   // sentence is the form's own, so either check reads the same.
   if (body.consent !== true) errors.consent = "Please tick the box so Arpine may reply to you.";
-  if (Object.keys(errors).length) return NextResponse.json({ ok: false, errors }, { status: 422 });
+  if (Object.keys(errors).length) return reply({ ok: false, errors }, 422);
+
+  const blocked = await botCheck(body, ip, deadline, "contact");
+  if (blocked) return blocked;
 
   const text = `ArpenArt enquiry\n\n${name} <${email}>\n\n${message}`;
-  const webhook = process.env.CONTACT_WEBHOOK_URL;
-  const resend = process.env.RESEND_API_KEY;
   const to = process.env.ORDER_TO_EMAIL;
-  // THE SENDER IS CONFIGURABLE (client, change 4.pdf p16, 2026-10-12: «էս էջը
-  // աշխատելու ա՞ … իմ մեյլին նամակ կգա՞» — will a letter reach my mail?).
-  // Resend's onboarding@resend.dev delivers ONLY to the address that owns
-  // the Resend account; to reach arpenbaroyan@gmail.com from a Resend account
-  // that is not hers, the sender must be an address on a domain verified in
-  // Resend (CONTACT_FROM, e.g. "ArpenArt <contact@arpenart.com>"). Unset,
-  // the onboarding sender is kept — see .env.example.
-  const from = process.env.CONTACT_FROM || "ArpenArt <onboarding@resend.dev>";
-  let delivered = false;
+  // webhook AND email when both are set; no copy to the sender — a contact
+  // form that mails whatever was typed to any address is a spam relay
+  const out = await deliver({
+    key: `contact-${randomBytes(6).toString("hex")}`,
+    deadline,
+    webhook: { url: process.env.CONTACT_WEBHOOK_URL, payload: { name, email, message } },
+    owner: to ? { to, replyTo: email, subject: `Enquiry from ${name}`, text } : undefined,
+  });
 
-  try {
-    if (webhook) {
-      const r = await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
-      });
-      delivered = r.ok;
-    } else if (resend && to) {
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from,
-          to: [to],
-          reply_to: email,
-          subject: `Enquiry from ${name}`,
-          text,
-        }),
-      });
-      delivered = r.ok;
-    }
-  } catch {
-    delivered = false;
+  if (!out.delivered) console.log("[arpenart contact — NOT DELIVERED]\n" + text);
+  else if (out.webhook === false || out.email === false) {
+    console.warn(`[arpenart contact] delivered, but ${out.webhook === false ? "the webhook" : "the email"} failed`);
   }
-
-  if (!delivered) console.log("[arpenart contact — NOT DELIVERED]\n" + text);
-  return NextResponse.json({ ok: true, delivered });
+  return reply({ ok: true, delivered: out.delivered });
 }

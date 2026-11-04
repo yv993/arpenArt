@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { toteBags } from "@/lib/content";
+import { isSoldOut, toteBags } from "@/lib/content";
 
 // ============================================================================
 // TOTE GALLERY — the four designs in a row; the one you point at opens and the
@@ -137,7 +137,8 @@ export default function ToteGallery({
     // `art` carries the BAG number — see ownItemWord in content.ts. The cart
     // and the order mail both read "Tote bag no. 02" from it, and the server
     // prices the line from the category table, never from this page.
-    add(slug, s.id, 1);
+    // add() refuses a sold-out bag (lib/cart.ts) — no flight, no "Added"
+    if (!add(slug, s.id, 1)) return;
     // the flight throws the photograph the buyer is looking at
     flyToCart(firstShot.current);
     setAdded(true);
@@ -148,6 +149,11 @@ export default function ToteGallery({
 
   if (!shots.length) return null;
   const bag = open !== null ? shots[open] : undefined;
+  /** SOLD OUT (readiness #25, 2026-11-01): the open bag's number is listed in
+   *  content.ts `soldOut`. The card still opens its window — her photographs
+   *  and the price stay — and the window's button reads «Sold out»,
+   *  disabled (the Tab loop above already skips a disabled button). */
+  const bagSold = !!bag && isSoldOut(slug, bag.id);
 
   return (
     <section className="ap-tg" aria-labelledby="ap-tg-title">
@@ -341,8 +347,8 @@ export default function ToteGallery({
                 <p className="ap-tgq__added" role="status">
                   {added ? toteBags.open.added : ""}
                 </p>
-                <button type="button" className="ap-btn" onClick={() => buy(bag)}>
-                  {toteBags.open.add}
+                <button type="button" className="ap-btn" onClick={() => buy(bag)} disabled={bagSold} data-sold={bagSold || undefined}>
+                  {bagSold ? "Sold out" : toteBags.open.add}
                 </button>
               </div>
             </div>

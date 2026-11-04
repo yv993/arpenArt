@@ -58,7 +58,11 @@ export default function ThemeToggle() {
   useEffect(() => {
     const m = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
-      if (localStorage.getItem(KEY)) return;
+      // a choice is on the page itself: the pre-paint script sets data-theme
+      // only from a stored one, and `flip` sets it. Read from there, not from
+      // localStorage, which throws when site data is blocked (2026-11-03, peer
+      // review #4) — and in that case a flip on this page still counts.
+      if (document.documentElement.dataset.theme) return;
       setTheme(m.matches ? "dark" : "light");
     };
     m.addEventListener("change", onChange);

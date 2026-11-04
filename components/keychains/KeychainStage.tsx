@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import Keychain3D, { type Swing } from "./Keychain3D";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
+import { isSoldOut } from "@/lib/content";
 import type { Keychain, KeychainWall } from "@/types/keychain";
 
 // ============================================================================
@@ -73,8 +74,14 @@ export default function KeychainStage({
 
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
 
+  /** SOLD OUT (readiness #25, 2026-11-01) — the wall's rule (KeychainCard):
+   *  «Sold out», disabled. No page mounts this stage today; it keeps the
+   *  rule so it cannot sell a sold-out keychain the day one does. */
+  const sold = isSoldOut("keychains", item.id);
+
   const buy = useCallback(() => {
-    add("keychains", item.id, 1);
+    // add() refuses a sold-out piece (lib/cart.ts) — no flight, no "Added"
+    if (!add("keychains", item.id, 1)) return;
     flyToCart(shot.current);
     setAdded(true);
     window.clearTimeout(addedTimer.current);
@@ -157,8 +164,8 @@ export default function KeychainStage({
       </button>
 
       <div className="ap-kc__stagebuy">
-        <button type="button" className="ap-btn ap-kc__add" onClick={buy}>
-          {wall.add}
+        <button type="button" className="ap-btn ap-kc__add" onClick={buy} disabled={sold} data-sold={sold || undefined}>
+          {sold ? "Sold out" : wall.add}
         </button>
         <p className="ap-kc__name">{item.title}</p>
         <p className="ap-kc__price">{dram(1000)}</p>

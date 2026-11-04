@@ -27,7 +27,16 @@ npm run typecheck    # tsc --noEmit
 npm run build        # production build into .next
 npm run build:check  # production build into .next-check (safe while dev is running)
 npm run start        # serve the production build on port 4000
+npm run smoke        # status/header/shape checks against a running local server (SMOKE_BASE to change it)
 ```
+
+CI (`.github/workflows/ci.yml`) runs typecheck, build, `next start` and the smoke on every push
+and pull request to `main`. It reports; it does not hold anything back: Vercel deploys the same
+push without waiting for it, so a commit that builds but fails the smoke is already live when CI
+says so (`docs/LAUNCH-CHECKLIST.md` §4 shows how to make it a Vercel Deployment Check). The smoke
+also checks the security headers `next.config.mjs` promises; on `next dev` it skips the two that
+are production-only (the CSP and the picture cache) and says so, and CI sets `SMOKE_PROD=1` so
+they always run there. Node is pinned to 22 (`.nvmrc`, `engines`).
 
 `build:check` exists because `next build` and `next dev` both own `.next`: building while the
 dev server is up replaces the chunks that server is mid-flight serving, and the next click dies
@@ -37,22 +46,63 @@ Windows), which means a build can verify a change at any time without killing th
 
 ## Environment
 
-Copy `.env.example` to `.env.local`. Everything works without it — delivery is env-gated, and
-the site never pretends otherwise:
+Copy `.env.example` to `.env.local`. Everything works without it — every variable is optional,
+delivery is env-gated, and the site never pretends otherwise. On Vercel the same names go under
+**Settings → Environment Variables (Production)**, and every change needs a **redeploy**: the
+values are read at build (pages, `NEXT_PUBLIC_*`) as well as at run time (API routes).
 
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | The public origin. Until this is an https URL, `robots.txt` blocks all indexing. |
-| `ORDER_WEBHOOK_URL` | Where `/api/order` delivers order submissions. |
-| `CONTACT_WEBHOOK_URL` | Where `/api/contact` delivers enquiries. |
-| `RESEND_API_KEY` + `ORDER_TO_EMAIL` | Email delivery for orders as an alternative/parallel channel. |
+| Variable | Secret? | What it does |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | no | The public origin, e.g. `https://www.arpenart.com`. Until this is an https URL, `robots.txt` says `Disallow: /` and the sitemap is empty; it is also the origin of canonicals, social cards, JSON-LD and sign-in links. |
+| `RESEND_API_KEY` | **yes** | Turns on email through Resend (orders and messages to Arpine, the buyer's copy, sign-in links). |
+| `ORDER_TO_EMAIL` | no | Arpine's inbox — where Resend delivers orders and contact messages, and the reply-to of the buyer's copy. Unset (a webhook-only setup), the copy replies to the shop's public address, `brand.email` in `lib/content.ts`. |
+| `MAIL_FROM` | no | The one sender for **all** mail, on a domain verified in Resend, e.g. `ArpenArt <shop@arpenart.com>`. Fallback chain: `MAIL_FROM` → `CONTACT_FROM` → `ArpenArt <onboarding@resend.dev>`. A sender counts as *verified* when it is set and does not contain `@resend.dev` (the onboarding address reaches only the Resend account's owner). |
+| `CONTACT_FROM` | no | Legacy name for the sender, still honoured when `MAIL_FROM` is empty. |
+| `ORDER_WEBHOOK_URL` | **yes** (the URL is the credential) | Optional HTTPS endpoint that receives each order as JSON. Every post carries an `Idempotency-Key` header; a receiver slower than about 12 seconds gets one retry with the same key, so it should de-duplicate on that header (the same holds for `CONTACT_WEBHOOK_URL`). |
+| `CONTACT_WEBHOOK_URL` | **yes** | Optional HTTPS endpoint that receives each contact message as JSON. |
+| `WEBHOOK_SECRET` | **yes** | When set, outgoing webhooks carry `X-ArpenArt-Signature: sha256=<hex HMAC-SHA256 of the exact raw body>`. |
+| `AUTH_SECRET` | **yes** | At least 16 random characters; signs sign-in links and the `ap_session` cookie. |
+| `NEXT_PUBLIC_SIGNIN` | — | **Computed, never set by hand**: `next.config.mjs` sets it at build to `"1"` only when `AUTH_SECRET` has ≥ 16 characters **and** `RESEND_API_KEY` is set **and** the sender is verified; otherwise `"0"`. Server and client both read it; the nav's account icon renders only when it is `"1"` (`/account` stays reachable and says sign-in is off). |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | no | Cloudflare Turnstile site key: the widget renders on the order, contact and sign-in forms only when set. |
+| `TURNSTILE_SECRET_KEY` | **yes** | The server enforces the Turnstile check only when this **and** the site key are set (with the secret alone no widget renders, so nothing is enforced). Set both keys or neither. Both are also needed for the buyer's copy of an order (see *Delivery semantics*). |
+| `GOOGLE_SITE_VERIFICATION`, `YANDEX_VERIFICATION`, `BING_SITE_VERIFICATION` | no | The verification codes for Search Console, Yandex Webmaster and Bing Webmaster Tools; each emits its meta tag when set. |
+| `RESEND_API_BASE` | — | **Test only.** Overrides `https://api.resend.com` so a local mock can stand in. Never set it on Vercel. |
 
-With no delivery configured, both API routes still accept the submission, log it to the server
-console, and return `delivered: false` — the UI then tells the visitor honestly and offers the
-artist's email address instead of pretending the message went out. The order route also never
-trusts a price from the browser: the client sends only *which* category, illustration and
-delivery option, and the total is recomputed server-side from the catalogue
-(`app/api/order/route.ts`).
+**Delivery semantics.** An order (or message) goes to the webhook **and** to Arpine by Resend
+when both are configured — not either/or. `delivered` is true when at least one channel
+accepted it. The buyer's copy is sent only when the order was delivered **and** Resend is
+configured **and** the sender is verified **and** Turnstile is enforced (both keys): the copy
+goes to whatever address the form names, so without the bot check a script could use it to mail
+its own text to anyone from the shop's sender. `/api/health`'s `buyerCopy` follows the same rule.
+The copy's reply-to is `ORDER_TO_EMAIL`, or the shop's public address when only a webhook is
+configured, so the sender address itself needs no inbox. Every outbound call has a timeout per
+attempt (8 seconds for Resend and Turnstile, about 12 for a webhook) and one retry on a network
+error, a 5xx or a 429, all inside a deadline per request so a route always answers within its
+time limit; Resend calls and webhook posts carry an `Idempotency-Key`, and a Resend 409 meaning
+"the first attempt is still being processed" is asked once more with the same key
+(`lib/server/mail.ts`). With nothing delivered, the routes still accept the submission, write
+it to the server log (the only copy — Vercel keeps runtime logs for 1 hour on Hobby, 1 day on
+Pro) and return `delivered: false`; the UI then tells the visitor honestly
+and offers the artist's email address instead of pretending the message went out. The sign-in
+route never logs a working link in production. The order route also never trusts a price from
+the browser: the client sends only *which* category, illustration, variant and delivery option,
+and the total is recomputed server-side from the catalogue (`app/api/order/route.ts`); a variant
+whose price is `null` in `lib/content.ts` is never counted and is marked "Price confirmed by
+Arpine". A piece listed in `soldOut` (`lib/content.ts`, empty until Arpine names one) cannot be
+added, is left out of the cart's total, and makes `/api/order` refuse the order (422) until the
+buyer removes it; `docs/OWNER-HANDBOOK.md` §5 says how to mark and unmark one.
+
+**Checking the setup without sending an order:** `GET /api/health` answers
+`{ ok, orders, buyerCopy, contact, signIn, turnstile }` — booleans only, never a value. See
+`docs/LAUNCH-CHECKLIST.md` for what each one needs.
+
+## Docs
+
+- `docs/LAUNCH-CHECKLIST.md` — the owner's click-path, in order: mail, domain, Turnstile,
+  Vercel plan, monitoring, search consoles, ownership.
+- `docs/OWNER-HANDBOOK.md` — where each kind of content lives, what to send the developer to
+  change it, how a change goes live, how orders arrive.
+- `docs/QUESTIONS-FOR-ARPINE.md` — the decisions and facts only Arpine can give.
 
 ## Notable engineering
 
@@ -105,8 +155,9 @@ sentence moves to `aria-label` so a screen reader never hears the alphabet soup.
   bounding box the painting and the pins share.
 - **Elevation** — SRTM (NASA/USGS, public domain) via AWS terrain tiles, baked into
   `public/map/height.png`.
-- **Street map tiles** — [OpenFreeMap](https://openfreemap.org/), the site's only third party,
-  loaded only if the visitor opens the map on `/find-in-store`. Chosen deliberately over the
+- **Street map tiles** — [OpenFreeMap](https://openfreemap.org/) — loaded only if the visitor
+  opens the map on `/find-in-store` — is the site's only third party by default; Cloudflare
+  Turnstile joins it once its site key is set, on the pages with a form. Chosen deliberately over the
   usual defaults: CARTO's basemaps require an Enterprise licence for commercial use, and OSM's
   own raster tiles are volunteer-run with a usage policy that warns commercial services off.
   OpenFreeMap permits commercial use with no key, no registration and no cookies, serves
@@ -114,4 +165,5 @@ sentence moves to `aria-label` so a screen reader never hears the alphabet soup.
   it ever disappeared. The reasoning is written out in `next.config.mjs`.
 
 All map data is vendored at build time; the deployed site fetches nothing at runtime except
-those street-map tiles, on request.
+those street-map tiles, on request — and, once the Turnstile site key is set, Cloudflare's check
+on the forms (`/privacy` names it from then on).

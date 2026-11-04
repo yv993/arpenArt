@@ -1509,6 +1509,15 @@
   font-size: 0.95em;
   color: var(--terracotta-ink);
 }
+/* her address at the end of a message line is a link, and now looks like one
+   (2026-11-03, V7-SIGNIN-2): `a { color: inherit; text-decoration: none }`
+   left it the same ink and weight as the words around it, so nothing said it
+   could be tapped (WCAG 1.4.1). The sign-in twin is in auth.css. */
+.ap-contact__warn a,
+.ap-cart__err a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 /* ==========================================================================
    FIND IN STORE (/find-in-store) — the towns list is the real content and
    renders for everyone; the 3D map is desktop + motion + WebGL only, and
@@ -2679,6 +2688,18 @@
 .ap-shop[data-strip] .ap-cats {
   display: none;
 }
+/* …AND IN THE SAME FRAME THE STRIP APPEARS (2026-10-31, readiness #17).
+   ShopStrip sets [data-live] on itself in one render and [data-strip] on the
+   section in a later effect, and a frame was painted between the two: the
+   strip shown, the grid still there and pushed 560px down, out of view —
+   counted as a 0.197 shift on every desktop cold load of /shop (4 of 4
+   live, 3 of 3 on a production build). Keyed on the strip's own attribute,
+   the grid leaves exactly when the strip arrives. A rule of its own, not a
+   second selector above: a browser without :has() would drop the whole list
+   and the [data-strip] rule with it. */
+.ap-shop:has(> .ap-xg[data-live]) .ap-cats {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .ap-xg__lb,
   .ap-xg__stage img {
@@ -3349,7 +3370,10 @@ html[data-footfx] .ap-foot {
 }
 .ap-s3[data-live] .ap-s3__scene {
   display: block;
-  position: relative;
+  /* the hold through the section's scroll room — StickerSurfer's note on
+     why this is sticky rather than a GSAP pin (2026-10-31) */
+  position: sticky;
+  top: 0;
   height: 100svh;
   overflow: hidden;
   /* its own stacking context, so the cards cannot climb over the fixed nav */
@@ -4470,7 +4494,7 @@ html[data-footfx] .ap-foot {
 }
 
 /* p1 · SHOP carries a caret, and the list of lines opens under it on hover
-   and on keyboard focus. The list starts 12px below the word and that gap
+   and from the keyboard (see .ap-nav__lines). The list starts 12px below the word and that gap
    is part of the list's own box, so the pointer can travel down into it
    without the menu closing on the way (Steering law). */
 .ap-nav__shop {
@@ -4490,7 +4514,7 @@ html[data-footfx] .ap-foot {
   transition: transform 220ms var(--ease);
 }
 .ap-nav__shop:hover .ap-nav__caret,
-.ap-nav__shop:focus-within .ap-nav__caret {
+.ap-nav__shop[data-lines] .ap-nav__caret {
   transform: rotate(180deg);
 }
 .ap-nav__menu {
@@ -4517,8 +4541,45 @@ html[data-footfx] .ap-foot {
   box-shadow: 0 24px 60px -20px rgba(27, 43, 76, 0.45);
 }
 .ap-nav__shop:hover .ap-nav__menu,
-.ap-nav__shop:focus-within .ap-nav__menu {
+.ap-nav__shop[data-lines] .ap-nav__menu {
   display: block;
+}
+/* THE KEYBOARD OPENS THE LIST FROM ITS OWN BUTTON (2026-10-31, readiness P3).
+   `:focus-within` used to open it, so SHOP's focus showed the list and the
+   next eleven Tabs walked every line, on every page, before the cart. The
+   button (Chrome.tsx `lines`) sits over the caret, 15px square: no face of
+   its own, only its focus ring, and click-through, so for the mouse the
+   caret is still part of the SHOP link and hover still opens the list.
+   Without scripts it could not work: it goes, and focus opens the list as
+   before. On the phone layout the list is always open in the drawer. The
+   ring sits 1px out, not the site's 3px, so it clears the P of SHOP. */
+.ap-nav__lines {
+  position: absolute;
+  top: calc(50% - 7.5px);
+  right: -3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.ap-nav__lines:focus-visible {
+  outline-offset: 1px;
+}
+@media (scripting: none) {
+  .ap-nav__lines {
+    display: none;
+  }
+  .ap-nav__shop:focus-within .ap-nav__menu {
+    display: block;
+  }
+  .ap-nav__shop:focus-within .ap-nav__caret {
+    transform: rotate(180deg);
+  }
+}
+@media (max-width: 860px) {
+  .ap-nav__lines {
+    display: none;
+  }
 }
 .ap-nav__menu li:first-child a {
   padding-top: 14px;
@@ -4920,4 +4981,38 @@ html[data-footfx] .ap-foot {
   .ap-shop__title > span {
     white-space: nowrap;
   }
+}
+
+/* ==========================================================================
+   SOLD OUT (readiness #25, 2026-11-01). A buy button whose piece is listed
+   in content.ts `soldOut` reads «Sold out» and does nothing: a native
+   disabled button, or — in the two places where the arrow keys change the
+   piece under a focused button (the home cloud's panel, the magnet window)
+   — aria-disabled with a guard, so focus is not dropped. Nothing is drawn
+   while `soldOut` is empty.
+   THE LOOK is the site's quieter pill (the cloud's «Play the puzzle», the
+   face chips): no fill, a hairline, and the muted ink the «Coming soon»
+   status already uses. Not globals.css's `.ap-btn[disabled]` half opacity:
+   that fades the label too, and here the label is the only thing that says
+   why the button does nothing (≥4.5:1 on every ground, measured with
+   imgss/readiness-2026-10-31/fix2-soldout/verify.mjs).
+   Three attribute steps on purpose: globals.css loads after this file, and
+   its `.ap-btn[disabled]` and the per-section `.ap-kc__buy .ap-btn` /
+   `.ap-mf__add.ap-btn` are two steps. :active too: an aria-disabled button
+   is not [disabled], so globals.css's touch press (scale, and the indigo
+   fill under reduced motion) would otherwise still answer a tap.
+   ========================================================================== */
+.ap-btn[data-sold]:is([disabled], [aria-disabled="true"]),
+.ap-btn[data-sold]:is([disabled], [aria-disabled="true"]):hover,
+.ap-btn[data-sold]:is([disabled], [aria-disabled="true"]):active {
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--sold-ink, var(--ink-muted)) 60%, transparent);
+  color: var(--sold-ink, var(--ink-muted));
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
+}
+/* the photo window's veil is dark in both themes */
+.ap-xg__lb .ap-btn[data-sold] {
+  --sold-ink: color-mix(in srgb, var(--cream) 76%, transparent);
 }

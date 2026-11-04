@@ -27,6 +27,7 @@ import { brand, categories, keychainWall, lookbooks, morphs, overtures, soon, wi
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
+import { pageMeta } from "@/lib/seo";
 
 type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: string };
 const ART = artworks as Art[];
@@ -83,7 +84,9 @@ export async function generateMetadata({
     // object replaces the layout's whole, so `follow` is restated)
     return { title: `${cat.name} — ${soon.tile}`, description: soon.copy, robots: { index: false, follow: indexable } };
   }
-  return { title: cat.name, description: cat.blurb, alternates: { canonical: `/shop/${cat.slug}` } };
+  // her blurb, and its own social card (lib/seo.ts) — a shared /shop/scarves
+  // link used to preview as the home page
+  return pageMeta({ title: cat.name, description: cat.blurb, path: `/shop/${cat.slug}` });
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -136,10 +139,24 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     ? Array.from({ length: 20 }, (_, i) => morphPool[Math.round((i * (morphPool.length - 1)) / 19)])
     : [];
 
-  // The first product shot doubles as the Product image; the price is the same
-  // placeholder figure the page itself shows (flagged in content.ts for the
-  // client), so the markup never claims more than the screen does. Availability
-  // can be a plain InStock: this route 404s any category that is not open.
+  // THE PRODUCT MARKUP CLAIMS ONLY A PRICE THE PAGE SHOWS (2026-11-01). It
+  // used to carry `cat.from` on every open line, but only some pages print
+  // it: the six bespoke views below (sticker sheets, 3D stickers, magnets,
+  // scarves, keychains, totes) each show `cat.from` ֏, and so does the
+  // Overture's "from" line — while CategoryView names no figure at all since
+  // prices left the catalogue (client, change.pdf p5 + p8, 2026-09-15). So
+  // /shop/postcards claimed 1000 AMD and InStock with no ֏ anywhere on it
+  // (measured on :4000, imgss/readiness-2026-10-31/fix2-server/
+  // shop-prices.mjs). Where no price is shown, the Product entity is left out
+  // entirely rather than kept without an offer: Google reads a Product with
+  // no offers, review or rating as an invalid item. The breadcrumb stays.
+  // Availability can be a plain InStock where it is claimed: this route
+  // shows no Product for a line that is not open, and a sold-out piece
+  // (content.ts `soldOut`) is one item of a line that still sells.
+  // If a view starts or stops printing the price, change PRICED_VIEWS.
+  const PRICED_VIEWS = ["stickers", "3d-stickers", "magnets", "scarves", "keychains", "totes"];
+  const showsPrice = opens || PRICED_VIEWS.includes(cat.slug);
+  // The first product shot doubles as the Product image.
   const firstShot = P[cat.media]?.[0];
   const jsonLd = {
     "@context": "https://schema.org",
@@ -366,7 +383,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {/* one tag, two entities — JSON-LD accepts a top-level array */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumbLd]) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(showsPrice ? [jsonLd, breadcrumbLd] : [breadcrumbLd]) }}
       />
       {/* splits and reveals the [data-tfx] headings — page-mounted so it
           cannot run before this page hydrates */}

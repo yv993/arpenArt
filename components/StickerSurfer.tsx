@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { stickers3d } from "@/lib/content";
+import { isSoldOut, stickers3d } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { loopTab } from "@/lib/tabLoop";
@@ -125,12 +125,20 @@ export default function StickerSurfer({
     swell.current = new Array(N).fill(0);
 
     const ctx = gsap.context(() => {
+      // NO GSAP PIN ANY MORE: THE SCENE IS position: sticky (2026-10-31,
+      // readiness P3). A pin switches the scene to `fixed` when the trigger
+      // starts and back to in-flow + translateY(14688px) when it ends, and a
+      // wheel step never lands exactly on either edge — the Layout
+      // Instability API counted 0.131 at the start and 0.997 at the end
+      // (it reads positions without the element's own transform, so the
+      // release looked like a jump of the whole page). Sticky does the same
+      // hold with no switch at all (0 shifts, measured), and the section's
+      // height is the scroll room the spacer used to add (see the style on
+      // the section below). This trigger now only reads the progress.
       const st = ScrollTrigger.create({
         trigger: root.current!,
         start: "top top",
         end: () => "+=" + window.innerHeight * PIN_PER_CARD * N,
-        pin: scene.current,
-        pinSpacing: true,
         scrub: true,
         onUpdate: (self) => {
           head.current = self.progress * N * TURNS;
@@ -228,8 +236,9 @@ export default function StickerSurfer({
     (s: Shot) => {
       // `art` is the design — the same field the postcards use, so the order
       // mail reads "(illustration 07)" and /api/order prices it from its own
-      // copy of the category table exactly as it does everything else
-      add(slug, s.id, 1);
+      // copy of the category table exactly as it does everything else.
+      // add() refuses a sold-out sticker (lib/cart.ts) — no flight, no "Added"
+      if (!add(slug, s.id, 1)) return;
       flyToCart(document.querySelector<HTMLImageElement>(".ap-s3__bigimg"));
       setAdded(true);
       if (addTimer.current) window.clearTimeout(addTimer.current);
@@ -238,8 +247,22 @@ export default function StickerSurfer({
     [slug],
   );
 
+  /** SOLD OUT (readiness #25, 2026-11-01): the open sticker is listed in
+   *  content.ts `soldOut`. The lane and the grid still open it — the window
+   *  is where it is bought, so that is where it says «Sold out», disabled.
+   *  Focus then starts on Close, the window's one live control. */
+  const openSold = !!open && isSoldOut(slug, open.id);
+
   return (
-    <section ref={root} className="ap-s3" data-live={live || undefined}>
+    <section
+      ref={root}
+      className="ap-s3"
+      data-live={live || undefined}
+      // the sticky scene's scroll room: one screen plus PIN_PER_CARD screens
+      // a card — the trigger's own `end`. quality.css reserves the same for
+      // 48 cards before hydration; this keeps it right for any count.
+      style={live ? { minHeight: `calc(100svh * ${1 + PIN_PER_CARD * N})` } : undefined}
+    >
       {/* ---- the lane (live layer only) ---- */}
       <div className="ap-s3__scene" ref={scene} onPointerMove={onMove} onPointerLeave={onLeave}>
         <div className="ap-s3__head">
@@ -350,13 +373,20 @@ export default function StickerSurfer({
               <p className="ap-kicker">{stickers3d.open.series}</p>
               <p className="ap-s3__bigno">No. {open.id}</p>
               <p className="ap-s3__bigprice">{dram(price)}</p>
-              <button type="button" className="ap-btn" onClick={() => buy(open)} autoFocus>
-                {stickers3d.open.add}
+              <button
+                type="button"
+                className="ap-btn"
+                onClick={() => buy(open)}
+                autoFocus={!openSold}
+                disabled={openSold}
+                data-sold={openSold || undefined}
+              >
+                {openSold ? "Sold out" : stickers3d.open.add}
               </button>
               <p className="ap-s3__added" role="status">
                 {added ? stickers3d.open.added : ""}
               </p>
-              <button type="button" className="ap-s3__close" onClick={close}>
+              <button type="button" className="ap-s3__close" onClick={close} autoFocus={openSold}>
                 {stickers3d.open.close}
               </button>
             </div>

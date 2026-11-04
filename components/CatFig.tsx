@@ -62,9 +62,20 @@ const THUMB_W: Record<string, number> = {
  *  rung is 736px wide — the most a real phone asks for here: 729 on a
  *  414px DPR 2 screen (88vw), 710 on a 430px DPR 3 one under the 55vw said
  *  below — and weighs 218 KB for postcards (totes 44, keychains 92, magnets
- *  85 KB). */
+ *  85 KB).
+ *  POSTCARDS' RUNG IS CUT TO WHAT THE CARD SHOWS (2026-10-31, readiness #18).
+ *  The figure is 4:3 with overflow hidden, and the portrait <img> inside it
+ *  is laid out at its own ratio FROM THE FIGURE'S TOP (measured live at
+ *  390x844: a 354x507 img in a 354x266 figure — its height:100% does not
+ *  resolve in the content-sized grid row), so only rows 0–552 of the
+ *  736x1054 file ever showed. tile-postcards-md-43.webp is that top band
+ *  alone, same original, same q82 (imgss/readiness-2026-10-31/
+ *  fix-performance/assets.cjs) — 88 KB instead of 218, and it is /shop's
+ *  phone LCP image. Same width, so the browser picks it exactly where it
+ *  picked the old one, and a 4:3 file fills the 4:3 figure with the same
+ *  pixels. The old file stays. */
 const MID: Record<string, { src: string; w: number }> = {
-  "/products/tile-postcards-sm.webp": { src: "/products/tile-postcards-md.webp", w: 736 },
+  "/products/tile-postcards-sm.webp": { src: "/products/tile-postcards-md-43.webp", w: 736 },
   "/products/tile-totes-sm.webp": { src: "/products/tile-totes-md.webp", w: 736 },
   "/products/tile-keychains-sm.webp": { src: "/products/tile-keychains-md.webp", w: 736 },
   "/products/tile-magnets-sm.webp": { src: "/products/tile-magnets-md.webp", w: 736 },

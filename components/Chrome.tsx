@@ -8,6 +8,11 @@ import { count, read, subscribe } from "@/lib/cart";
 import ThemeToggle from "./ThemeToggle";
 import SoonModal, { SoonLink } from "./Soon";
 
+// SIGN-IN IS ON only when next.config.mjs computed it so at build (AUTH_SECRET,
+// RESEND_API_KEY and a verified sender all present). Inlined at build, so the
+// server HTML and the hydrated tree always agree.
+const SIGNIN = process.env.NEXT_PUBLIC_SIGNIN === "1";
+
 // Fixed chrome: wordmark left, sections right, cart count. The count is read
 // only after mount so the server HTML and the hydrated tree agree.
 //
@@ -19,6 +24,8 @@ export default function Chrome() {
   const [n, setN] = useState(0);
   const [open, setOpen] = useState(false);
   const [lift, setLift] = useState(false);
+  // the desktop shop list, opened from the keyboard (see `lines` below)
+  const [lines, setLines] = useState(false);
   const path = usePathname();
   // YOU ARE HERE (2026-10-05): the drawer listed every page and never said
   // which one was open (UX laws M4) — `aria-current="page"` on the link whose
@@ -34,15 +41,16 @@ export default function Chrome() {
   useEffect(() => {
     let frame = 0;
     // 6px of hysteresis so a trackpad hovering on the threshold cannot
-    // flicker the bar between its two states.
-    const read = () => {
+    // flicker the bar between its two states. (Not named `read`: that is the
+    // cart's, imported above — peer review #9, 2026-11-03.)
+    const measure = () => {
       frame = 0;
       setLift((was) => (window.scrollY > (was ? 6 : 12) ? true : false));
     };
     const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(read);
+      if (!frame) frame = window.requestAnimationFrame(measure);
     };
-    read();
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
@@ -50,7 +58,59 @@ export default function Chrome() {
     };
   }, []);
 
-  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    setOpen(false);
+    setLines(false);
+  }, [path]);
+
+  // THE SHOP LIST IS A DISCLOSURE FOR THE KEYBOARD (2026-10-31, readiness P3).
+  // It used to open on :focus-within, so focusing SHOP showed it and the next
+  // eleven Tabs walked every line before Find in store — on every page, to
+  // reach the cart (measured at 1440: 21 stops from the top to Cart). Now the
+  // list opens for the keyboard only from its own button (`.ap-nav__lines`,
+  // over the caret), and closed it is display:none, i.e. out of the Tab order.
+  // The mouse is untouched: hover still opens it and the caret still belongs
+  // to the SHOP link. While it is open: Escape closes it and gives focus back
+  // to the button; a press outside, or focus leaving the SHOP box, closes it.
+  // The Available Soon window a line opens counts as inside — its Close hands
+  // focus back to that line, which must still be on screen to take it.
+  const shopBox = useRef<HTMLDivElement | null>(null);
+  const linesBtn = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!lines) return;
+    const box = shopBox.current;
+    const phone = window.matchMedia("(max-width: 860px)");
+    const inModal = (n: EventTarget | null) => n instanceof Element && !!n.closest('[aria-modal="true"]');
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector('[aria-modal="true"]')) return;
+      setLines(false);
+      linesBtn.current?.focus();
+    };
+    const onDown = (e: PointerEvent) => {
+      const t = e.target;
+      if (!(t instanceof Node) || box?.contains(t) || inModal(t)) return;
+      setLines(false);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const to = e.relatedTarget;
+      if (!(to instanceof Node) || box?.contains(to) || inModal(to)) return;
+      setLines(false);
+    };
+    // the phone drawer shows the list open by itself; the button is gone there
+    const onNarrow = () => {
+      if (phone.matches) setLines(false);
+    };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    box?.addEventListener("focusout", onFocusOut);
+    phone.addEventListener("change", onNarrow);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+      box?.removeEventListener("focusout", onFocusOut);
+      phone.removeEventListener("change", onNarrow);
+    };
+  }, [lines]);
 
   // THE OPEN PHONE DRAWER HOLDS THE PAGE STILL, AND LETS GO THE USUAL WAYS
   // (2026-10-05, leftovers pass, real phone emulation). Measured before:
@@ -163,21 +223,36 @@ export default function Chrome() {
             // THE SHOP LINK CARRIES A CARET (client, change.pdf p1, 2026-09-15:
             // «add a small triangle that opens the list of shop products on
             // hover»). The word is still the link to /shop; the list under it
-            // shows on hover and on keyboard focus (CSS :focus-within), and in
-            // the phone drawer it simply sits open under the word. A closed
+            // shows on hover and, for the keyboard, from the button below, and
+            // in the phone drawer it simply sits open under the word. A closed
             // line lists itself too, but opens the Available Soon window.
             // NO aria-haspopup (2026-10-05): the word NAVIGATES to /shop — a
-            // press never opens the list, which shows on hover/focus — so the
+            // press never opens the list, which shows on hover or from its own
+            // button (which says aria-expanded, not aria-haspopup) — so the
             // attribute promised a menu button the link is not (WCAG 4.1.2).
             // `here` marks the page you are on, in the drawer and the bar.
-            <div className="ap-nav__shop" key={l.href}>
+            // KEYBOARD (2026-10-31): the list no longer opens on focus — the
+            // button after the link discloses it (see `lines` above).
+            <div className="ap-nav__shop" key={l.href} ref={shopBox} data-lines={lines || undefined}>
               <Link href={l.href} aria-current={here(l.href)}>
                 {l.label}
                 <svg className="ap-nav__caret" viewBox="0 0 10 10" aria-hidden="true">
                   <path d="M1 3l4 4 4-4z" />
                 </svg>
               </Link>
-              <ul className="ap-nav__menu" aria-label="Shop lines">
+              {/* no visible face of its own: it sits over the caret and shows
+                  only as its focus ring; click-through for the mouse, gone on
+                  the phone layout and without scripts (shop.css) */}
+              <button
+                ref={linesBtn}
+                type="button"
+                className="ap-nav__lines"
+                aria-expanded={lines}
+                aria-controls="ap-shop-lines"
+                aria-label="Shop lines"
+                onClick={() => setLines((v) => !v)}
+              />
+              <ul className="ap-nav__menu" id="ap-shop-lines" aria-label="Shop lines">
                 {categories.map((c) => (
                   <li key={c.slug}>
                     {c.status === "open" ? (
@@ -210,12 +285,23 @@ export default function Chrome() {
               a 1024px laptop, and a fifth label pushed the cart badge into
               the wordmark. The accessible name carries the meaning. */}
           <ThemeToggle />
-          <Link className="ap-nav__acct" href="/account" aria-label="Your account" title="Your account" aria-current={here("/account")}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.6" />
-              <path d="M4.6 20a7.4 7.4 0 0 1 14.8 0" strokeLinecap="round" />
-            </svg>
-          </Link>
+          {/* ONLY WHEN SIGN-IN IS ON (2026-10-31, readiness #13): with it off,
+              the icon on every page led to "Sign-in is not switched on". The
+              /account page stays reachable by its address. With it off there
+              is NO placeholder (2026-11-01, PERF-2): an invisible box of the
+              icon's size held its place and left a 91px hole between the
+              night switch and CART at 1440, against ~29px between the other
+              items. The bar is a right-aligned flex row and the drawer row
+              pushes the cart right with margin-left: auto, so both close up
+              on their own. */}
+          {SIGNIN && (
+            <Link className="ap-nav__acct" href="/account" aria-label="Your account" title="Your account" aria-current={here("/account")}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.6" />
+                <path d="M4.6 20a7.4 7.4 0 0 1 14.8 0" strokeLinecap="round" />
+              </svg>
+            </Link>
+          )}
           <Link className="ap-nav__cart" href="/cart" aria-current={here("/cart")}>
             Cart
             <span className="ap-nav__n" data-has={n > 0 || undefined}>

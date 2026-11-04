@@ -5,12 +5,9 @@ import Chrome from "@/components/Chrome";
 import FindInStore from "@/components/FindInStore";
 import { brand, stockistPage, stockists, towns } from "@/lib/content";
 import TextFX from "@/components/TextFX";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Find in store",
-  description: stockistPage.copy,
-  alternates: { canonical: "/find-in-store" },
-};
+export const metadata: Metadata = pageMeta({ title: "Find in store", description: stockistPage.copy, path: "/find-in-store" });
 
 /** WHICH LOGOS ACTUALLY EXIST, read at build time.
  *

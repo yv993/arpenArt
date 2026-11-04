@@ -4,11 +4,12 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { add } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { ordering, withheldArt, type Category } from "@/lib/content";
+import { isSoldOut, ordering, withheldArt, type Category } from "@/lib/content";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 import MugPrint from "./MugPrint";
 import CardPrint, { type Quad } from "./CardPrint";
+import { artThumbSet } from "@/lib/thumbs";
 
 type Art = {
   id: string;
@@ -506,8 +507,15 @@ export default function CategoryView({
   const heroImg = useRef<HTMLImageElement | null>(null);
   const pickBox = useRef<HTMLDivElement | null>(null);
 
+  /** SOLD OUT (readiness #25, 2026-11-01): what the button would add RIGHT
+   *  NOW — the illustration picked and the format picked — is listed in
+   *  content.ts `soldOut`. It follows the choice: pick another picture or
+   *  format and the button comes back. Before a picture is picked only the
+   *  format can be sold out. */
+  const sold = cat.status === "open" && isSoldOut(cat.slug, art ?? undefined, variant);
+
   const onAdd = () => {
-    if (cat.status !== "open") return;
+    if (cat.status !== "open" || sold) return;
     // The button used to be DISABLED until an illustration was chosen, which
     // read as "add to cart is broken" on all six categories that carry the
     // picker. It is live now: pressing it with nothing chosen takes you to
@@ -525,7 +533,9 @@ export default function CategoryView({
       window.setTimeout(() => setNeed(false), 3000);
       return;
     }
-    add(cat.slug, art ?? undefined, 1, variant);
+    // add() has the last word on a sold-out piece (lib/cart.ts): when it
+    // refuses, nothing flies and nothing says "Added"
+    if (!add(cat.slug, art ?? undefined, 1, variant)) return;
     flyToCart(heroImg.current);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2600);
@@ -562,12 +572,17 @@ export default function CategoryView({
                       is picked this is the picture in the frame, and with the
                       ref only on the photograph below, «Add to cart» threw
                       nothing — 0 flight frames at 390 and at 1440 */}
+                  {/* HIGH PRIORITY (2026-10-31, readiness #18): on /shop/
+                      postcards this face is the phone's LCP picture, and
+                      React preloaded it at the browser's default Low, last of
+                      seven image preloads — 10–11 s on a slow 4G link. */}
                   <img
                     ref={heroImg}
                     key={shownFace.key}
                     src={shownFace.src}
                     alt={`${shownFace.label} by Arpine Baroyan`}
                     decoding="async"
+                    fetchPriority="high"
                   />
                 </figure>
               ) : (
@@ -807,7 +822,21 @@ export default function CategoryView({
                       }}
                       style={{ background: a.avg }}
                     >
-                      <img src={a.thumb} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />
+                      {/* the 240px -xs where it exists (lib/thumbs.ts,
+                          2026-10-31): a tile is 52–70px, so 72px covers it at
+                          DPR 3. The 57 -sm thumbs were ~2 MB on a slow phone,
+                          inside the lazy-load margin and so fetched at once,
+                          sharing the pipe with the page's LCP picture. */}
+                      <img
+                        src={a.thumb}
+                        srcSet={artThumbSet(a.thumb)}
+                        sizes={artThumbSet(a.thumb) ? "72px" : undefined}
+                        alt=""
+                        width={a.w}
+                        height={a.h}
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </button>
                   </li>
                 ))}
@@ -843,12 +872,15 @@ export default function CategoryView({
               type="button"
               className="ap-btn"
               onClick={onAdd}
-              disabled={cat.status !== "open"}
-              aria-describedby={picks && cat.status === "open" && !art ? "ap-pick-lab" : undefined}
+              disabled={cat.status !== "open" || sold}
+              data-sold={sold || undefined}
+              aria-describedby={picks && cat.status === "open" && !art && !sold ? "ap-pick-lab" : undefined}
             >
-              {cat.status === "open" ? "Add to cart" : "Not yet available"}
+              {cat.status === "open" ? (sold ? "Sold out" : "Add to cart") : "Not yet available"}
             </button>
-            {picks && cat.status === "open" && !art && (
+            {/* not under a sold-out format: "pick an illustration first"
+                beside «Sold out» would promise an add that cannot happen */}
+            {picks && cat.status === "open" && !art && !sold && (
               <p className="ap-cv__hint" role={need ? "alert" : undefined}>
                 {/* the count is the picker's own, not a typed "57": postcards
                     offer two fewer since 2026-10-01 and the line must stay

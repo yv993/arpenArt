@@ -4,7 +4,7 @@ import Link from "next/link";
 import Chrome from "@/components/Chrome";
 import AuthUI from "@/components/AuthUI";
 import SignOut from "@/components/SignOut";
-import { authReady, readSession, SESSION_COOKIE } from "@/lib/server/auth";
+import { readSession, SESSION_COOKIE, signInOn } from "@/lib/server/auth";
 import { brand } from "@/lib/content";
 
 // NOINDEX, and not because the page is secret: it is a sign-in screen, and a
@@ -17,8 +17,12 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+// `bad`: not "or was already used" (2026-11-03, peer review #2) — with no
+// database nothing remembers a used link, so it works again until it expires
+// (app/api/auth/route.ts says the same in the mail). A link signed with an
+// old secret lands here too, hence "no longer works".
 const NOTE: Record<string, string> = {
-  bad: "That link has expired or was already used. Ask for a fresh one.",
+  bad: "That link has expired or no longer works. Ask for a fresh one.",
   off: "Sign-in is not switched on for this site yet.",
 };
 
@@ -28,7 +32,8 @@ export default async function AccountPage({
   searchParams: Promise<{ s?: string }>;
 }) {
   const { s } = await searchParams;
-  const ready = authReady();
+  // on only when sign-in works end to end — the same switch as the nav icon
+  const ready = signInOn();
   const jar = await cookies();
   const who = ready ? readSession(jar.get(SESSION_COOKIE)?.value) : null;
 
@@ -49,7 +54,7 @@ export default async function AccountPage({
               the visitor's orders. */}
           <div className="ap-acct__facts">
             <p>
-              Your name and email are remembered on this device so the order form starts filled in.
+              Your name and email are remembered on this device so the order and message forms start filled in.
             </p>
             <p>
               Orders are confirmed by Arpine over email, exactly as they are without an account —
@@ -71,12 +76,15 @@ export default async function AccountPage({
   return (
     <>
       <Chrome />
-      <AuthUI ready={ready} notice={s && NOTE[s] ? NOTE[s] : !ready ? NOTE.off : undefined} />
       {/* the expired-link case has no form of its own to live in, so it is
-          handed to the panel above as its notice */}
-      <span className="ap-sr" role="status">
-        {s === "bad" ? NOTE.bad : ""}
-      </span>
+          handed to the panel above as its notice — which now shows it while
+          sign-in is on too (2026-11-03, peer review #1: it rendered only when
+          sign-in was off, so a sighted visitor with an old link met a plain
+          form and only a screen reader heard why). "off" is said only when
+          it is true: an old ?s=off link must not say so once sign-in is on,
+          and with sign-in off an old ?s=bad link says "off", not "ask for a
+          fresh one" over a form that cannot (N2). */}
+      <AuthUI ready={ready} notice={!ready ? NOTE.off : s === "bad" ? NOTE.bad : undefined} />
       <span hidden>{brand.name}</span>
     </>
   );

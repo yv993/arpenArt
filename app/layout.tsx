@@ -2,15 +2,20 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla, Montserrat } from "next/font/google";
 import { brand } from "@/lib/content";
 import { indexable, origin } from "@/lib/site";
+import { ogBase, searchVerification, siteDescription as description, siteTitle } from "@/lib/seo";
 import Foot from "@/components/Foot";
 import "./globals.css";
+// the order, contact and sign-in forms' sheet, global since 2026-11-01: as a
+// per-component import it was a chunk the first client navigation to /cart,
+// /contact or /account waited for under the loading shutter (see its header)
+import "./orderflow.css";
 
 // Social cards need absolute URLs, so metadata gets a base — the public
 // origin decided in lib/site.ts (it used to be guessed here, and on Vercel
 // the guess was localhost: the live og:image pointed at a dev server).
-
-const description =
-  "Original illustration by Arpine Baroyan, printed and painted onto postcards, scarves, hoodies, cups, plates, puzzles and stickers. Made in Yerevan.";
+//
+// THE DESCRIPTION IS BUILT FROM THE CATALOGUE (lib/seo.ts, 2026-10-31): the
+// typed one named hoodies, cups, plates and puzzles — none of them buyable.
 
 // Fraunces carries the hand-made warmth of the gouache without being twee;
 // Karla keeps the shop information plain and legible underneath it.
@@ -54,21 +59,20 @@ export const metadata: Metadata = {
   robots: { index: indexable, follow: indexable },
   // The shop sells through shared links, so the link preview IS the shopfront.
   // No image URL is written here on purpose: Next wires app/opengraph-image.jpg
-  // into og:image (and Twitter falls back to it) with correct absolute URLs.
+  // into og:image (and Twitter falls back to it) for every route that sets no
+  // openGraph of its own. The indexable pages DO set their own since
+  // 2026-10-31, and a page's object replaces this one whole, picture included
+  // — so lib/seo.ts pageMeta names the same file for them (`socialImage`).
   // (A JPEG since 2026-09-22: the same card was a 356 KB PNG, 137 KB now —
   // messaging apps fetch it on every share.)
-  openGraph: {
-    type: "website",
-    siteName: brand.name,
-    title: `${brand.name} — ${brand.tagline}`,
-    description,
-    locale: "en_US",
-  },
+  openGraph: { ...ogBase, title: siteTitle, description },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.name} — ${brand.tagline}`,
+    title: siteTitle,
     description,
   },
+  // search-console ownership tags — rendered only for the env vars that are set
+  verification: searchVerification(),
 };
 
 export const viewport: Viewport = {

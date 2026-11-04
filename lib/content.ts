@@ -97,8 +97,14 @@ export type Category = {
   swatch?: string[];
   /** The one buyer choice besides the illustration — a garment size, a card
    *  format. Only present where the existing copy already supports the split;
-   *  a category without one simply renders no picker. */
-  variants?: { label: string; options: string[] };
+   *  a category without one simply renders no picker.
+   *
+   *  `prices` (2026-10-31): option label → unit price in dram, for an option
+   *  that does not cost `from`. No entry = `from`. An entry of `null` = the
+   *  price is not on the site yet and Arpine confirms it by reply: such a
+   *  line is never counted in any total, in the browser (lib/cart.ts
+   *  unitOf) or in /api/order, and reads "Price confirmed by Arpine". */
+  variants?: { label: string; options: string[]; prices?: Record<string, number | null> };
   // NO `spec` ROWS SINCE 2026-10-12 (client, change 4.pdf p3–p11). Each line
   // carried PAPER / SIZE / MATERIAL / FINISH rows plus three shared process
   // rows, and CategoryView rendered them as the MADE BY / … / PRICES panel
@@ -106,7 +112,8 @@ export type Category = {
   // circled that panel on all seven shop pages, the postcards' included (p4:
   // «փոստքարտերի էջից սա հանենք»), so the panel, its CSS and these rows left
   // together — a field nothing renders would only start to drift. The
-  // returns wording the rows carried stands where it binds, on /terms.
+  // returns wording those rows carried left with them: /terms has none yet
+  // (readiness audit 2026-10-31, #10) — the policy is Arpine's to give.
 };
 
 /** CATEGORIES WHOSE CART `art` ID NAMES THE CATEGORY'S OWN ITEM, not one of
@@ -166,6 +173,29 @@ export const withheldArt: Record<string, readonly string[]> = {
   postcards: ["23", "25"],
 };
 
+/** SOLD OUT (readiness #25, 2026-11-01) — one-off pieces that are gone: a
+ *  print, the last scarf of a design, a keychain no longer made. Keyed by
+ *  category slug; each entry names what a cart line carries — its item id
+ *  (`art`: an illustration id such as "05", or the line's own item number
+ *  for the categories in `ownItemWord`) or a variant label exactly as the
+ *  picker shows it ("Sheet 03", "M"). E.g. `keychains: ["03"]`.
+ *
+ *  EMPTY until Arpine names a sold-out piece — never guess one. Unlike
+ *  `withheldArt` (a picture the line never sold), a sold-out piece WAS on
+ *  sale and may sit in a saved cart, so it is never dropped silently:
+ *  the Add buttons read "Sold out" and do nothing, lib/cart.ts add()
+ *  refuses it, the cart flags the line, leaves it out of the total and asks
+ *  for it to be removed before sending, and /api/order refuses an order
+ *  that still holds one. A whole line that stops selling is `status`. */
+export const soldOut: Record<string, readonly string[]> = {};
+
+/** true when this cart line (category + item id and/or variant) is sold out */
+export function isSoldOut(cat: string, art?: string, variant?: string): boolean {
+  const list = soldOut[cat];
+  if (!list || list.length === 0) return false;
+  return (!!art && list.includes(art)) || (!!variant && list.includes(variant));
+}
+
 export const categories: Category[] = [
   {
     slug: "postcards",
@@ -181,7 +211,12 @@ export const categories: Category[] = [
     status: "open",
     // "Sold singly or as a set" is already the blurb's promise — the picker
     // only lets the buyer say which of the two they meant.
-    variants: { label: "Format", options: ["Single card", "Full series set"] },
+    // THE SET HAS NO PRICE ON THE SITE (readiness audit 2026-10-31, #7): it
+    // was charged `from`, 1,000 — the price of ONE card. Its real price and
+    // card count are Arpine's to give, so until she does it is `null`: never
+    // in a total, "Price confirmed by Arpine" on the line. Put her number
+    // in place of the null and both totals follow.
+    variants: { label: "Format", options: ["Single card", "Full series set"], prices: { "Full series set": null } },
   },
   {
     slug: "scarves",

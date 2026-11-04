@@ -3,12 +3,9 @@ import Chrome from "@/components/Chrome";
 import AboutView from "@/components/AboutView";
 import { about, brand } from "@/lib/content";
 import TextFX from "@/components/TextFX";
+import { pageMeta, personLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: about.lead,
-  alternates: { canonical: "/about" },
-};
+export const metadata: Metadata = pageMeta({ title: "About", description: about.lead, path: "/about" });
 
 export default function Page() {
   return (
@@ -32,13 +29,8 @@ export default function Page() {
             "@type": "AboutPage",
             name: `About ${brand.artist}`,
             description: about.lead,
-            mainEntity: {
-              "@type": "Person",
-              name: brand.artist,
-              jobTitle: brand.role,
-              address: { "@type": "PostalAddress", addressLocality: "Yerevan", addressCountry: "AM" },
-              sameAs: [about.link.href],
-            },
+            // the same Person, same @id, as the home page's graph (lib/seo.ts)
+            mainEntity: personLd(),
           }),
         }}
       />

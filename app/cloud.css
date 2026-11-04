@@ -873,3 +873,11 @@
     }
   }
 }
+
+/* SOLD OUT on the panel's buy button (readiness #25, 2026-11-01): the
+   sold-out pill itself is shop.css's; the cloud is dark in both themes, so
+   its label takes the cream the «a card» line beside the price uses, a
+   step brighter, instead of the page's muted ink. Both layers. */
+.ap-cloud__buy .ap-btn[data-sold] {
+  --sold-ink: color-mix(in srgb, var(--cream) 76%, transparent);
+}

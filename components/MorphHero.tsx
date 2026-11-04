@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { artThumbSet } from "@/lib/thumbs";
 
 // A PIN MUST BE TORN DOWN IN A *LAYOUT* EFFECT (2026-08-12).
 //
@@ -55,6 +56,19 @@ type Art = { id: string; src: string; thumb: string; w: number; h: number; avg: 
 // ============================================================================
 
 const MAX_CARDS = 20;
+
+/** THE PLAIN LAYER'S HAND (2026-10-31, readiness #18): morph.css shows the
+ *  first seven cards (nth-child(-n + 7)) as a static fan 64px wide — 77px at
+ *  most, 231 device px at DPR 3 — and hides the other thirteen. On a slow
+ *  phone the seven fetched their 420px -sm thumbs (235 KB, preloaded ahead
+ *  of the page's LCP picture) and the hidden thirteen were fetched too
+ *  (~480 KB, lazy or not). The seven now offer the 240px -xs (lib/thumbs.ts);
+ *  the thirteen get a 1x1 GIF wherever the plain layer is the one showing —
+ *  CatFig's and ShopStrip's pattern. The moved layer keeps every file it had. */
+const FAN = 7;
+const PLAIN = "(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)";
+/** a 1x1 transparent GIF, inline: a <source> that costs no request */
+const NOTHING = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
 // THE DARK VOID (client, «change 3.pdf» p1, 2026-10-01: «երբ 1-ին անգամ սքրոլ
 // ենք անում էն սիրուն շարքով նկարները, հետո դատարկ մեծ սենց մնում ա» — after
@@ -440,7 +454,31 @@ export default function MorphHero({
           <div className="ap-mh__card" key={a.id} style={{ zIndex: i + 1 }}>
             <div className="ap-mh__flip">
               <figure className="ap-mh__face" style={{ background: a.avg }}>
-                <img src={a.thumb} alt="" width={a.w} height={a.h} loading={i < 6 ? undefined : "lazy"} decoding="async" />
+                {/* the fan: the phone slot is 80px (covers 77, and a DPR-3
+                    64px card); the desktop slot is said as the -sm's own
+                    width so every desktop keeps the file it had — the moved
+                    layer blows a card up to 194px. React's hoisted preload
+                    carries the same srcset/sizes, so a phone preloads the
+                    -xs. The rest: nothing at all on the plain layer, where
+                    they are display:none (display: contents keeps
+                    `.ap-mh__face img` laying out exactly as before). */}
+                {i < FAN ? (
+                  <img
+                    src={a.thumb}
+                    srcSet={artThumbSet(a.thumb)}
+                    sizes={artThumbSet(a.thumb) ? "(max-width: 860px) 80px, 420px" : undefined}
+                    alt=""
+                    width={a.w}
+                    height={a.h}
+                    loading={i < 6 ? undefined : "lazy"}
+                    decoding="async"
+                  />
+                ) : (
+                  <picture style={{ display: "contents" }}>
+                    <source media={PLAIN} srcSet={NOTHING} />
+                    <img src={a.thumb} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />
+                  </picture>
+                )}
               </figure>
               <figure className="ap-mh__face is-back">
                 <span>No. {a.id}</span>

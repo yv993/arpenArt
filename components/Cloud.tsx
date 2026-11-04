@@ -5,7 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { withheldArt } from "@/lib/content";
+import { isSoldOut, withheldArt } from "@/lib/content";
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
@@ -139,6 +139,8 @@ const VIEW_SCALE = 3.6;
 const DESKTOP = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 /** sessionStorage: the picture whose puzzle a stale-chunk reload reopens */
 const REOPEN = "ap-puzzle-reopen";
+/** under Play when the puzzle's file failed for want of a connection */
+const OFFLINE_NOTE = "You seem to be offline — the puzzle needs a connection.";
 
 export default function Cloud({
   items,
@@ -203,8 +205,20 @@ export default function Cloud({
   const wasPlaying = useRef(false);
   /** when Play was last pressed (performance.now) — see puzzleFailed */
   const playAt = useRef(0);
+  /** the puzzle's file could not be fetched for want of a connection — said
+   *  under Play (readiness P3, 2026-10-31: the press used to just put the
+   *  picture back, silently). Cleared by the next press, another picture, or
+   *  the connection coming back. */
+  const [offline, setOffline] = useState(false);
+  useEffect(() => setOffline(false), [chosen]);
+  useEffect(() => {
+    const back = () => setOffline(false);
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
+  }, []);
   const startPuzzle = useCallback(() => {
     playAt.current = performance.now();
+    setOffline(false);
     // the desktop room is the frame: bring the whole of it on screen first,
     // or the board can open half under the fold
     const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
@@ -301,11 +315,16 @@ export default function Cloud({
           },
           () => {
             unhook();
+            // no answer at all: the connection, not a deploy — say so
+            if (alive.current) setOffline(true);
             setPlaying(false);
           },
         );
         return;
       }
+      // the browser itself says it is offline: no reload (above), and no
+      // silent press either — the line under Play says why
+      if (stale && navigator.onLine === false) setOffline(true);
       setPlaying(false);
     },
     [reloadOnce],
@@ -449,8 +468,16 @@ export default function Cloud({
   const [added, setAdded] = useState(false);
   /** the open picture is not sold as a postcard — see the buy row below */
   const notACard = !!chosen && !!withheldArt.postcards?.includes(chosen);
+  /** SOLD OUT (readiness #25, 2026-11-01): the open picture's single card is
+   *  listed in content.ts `soldOut` — by its number, or "Single card" for
+   *  every card. Unlike `notACard` the price and the button STAY, the button
+   *  reading «Sold out»: the card was on sale, and saying so is the answer.
+   *  aria-disabled, not disabled: ← → walk the series while this button may
+   *  hold focus, and a disabled button would drop it. */
+  const soldCard = !!chosen && isSoldOut("postcards", chosen, "Single card");
   const buy = useCallback((id: string) => {
-    add("postcards", id, 1, "Single card");
+    // add() refuses a sold-out card (lib/cart.ts) — no flight, no "Added"
+    if (!add("postcards", id, 1, "Single card")) return;
     flyToCart(document.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${id}"]`));
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2400);
@@ -1218,6 +1245,20 @@ export default function Cloud({
                 <PieceIcon />
                 {puzzle.cta}
               </button>
+              {/* why the press did nothing, when it was the connection. The
+                  desktop panel is already a status region (it announces the
+                  line); the plain layer's has no role, so a hidden live line,
+                  present before the words arrive, says it there. */}
+              {offline && (
+                <p className="ap-cloud__body" aria-hidden={plain || undefined}>
+                  {OFFLINE_NOTE}
+                </p>
+              )}
+              {plain && (
+                <span className="ap-sr" aria-live="polite">
+                  {offline ? OFFLINE_NOTE : ""}
+                </span>
+              )}
               <div className="ap-cloud__nav">
                 <button type="button" onClick={() => step(-1)} aria-label="Previous picture">
                   ←
@@ -1245,8 +1286,17 @@ export default function Cloud({
               )}
               <div className="ap-cloud__buy">
                 {!notACard && (
-                  <button type="button" className="ap-btn" onClick={() => buy(chosen)} data-added={added || undefined}>
-                    {added ? "Added ✓" : "Add to cart"}
+                  <button
+                    type="button"
+                    className="ap-btn"
+                    onClick={() => {
+                      if (!soldCard) buy(chosen);
+                    }}
+                    data-added={added || undefined}
+                    data-sold={soldCard || undefined}
+                    aria-disabled={soldCard || undefined}
+                  >
+                    {soldCard ? "Sold out" : added ? "Added ✓" : "Add to cart"}
                   </button>
                 )}
                 <Link className="ap-cloud__go" href="/shop/postcards">

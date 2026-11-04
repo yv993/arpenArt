@@ -1,0 +1,84 @@
+# What this checks: types, a production build, then the built app answering on
+# every page and API route, with the security headers next.config.mjs promises
+# (scripts/smoke.mjs).
+#
+# WHAT IT DOES NOT DO (2026-11-01): hold anything back. Vercel deploys every
+# push to main by itself and does not wait for this workflow. Type and build
+# errors also fail Vercel's own build, so those never go live; but a commit
+# that builds and then fails the smoke here (a page that errors at run time, a
+# lost header) is already live by the time this reports. To make it a real
+# gate, add this job ("check") as a Vercel Deployment Check — an account
+# setting, not code: docs/LAUNCH-CHECKLIST.md §4.
+#
+# It needs NO secrets, on purpose. With RESEND_API_KEY, ORDER_WEBHOOK_URL and
+# CONTACT_WEBHOOK_URL absent nothing can be sent anywhere, and the smoke test
+# only POSTs bodies the order route rejects before any delivery code runs.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# a newer push to the same branch makes the older run pointless
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      # Next's own build cache, keyed on the lockfile and the source, so a
+      # rebuild only recompiles what changed
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'types/**', 'next.config.mjs') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - run: npm run build
+
+      - name: Start the built app
+        run: |
+          nohup npx next start -p 4000 > next-start.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://localhost:4000/robots.txt; then
+              echo "next start answered after ${i} s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "next start did not answer within 60 s"
+          cat next-start.log
+          exit 1
+
+      # SMOKE_PROD=1: this IS a production build, so the production-only rows
+      # (the CSP, the picture cache) must run and pass, never be skipped
+      - run: npm run smoke
+        env:
+          SMOKE_BASE: http://localhost:4000
+          SMOKE_PROD: "1"
+
+      - name: Server log
+        if: failure()
+        run: cat next-start.log || true
