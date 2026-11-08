@@ -83,7 +83,9 @@ const KEY_STEP = 0.32;
 
 // The sphere is expensive, so it only mounts once the section is actually on
 // screen, and never at all if the visitor asked for reduced motion or the
-// browser has no WebGL — both fall back to a real, scrollable grid.
+// browser has no WebGL — both fall back to a real, scrollable grid. Phones DO
+// get the sphere (measured at 390x844: a 354x420 canvas); they only load its
+// chunk later, when the gallery comes near (see the warm-up below).
 export default function Gallery() {
   const host = useRef<HTMLDivElement | null>(null);
   const [live, setLive] = useState(false);
@@ -130,8 +132,8 @@ export default function Gallery() {
   // fetched in idle time right after hydration — long before a 1440 reader
   // has scrolled the ~2,800px to the gallery — so the canvas mounts as soon
   // as `live` turns true, as it did when three shipped in the page chunk.
-  // Phones (and reduced motion) never warm it: they load it when the
-  // gallery comes near, or never.
+  // Phones never warm it: they load it when the gallery comes near (and
+  // then get the same sphere). Reduced motion never loads it at all.
   useEffect(() => {
     if (!window.matchMedia(FX_MEDIA).matches) return;
     const warm = () => {
@@ -367,11 +369,12 @@ export default function Gallery() {
           </noscript>
         </>
       ) : (
-        // Phones, reduced motion and no WebGL get the same pieces as a real
-        // grid — and every tile is a LINK, because these are things for sale
-        // rather than pictures to look at; a line that is not open yet opens
-        // the Available Soon window here too. The sphere's whole purpose is
-        // reachable here.
+        // Reduced motion, no WebGL and a canvas chunk that failed to arrive
+        // get the same pieces as a real grid (phones get the sphere like any
+        // other screen) — and every tile is a LINK, because these are things
+        // for sale rather than pictures to look at; a line that is not open
+        // yet opens the Available Soon window here too. The sphere's whole
+        // purpose is reachable here.
         <ul className="ap-gal__grid">
           {CARDS.map((c) => (
             <li key={c.id} style={{ background: c.avg }}>

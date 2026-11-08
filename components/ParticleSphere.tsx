@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_Z, type Spin } from "./sphereSpin";
+import { GlobeWords } from "./GlobeWords";
 
 // ============================================================================
 // A slowly turning sphere of Arpine's illustrations, held in a haze of warm
@@ -378,9 +379,17 @@ export function ParticleSphere({
   });
 
   return (
-    <group ref={group}>
-      <Particles />
-      <Artworks images={images} chosenRef={chosenRef} onPick={onPick} />
-    </group>
+    <>
+      <group ref={group}>
+        <Particles />
+        <Artworks images={images} chosenRef={chosenRef} onPick={onPick} />
+      </group>
+      {/* HER SEVEN WORDS (change 5.pdf p2) on an inner shell that turns at a
+          share of this group's turn, so they are a sibling, not a child. Their
+          own boundary: the cards never wait for seven small PNGs. */}
+      <Suspense fallback={null}>
+        <GlobeWords globe={group} chosenRef={chosenRef} />
+      </Suspense>
+    </>
   );
 }
