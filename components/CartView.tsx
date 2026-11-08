@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { brand, categories, delivery, home, ownItemMedia, ownItemWord, scarfDesigns, stickerSheets } from "@/lib/content";
+import {
+  brand,
+  categories,
+  delivery,
+  home,
+  ownItemMedia,
+  ownItemWord,
+  priceTbc,
+  priceTbcMid,
+  scarfDesigns,
+  stickerSheets,
+} from "@/lib/content";
 import {
   clear,
   dram,
@@ -38,8 +49,9 @@ type State = "idle" | "sending" | "sent" | "logged" | "handed" | "error";
  *  the consent box — and never the hidden honeypot (tabIndex -1) */
 const TEXT_FIELDS = 'input:not([type="radio"]):not([type="checkbox"]):not([tabindex="-1"]), textarea';
 
-/** the word a line with no price on the site wears (lib/cart.ts unitOf) */
-const TBC = "Price confirmed by Arpine";
+// THE WORDS A LINE WITH NO PRICE ON THE SITE WEARS (lib/cart.ts unitOf) are
+// content.ts `priceTbc` (`priceTbcMid` inside a sentence) since change 5 —
+// one copy for the cart, the order mail and every page that sells such a line.
 /** the sentence under a total that leaves such lines out */
 const notIncluded = (labels: string[]) =>
   `Not included in the total: ${labels.join("; ")} — Arpine confirms ${labels.length > 1 ? "those prices" : "that price"} when she replies.`;
@@ -120,7 +132,7 @@ const forget = () => {
 function orderText(r: Receipt, ref: string, withEmail: boolean) {
   return [
     ...(ref ? [`Order reference: ${ref}`, ""] : []),
-    ...r.lines.map((l) => `${l.qty} × ${l.label} — ${l.sum === null ? "price confirmed by Arpine" : dram(l.sum)}`),
+    ...r.lines.map((l) => `${l.qty} × ${l.label} — ${l.sum === null ? priceTbcMid : dram(l.sum)}`),
     `Delivery — ${r.shipLabel}: ${r.shipPrice ? dram(r.shipPrice) : "Free"}`,
     `Total: ${dram(r.goods + r.shipPrice)}`,
     ...(r.unpriced.length ? [notIncluded(r.unpriced)] : []),
@@ -919,7 +931,7 @@ export default function CartView() {
                     <span>
                       {l.qty} × {l.label}
                     </span>
-                    <span className={l.sum === null ? "ap-of__tbc" : undefined}>{l.sum === null ? TBC : dram(l.sum)}</span>
+                    <span className={l.sum === null ? "ap-of__tbc" : undefined}>{l.sum === null ? priceTbc : dram(l.sum)}</span>
                   </li>
                 ))}
               </ul>
@@ -1045,7 +1057,7 @@ export default function CartView() {
                     </h2>
                     {l.art && <p>{ownItemWord[l.cat] ?? "Illustration"} no. {l.art}</p>}
                     {l.variant && <p>{l.variant}</p>}
-                    <p className="ap-cart__unit">{u === null ? TBC : `${dram(u)} each`}</p>
+                    <p className="ap-cart__unit">{u === null ? priceTbc : `${dram(u)} each`}</p>
                   </div>
                   <div className="ap-cart__qty">
                     {/* at one, "−" removes the line — the same act as Remove,
@@ -1069,7 +1081,7 @@ export default function CartView() {
                     </button>
                   </div>
                   <p className={out ? "ap-cart__sum ap-of__out" : u === null ? "ap-cart__sum ap-of__tbc" : "ap-cart__sum"}>
-                    {out ? "Sold out" : u === null ? TBC : dram(u * l.qty)}
+                    {out ? "Sold out" : u === null ? priceTbc : dram(u * l.qty)}
                   </p>
                   <button
                     type="button"

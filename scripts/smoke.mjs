@@ -21,9 +21,11 @@
 //    another site.
 //
 // Pages come from two places: the shop's own catalogue (lib/content.ts — every
-// line, the open ones and the "available soon" ones, since both have a page)
-// and, when indexing is open, every <loc> the live sitemap lists. Exit code 1
-// on any mismatch, so CI fails loudly; 2 when it refuses to run.
+// line, the open ones and the "available soon" ones, since both have a page,
+// each at its `href` when it names one) and, when indexing is open, every
+// <loc> the live sitemap lists. The retired addresses (next.config.mjs
+// RETIRED) are checked for their redirect and its target. Exit code 1 on any
+// mismatch, so CI fails loudly; 2 when it refuses to run.
 //
 // THE SECURITY HEADERS next.config.mjs PROMISES are checked too (2026-11-01),
 // because a CSP that lost the Turnstile host would pass every status check
@@ -54,19 +56,100 @@ if (!LOCAL && process.env.SMOKE_ALLOW_REMOTE !== "1") {
 }
 
 // THE CATALOGUE, read from source rather than imported (it is TypeScript, and
-// this script needs no build step). Only lines that START with `slug:` /
-// `status:` count, so a comment quoting either can never add a page.
+// this script needs no build step). PER ENTRY since change 5 (2026-11): the
+// array is walked character by character — strings, template literals and
+// comments skipped, brackets counted — so each `{ … }` at the array's top
+// level is one category, and only ITS OWN top-level `slug:` / `status:` /
+// `href:` count. The old reader paired every `slug:` line with every
+// `status:` line by position, so a nested object with a slug of its own
+// would have shifted every page after it onto the wrong status, and it
+// could not see `href` at all. A comment quoting a key can never add a page.
+function topLevelEntries(src, from) {
+  // the array literal's own bracket — `= [`, not the `[]` of `Category[]`
+  const eq = /=\s*\[/g;
+  eq.lastIndex = from;
+  const m = eq.exec(src);
+  if (!m) return [];
+  const open = m.index + m[0].length - 1;
+  const entries = [];
+  let depth = 0; // bracket depth INSIDE the array: 0 = between entries
+  let start = -1;
+  for (let i = open + 1; i < src.length; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+    if (ch === "/" && next === "/") {
+      i = src.indexOf("\n", i);
+      if (i < 0) break;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      i = src.indexOf("*/", i + 2) + 1;
+      if (i <= 0) break;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      for (i++; i < src.length && src[i] !== ch; i++) if (src[i] === "\\") i++;
+      continue;
+    }
+    if (ch === "{" || ch === "[" || ch === "(") {
+      if (depth === 0 && ch === "{") start = i;
+      depth++;
+    } else if (ch === "}" || ch === "]" || ch === ")") {
+      if (depth === 0) break; // the array's own closing bracket
+      depth--;
+      if (depth === 0 && ch === "}" && start >= 0) {
+        entries.push(src.slice(start + 1, i));
+        start = -1;
+      }
+    }
+  }
+  return entries;
+}
+
+/** an entry's OWN string-valued keys (nested objects and comments ignored) */
+function ownKeys(body) {
+  const out = {};
+  let depth = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    const next = body[i + 1];
+    if (ch === "/" && next === "/") {
+      const nl = body.indexOf("\n", i);
+      i = nl < 0 ? body.length : nl;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      const end = body.indexOf("*/", i + 2);
+      i = end < 0 ? body.length : end + 1;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      for (i++; i < body.length && body[i] !== ch; i++) if (body[i] === "\\") i++;
+      continue;
+    }
+    if (ch === "{" || ch === "[" || ch === "(") depth++;
+    else if (ch === "}" || ch === "]" || ch === ")") depth--;
+    else if (depth === 0) {
+      const m = /^([A-Za-z_$][\w$]*)\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(body.slice(i));
+      if (m && (i === 0 || /[\s,{]/.test(body[i - 1]))) {
+        out[m[1]] = m[2];
+        i += m[0].length - 1;
+      }
+    }
+  }
+  return out;
+}
+
 function catalogue() {
   const src = readFileSync(new URL("../lib/content.ts", import.meta.url), "utf8");
-  const start = src.indexOf("export const categories");
-  const end = src.indexOf("\n];", start);
-  const block = start >= 0 && end > start ? src.slice(start, end) : "";
-  const slugs = [...block.matchAll(/^\s*slug:\s*"([^"]+)"/gm)].map((m) => m[1]);
-  const status = [...block.matchAll(/^\s*status:\s*"([^"]+)"/gm)].map((m) => m[1]);
-  if (!slugs.length || slugs.length !== status.length) {
-    throw new Error(`could not read the categories from lib/content.ts (${slugs.length} slugs, ${status.length} statuses)`);
+  const at = src.indexOf("export const categories");
+  const cats = (at >= 0 ? topLevelEntries(src, at) : []).map(ownKeys);
+  const bad = cats.filter((c) => !c.slug || !["open", "soon"].includes(c.status));
+  if (!cats.length || bad.length) {
+    throw new Error(`could not read the categories from lib/content.ts (${cats.length} entries, ${bad.length} without a slug and a status)`);
   }
-  return slugs.map((slug, i) => ({ slug, status: status[i] }));
+  // the page's address — content.ts hrefOf: its own `href`, else /shop/<slug>
+  return cats.map((c) => ({ slug: c.slug, status: c.status, href: c.href ?? `/shop/${c.slug}` }));
 }
 
 const noStore = (res) => ((res.headers.get("cache-control") || "").includes("no-store") ? null : "Cache-Control lacks no-store");
@@ -161,7 +244,27 @@ try {
   console.error(`smoke: ${e.message}`);
   process.exit(1);
 }
-for (const c of cats) get(`/shop/${c.slug}`, 200, null, c.status);
+for (const c of cats) get(c.href, 200, null, c.status);
+// THE RETIRED ADDRESSES (next.config.mjs RETIRED, change 5): each answers its
+// redirect on dev and prod alike — before the `!site` early-out, so with no
+// NEXT_PUBLIC_SITE_URL too. Status AND Location: a 307 that went somewhere
+// else would be a broken link that merely looks handled.
+const lands = (want) => (res) => {
+  const loc = res.headers.get("location") || "";
+  // Next writes a relative Location; resolve it so either form compares
+  let path = loc;
+  try {
+    path = new URL(loc, BASE).pathname;
+  } catch {}
+  return path === want ? null : `Location is ${loc || "(none)"}, not ${want}`;
+};
+// [address, status, where it lands] — one row per RETIRED entry
+const RETIRED = [
+  ["/shop/cups", 307, "/shop"],
+  ["/shop/plates", 307, "/shop"],
+  ["/shop/puzzles", 307, "/shop"],
+];
+for (const [path, status, to] of RETIRED) get(path, status, lands(to), "retired");
 for (const p of ["/cart", "/about", "/stories", "/find-in-store", "/contact", "/account", "/privacy", "/terms"]) {
   get(p, 200, p === "/cart" || p === "/stories" ? notPictureCached : undefined);
 }

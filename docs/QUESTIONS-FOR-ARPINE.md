@@ -115,10 +115,10 @@ Russian? Should international buyers also see prices in another currency?
 
 ### When those products are ready
 
-**14. Prices for T-shirts, cups, plates and puzzles.**
-- *Today:* they are "Available Soon" and cannot be ordered. The prices stored for them (18,000 /
-  5,500 / 7,500 / 8,500 ֏) are placeholders, not your figures. We need your real prices before
-  these products open.
+**14. Price for T-shirts.**
+- *Today:* they are "Available Soon" and cannot be ordered. The price stored for them (18,000 ֏)
+  is a placeholder, not your figure. We need your real price before they open. (Cups, plates and
+  puzzles left the shop on 2026-11-04, as your change 5 asked.)
 
 **15. How quickly do you usually reply to an order?** If you tell us, the site can say "Arpine
 replies within … days". *Today:* the site promises no reply time.

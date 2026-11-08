@@ -33,16 +33,19 @@ async function pair(src, base, big, small, opts = {}) {
 
 (async () => {
   const out = { ring: {}, tiles: {}, scarves: [] };
-  // ---- ring: the five the note names (t-shirt, scarf, postcard, bag, plate)
-  const ring = { tshirt: "մայկա06.png", scarf: "98-scarves-mockup-01.png", postcard: "Postcard Envelope.png", tote: "totebag.png", plate: "աման.png" };
+  // ---- ring: the five the note named (t-shirt, scarf, postcard, bag, plate).
+  // THE PLATE, AND THE CUP/PLATE/PUZZLE TILES BELOW, ARE GONE (change 5.pdf
+  // p3, 2026-11-04: the three lines left the shop and their files were
+  // deleted) — they are out of these lists so a re-run cannot bring them back.
+  const ring = { tshirt: "մայկա06.png", scarf: "98-scarves-mockup-01.png", postcard: "Postcard Envelope.png", tote: "totebag.png" };
   for (const [k, f] of Object.entries(ring)) {
     const { buf, keyed } = await keyWhite(`${IN}/mockups/${f}`);
     const trimmed = await sharp(buf).trim({ threshold: 12 }).toBuffer();
     const r = await sharp(trimmed).resize({ width: 700, height: 700, fit: "inside", withoutEnlargement: true }).webp({ quality: 84, alphaQuality: 90 }).toFile(`${OUT}/ring-${k}.webp`);
     out.ring[k] = { tex: `/products/ring-${k}.webp`, w: r.width, h: r.height, keyed };
   }
-  // ---- tiles: nine of the eleven lines
-  const tiles = { hoodies: "t-shirt (2).jpg", scarves: "scarf.jpg", postcards: "postcard .jpg", totes: "tote bag.jpg", plates: "plate.png", cups: "cup.png", keychains: "keychain.png", magnets: "magnet.png", puzzles: "puzzle.jpg" };
+  // ---- tiles: nine of the eleven lines then, six since 2026-11-04
+  const tiles = { hoodies: "t-shirt (2).jpg", scarves: "scarf.jpg", postcards: "postcard .jpg", totes: "tote bag.jpg", keychains: "keychain.png", magnets: "magnet.png" };
   for (const [slug, f] of Object.entries(tiles)) out.tiles[slug] = await pair(`${IN}/mockups/${f}`, `tile-${slug}`, 1400, 700);
   // ---- scarves: three designs × four photographs, flat print first
   const designs = [

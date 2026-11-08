@@ -36,17 +36,11 @@ const THUMB_W: Record<string, number> = {
   "/products/tile-scarves-sm.webp": 700,
   "/products/tile-postcards-sm.webp": 489,
   "/products/tile-totes-sm.webp": 544,
-  "/products/tile-plates-sm.webp": 700,
-  "/products/tile-cups-sm.webp": 666,
   "/products/tile-keychains-sm.webp": 583,
   "/products/tile-magnets-sm.webp": 467,
-  "/products/tile-puzzles-sm.webp": 700,
   "/products/stickers-01-sm.webp": 553,
   "/products/sticker3d-01-sm.webp": 337,
   "/products/totes-01-sm.webp": 466,
-  "/products/mugs-01-sm.webp": 690,
-  "/products/plates-01-sm.webp": 700,
-  "/products/puzzles-01-sm.webp": 700,
   "/products/postcards-01-sm.webp": 560,
   "/products/scarf-01-sm.webp": 700,
   "/products/apparel-01-sm.webp": 700,
@@ -87,7 +81,33 @@ const STRIP_MEDIA = "(min-width: 861px) and (prefers-reduced-motion: no-preferen
 /** a 1x1 transparent GIF, inline: a <source> that costs no request */
 const NOTHING = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
-export default function CatFig({ cat, eager = false }: { cat: Category; eager?: boolean }) {
+/** A "SOON" CARD WITH NO PARTNER (change 5, 2026-11). Under 595px an open
+ *  card spans the grid's row and consecutive soon cards share one, two by
+ *  two (globals.css). A soon card left without a partner — the last of an
+ *  odd run, or one alone, which is T-Shirts since cups, plates and puzzles
+ *  left (change 5.pdf p3, 2026-11-04) — would sit in half a row beside
+ *  nothing, so the card wears `data-solo` and spans the row too, and its
+ *  picture asks for an open card's sizes. `cats` is the grid's own list, in
+ *  its order. */
+export function soloSoon(cats: readonly Pick<Category, "status">[], i: number): boolean {
+  if (cats[i]?.status !== "soon") return false;
+  let start = i;
+  while (start > 0 && cats[start - 1].status === "soon") start--;
+  let end = i;
+  while (end < cats.length - 1 && cats[end + 1].status === "soon") end++;
+  return i === end && (end - start + 1) % 2 === 1;
+}
+
+export default function CatFig({
+  cat,
+  eager = false,
+  solo = false,
+}: {
+  cat: Category;
+  eager?: boolean;
+  /** a soon card spanning the phone's row on its own — see soloSoon */
+  solo?: boolean;
+}) {
   // the client's own tile cover first (content.ts `covers`, 2026-09-15), so
   // the plain grid and the moved strip show the same picture
   const cover = covers[cat.slug];
@@ -113,7 +133,7 @@ export default function CatFig({ cat, eager = false }: { cat: Category; eager?: 
     // browser that does not know `min-resolution` skips that entry and takes
     // the 88vw one — the old choice.
     const sizes = tw
-      ? cat.status === "soon"
+      ? cat.status === "soon" && !solo
         ? "(max-width: 860px) 46vw, 320px"
         : "(max-width: 594px) and (min-resolution: 2.5dppx) 55vw, (max-width: 594px) 88vw, (max-width: 860px) 46vw, 320px"
       : undefined;

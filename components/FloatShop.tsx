@@ -55,7 +55,10 @@ const useLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 export type FloatCat = {
   slug: string;
   name: string;
-  from: number;
+  /** the line's page — content.ts `hrefOf`, never a typed /shop/ path */
+  href: string;
+  /** null = Arpine confirms it; the room prints no price either way */
+  from: number | null;
   status: "open" | "soon";
   tex: string;
   w: number;
@@ -588,7 +591,7 @@ export default function FloatShop({
       // the first still has the room.
       if (caught.current || grab.current?.captured || performance.now() - draggedAt.current < 400) return;
       // a closed line opens the small Available Soon window, not a page
-      if (c.status === "open") router.push(`/shop/${c.slug}`);
+      if (c.status === "open") router.push(c.href);
       else openSoon(c.name);
     },
     [router],

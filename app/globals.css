@@ -1509,11 +1509,13 @@ select {
 .ap-cat[data-soon] a .ap-cat__fig {
   opacity: 0.72;
 }
-/* PHONES: THE FOUR LINES THAT ARE NOT OPEN YET PAIR UP (2026-10-05 package).
-   In one column they ran 1,479–1,495px of cards nobody can buy, between
-   Scarves and Stickers (UX laws M3, D0). Two to a row, in HER order and with
-   every word: an open line keeps the full width, so the grid lays the four
-   consecutive soon cards two by two and the reading order is the DOM order.
+/* PHONES: THE LINES THAT ARE NOT OPEN YET PAIR UP (2026-10-05 package, when
+   there were four). In one column they ran 1,479–1,495px of cards nobody can
+   buy, between Scarves and Stickers (UX laws M3, D0). Two to a row, in HER
+   order and with every word: an open line keeps the full width, so the grid
+   lays consecutive soon cards two by two and the reading order is the DOM
+   order. Since 2026-11-04 only T-Shirts is soon, and a card without a
+   partner spans the row (`data-solo`, below).
    Their name and «Available soon» stack inside the half-width card (one row
    of both measured wider than the 167px column).
    594px is where the grid's own auto-fill (260px cards, 20px gap, inside the
@@ -1533,7 +1535,13 @@ select {
        the size widened both columns to 216px, the home and /shop to 452+ */
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .ap-cats > .ap-cat:not([data-soon]) {
+  .ap-cats > .ap-cat:not([data-soon]),
+  /* a soon card with no partner spans the row too (change 5, 2026-11-04:
+     with cups, plates and puzzles gone, T-Shirts is the only soon card, and
+     alone it sat in half a row beside nothing). `data-solo` is computed in
+     the markup — CatFig.tsx soloSoon — so the last card of any odd run of
+     soon cards gets it, and its picture asks for the matching sizes. */
+  .ap-cats > .ap-cat[data-solo] {
     grid-column: 1 / -1;
   }
   .ap-cats > .ap-cat[data-soon] .ap-cat__row {

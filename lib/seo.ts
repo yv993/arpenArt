@@ -1,14 +1,14 @@
 // WHAT SEARCH ENGINES AND LINK PREVIEWS ARE TOLD, IN ONE PLACE (2026-10-31,
 // readiness #24). Three things kept going stale when each page typed its own:
 //   · the site and /shop descriptions named cups, plates, puzzles and
-//     hoodies, which have never been buyable — the list is now read from the
-//     catalogue, so a line that opens (or closes) in lib/content.ts changes
-//     the sentence by itself;
+//     hoodies, which were never buyable (the first three left the catalogue
+//     on 2026-11-04) — the list is now read from the catalogue, so a line
+//     that opens (or closes) in lib/content.ts changes the sentence by itself;
 //   · every shared link previewed as the home page: no route set its own
 //     og:title / og:description / og:url;
 //   · the Organization / Person markup carried a name and little else.
 import type { Metadata } from "next";
-import { about, brand, categories, socials } from "@/lib/content";
+import { about, brand, categories, isCollection, socials } from "@/lib/content";
 import { origin } from "@/lib/site";
 import products from "@/lib/products.json";
 // The social card, imported rather than named by its route. A page's
@@ -25,9 +25,14 @@ import card from "@/app/opengraph-image.jpg";
 const midSentence = (name: string) => (/[A-Z]/.test(name.slice(1)) ? name : name.charAt(0).toLowerCase() + name.slice(1));
 
 /** The lines a visitor can buy today, in catalogue order, as prose:
- *  "postcards, scarves, … and tote bags". Only `status: "open"` lines. */
+ *  "postcards, scarves, … and tote bags". Only `status: "open"` lines, and
+ *  no COLLECTION (content.ts `Category.href`): a collection gathers pieces
+ *  of several kinds under one name, so "printed onto … Armenia Eternal"
+ *  would name a series where the sentence lists objects. */
 export const openLines = (() => {
-  const names = categories.filter((c) => c.status === "open").map((c) => midSentence(c.name));
+  const names = categories
+    .filter((c) => c.status === "open" && !isCollection(c))
+    .map((c) => midSentence(c.name));
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
 })();
 
@@ -59,14 +64,27 @@ export const ogBase = {
  *  `title` is the short page name (the layout's template adds the brand to
  *  <title>); the social title spells the brand out, because og:title takes
  *  no template from a plain-string parent. Twitter's image is filled from
- *  og:image by Next when the twitter object names none. */
-export function pageMeta({ title, description, path }: { title?: string; description: string; path: string }): Metadata {
+ *  og:image by Next when the twitter object names none.
+ *  `image` (change 5, 2026-11): a route's own social card in place of the
+ *  site's — e.g. a collection previewed by its own art. Same shape as
+ *  `socialImage`; import the file so its size and hashed URL come with it. */
+export function pageMeta({
+  title,
+  description,
+  path,
+  image = socialImage,
+}: {
+  title?: string;
+  description: string;
+  path: string;
+  image?: { url: string; width: number; height: number; type?: string; alt: string };
+}): Metadata {
   const social = title ? `${title} — ${brand.name}` : siteTitle;
   return {
     ...(title ? { title } : {}),
     description,
     alternates: { canonical: path },
-    openGraph: { ...ogBase, images: [socialImage], title: social, description, url: path },
+    openGraph: { ...ogBase, images: [image], title: social, description, url: path },
     twitter: { card: "summary_large_image", title: social, description },
   };
 }

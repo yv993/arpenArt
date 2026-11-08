@@ -4,9 +4,11 @@ import {
   brand,
   categories,
   delivery,
+  hrefOf,
   isSoldOut,
   ownItemMedia,
   ownItemWord,
+  priceTbcMid,
   scarfDesigns,
   stickerSheets,
   withheldArt,
@@ -235,7 +237,7 @@ export async function POST(req: Request) {
         unit: priceOf(cat, variant),
         sum: null,
         picture: pictureOf(cat, art, variant),
-        page: `${site}/shop/${cat.slug}`,
+        page: site + hrefOf(cat),
       });
     }
   const lines = [...merged.values()].map((l) => ({ ...l, sum: l.unit === null ? null : l.unit * l.qty }));
@@ -272,7 +274,7 @@ export async function POST(req: Request) {
   // (labelOf). The picture link under it is the one the buyer was looking
   // at; the page link is the product's shop page.
   const lineText = lines.flatMap((l) => [
-    `  ${l.qty} x ${labelOf(l)} — ${l.sum === null ? "price confirmed by Arpine" : `${l.sum} AMD`}`,
+    `  ${l.qty} x ${labelOf(l)} — ${l.sum === null ? priceTbcMid : `${l.sum} AMD`}`,
     ...(l.picture ? [`      Picture: ${l.picture}`] : []),
     `      Page: ${l.page}`,
   ]);

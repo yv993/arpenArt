@@ -5,7 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { isSoldOut, withheldArt } from "@/lib/content";
+import { isSoldOut, priceTbc, withheldArt } from "@/lib/content";
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
@@ -19,6 +19,9 @@ import { lastKeys, scriptFocus, seedPointer } from "@/lib/modality";
 // throwing to app/error.tsx and taking the whole home page with it (the
 // same reason GlobeCanvas and the store map sit in one).
 const Puzzle = dynamic(() => import("./Puzzle"), { ssr: false });
+
+/** one card's price, from the catalogue — null when Arpine confirms it */
+const CARD_PRICE = unit("postcards");
 
 /** a jigsaw piece, the panel's sign for «Play the puzzle» (one tab out on
  *  top and right, a blank on the bottom and left) */
@@ -1281,7 +1284,13 @@ export default function Cloud({
                   stays. */}
               {!notACard && (
                 <p className="ap-cloud__price">
-                  <strong>{dram(unit("postcards"))}</strong> <span>a card</span>
+                  {CARD_PRICE === null ? (
+                    priceTbc
+                  ) : (
+                    <>
+                      <strong>{dram(CARD_PRICE)}</strong> <span>a card</span>
+                    </>
+                  )}
                 </p>
               )}
               <div className="ap-cloud__buy">

@@ -82,48 +82,6 @@
    "avg": "#695757"
   }
  ],
- "mugs": [
-  {
-   "id": "01",
-   "src": "/products/mugs-01.webp",
-   "thumb": "/products/mugs-01-sm.webp",
-   "w": 1578,
-   "h": 1600,
-   "alpha": true,
-   "avg": "#706f6e"
-  }
- ],
- "plates": [
-  {
-   "id": "01",
-   "src": "/products/plates-01.webp",
-   "thumb": "/products/plates-01-sm.webp",
-   "w": 1600,
-   "h": 1600,
-   "alpha": true,
-   "avg": "#5f5e5d"
-  }
- ],
- "puzzles": [
-  {
-   "id": "01",
-   "src": "/products/puzzles-01.webp",
-   "thumb": "/products/puzzles-01-sm.webp",
-   "w": 1600,
-   "h": 1067,
-   "alpha": true,
-   "avg": "#20221c"
-  },
-  {
-   "id": "02",
-   "src": "/products/puzzles-02.webp",
-   "thumb": "/products/puzzles-02-sm.webp",
-   "w": 1600,
-   "h": 1067,
-   "alpha": false,
-   "avg": "#ac989d"
-  }
- ],
  "postcards": [
   {
    "id": "01",

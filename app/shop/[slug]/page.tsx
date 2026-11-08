@@ -23,7 +23,18 @@ import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
 import type { Keychain } from "@/types/keychain";
-import { brand, categories, keychainWall, lookbooks, morphs, overtures, soon, withheldArt } from "@/lib/content";
+import {
+  brand,
+  categories,
+  hrefOf,
+  isCollection,
+  keychainWall,
+  lookbooks,
+  morphs,
+  overtures,
+  soon,
+  withheldArt,
+} from "@/lib/content";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
 import TextFX from "@/components/TextFX";
@@ -63,13 +74,19 @@ export const dynamicParams = false; // unknown slugs are a real 404, not a soft 
 // THE "AVAILABLE SOON" LINES HAVE A PAGE AT THEIR ADDRESS (2026-10-05). Their
 // tiles open the small Available Soon window and never navigate (client,
 // change.pdf p8), but the address still exists for anyone who has it — a
-// shared or typed /shop/cups — and it answered "NOT HERE" under the home
+// shared or typed /shop/hoodies — and it answered "NOT HERE" under the home
 // page's title, about a line the site itself announces. So the soon lines are built too, and say what the window
 // says: her notice, the line's name, the way to the shop. Not indexed, and
 // no Product markup: there is nothing to buy there yet.
+// A COLLECTION (a category with its own `href`, outside /shop) gets no page
+// here: its address is that href, and /shop/<its slug> is a 404 unless
+// next.config.mjs RETIRED sends it on.
 export function generateStaticParams() {
-  return categories.map((c) => ({ slug: c.slug }));
+  return categories.filter((c) => !isCollection(c)).map((c) => ({ slug: c.slug }));
 }
+
+/** the line a /shop/<slug> address serves — never a collection */
+const lineOf = (slug: string) => categories.find((c) => c.slug === slug && !isCollection(c));
 
 export async function generateMetadata({
   params,
@@ -77,7 +94,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const cat = categories.find((c) => c.slug === slug);
+  const cat = lineOf(slug);
   if (!cat) return {};
   if (cat.status !== "open") {
     // never indexed; links followed exactly as the layout says (a robots
@@ -86,12 +103,12 @@ export async function generateMetadata({
   }
   // her blurb, and its own social card (lib/seo.ts) — a shared /shop/scarves
   // link used to preview as the home page
-  return pageMeta({ title: cat.name, description: cat.blurb, path: `/shop/${cat.slug}` });
+  return pageMeta({ title: cat.name, description: cat.blurb, path: hrefOf(cat) });
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const cat = categories.find((c) => c.slug === slug);
+  const cat = lineOf(slug);
   if (!cat) notFound();
   if (cat.status !== "open") {
     return (
@@ -154,8 +171,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   // shows no Product for a line that is not open, and a sold-out piece
   // (content.ts `soldOut`) is one item of a line that still sells.
   // If a view starts or stops printing the price, change PRICED_VIEWS.
+  // A NULL PRICE (change 5) is no price shown — the view prints «Price
+  // confirmed by Arpine» — so such a line gets no Product either.
   const PRICED_VIEWS = ["stickers", "3d-stickers", "magnets", "scarves", "keychains", "totes"];
-  const showsPrice = opens || PRICED_VIEWS.includes(cat.slug);
+  const price = cat.from;
+  const showsPrice = price !== null && (opens || PRICED_VIEWS.includes(cat.slug));
   // The first product shot doubles as the Product image.
   const firstShot = P[cat.media]?.[0];
   const jsonLd = {
@@ -168,7 +188,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     ...(firstShot ? { image: origin + firstShot.src } : {}),
     offers: {
       "@type": "Offer",
-      price: cat.from,
+      price,
       priceCurrency: "AMD",
       availability: "https://schema.org/InStock",
     },
@@ -180,7 +200,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: origin + "/" },
       { "@type": "ListItem", position: 2, name: "Shop", item: origin + "/shop" },
-      { "@type": "ListItem", position: 3, name: cat.name, item: origin + "/shop/" + cat.slug },
+      { "@type": "ListItem", position: 3, name: cat.name, item: origin + hrefOf(cat) },
     ],
   };
 
@@ -192,7 +212,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           shots={ovtShots}
           name={cat.name}
           kicker={ovt.kicker}
-          from={`${cat.from.toLocaleString()} ֏`}
+          from={price}
         />
       )}
       {morph && (

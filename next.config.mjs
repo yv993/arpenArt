@@ -87,7 +87,7 @@ const signIn =
 //    with a custom domain attached that variable no longer holds the
 //    vercel.app name. Preview builds never get this rule, and the configured
 //    host is never matched (no loop).
-// Today NEXT_PUBLIC_SITE_URL is unset, so redirects() returns nothing.
+// Today NEXT_PUBLIC_SITE_URL is unset, so redirects() returns only RETIRED.
 const configured = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 const urlOrNull = (v) => {
   try {
@@ -119,6 +119,23 @@ if (site && prodHost && prodHost !== site.hostname && !prodHost.endsWith(".verce
   }
 }
 
+// RETIRED ADDRESSES (change 5, 2026-11-04): pages that left the site, and
+// where an old link to one lands. Returned BEFORE the `!site` early-out in
+// redirects() below — NEXT_PUBLIC_SITE_URL is unset today, so a rule placed
+// after that line would ship and never run in production (and with
+// /shop/[slug]'s dynamicParams = false, the old link would be a bare 404).
+//  - /shop/cups, /shop/plates, /shop/puzzles: the three lines came off the
+//    shop (change 5.pdf p3). Their pages said "Available soon" and were
+//    noindex, so nothing is lost in search; 307, TEMPORARY, because a 308 is
+//    cached hard by browsers and would keep sending returning visitors away
+//    if a line ever came back at its old address. They land in the shop.
+// One entry per address; `permanent: true` is a 308, `false` a 307.
+const RETIRED = [
+  { source: "/shop/cups", destination: "/shop", permanent: false },
+  { source: "/shop/plates", destination: "/shop", permanent: false },
+  { source: "/shop/puzzles", destination: "/shop", permanent: false },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -148,7 +165,8 @@ const nextConfig = {
     "*": ["./imgss/**/*"],
   },
   async redirects() {
-    if (!site) return [];
+    // the retired addresses run on every build, configured domain or not
+    if (!site) return RETIRED;
     // PAGES REDIRECT; WHAT AN OPEN PAGE FETCHES DOES NOT (2026-11-01). A tab
     // opened on the old host before the cutover keeps asking THAT host for
     // things, and its own CSP ('self' = the old host) blocks any answer that
@@ -175,12 +193,15 @@ const nextConfig = {
     // reload lands on the new home page without reopening the puzzle; and
     // the cart (localStorage) and the sign-in cookie, which is why
     // docs/LAUNCH-CHECKLIST.md §2 says to warn Arpine and pick a quiet hour.
-    return redirectHosts.map((host) => ({
-      source: `/:path((?!api/|_next/|(?:${PUBLIC_DIRS})/).*)`,
-      has: [{ type: "host", value: host }],
-      destination: `${site.origin}/:path`,
-      permanent: true,
-    }));
+    return [
+      ...RETIRED,
+      ...redirectHosts.map((host) => ({
+        source: `/:path((?!api/|_next/|(?:${PUBLIC_DIRS})/).*)`,
+        has: [{ type: "host", value: host }],
+        destination: `${site.origin}/:path`,
+        permanent: true,
+      })),
+    ];
   },
   async headers() {
     return [

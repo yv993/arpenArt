@@ -9,7 +9,7 @@
 // PLACEHOLDERS until Arpine supplies real ones; the cart never invents a
 // total of its own, it only ever multiplies what is written there.
 
-import { categories, isSoldOut, withheldArt } from "./content";
+import { categories, isSoldOut, priceTbc, withheldArt } from "./content";
 
 export type Line = {
   /** category slug, e.g. "postcards" */
@@ -33,6 +33,10 @@ const KEY = "arpenart.cart.v2";
 const OLD_KEY = "arpenart.cart.v1";
 const EVT = "arpenart:cart";
 
+/** true when a line of this category can be ordered today: the category
+ *  exists and is open. /api/order keeps exactly these and no others. */
+const orderable = (slug: string) => categories.some((c) => c.slug === slug && c.status === "open");
+
 /** the lines in one stored value, with anything malformed or withdrawn dropped */
 function parse(raw: string | null): Line[] {
   try {
@@ -43,6 +47,16 @@ function parse(raw: string | null): Line[] {
         !!l &&
         typeof l === "object" &&
         typeof (l as Line).cat === "string" &&
+        // A LINE THAT CANNOT BE ORDERED LEAVES (change 5, 2026-11). A cart
+        // saved while cups, plates and puzzles still had tiles (before
+        // 2026-09-15 they could be added) kept such a line: the badge counted
+        // it, the total charged its old `from`, and /api/order dropped it
+        // without a word — so Arpine's mail lacked a line the buyer saw.
+        // Since change 5.pdf p3 removed those three there is not even a name
+        // to show it by. A category that is unknown or not open is dropped
+        // here, silently, the same rule as the server's; it also covers any
+        // line removed or paused later.
+        orderable((l as Line).cat) &&
         Number.isFinite((l as Line).qty) &&
         // a stored variant that is not a string (old or tampered data) would
         // poison the merge key, so such lines are dropped, not coerced
@@ -177,10 +191,11 @@ export function count(lines = read()) {
   return lines.reduce((n, l) => n + l.qty, 0);
 }
 
-/** The category's own price, in dram (0 for an unknown slug) — what one
- *  item costs when no variant says otherwise. A LINE's price is unitOf. */
-export function unit(cat: string) {
-  return categories.find((c) => c.slug === cat)?.from ?? 0;
+/** The category's own price, in dram — what one item costs when no variant
+ *  says otherwise — or null when the site does not know it (a null `from`,
+ *  or an unknown slug). A LINE's price is unitOf. */
+export function unit(cat: string): number | null {
+  return categories.find((c) => c.slug === cat)?.from ?? null;
 }
 
 /** A line's unit price, in dram — or null when the site does not know it.
@@ -225,3 +240,8 @@ export function subscribe(fn: () => void) {
 }
 
 export const dram = (n: number) => n.toLocaleString("en-US") + " ֏";
+
+/** a price as a page prints it: "1,500 ֏" — or, when the site does not know
+ *  it (a null `from` or variant price), content.ts `priceTbc`, «Price
+ *  confirmed by Arpine» */
+export const priceText = (n: number | null) => (n === null ? priceTbc : dram(n));

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { brand } from "@/lib/content";
+import { siteDescription } from "@/lib/seo";
 
 // Web app manifest. `display: "browser"` is deliberate — this is a shop, not
 // an app, and pretending otherwise (standalone, no URL bar) would only make
@@ -10,8 +11,9 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: brand.name,
     short_name: brand.name,
-    description:
-      "Original illustration by Arpine Baroyan, printed and painted onto postcards, scarves, hoodies, cups, plates, puzzles and stickers. Made in Yerevan.",
+    // the site's own sentence, read from the catalogue (lib/seo.ts) — the
+    // typed one named hoodies, cups, plates and puzzles, none of them buyable
+    description: siteDescription,
     start_url: "/",
     display: "browser",
     // both are --paper: the splash/tile should look like the page it opens

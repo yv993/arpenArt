@@ -31,11 +31,13 @@ Prices are in Armenian dram (֏).
 
 **How a price works**
 
-- A line's price is `from`.
+- A line's price is `from`. A line whose `from` is **`null`** is on sale without a price on the
+  site: like a `null` option below, it shows **"Price confirmed by Arpine"** and is never added
+  to a total.
 - An option with its own entry in `variants.prices` costs that entry.
 - An option whose entry is **`null`** is never added to any total. The cart and the order email
-  show it as **"Price confirmed by Arpine"**. The postcard **"Full series set"** is like this
-  until she gives its price.
+  show it as **"Price confirmed by Arpine"** (`priceTbc` in `lib/content.ts`). The postcard
+  **"Full series set"** is like this until she gives its price.
 - The server re-prices every order from this file. A price in the visitor's browser is never
   trusted.
 
@@ -45,8 +47,9 @@ folder. Chat apps shrink the image.
 **Today's state:**
 
 - Delivery rates (free / 1,500 / 2,500 / 9,000 ֏) are placeholders.
-- T-shirts (slug `hoodies` in the code), cups, plates and puzzles are "Available Soon", and their
-  prices are placeholders.
+- T-shirts (slug `hoodies` in the code) are "Available Soon", and their price is a placeholder.
+  Cups, plates and puzzles were removed on 2026-11-04 (her change 5, p3); their old addresses
+  lead to the shop.
 - `docs/QUESTIONS-FOR-ARPINE.md` lists every open fact.
 
 ---

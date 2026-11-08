@@ -757,14 +757,14 @@
   overflow: hidden;
   aspect-ratio: 4 / 3;
 }
-/* THE LIVE MOCKUP. The print is placed in percentages of the PHOTO, so the
-   figure has to BE the photo — at 4/3 with `object-fit: contain` a 1578x1600
-   mug is letterboxed and every percentage lands in the wrong place. Matching
-   the ratio makes the drawn image fill the box exactly. */
+/* THE LIVE MOCKUP. The print is placed in the PHOTO's own coordinates, so the
+   figure has to BE the photo — at 4/3 with `object-fit: contain` a 1280x1600
+   postcard scene is letterboxed and every corner lands in the wrong place.
+   Matching the ratio makes the drawn image fill the box exactly. */
 .ap-cv__hero[data-mock] {
-  /* PER MOCKUP, not hardcoded: the mug is 1578x1600 and the plate 1600x1600,
-     and baking one in letterboxes the other — which puts every percentage in
-     the print box somewhere other than the object. */
+  /* PER SHOT, not hardcoded: the postcard roll mixes 1280x1600 scenes with
+     1600x1067 ones, and baking one in letterboxes the other — which puts
+     every measured corner somewhere other than the card. */
   aspect-ratio: var(--mock-ar);
 }
 /* `.ap-cv__hero img` is (0,1,1) and would outrank a bare `.ap-cv__print`
@@ -780,36 +780,15 @@
   /* the artwork keeps its own shape inside the printable area rather than
      being stretched to it */
   object-fit: contain;
-  /* seats the ink into the ceramic's own shading instead of floating a
-     rectangle on it — the mug's highlight and shadow read through */
+  /* seats ink into the object's own shading instead of floating a rectangle
+     on it (the base for a printed object; the card below sets `normal`) */
   mix-blend-mode: multiply;
   animation: ap-loc-in 0.34s var(--ease) both;
 }
-/* THE PLATE. `contain`, and no round crop — the buyer has to see the WHOLE
-   illustration they are choosing (client 2026-08-11). I had it on `cover`
-   inside a circle, which filled the well handsomely but cut the top and bottom
-   off every portrait picture, i.e. hid part of the very thing being sold.
-   The box is the largest square inside the well (see MOCKUPS), so a contained
-   picture of any shape lands inside the rim on its own.
-   The 1.5% ellipse stays: it is the plate's real one, measured. */
-.ap-cv__hero .ap-cv__print--disc,
-.ap-cv__hero img.ap-cv__print--disc {
-  object-fit: contain;
-  transform: scaleY(var(--squash, 1));
-}
-
-/* THE PUZZLE. The board is square and the illustrations are portrait, so
-   `cover` — the centre of the picture is what gets cut into pieces. The board
-   is card, not ceramic: no `multiply`, because the picture IS the surface here
-   rather than ink laid on a white one. */
-.ap-cv__hero .ap-cv__print--puzzle,
-.ap-cv__hero img.ap-cv__print--puzzle {
-  object-fit: cover;
-  mix-blend-mode: normal;
-  border-radius: 6px;
-}
+/* (The plate's disc and the puzzle's board and seams had rules here; they
+   left with their lines on 2026-11-04, change 5.pdf p3.) */
 /* THE CARD IN THE SCENE. Covers the photographed postcard edge to edge, so
-   the design underneath never shows. `normal` rather than the mug's
+   the design underneath never shows. `normal` rather than the base rule's
    `multiply`: the card is lit flat and square, and multiplying would drag
    the scene's shadow across a picture that is standing in the light.
    NO object-fit and NO border-radius here: CardPrint maps the artwork onto
@@ -843,14 +822,6 @@
   height: 100%;
   object-fit: fill;
   pointer-events: none;
-}
-/* the cut, over the picture — see MOCKUPS for why it is drawn rather than
-   lifted out of the photograph */
-.ap-cv__hero .ap-cv__seams,
-.ap-cv__hero img.ap-cv__seams {
-  object-fit: fill;
-  mix-blend-mode: normal;
-  animation: none;
 }
 .ap-cv__hero img {
   width: 100%;
@@ -4443,10 +4414,10 @@ html[data-footfx] .ap-foot {
    the page now. `--paper` is the token the body itself wears, so the blocks
    vanish in the light theme and in the night one alike — a hard-coded cream
    would have left two pale slabs on the dark page. Only this postcard frame
-   changes: the photograph frame above (`.ap-cv__hero`, cups / plates /
-   puzzles) keeps its average ground, because there it is the backdrop the
-   cut-out and letterboxed PRODUCT PHOTOGRAPHS stand on, not a mat around a
-   flat card, and her note is on the postcards. */
+   changes: the photograph frame above (`.ap-cv__hero`) keeps its average
+   ground, because there it is the backdrop the cut-out and letterboxed
+   PRODUCT PHOTOGRAPHS stand on, not a mat around a flat card, and her note
+   is on the postcards. */
 .ap-cv__hero--face {
   aspect-ratio: 1;
   background: var(--paper);

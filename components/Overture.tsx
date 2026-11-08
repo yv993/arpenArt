@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Drift from "./Drift";
+import { dram } from "@/lib/cart";
+import { priceTbc } from "@/lib/content";
 
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 
@@ -28,7 +30,9 @@ export default function Overture({
   shots: Shot[];
   name: string;
   kicker: string;
-  from: string;
+  /** the line's price, in dram — null = Arpine confirms it (content.ts
+   *  `priceTbc`), printed without "from" */
+  from: number | null;
 }) {
   const root = useRef<HTMLDivElement | null>(null);
 
@@ -73,7 +77,7 @@ export default function Overture({
         <h1 className="ap-ovt__title" data-tfx="flip">
           {name}
         </h1>
-        <p className="ap-ovt__from">from {from}</p>
+        <p className="ap-ovt__from">{from === null ? priceTbc : `from ${dram(from)}`}</p>
         <span className="ap-ovt__cue" aria-hidden="true">
           Scroll ↓
         </span>

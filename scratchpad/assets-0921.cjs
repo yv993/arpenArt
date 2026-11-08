@@ -33,6 +33,9 @@ const srcOf = (n) => `${IMG}/${n}.${n === 3 || n === 16 ? "png" : n >= 18 && n <
   fs.mkdirSync(`${ROOT}/public/globe`, { recursive: true });
   const globe = [];
   for (let n = 1; n <= 17; n++) {
+    // 05 (a mug) and 15 (a jigsaw) left the globe with their lines (change
+    // 5.pdf p3, 2026-11-04); a re-run must not bring them back
+    if (n === 5 || n === 15) continue;
     const id = String(n).padStart(2, "0");
     const trimmed = await sharp(srcOf(n)).ensureAlpha().trim({ threshold: 6 }).png().toBuffer();
     const r = await sharp(trimmed).resize({ width: 640, height: 640, fit: "inside", withoutEnlargement: true }).webp({ quality: 84, alphaQuality: 90 }).toFile(`${ROOT}/public/globe/g-${id}.webp`);

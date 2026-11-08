@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { categories } from "@/lib/content";
+import { categories, hrefOf } from "@/lib/content";
 import { indexable, origin as base } from "@/lib/site";
 
 // Same switch as robots.ts: until the owner opens indexing, an empty sitemap
@@ -14,9 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: base + "/stories", lastModified: now, priority: 0.6 },
     { url: base + "/about", lastModified: now, priority: 0.6 },
     { url: base + "/contact", lastModified: now, priority: 0.6 },
+    // every open line's page, a collection's own address included (hrefOf)
     ...categories
       .filter((c) => c.status === "open")
-      .map((c) => ({ url: base + "/shop/" + c.slug, lastModified: now, priority: 0.7 })),
+      .map((c) => ({ url: base + hrefOf(c), lastModified: now, priority: 0.7 })),
     { url: base + "/privacy", lastModified: now, priority: 0.2 },
     { url: base + "/terms", lastModified: now, priority: 0.2 },
   ];

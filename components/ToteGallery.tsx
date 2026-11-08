@@ -1,9 +1,9 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { add, dram } from "@/lib/cart";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { isSoldOut, toteBags } from "@/lib/content";
+import { isSoldOut, priceTbc, toteBags } from "@/lib/content";
 
 // ============================================================================
 // TOTE GALLERY — the four designs in a row; the one you point at opens and the
@@ -62,8 +62,9 @@ export default function ToteGallery({
   shots: ToteShot[];
   /** the category the cart line is filed under — the server re-prices by it */
   slug: string;
-  /** the category's `from`, in dram */
-  price: number;
+  /** the category's `from`, in dram — null = Arpine confirms it (content.ts
+   *  `priceTbc`) */
+  price: number | null;
   heading?: "h1" | "h2";
 }) {
   // the gallery opens /shop/totes, so there it carries the page's h1
@@ -193,7 +194,13 @@ export default function ToteGallery({
               cart, so it is said here once for all four bags — they cost the
               same — rather than only behind a click. */}
           <p className="ap-tg__price">
-            <strong>{dram(price)}</strong> {toteBags.open.each}
+            {price === null ? (
+              priceTbc
+            ) : (
+              <>
+                <strong>{dram(price)}</strong> {toteBags.open.each}
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -207,7 +214,7 @@ export default function ToteGallery({
             <button
               type="button"
               aria-haspopup="dialog"
-              aria-label={`Tote bag no. ${s.id}, ${dram(price)} — open`}
+              aria-label={`Tote bag no. ${s.id}, ${priceText(price)} — open`}
               onClick={(e) => show(i, e.currentTarget)}
             >
               <span className="ap-tg__shots">
@@ -336,7 +343,7 @@ export default function ToteGallery({
 
             <div className="ap-tgq__buy">
               <div className="ap-tgq__facts">
-                <p className="ap-tgq__price">{dram(price)}</p>
+                <p className="ap-tgq__price">{priceText(price)}</p>
                 {/* the two facts the cards' badges already carry — the
                     lookbook caption's own words; nothing new is claimed here */}
                 <p className="ap-tgq__spec">{toteBags.badges.join(" · ")}</p>

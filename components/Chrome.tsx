@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { brand, categories, nav, soon } from "@/lib/content";
+import { brand, categories, hrefOf, nav, soon } from "@/lib/content";
 import { count, read, subscribe } from "@/lib/cart";
 import ThemeToggle from "./ThemeToggle";
 import SoonModal, { SoonLink } from "./Soon";
@@ -256,7 +256,7 @@ export default function Chrome() {
                 {categories.map((c) => (
                   <li key={c.slug}>
                     {c.status === "open" ? (
-                      <Link href={`/shop/${c.slug}`} aria-current={here(`/shop/${c.slug}`)}>
+                      <Link href={hrefOf(c)} aria-current={here(hrefOf(c))}>
                         {c.name}
                       </Link>
                     ) : (

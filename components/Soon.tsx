@@ -8,9 +8,11 @@ import { loopTab } from "@/lib/tabLoop";
 // AVAILABLE SOON — the small window a not-yet-open line opens instead of a
 // page (client, change.pdf p8, 2026-09-15: «these sections should not lead to
 // another window yet — let a small window open on top and say Available
-// Soon»). Four lines wear `status: "soon"` in content.ts: T-Shirts, cups,
-// plates and puzzles (totes were among them for six days, until her
-// 2026-09-21 note brought the four-design page back).
+// Soon»). One line wears `status: "soon"` in content.ts: T-Shirts. Cups,
+// plates and puzzles did until her change 5.pdf p3 (2026-11-04) removed
+// them, and totes were among them for six days, until her 2026-09-21 note
+// brought the four-design page back. The globe's price-list lines (bracelets,
+// brooches, pendants) open this window too.
 //
 // ONE window, mounted once in Chrome so it exists on every page; any tile,
 // card, ring pick or menu item asks for it with `openSoon(name)`. The tiles

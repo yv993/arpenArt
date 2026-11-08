@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { isSoldOut, stickers3d } from "@/lib/content";
-import { add, dram } from "@/lib/cart";
+import { isSoldOut, priceTbc, stickers3d } from "@/lib/content";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { loopTab } from "@/lib/tabLoop";
 
@@ -83,7 +83,8 @@ export default function StickerSurfer({
 }: {
   shots: Shot[];
   slug: string;
-  price: number;
+  /** null = Arpine confirms it (content.ts `priceTbc`) */
+  price: number | null;
   /** "h1" when this section IS the page. It was missing when the lane first
    *  shipped — /shop/3d-stickers had no h1 at all, because the lane was
    *  written as a section and then made into the whole page. */
@@ -93,6 +94,15 @@ export default function StickerSurfer({
   const [live, setLive] = useState(false);
   const [open, setOpen] = useState<Shot | null>(null);
   const [added, setAdded] = useState(false);
+  /** the head's price line, printed by both layers */
+  const priceEach =
+    price === null ? (
+      priceTbc
+    ) : (
+      <>
+        <strong>{dram(price)}</strong> each
+      </>
+    );
 
   const root = useRef<HTMLElement>(null);
   const scene = useRef<HTMLDivElement>(null);
@@ -277,9 +287,7 @@ export default function StickerSurfer({
               {t}
             </p>
           ))}
-          <p className="ap-s3__price">
-            <strong>{dram(price)}</strong> each
-          </p>
+          <p className="ap-s3__price">{priceEach}</p>
         </div>
 
         <div className="ap-s3__stage">
@@ -320,9 +328,7 @@ export default function StickerSurfer({
               {t}
             </p>
           ))}
-          <p className="ap-s3__price">
-            <strong>{dram(price)}</strong> each
-          </p>
+          <p className="ap-s3__price">{priceEach}</p>
           {/* THE TAP CUE (2026-10-05, mobile pass). 48 cards, no visible Add,
               and the only hint — the lane's «Scroll to surf · click to open»
               — is the live layer's and never shows on a phone: nothing said a
@@ -372,7 +378,7 @@ export default function StickerSurfer({
             <div className="ap-s3__meta">
               <p className="ap-kicker">{stickers3d.open.series}</p>
               <p className="ap-s3__bigno">No. {open.id}</p>
-              <p className="ap-s3__bigprice">{dram(price)}</p>
+              <p className="ap-s3__bigprice">{priceText(price)}</p>
               <button
                 type="button"
                 className="ap-btn"

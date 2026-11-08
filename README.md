@@ -1,9 +1,10 @@
 # ArpenArt
 
 E-commerce site for [Arpine Baroyan](https://www.akneye.com/artists/arpine-baroyan), an Armenian
-illustrator. Her paintings are sold as prints on physical objects — postcards, scarves, hoodies,
-cups, plates, puzzles, stickers, tote bags and skirts — with ordering, a cart, and a
-find-in-store page for the Yerevan shops that carry her work.
+illustrator. Her paintings are sold as prints on physical objects — postcards, scarves, sticker
+sheets, 3D stickers, keychains, magnets and tote bags, with T-shirts to come — with ordering, a
+cart, and a find-in-store page for the Yerevan shops that carry her work. The lines are the
+`categories` in `lib/content.ts`; every link to one goes through `hrefOf` there.
 
 Built on **Next.js 15 (App Router) + React 19 + TypeScript (strict)**, with a deliberately tiny
 dependency budget. The complete runtime dependency list:
@@ -131,14 +132,12 @@ exclave). The town pins are placed from their true coordinates on the same equir
 grid, so they land on her provinces. Nothing is fetched at runtime; the production CSP in
 `next.config.mjs` is self-only apart from the one street-map tile host.
 
-**Live product mockups** (`components/CardPrint.tsx`, `components/MugPrint.tsx`). The chosen
-illustration is printed *into* the product photographs in the browser. Cards: each card's four
-corners were measured off the photograph and the artwork is mapped onto them by a homography —
-solved in the figure's current pixels and re-solved on resize, because a homography is not
-scale-invariant. Mugs: the artwork is drawn through an actual cylinder projection
-(per-destination-column inverse sampling, `θ = asin(x / R)`, with a measured radius and a
-double "bow" for the above-eye-level camera), so the print bunches toward the silhouette like
-ink on a mug rather than floating like a sticker.
+**Live product mockups** (`components/CardPrint.tsx`). The chosen illustration is printed
+*into* the product photographs in the browser: each card's four corners were measured off the
+photograph and the artwork is mapped onto them by a homography — solved in the figure's current
+pixels and re-solved on resize, because a homography is not scale-invariant. (The mug's
+cylinder projection left with the cups, plates and puzzles on 2026-11-04; it is in the git
+history.)
 
 **Text FX system** (`lib/textfx.ts` + `components/TextFX.tsx`). A shared vocabulary of four
 entrance logics assigned by meaning — *rise* for openers, *flip* for the commerce voice,

@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import KeychainCard, { KEYCHAIN_PRICE } from "./KeychainCard";
-import { add, dram } from "@/lib/cart";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { isSoldOut } from "@/lib/content";
+import { isSoldOut, priceTbc } from "@/lib/content";
 import type { Keychain, KeychainWall } from "@/types/keychain";
 
 // ============================================================================
@@ -185,7 +185,13 @@ export default function KeychainSection({
           </p>
         ))}
         <p className="ap-kc__from">
-          <strong>{dram(KEYCHAIN_PRICE)}</strong> each
+          {KEYCHAIN_PRICE === null ? (
+            priceTbc
+          ) : (
+            <>
+              <strong>{dram(KEYCHAIN_PRICE)}</strong> each
+            </>
+          )}
         </p>
       </div>
 
@@ -260,11 +266,11 @@ export default function KeychainSection({
               >
                 {sold ? "Sold out" : wall.add}
                 <span className="ap-sr">
-                  : {k.title}, {dram(KEYCHAIN_PRICE)}
+                  : {k.title}, {priceText(KEYCHAIN_PRICE)}
                 </span>
               </button>
               <p className="ap-kc__rackname">
-                {k.title} · {dram(KEYCHAIN_PRICE)}
+                {k.title} · {priceText(KEYCHAIN_PRICE)}
               </p>
               <p className="ap-kc__added" role="status">
                 {added === k.id ? wall.added : ""}

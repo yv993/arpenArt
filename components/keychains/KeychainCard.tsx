@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { add, dram } from "@/lib/cart";
+import { add, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { categories, isSoldOut } from "@/lib/content";
 import type { Keychain, KeychainWall } from "@/types/keychain";
@@ -53,8 +53,9 @@ const PER_PX = 0.42; // how many degrees a pixel of drag is worth
 /** ONE price for the line, and it is the catalogue's — the same field the
  *  cart and /api/order re-price from (1,500 ֏ on her 2026-09-21 list; the
  *  1,000 that used to be typed here three times over is what her list
- *  corrected). */
-export const KEYCHAIN_PRICE = categories.find((c) => c.slug === "keychains")?.from ?? 0;
+ *  corrected). null = Arpine confirms it — printed as content.ts `priceTbc`,
+ *  never as 0 (the `?? 0` that stood here would have shown «0 ֏»). */
+export const KEYCHAIN_PRICE: number | null = categories.find((c) => c.slug === "keychains")?.from ?? null;
 
 export default function KeychainCard({
   item,
@@ -234,7 +235,7 @@ export default function KeychainCard({
           <span className="ap-sr">: {item.title}</span>
         </button>
         <p className="ap-kc__name">{item.title}</p>
-        <p className="ap-kc__price">{dram(KEYCHAIN_PRICE)}</p>
+        <p className="ap-kc__price">{priceText(KEYCHAIN_PRICE)}</p>
         <p className="ap-kc__added" role="status">
           {added ? wall.added : ""}
         </p>

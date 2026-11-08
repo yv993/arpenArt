@@ -82,15 +82,29 @@ export type Category = {
    *  magnets 1,600 → 1,500. The same list names five lines the shop does
    *  not carry yet — see `priceList` below.
    *
-   *  STILL PLACEHOLDERS, waiting on her figures: hoodies, cups, plates,
-   *  puzzles. Every one she has corrected so far moved by a lot and in both
-   *  directions — scarves down from 14,000, sticker sheets up from 600 — which
-   *  is the standing argument for never inventing one that merely looks right.
+   *  STILL A PLACEHOLDER, waiting on her figure: hoodies (T-Shirts, behind
+   *  "Available soon", so it is never shown or charged). Every one she has
+   *  corrected so far moved by a lot and in both directions — scarves down
+   *  from 14,000, sticker sheets up from 600 — which is the standing argument
+   *  for never inventing one that merely looks right.
+   *
+   *  NULL (change 5, 2026-11) = the line is on sale but its price is not on
+   *  the site yet: Arpine names it when she replies to the order. Such a line
+   *  reads `priceTbc` («Price confirmed by Arpine») wherever a price would
+   *  stand, and it is never counted in a total — in the browser (lib/cart.ts
+   *  unitOf) or in /api/order. The same rule as a `variants.prices` null.
    *
    *  The cart and the order endpoint both read this field, and the endpoint
    *  re-prices from it so the browser can never name a price of its own. */
-  from: number;
+  from: number | null;
   status: "open" | "soon";
+  /** WHERE THE LINE'S PAGE IS, when it is not /shop/<slug> (change 5,
+   *  2026-11). Set only on a COLLECTION: one name gathering several kinds of
+   *  piece (Armenia Eternal — cards, scarves, a runner) on a page of its own.
+   *  A collection is not a line, so the sentences that list the lines leave
+   *  it out (lib/seo.ts openLines), and /shop/[slug] builds no page for it.
+   *  Every link to a line goes through `hrefOf`, never a typed /shop/ path. */
+  href?: string;
   /** Artwork ids to tile on the card while the line is unphotographed. The
    *  designs are finished even when the garment shoot is not, so this shows
    *  real work instead of an empty box. Delete once photographs land. */
@@ -162,8 +176,8 @@ export const ownItemMedia: Record<string, string> = {
  *  girl dreaming under the stars — «ԵՐԱԶԵԼՈՎ» — and «սա էլ» on no. 23, the two
  *  fish kissing on the waves). Her note is on the POSTCARD picker and says
  *  "this kind of postcard", so the two leave the postcard catalogue only: the
- *  pictures stay in the series itself (the home cloud, the cups / plates /
- *  puzzles pickers), which is why this is a list beside artworks.json and not
+ *  pictures stay in the series itself (the home cloud and its puzzle), which
+ *  is why this is a list beside artworks.json and not
  *  two deleted rows in it. ONE list, read by everything that offers a
  *  postcard: the picker in CategoryView, the hero's deck on /shop/postcards
  *  and the cloud's own "Add to cart". (Both are among the three pictures that
@@ -247,30 +261,17 @@ export const categories: Category[] = [
     // cannot be placed without
     variants: { label: "Size", options: ["S", "M", "L", "XL"] },
   },
-  {
-    slug: "cups",
-    name: "Cups",
-    blurb: "Start your day with a little Armenia.",
-    media: "mugs",
-    from: 5500,
-    status: "soon", // change.pdf p8 — Available Soon window, no page yet
-  },
-  {
-    slug: "plates",
-    name: "Plates",
-    blurb: "Armenian stories for your table.",
-    media: "plates",
-    from: 7500,
-    status: "soon", // change.pdf p8 — Available Soon window, no page yet
-  },
-  {
-    slug: "puzzles",
-    name: "Puzzles",
-    blurb: "Piece together a little Armenia.",
-    media: "puzzles",
-    from: 8500,
-    status: "soon", // change.pdf p8 — Available Soon window, no page yet
-  },
+  // CUPS, PLATES AND PUZZLES REMOVED (client, change 5.pdf p3, 2026-11-04:
+  // «հանենք սրանք, փոխարենը նոր բաժիններ անենք» — let's remove these and
+  // make new sections in their place — the three crossed out on the strip).
+  // They were "Available soon" lines with no page of their own; their
+  // addresses answer a 307 to /shop (RETIRED in next.config.mjs), a cart
+  // line saved for one is dropped (lib/cart.ts parse), and the mug and the
+  // puzzle left the globe with them. THE ORDER BELOW IS HER p3 STRIP, read
+  // left to right: Postcards, Scarves, T-Shirts, Bookmarks, Armenia Eternal,
+  // Posters, Stickers, 3D stickers, Keychains, Magnets, Tote bags. The strip,
+  // the nav's menu and the home ring all follow this array, so a new line
+  // goes in at its slot here and nowhere else.
   {
     slug: "stickers",
     name: "Stickers",
@@ -349,6 +350,26 @@ export const categories: Category[] = [
   // To bring it back: restore this entry. Nothing else was skirts-specific.
 ];
 
+/** THE ADDRESS OF A LINE'S PAGE — the one place it is spelled (change 5,
+ *  2026-11). /shop/<slug>, unless the entry names its own `href` (a
+ *  collection with a page outside the shop). The strip, the nav's menu, the
+ *  home ring and grid, the globe, the sitemap, the order mail and the smoke
+ *  test all link through this, so a line that moves moves everywhere. */
+export const hrefOf = (cat: Pick<Category, "slug" | "href">) => cat.href ?? `/shop/${cat.slug}`;
+
+/** true for a COLLECTION (see `Category.href`): not one line but several
+ *  kinds of piece under one name */
+export const isCollection = (cat: Pick<Category, "href">) => cat.href !== undefined;
+
+/** THE WORDS FOR A PRICE THE SITE DOES NOT KNOW (2026-10-31) — a line whose
+ *  `from`, or whose variant's price, is null. One copy (change 5, 2026-11),
+ *  so the cart, the order mail and every page that sells such a line print
+ *  the same words. */
+export const priceTbc = "Price confirmed by Arpine";
+/** the same words mid-sentence: "2 x Postcards [Full series set] — price
+ *  confirmed by Arpine" (the order mail, the cart's copied text) */
+export const priceTbcMid = priceTbc.charAt(0).toLowerCase() + priceTbc.slice(1);
+
 // Every entry here is a PAGE. "Gallery" was removed (client 2026-08-06): it
 // was the one anchor among them, `/#gallery`, pointing part-way down the home
 // page's scroll story — so it behaved unlike its neighbours and, pressed from
@@ -387,13 +408,16 @@ export const priceList: Record<string, { name: string; hy: string; from: number 
  *  are in lib/globe.json (sizes and colours read off them, never typed).
  *  A card names the line it shows: a `slug` for a line the shop carries
  *  (open or Available Soon), or a `list` key for one that exists only on
- *  her price list so far. */
+ *  her price list so far. 17 + 9 (2026-10-12) − 2 (2026-11-04) = 24 cards. */
 export const globe: { id: string; slug?: string; list?: keyof typeof priceList }[] = [
   { id: "01", slug: "magnets" },
   { id: "02", slug: "magnets" },
   { id: "03", slug: "keychains" },
   { id: "04", slug: "scarves" },
-  { id: "05", slug: "cups" },
+  // 05 (a mug) and 15 (a jigsaw) LEFT WITH THEIR LINES (change 5.pdf p3,
+  // 2026-11-04: cups and puzzles came off the shop). Removed here on
+  // purpose, not left for Gallery.tsx to drop because their slug is gone:
+  // the globe is 24 cards and says so. Their pictures are deleted too.
   { id: "06", slug: "keychains" },
   { id: "07", list: "bracelets" },
   { id: "08", list: "brooches" },
@@ -403,7 +427,6 @@ export const globe: { id: string; slug?: string; list?: keyof typeof priceList }
   { id: "12", slug: "hoodies" },
   { id: "13", slug: "stickers" },
   { id: "14", slug: "stickers" },
-  { id: "15", slug: "puzzles" },
   { id: "16", slug: "keychains" },
   // THREE magnets, not one: 01 Tsitsernakaberd, 02 the café by the Opera,
   // 17 Republic Square. A whole-image comparison called 17 a duplicate of
@@ -450,36 +473,30 @@ export const soon = {
 /** THE TILE COVERS (client drop, 2026-09-15 — change.pdf p8: «change the main
  *  pictures here»). Nine of the eleven lines came with one; stickers and 3D
  *  stickers keep their first photograph. Sizes and averages were read off the
- *  files by scratchpad/redesign-assets.cjs, never typed. */
+ *  files by scratchpad/redesign-assets.cjs, never typed. (Cups, plates and
+ *  puzzles took their three covers with them on 2026-11-04.) */
 export const covers: Record<string, { src: string; thumb: string; w: number; h: number; avg: string }> = {
   hoodies: { src: "/products/tile-hoodies.webp", thumb: "/products/tile-hoodies-sm.webp", w: 1400, h: 933, avg: "#5f5e65" },
   scarves: { src: "/products/tile-scarves.webp", thumb: "/products/tile-scarves-sm.webp", w: 1400, h: 1400, avg: "#8a867e" },
   postcards: { src: "/products/tile-postcards.webp", thumb: "/products/tile-postcards-sm.webp", w: 977, h: 1400, avg: "#a38d7b" },
   totes: { src: "/products/tile-totes.webp", thumb: "/products/tile-totes-sm.webp", w: 1089, h: 1400, avg: "#636247" },
-  plates: { src: "/products/tile-plates.webp", thumb: "/products/tile-plates-sm.webp", w: 1254, h: 1254, avg: "#b4a193" },
-  cups: { src: "/products/tile-cups.webp", thumb: "/products/tile-cups-sm.webp", w: 1223, h: 1286, avg: "#a38f7f" },
   keychains: { src: "/products/tile-keychains.webp", thumb: "/products/tile-keychains-sm.webp", w: 1145, h: 1374, avg: "#b29d8e" },
   magnets: { src: "/products/tile-magnets.webp", thumb: "/products/tile-magnets-sm.webp", w: 933, h: 1400, avg: "#bbb4ae" },
-  puzzles: { src: "/products/tile-puzzles.webp", thumb: "/products/tile-puzzles-sm.webp", w: 1400, h: 933, avg: "#ac989d" },
 };
 
-/** THE RING'S FIVE (change.pdf p5: «replace the t-shirt, the scarf, the
- *  postcard, the bag, the plate — the rest stay»). Four of her mockups are
- *  delivered as PNG cut-outs with their OWN alpha, and that alpha is used
- *  as-is: the first pass ran a near-white flood fill over them too, which
- *  ate every white region touching the transparent ground — the white
- *  postcard inside the envelope went, leaving its QR code and stamps
- *  floating (Vardan 2026-09-15: «change first envelope, it must be the
- *  second image»). The plate is the one opaque file; it is keyed as a disc. */
+/** THE RING'S CUT-OUTS (change.pdf p5: «replace the t-shirt, the scarf, the
+ *  postcard, the bag, the plate — the rest stay»; the plate left with its
+ *  line on 2026-11-04). Her mockups are delivered as PNG cut-outs with their
+ *  OWN alpha, and that alpha is used as-is: the first pass ran a near-white
+ *  flood fill over them too, which ate every white region touching the
+ *  transparent ground — the white postcard inside the envelope went, leaving
+ *  its QR code and stamps floating (Vardan 2026-09-15: «change first
+ *  envelope, it must be the second image»). */
 export const ring: Record<string, { tex: string; w: number; h: number }> = {
   hoodies: { tex: "/products/ring-tshirt.webp", w: 645, h: 700 },
   scarves: { tex: "/products/ring-scarf.webp", w: 700, h: 539 },
   postcards: { tex: "/products/ring-postcard.webp", w: 700, h: 602 },
   totes: { tex: "/products/ring-tote.webp", w: 419, h: 700 },
-  // the plate is keyed as a DISC (centre + radius from its own silhouette),
-  // not by near-white flood fill — that ate the white rim and left a crescent
-  // (Vardan 2026-09-15, «must be the image I provided»)
-  plates: { tex: "/products/ring-plate.webp", w: 700, h: 700 },
 };
 
 // ---------------------------------------------------------------------------
@@ -905,7 +922,9 @@ export const home = {
     // phrase it lands on.
     line1: "ILLUSTRATING",
     line2: "THE SOUL OF ARMENIA",
-    sub: "Original illustration by Arpine Baroyan — on paper, silk, cotton and clay.",
+    // «and clay» came off with the cups and plates (change 5.pdf p3,
+    // 2026-11-04) — words taken out, none added
+    sub: "Original illustration by Arpine Baroyan — on paper, silk and cotton.",
     cta: "See the shop",
     hint: "Scroll",
   },
@@ -922,8 +941,9 @@ export const home = {
      *  the series. The artworks have no titles yet — see the note at the top
      *  of this file — so nothing here invents one. */
     pickLine: "The Armenia series",
+    // «glazed» left with the cups and plates (change 5.pdf p3, 2026-11-04)
     pickBody:
-      "One of the fifty-seven original illustrations, painted in Yerevan. Every piece in the shop is printed, painted or glazed from one of them.",
+      "One of the fifty-seven original illustrations, painted in Yerevan. Every piece in the shop is printed or painted from one of them.",
     pickCta: "See them in the shop",
     /** THE PUZZLE's words (2026-10-29 — interface microcopy, the site's
      *  voice, NOT hers; Vardan asked for the puzzle, not for words). Only a
@@ -990,8 +1010,9 @@ export const home = {
   shopIntro: {
     kicker: "(Shop)",
     title: ["THE PICTURES", "COME OFF", "THE PAGE"],
-    copy:
-      "Each illustration is printed, painted or glazed onto something you can actually use — a card to send, a scarf to wear, a mug for the morning.",
+    // the mug and «glazed» left with the cups and plates (change 5.pdf p3,
+    // 2026-11-04) — words taken out, none added
+    copy: "Each illustration is printed or painted onto something you can actually use — a card to send, a scarf to wear.",
   },
   // -------------------------------------------------------------------------
   // FROM THE STUDIO — the strip above the footer. It is BUILT to hold short

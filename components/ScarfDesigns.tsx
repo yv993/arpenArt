@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import PhotoLightbox from "./PhotoLightbox";
-import { add, dram } from "@/lib/cart";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { isSoldOut, scarfDesigns, type Category } from "@/lib/content";
+import { isSoldOut, priceTbc, scarfDesigns, type Category } from "@/lib/content";
 import products from "@/lib/products.json";
 
 /** `md`: the 1,080px-wide middle rung, on the three prints only (2026-10-05) —
@@ -104,7 +104,13 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
           </div>
         )}
         <p className="ap-cv__price ap-sd__price">
-          <strong>{dram(cat.from)}</strong> {scarfDesigns.each}
+          {cat.from === null ? (
+            priceTbc
+          ) : (
+            <>
+              <strong>{dram(cat.from)}</strong> {scarfDesigns.each}
+            </>
+          )}
         </p>
       </div>
 
@@ -189,7 +195,7 @@ export default function ScarfDesigns({ cat, heading = "h2" }: { cat: Category; h
                   </button>
                   {variant && (
                     <p className="ap-sd__style" id={`sd-style-${d.id}`}>
-                      {variant} · {dram(cat.from)}
+                      {variant} · {priceText(cat.from)}
                     </p>
                   )}
                   <p className="ap-sd__added" role="status">

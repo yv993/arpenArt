@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Chrome from "@/components/Chrome";
-import CatFig from "@/components/CatFig";
+import CatFig, { soloSoon } from "@/components/CatFig";
 import ShopStrip, { type StripCat } from "@/components/ShopStrip";
-import { categories, covers, soon } from "@/lib/content";
+import { categories, covers, hrefOf, soon } from "@/lib/content";
 import { SoonLink } from "@/components/Soon";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
@@ -19,7 +19,8 @@ const ART = artworks as Art[];
 // lines while the grid below rendered eleven — every category added after it
 // was silently missing from the shop's own search snippet. And only the OPEN
 // lines since 2026-10-31 (lib/seo.ts): the snippet listed t-shirts, cups,
-// plates and puzzles, which nobody can buy yet.
+// plates and puzzles, which nobody could buy (the last three left the shop
+// on 2026-11-04).
 export const metadata: Metadata = pageMeta({ title: "Shop", description: shopDescription, path: "/shop" });
 
 export default function ShopPage() {
@@ -36,6 +37,7 @@ export default function ShopPage() {
     return {
       slug: c.slug,
       name: c.name,
+      href: hrefOf(c),
       from: c.from,
       status: c.status,
       blurb: c.blurb,
@@ -77,11 +79,16 @@ export default function ShopPage() {
 
         <ul className="ap-cats">
           {categories.map((c, i) => (
-            <li className="ap-cat" key={c.slug} data-soon={c.status === "soon" || undefined}>
+            <li
+              className="ap-cat"
+              key={c.slug}
+              data-soon={c.status === "soon" || undefined}
+              data-solo={soloSoon(categories, i) || undefined}
+            >
               {/* no price under the name (change.pdf p8); a closed line opens
                   the Available Soon window, not a page */}
               {c.status === "open" ? (
-                <Link href={`/shop/${c.slug}`} aria-label={c.name}>
+                <Link href={hrefOf(c)} aria-label={c.name}>
                   {/* the first card is this page's LCP on a phone (2026-10-05
                       package) — see CatFig */}
                   <CatFig cat={c} eager={i === 0} />
@@ -92,7 +99,7 @@ export default function ShopPage() {
                 </Link>
               ) : (
                 <SoonLink name={c.name} aria-label={`${c.name} — ${soon.tile}`}>
-                  <CatFig cat={c} />
+                  <CatFig cat={c} solo={soloSoon(categories, i)} />
                   <div className="ap-cat__row">
                     <h2>{c.name}</h2>
                     <span className="ap-cat__from is-soon">{soon.tile}</span>

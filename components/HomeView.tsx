@@ -5,12 +5,12 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Gallery from "./Gallery";
-import CatFig from "./CatFig";
+import CatFig, { soloSoon } from "./CatFig";
 import Cloud from "./Cloud";
 import FloatShop, { type FloatCat } from "./FloatShop";
 import Selector from "./Selector";
 import Sun from "./Sun";
-import { brand, categories, home, ribbon, ring, soon } from "@/lib/content";
+import { brand, categories, home, hrefOf, ribbon, ring, soon } from "@/lib/content";
 import { SoonLink } from "./Soon";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
@@ -228,12 +228,13 @@ export default function HomeView() {
     const shot = P[c.media]?.[0];
     const swatch = c.swatch?.length ? ART.find((a) => a.id === c.swatch![0]) : undefined;
     const src = shot ?? swatch;
-    // the five the client re-shot for the ring (content.ts `ring`) win over
-    // the line's first photograph
+    // the cut-outs the client re-shot for the ring (content.ts `ring`) win
+    // over the line's first photograph
     const r = ring[c.slug];
     return {
       slug: c.slug,
       name: c.name,
+      href: hrefOf(c),
       from: c.from,
       status: c.status,
       tex: r?.tex ?? src?.thumb ?? "/hero/hero.webp",
@@ -427,14 +428,15 @@ export default function HomeView() {
         {/* the grid stays: the plain layer everywhere, the accessible layer
             under the canvas (sr-only + focus bottom sheet) when it runs */}
         <ul className="ap-cats">
-          {categories.map((c) => {
+          {categories.map((c, i) => {
+            const solo = soloSoon(categories, i);
             return (
-              <li className="ap-cat" key={c.slug} data-soon={c.status === "soon" || undefined}>
+              <li className="ap-cat" key={c.slug} data-soon={c.status === "soon" || undefined} data-solo={solo || undefined}>
                 {/* NO PRICE UNDER THE NAME any more (client, change.pdf p8,
                     2026-09-15); a line that is not open yet opens the small
                     Available Soon window instead of a page */}
                 {c.status === "open" ? (
-                  <Link href={`/shop/${c.slug}`} aria-label={c.name}>
+                  <Link href={hrefOf(c)} aria-label={c.name}>
                     <CatFig cat={c} />
                     <div className="ap-cat__row">
                       <h3>{c.name}</h3>
@@ -443,7 +445,7 @@ export default function HomeView() {
                   </Link>
                 ) : (
                   <SoonLink name={c.name} aria-label={`${c.name} — ${soon.tile}`}>
-                    <CatFig cat={c} />
+                    <CatFig cat={c} solo={solo} />
                     <div className="ap-cat__row">
                       <h3>{c.name}</h3>
                       <span className="ap-cat__from is-soon">{soon.tile}</span>

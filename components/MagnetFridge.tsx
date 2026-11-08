@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isSoldOut, magnetFridge } from "@/lib/content";
-import { add, dram } from "@/lib/cart";
+import { isSoldOut, magnetFridge, priceTbc } from "@/lib/content";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
 
@@ -50,7 +50,8 @@ export default function MagnetFridge({
 }: {
   shots: MagnetShot[];
   slug: string;
-  price: number;
+  /** null = Arpine confirms it (content.ts `priceTbc`) */
+  price: number | null;
   heading?: "h1" | "h2";
 }) {
   const [big, setBig] = useState<number | null>(null);
@@ -109,7 +110,13 @@ export default function MagnetFridge({
           </p>
         ))}
         <p className="ap-mf__from">
-          <strong>{dram(price)}</strong> each
+          {price === null ? (
+            priceTbc
+          ) : (
+            <>
+              <strong>{dram(price)}</strong> each
+            </>
+          )}
         </p>
       </div>
 
@@ -178,7 +185,7 @@ export default function MagnetFridge({
                 ? "Sold out"
                 : added === shots[big].id
                   ? magnetFridge.added
-                  : `${magnetFridge.add} — ${dram(price)}`}
+                  : `${magnetFridge.add} — ${priceText(price)}`}
             </button>
           }
         />

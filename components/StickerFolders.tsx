@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
-import { isSoldOut, stickerSheets } from "@/lib/content";
-import { add, dram } from "@/lib/cart";
+import { isSoldOut, priceTbc, stickerSheets } from "@/lib/content";
+import { add, dram, priceText } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
 
@@ -75,8 +75,8 @@ export default function StickerFolders({
    *  of that table and never trusts the browser, and a per-sheet price the
    *  server did not also hold would be a figure the server would silently
    *  under-charge. The sheets are all one size and count, so one number is
-   *  also simply true. */
-  price: number;
+   *  also simply true. null = Arpine confirms it (content.ts `priceTbc`). */
+  price: number | null;
 }) {
   const [live, setLive] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -285,7 +285,13 @@ export default function StickerFolders({
           ))}
         </div>
         <p className="ap-cv__price ap-sf__from">
-          <strong>{dram(price)}</strong> a sheet
+          {price === null ? (
+            priceTbc
+          ) : (
+            <>
+              <strong>{dram(price)}</strong> a sheet
+            </>
+          )}
         </p>
       </div>
 
@@ -412,7 +418,7 @@ export default function StickerFolders({
               <div className="ap-sf__buy">
                 <p className="ap-sf__price" id={`sf-price-${sheet.id}`}>
                   <span className="ap-sf__pname">{sheet.name}</span>
-                  <strong>{dram(price)}</strong>
+                  <strong>{priceText(price)}</strong>
                 </p>
                 <button
                   type="button"
@@ -461,7 +467,7 @@ export default function StickerFolders({
               disabled={bigSold}
               data-sold={bigSold || undefined}
             >
-              {bigSold ? "Sold out" : <>{stickerSheets.add} — {dram(price)}</>}
+              {bigSold ? "Sold out" : <>{stickerSheets.add} — {priceText(price)}</>}
             </button>
           }
         />

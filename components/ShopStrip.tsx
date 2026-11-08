@@ -28,7 +28,10 @@ export type StripShot = { src: string; w: number; h: number; avg: string };
 export type StripCat = {
   slug: string;
   name: string;
-  from: number;
+  /** the line's page — content.ts `hrefOf`, never a typed /shop/ path */
+  href: string;
+  /** null = Arpine confirms it; no panel prints a price either way */
+  from: number | null;
   status: "open" | "soon";
   blurb: string;
   photo: StripShot;
@@ -171,7 +174,7 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
                 </>
               );
               return c.status === "open" ? (
-                <Link className="ap-xg__go" href={`/shop/${c.slug}`} onFocus={() => focusPanel(idx)} onBlur={() => focusPanel(null)}>
+                <Link className="ap-xg__go" href={c.href} onFocus={() => focusPanel(idx)} onBlur={() => focusPanel(null)}>
                   {face}
                 </Link>
               ) : (
@@ -213,7 +216,7 @@ export default function ShopStrip({ cats }: { cats: StripCat[] }) {
           label={`Photographs of ${cats[lb].name}`}
           alt={(n) => `${cats[lb].name}, photograph ${n + 1} of ${shots.length}`}
           footer={
-            <Link className="ap-btn" href={`/shop/${cats[lb].slug}`}>
+            <Link className="ap-btn" href={cats[lb].href}>
               Open {cats[lb].name} <span aria-hidden>→</span>
             </Link>
           }
