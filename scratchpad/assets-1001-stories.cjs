@@ -1,5 +1,15 @@
 // STUDIO STORIES — the 2026-10-01 brief (change 3.pdf, p9 + p11).
 //
+// ⚠ RETIRED 2026-11-04 — DO NOT RE-RUN. Its table still lists `tales-3844`
+// (the wooden-table photograph) as story 02's lead, which change 5.pdf p8
+// replaced with her studio render under the new id `tales-cover`
+// (scratchpad/assets-1104-stories.cjs). A run would bring the old picture
+// back, delete s-tales-cover*.webp (it removes every s-*.webp its table does
+// not list), rewrite lib/stories.json without the four hand-made `md` rungs,
+// and flatten any alpha onto near-black. It refuses to start unless given
+// --i-know-it-is-retired; edit lib/stories.json row by row instead, the way
+// assets-1104-stories.cjs does.
+//
 // p9: «Խառնվել են նկարները… խնդրում եմ նորից ըստ պապկաների ստուգես» — the
 // pictures were mixed up between stories, check them again BY HER FOLDERS.
 // The 09-21 set was built from pictures pasted into a chat and placed by
@@ -65,6 +75,10 @@ const FILMS = [
 ];
 
 (async () => {
+  if (!process.argv.includes("--i-know-it-is-retired")) {
+    console.error("assets-1001-stories.cjs is retired (see the note at the top): it would undo change 5's story-02 lead and drop the md rungs. Nothing was written.");
+    process.exit(1);
+  }
   fs.mkdirSync(OUT, { recursive: true });
 
   // ---- 1. the pictures ------------------------------------------------------

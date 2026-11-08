@@ -635,9 +635,13 @@ export type DeliveryOption = (typeof delivery.options)[number];
 //                         number. This is the northern one (the Noyan Aygi
 //                         courtyard). NEEDS HER CONFIRMATION.
 // The other four are exact building matches and are not flagged.
-// 2026-10-12 (change 4.pdf p13–14): APRICOT gift store joined Yerevan — eight
-// shops now — with an exact house-number geocode, and the Dilijan list was
-// reordered to put the TIC first. See the entries.
+// 2026-10-12 (change 4.pdf p13–14): APRICOT gift store joined Yerevan with an
+// exact house-number geocode, and the Dilijan list was reordered to put the
+// TIC first. See the entries.
+// 2026-11-04 (change 5.pdf p6): «Էս խանութի էս մասնաճյուղը փակվեց 2 օր առաջ,
+// հանենք սա» — Note Mote's branch at 10 Northern Avenue, unit 3/1, closed, and
+// its entry went. Seven shops now: Note Mote is one shop again, at 6/2 (its id
+// and its logo are unchanged).
 //
 // SHAPE: this list is SHOPS, not towns. It used to be one row per town, which
 // stopped being true the moment Yerevan came back with three. Towns are
@@ -649,7 +653,8 @@ export type DeliveryOption = (typeof delivery.options)[number];
 // Each renders only when filled.
 // ---------------------------------------------------------------------------
 export type Stockist = {
-  /** unique per SHOP — two Note Motes share a name and a logo, not an id */
+  /** unique per SHOP — two branches of one shop would share a name and a
+   *  logo, never an id (Note Mote had two until 2026-11-04) */
   id: string;
   shop: string;
   /** which town group this sits under; matches a `Town.id` */
@@ -721,21 +726,10 @@ export const stockists: Stockist[] = [
     lines: [],
   },
   {
-    id: "note-mote-northern-10",
-    shop: "Note Mote",
-    townId: "yerevan",
-    addressAm: "Հյուսիսային պողոտա 10, 3/1 տարածք",
-    address: "10 Northern Avenue, unit 3/1",
-    addressLat: 40.182033,
-    addressLng: 44.514485,
-    logo: "note-mote",
-    lines: [],
-  },
-  {
     // APRICOT (client, change 4.pdf p13, 2026-10-12): «Ավելացնում ենք նոր
     // խանութ» — «APRICOT gift store», «7/10 buzand st.», her spelling of the
-    // name and the street kept. FOURTH in Yerevan: she said "add", not
-    // "first", so it follows Made by Armenia and the two Note Mote.
+    // name and the street kept. LAST in Yerevan: she said "add", not
+    // "first", so it follows Made by Armenia and Note Mote.
     // THE ARMENIAN LINE IS NOT HERS. She sent only the Latin address; this is
     // the street's established Armenian form (OSM names the road «Փավստոս
     // Բուզանդի փողոց»), filled because the field is required and the card
@@ -830,7 +824,7 @@ const TOWN_META: Omit<Town, "shops">[] = [
 
 /** Towns WITH shops, derived. A town nobody stocks simply does not appear —
  *  there is no "coming soon" state any more, because there is nothing to
- *  promise: she is in eight shops (2026-10-12) and the page can just say so. */
+ *  promise: she is in seven shops (2026-11-04) and the page can just say so. */
 export const towns: Town[] = TOWN_META.map((t) => ({
   ...t,
   shops: stockists.filter((s) => s.townId === t.id),
@@ -1526,8 +1520,12 @@ export const stories = {
         "Through illustration, Arpen Art translates these stories into a visual language — bringing historical figures, places and moments to life while creating a bridge between the past and a new generation of readers.",
         "A book where history, imagination and illustration meet.",
       ],
-      // the book's cover, an open spread, two of the illustrations
-      photos: ["tales-3844", "tales-mockup-5", "tales-a5-02", "tales-a5-06"],
+      // the book's cover, an open spread, two of the illustrations.
+      // THE LEAD IS HER STUDIO RENDER (change 5.pdf p8, 2026-11-04: «փոխենք
+      // էս նկարը էս մեկով էլ՝»), under a new id because /stories/* is cached
+      // for a day; it replaced the wooden-table photograph, whose files are
+      // gone. Made by scratchpad/assets-1104-stories.cjs.
+      photos: ["tales-cover", "tales-mockup-5", "tales-a5-02", "tales-a5-06"],
     },
     {
       id: "vardavar-2026",

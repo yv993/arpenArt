@@ -577,14 +577,14 @@ export default function FindInStore({ list, logos }: { list: Town[]; logos: stri
                             visitor has just located themselves: filling it
                             would put their coordinates in a URL bound for a
                             third party. OSM asks for the start itself. */}
-                        {/* SEVEN OF EACH, NOW TOLD APART (2026-10-05): a
-                            screen reader's list of links read "Directions to
-                            the door" ×7, "Copy the address" ×7 and "Open a
-                            larger map" ×7. Each carries its shop's name and
-                            street address in a visually hidden tail — the
-                            name alone is not enough, Note Mote has two doors
-                            on Northern Avenue; the visible words are as they
-                            were. */}
+                        {/* ONE PER SHOP, TOLD APART (2026-10-05): a screen
+                            reader's list of links read "Directions to the
+                            door" ×7, "Copy the address" ×7 and "Open a larger
+                            map" ×7. Each carries its shop's name and street
+                            address in a visually hidden tail — the address
+                            too, because a shop can have two branches (Note
+                            Mote had two on Northern Avenue until 2026-11-04);
+                            the visible words are as they were. */}
                         <a
                           className="ap-map__dir"
                           href={`https://www.openstreetmap.org/directions?from=&to=${s.addressLat},${s.addressLng}`}

@@ -12,7 +12,7 @@ whatever it finds):
 
 | file                     | shop                                            |
 | ------------------------ | ----------------------------------------------- |
-| `note-mote.*`            | Note Mote (both Northern Avenue shops share it)  |
+| `note-mote.*`            | Note Mote — 6/2 Northern Avenue, Yerevan (the 10 Northern Avenue branch closed, change 5.pdf p6) |
 | `made-by-armenia.*`      | Made by Armenia — Arami St, Yerevan              |
 | `anyutis.*`              | Anyut Is / Anyutis — Dilijan                     |
 | `tic-dilijan.*`          | TIC — Dilijan Tourist Information Center         |

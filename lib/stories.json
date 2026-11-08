@@ -1,11 +1,12 @@
 [
  {
-  "id": "tales-3844",
-  "src": "/stories/s-tales-3844.webp",
-  "thumb": "/stories/s-tales-3844-sm.webp",
-  "w": 1122,
-  "h": 1402,
-  "avg": "#a08063"
+  "id": "tales-cover",
+  "src": "/stories/s-tales-cover.webp",
+  "thumb": "/stories/s-tales-cover-sm.webp",
+  "md": "/stories/s-tales-cover-md.webp",
+  "w": 1323,
+  "h": 1189,
+  "avg": "#c6bdb9"
  },
  {
   "id": "tales-mockup-5",
