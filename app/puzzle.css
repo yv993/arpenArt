@@ -41,6 +41,32 @@
   right: calc(var(--gutter) * 0.4 + 52px);
   touch-action: pan-y;
 }
+/* PLAYED IN PLACE (change 5.pdf p1, 2026-11-04): the section is the room,
+   and the sun keeps the right-hand lane — the room ends at 0.84 of the
+   width (the sun's box stays at 0.868 and beyond while it is in the
+   section: imgss/change5-2026-11-04/build/g/sun-sim). The title stays up in
+   the top-left corner; Puzzle.tsx keeps every resting place off it.
+   A swipe that starts on a piece still SCROLLS THE PAGE until the visitor
+   has picked a piece or placed one (`data-engaged`, Puzzle.tsx): the
+   pieces lie right across the section, and a page that will not scroll
+   past them is a trap. A sideways drag moves a piece from the first touch. */
+.ap-pz[data-place="section"] {
+  right: 16vw;
+  touch-action: pan-y pinch-zoom;
+}
+.ap-pz[data-place="section"] .ap-pz__piece {
+  touch-action: pan-y pinch-zoom;
+}
+.ap-pz[data-place="section"][data-engaged] .ap-pz__piece {
+  touch-action: none;
+}
+/* a solved game brought back is shown finished, not finished again */
+.ap-pz[data-instant] .ap-pz__whole,
+.ap-pz[data-instant][data-done] .ap-pz__whole,
+.ap-pz[data-instant][data-done] .ap-pz__shine {
+  transition: none;
+  animation: none;
+}
 /* the window's room is the game and nothing else */
 .ap-pz[data-mode="sheet"] {
   position: relative;

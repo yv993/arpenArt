@@ -32,6 +32,19 @@
 .ap-cloud__sun {
   display: none;
 }
+/* THE PLAIN LAYER'S PUZZLE STILL AND THE SERIES' DISCLOSURE (change 5.pdf
+   p1, 2026-11-04 — Cloud.tsx). Neither exists on the moved layer, where the
+   section is the puzzle itself; the plain layer's block below shows them. */
+.ap-cloud__teaser,
+.ap-cloud__more {
+  display: none;
+}
+/* the card's picture before the series is first shown has no address (a
+   hidden lazy <img> still loads): no empty box, the card's own average
+   colour stands in (its size is its aspect-ratio, never the picture's) */
+.ap-cloud__card > img:not([src]) {
+  display: none;
+}
 
 /* --------------------------------------------------------------------------
    1. PLAIN — a swipeable rail
@@ -261,6 +274,83 @@
   .ap-cloud__say {
     order: 2;
   }
+  /* HER MOCK, AS A STILL, FIRST (change 5.pdf p1): the board with its cut
+     lines and two pieces beside it, «Play the puzzle» under it — where the
+     rail used to open the section. The rail follows under «See the
+     series», a disclosure, then the panel, then the title block, as before. */
+  .ap-cloud__teaser {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    padding: clamp(30px, 5vh, 60px) var(--gutter) 0;
+  }
+  .ap-cloud__teaser picture {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+  }
+  .ap-cloud__teaser img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .ap-cloud__teaser .ap-cloud__play {
+    margin-top: 4px;
+  }
+  .ap-cloud__note:empty {
+    display: none;
+  }
+  .ap-cloud__note {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--cream) 84%, transparent);
+  }
+  .ap-cloud__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+    min-height: 44px;
+    margin: 18px var(--gutter) 0;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
+    background: none;
+    color: var(--cream);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .ap-cloud__more:hover {
+    background: color-mix(in srgb, var(--cream) 12%, transparent);
+  }
+  /* the disclosure's chevron: down while shut, up while open */
+  .ap-cloud__more::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-top: -4px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+  .ap-cloud__more[aria-expanded="true"]::after {
+    margin-top: 4px;
+    transform: rotate(-135deg);
+  }
+  /* the rail, shut until the disclosure opens it — and the space the open
+     rail keeps above the title block (its own padding) kept without it */
+  .ap-cloud__frame:not([data-scene="series"]) .ap-cloud__plane {
+    display: none;
+  }
+  .ap-cloud__frame:not([data-scene="series"]) .ap-cloud__more {
+    margin-bottom: clamp(30px, 5vh, 60px);
+  }
   .ap-cloud__info {
     order: 1;
     position: relative; /* the ✕'s corner */
@@ -409,6 +499,23 @@
     scroll-snap-align: start;
   }
 }
+/* WITHOUT SCRIPTS nothing can be played or disclosed: no still, no
+   disclosure, and the rail is simply open (its pictures come from the
+   cards' <noscript> copies — Cloud.tsx) */
+@media (scripting: none) {
+  .ap-cloud .ap-cloud__teaser,
+  .ap-cloud .ap-cloud__more {
+    display: none;
+  }
+  .ap-cloud .ap-cloud__frame .ap-cloud__plane {
+    display: flex;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-cloud__more::after {
+    transition: none;
+  }
+}
 
 /* --------------------------------------------------------------------------
    2. MOVED — the pinned frame and its plane
@@ -463,18 +570,28 @@
     position: absolute;
     inset: 0;
     z-index: 0;
-    overflow: hidden;
     pointer-events: none;
-    filter: drop-shadow(0 0 42px rgba(239, 171, 35, 0.34));
+    /* THE CLIP IS A clip-path, NOT overflow (change 5.pdf p1, 2026-11-04 —
+       the house pattern of the cart's plate, shop.css .ap-plate__clip). The
+       disc below is `position: fixed` now, so the page's scroll never
+       carries it (it used to ride up with each wheel notch and be put back
+       a frame later: a 44–65px jerk per notch, measured). overflow does not
+       clip a fixed child whose containing block is the viewport; a
+       clip-path clips everything painted inside the box. And NOTHING here
+       may make this box the fixed child's containing block: no filter, no
+       transform, no will-change, no contain — the glow moved onto the disc. */
+    clip-path: inset(0);
   }
   .ap-cloud__sun-disc {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
+    max-width: none;
     transform-origin: 50% 50%;
     opacity: 0;
     visibility: hidden;
     will-change: transform, opacity;
+    filter: drop-shadow(0 0 42px rgba(239, 171, 35, 0.34));
   }
 
   /* A vignette over the WHOLE frame rather than a panel behind the words.
@@ -563,6 +680,82 @@
   }
   .ap > .ap-cloud:has(> .ap-cloud__frame[data-puzzle]) > .ap-cloud__sun {
     opacity: 0;
+  }
+  /* (That is a SERIES picture's puzzle only — `data-puzzle`. The section's
+     own puzzle, played in place, keeps the sun: its room ends at 0.84 of
+     the width — puzzle.css — and the sun's lane is the rest.) */
+
+  /* THE SECTION OPENS ON THE PUZZLE (change 5.pdf p1, 2026-11-04). The
+     plane is out only in the series scene; in the puzzle scene it rests
+     unseen (Cloud.tsx writes none of its cards, and its pictures have no
+     address until it is first shown), the frame has no grab hand, and the
+     vignette steps back as it does under any puzzle. */
+  .ap-cloud__frame[data-scene="puzzle"] {
+    cursor: default;
+  }
+  .ap-cloud__frame[data-scene="puzzle"] .ap-cloud__plane {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.35s var(--ease),
+      visibility 0s linear 0.35s;
+  }
+  .ap-cloud__frame[data-scene="puzzle"]::after {
+    opacity: 0.6;
+  }
+  /* «Play the puzzle» over the series: where the puzzle's bar was, a pill
+     of the same make, so the way back is where the way out was */
+  .ap-cloud__play.ap-cloud__back {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 20px;
+    z-index: 1001; /* over the panel (1000) */
+    width: max-content;
+    margin: 0 auto;
+    background: color-mix(in srgb, var(--ink-solid) 78%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: ap-pz-bar 0.4s var(--ease) both;
+  }
+  .ap-cloud__play.ap-cloud__back:hover {
+    background: color-mix(in srgb, var(--cream) 14%, var(--ink-solid));
+  }
+  /* the still standing in for a game whose file would not come — in the
+     room's own box, centred */
+  .ap-cloud__stand {
+    position: absolute;
+    top: var(--nav-h, 84px);
+    bottom: 92px;
+    left: calc(var(--gutter) * 0.4 + 52px);
+    right: 16vw;
+    z-index: 1100;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 16px;
+  }
+  .ap-cloud__stand img {
+    display: block;
+    width: min(100%, 760px);
+    height: auto;
+  }
+  .ap-cloud__stand-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .ap-cloud__stand .ap-cloud__play {
+    margin: 0;
+  }
+  .ap-cloud__note {
+    margin: 0;
+    font-size: 13.5px;
+    color: color-mix(in srgb, var(--cream) 84%, transparent);
+  }
+  .ap-cloud__note:empty {
+    display: none;
   }
 
   /* .ap-dark only fixes focus rings — every dark band sets its own type

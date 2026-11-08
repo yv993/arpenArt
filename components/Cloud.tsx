@@ -8,6 +8,7 @@ import { flyToCart } from "@/lib/fly";
 import { isSoldOut, priceTbc, withheldArt } from "@/lib/content";
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
+import teaser from "@/lib/puzzle-teaser.json";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
 import MapBoundary from "./MapBoundary";
 import { lastKeys, scriptFocus, seedPointer } from "@/lib/modality";
@@ -142,6 +143,26 @@ const VIEW_SCALE = 3.6;
 const DESKTOP = "(min-width: 861px) and (prefers-reduced-motion: no-preference)";
 /** sessionStorage: the picture whose puzzle a stale-chunk reload reopens */
 const REOPEN = "ap-puzzle-reopen";
+
+// THE SECTION OPENS ON A PUZZLE (client, change 5.pdf p1, 2026-11-04: «could
+// we make a game in its place — put the puzzle pieces mixed, and people try
+// to put it together»). Her mock is No. 05, the picture he cut into eighteen
+// (lib/puzzles.ts); scripts/puzzle-teaser.mjs made its still from those
+// pieces and names the picture. On the desktop moved layer the section IS
+// the puzzle — played in place, beside the title, clear of the sun's lane —
+// and «See the series» brings back the cloud of every picture, unchanged.
+// Phones and reduced motion get her mock as a still and «Play the puzzle»,
+// which opens the window form; the rail is under a «See the series»
+// disclosure.
+const IN_PLACE = teaser.art;
+/** the in-place game outlives a reload in this tab (Puzzle `persist`); the
+ *  set's version is in the key, so a recut never restores into new pieces */
+const PERSIST = puzzles[IN_PLACE] ? `ap-puzzle:${IN_PLACE}:${puzzles[IN_PLACE].v}` : undefined;
+/** a 1×1 transparent GIF, inlined: the <picture> source where nothing may be fetched */
+const NOTHING = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+/** the layer the in-place puzzle lives on (the moved layer, scripted) —
+ *  where the still must not be fetched at all */
+const MOVED = "(scripting: enabled) and (min-width: 861px) and (prefers-reduced-motion: no-preference)";
 /** under Play when the puzzle's file failed for want of a connection */
 const OFFLINE_NOTE = "You seem to be offline — the puzzle needs a connection.";
 
@@ -203,8 +224,44 @@ export default function Cloud({
   const [playing, setPlaying] = useState(false);
   const playingRef = useRef(false);
   playingRef.current = playing;
+  /** what `playing` opens: the chosen card's puzzle (its panel's Play), or
+   *  No. 05 from the still (phones, reduced motion) */
+  const [playFrom, setPlayFrom] = useState<"panel" | "teaser">("panel");
+  const playFromRef = useRef(playFrom);
+  playFromRef.current = playFrom;
   const puzzleMemory = useRef<Record<string, PuzzleSaved | undefined>>({});
   const playBtn = useRef<HTMLButtonElement | null>(null);
+  /** the still's «Play the puzzle» — where focus comes back to from its window */
+  const teaserBtn = useRef<HTMLButtonElement | null>(null);
+
+  // ---- THE TWO SCENES (change 5.pdf p1, 2026-11-04) ------------------------
+  /** the series is out: on the moved layer the cloud replaces the in-place
+   *  puzzle; on the plain layer the rail's disclosure is open */
+  const [series, setSeries] = useState(false);
+  const seriesRef = useRef(series);
+  seriesRef.current = series;
+  /** the series has been shown once: from then on its cards' pictures are
+   *  asked for (a hidden lazy <img> still loads — so until then they have
+   *  no address at all) */
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    if (series) setSeen(true);
+  }, [series]);
+  /** the in-place puzzle may come: the section is within a screen of the
+   *  viewport AND the page has loaded — never in the hero's LCP window */
+  const [near, setNear] = useState(false);
+  /** the in-place puzzle's file failed (a deploy since the page opened, or
+   *  no connection): the still and «Play the puzzle» stand in */
+  const [inFailed, setInFailed] = useState(false);
+  /** a new mount of the in-place puzzle (its retry) */
+  const [inKey, setInKey] = useState(0);
+  /** when the still's Play was pressed to retry it (0: never) */
+  const inPressAt = useRef(0);
+  /** where focus goes when the in-place puzzle next mounts: onto its way to
+   *  the series, when the visitor came back from there by the keyboard */
+  const [inFocus, setInFocus] = useState<boolean | "exit">(false);
+  /** the moved layer's «Play the puzzle», shown over the series */
+  const backBtn = useRef<HTMLButtonElement | null>(null);
   const wasPlaying = useRef(false);
   /** when Play was last pressed (performance.now) — see puzzleFailed */
   const playAt = useRef(0);
@@ -222,6 +279,7 @@ export default function Cloud({
   const startPuzzle = useCallback(() => {
     playAt.current = performance.now();
     setOffline(false);
+    setPlayFrom("panel");
     // the desktop room is the frame: bring the whole of it on screen first,
     // or the board can open half under the fold
     const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
@@ -229,6 +287,14 @@ export default function Cloud({
       const top = frame.getBoundingClientRect().top;
       if (Math.abs(top) > 2) window.scrollTo({ top: window.scrollY + top, behavior: "smooth" });
     }
+    setPlaying(true);
+  }, []);
+  /** the still's «Play the puzzle»: No. 05 in the window form — no card is
+   *  chosen, so the rail and its panel stay as they are */
+  const startTeaser = useCallback(() => {
+    playAt.current = performance.now();
+    setOffline(false);
+    setPlayFrom("teaser");
     setPlaying(true);
   }, []);
   /** the visitor closed the puzzle themselves (Back, ✕, Escape) — see the way back */
@@ -274,7 +340,11 @@ export default function Cloud({
       const last = Number(sessionStorage.getItem(`${REOPEN}:at`) || 0);
       if (Date.now() - last <= 60_000) return false;
       sessionStorage.setItem(`${REOPEN}:at`, String(Date.now()));
-      sessionStorage.setItem(REOPEN, chosenRef.current ?? "");
+      // what the reload reopens: the chosen card's puzzle, No. 05 from the
+      // still, or nothing (the in-place puzzle comes back by itself)
+      const from = playingRef.current ? playFromRef.current : "inplace";
+      sessionStorage.setItem(REOPEN, from === "panel" ? (chosenRef.current ?? "") : from === "teaser" ? IN_PLACE : "");
+      sessionStorage.setItem(`${REOPEN}:from`, from);
       // the page the note is for: only a reload of THIS address may use it
       sessionStorage.setItem(`${REOPEN}:href`, location.href.split("#")[0]);
       // how Play was pressed, so the reopened page treats focus the same
@@ -285,13 +355,19 @@ export default function Cloud({
     window.location.reload();
     return true;
   }, []);
-  const puzzleFailed = useCallback(
-    (err?: unknown) => {
+  /** ONE WAY TO FAIL, TWO PUZZLES (change 5.pdf p1): the one a press opened
+   *  (`playing`) and the in-place one. `at` is when the visitor pressed
+   *  (0: nobody did — the in-place puzzle mounts by itself, and a page
+   *  never reloads itself under a visitor who asked for nothing);
+   *  `waiting` says whether they still wait on it; `giveUp` puts the
+   *  picture (or the still) back. */
+  const chunkFailed = useCallback(
+    (err: unknown, at: number, waiting: () => boolean, giveUp: () => void) => {
       const stale =
         err instanceof Error &&
         (err.name === "ChunkLoadError" ||
           /Loading (CSS )?chunk|dynamically imported module|Importing a module script failed/i.test(err.message));
-      if (stale && navigator.onLine !== false && performance.now() - playAt.current < 15_000) {
+      if (stale && navigator.onLine !== false && at > 0 && performance.now() - at < 15_000) {
         // webpack's ChunkLoadError carries the address that failed
         const url = (err as { request?: unknown }).request;
         // A PRESS OR A KEY WHILE THE SERVER IS ASKED is the visitor moving
@@ -313,14 +389,14 @@ export default function Cloud({
           () => {
             unhook();
             // the visitor left (or put the picture away) while it was asked
-            if (!alive.current || !playingRef.current) return;
-            if (acted || !reloadOnce()) setPlaying(false);
+            if (!alive.current || !waiting()) return;
+            if (acted || !reloadOnce()) giveUp();
           },
           () => {
             unhook();
             // no answer at all: the connection, not a deploy — say so
             if (alive.current) setOffline(true);
-            setPlaying(false);
+            giveUp();
           },
         );
         return;
@@ -328,9 +404,29 @@ export default function Cloud({
       // the browser itself says it is offline: no reload (above), and no
       // silent press either — the line under Play says why
       if (stale && navigator.onLine === false) setOffline(true);
-      setPlaying(false);
+      giveUp();
     },
     [reloadOnce],
+  );
+  const puzzleFailed = useCallback(
+    (err?: unknown) =>
+      chunkFailed(
+        err,
+        playAt.current,
+        () => playingRef.current,
+        () => setPlaying(false),
+      ),
+    [chunkFailed],
+  );
+  const inplaceFailed = useCallback(
+    (err?: unknown) =>
+      chunkFailed(
+        err,
+        inPressAt.current,
+        () => !seriesRef.current,
+        () => setInFailed(true),
+      ),
+    [chunkFailed],
   );
   // …and after that reload: the picture is chosen again and its puzzle
   // started, once the page has loaded (the browser has put the scroll back;
@@ -345,13 +441,15 @@ export default function Cloud({
     let id: string | null = null;
     let ok = false;
     let by: string | null = null;
+    let from: string | null = null;
     try {
       id = sessionStorage.getItem(REOPEN);
       if (id === null) return; // an ordinary visit: nothing was set
       by = sessionStorage.getItem(`${REOPEN}:by`);
+      from = sessionStorage.getItem(`${REOPEN}:from`);
       const href = sessionStorage.getItem(`${REOPEN}:href`);
       // `:at` stays: it is the loop guard
-      for (const k of [REOPEN, `${REOPEN}:by`, `${REOPEN}:href`]) sessionStorage.removeItem(k);
+      for (const k of [REOPEN, `${REOPEN}:by`, `${REOPEN}:href`, `${REOPEN}:from`]) sessionStorage.removeItem(k);
       const at = Number(sessionStorage.getItem(`${REOPEN}:at`) || 0);
       const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
       ok =
@@ -376,14 +474,23 @@ export default function Cloud({
     const go = () =>
       requestAnimationFrame(() => {
         unhook();
-        if (!live || touched || handChose.current || chosenRef.current) return;
+        if (!live || touched || handChose.current || chosenRef.current || playingRef.current) return;
         const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
         if (frame) window.scrollTo({ top: window.scrollY + frame.getBoundingClientRect().top, behavior: "instant" });
-        reopen.current = want;
         // the layer is read here too: Cloud hydrates at idle priority, so
         // the mount effect's own read lands after this choice, and a phone
         // built the desktop room first, then the window (review)
-        setPlain(!window.matchMedia(DESKTOP).matches);
+        const isPlain = !window.matchMedia(DESKTOP).matches;
+        setPlain(isPlain);
+        if (from === "teaser") {
+          // No. 05 from the still: its window again (on the moved layer the
+          // section is that puzzle already, in place)
+          if (isPlain) startTeaser();
+          return;
+        }
+        reopen.current = want;
+        // a card lives in the series: it is brought out first
+        setSeries(true);
         setChosen(want);
       });
     if (document.readyState === "complete") go();
@@ -426,7 +533,8 @@ export default function Cloud({
       exitByHand.current = false;
       requestAnimationFrame(() => {
         const a = document.activeElement;
-        const b = playBtn.current;
+        // back to the button that opened it: the panel's Play, or the still's
+        const b = playFromRef.current === "teaser" ? teaserBtn.current : playBtn.current;
         if (!b || !(!a || a === document.body || root.current?.contains(a))) return;
         const r = b.getBoundingClientRect();
         const off = r.top < 0 || r.bottom > window.innerHeight;
@@ -553,6 +661,47 @@ export default function Cloud({
 
   const placed = useMemo(() => scatter(items), [items]);
 
+  // THE IN-PLACE PUZZLE IS ASKED FOR NEAR THE SECTION, AFTER THE PAGE HAS
+  // LOADED (change 5.pdf p1): its code and its nineteen pictures would
+  // otherwise compete with the hero. A screen of margin above and below:
+  // by the time the curtain starts to rise, the pieces are on their way.
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    let loaded = document.readyState === "complete";
+    let close = false;
+    const check = () => {
+      if (loaded && close) {
+        // THE LAYER IS READ IN THE SAME BREATH (measured on a phone): Cloud
+        // hydrates at idle priority, so the mount effect's `plain` lands
+        // after this observer's update — and for ~300 ms the moved layer's
+        // puzzle mounted on a 390px phone and fetched all nineteen files.
+        // Both now arrive in one render.
+        setPlain(!window.matchMedia(DESKTOP).matches);
+        setNear(true);
+        io.disconnect();
+        window.removeEventListener("load", onLoad);
+      }
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        close = e.isIntersecting;
+        check();
+      },
+      { rootMargin: "100% 0px" },
+    );
+    const onLoad = () => {
+      loaded = true;
+      check();
+    };
+    io.observe(el);
+    window.addEventListener("load", onLoad);
+    return () => {
+      io.disconnect();
+      window.removeEventListener("load", onLoad);
+    };
+  }, []);
+
   const write = useCallback(() => {
     const plane = planeRef.current;
     if (plane) gsap.set(plane, { x: pan.current.x, y: pan.current.y });
@@ -652,7 +801,8 @@ export default function Cloud({
         if ((e.target as HTMLElement).closest(".ap-cloud__info")) return;
         // while the puzzle is out the frame is its room: a press there moves
         // a piece, never the hidden plane (2026-10-29)
-        if (playingRef.current || (e.target as HTMLElement).closest(".ap-pz, .ap-pz__bar")) return;
+        // and while the puzzle is played IN PLACE the plane is not out at all
+        if (playingRef.current || !seriesRef.current || (e.target as HTMLElement).closest(".ap-pz, .ap-pz__bar, .ap-cloud__back")) return;
         // a press takes over from whatever was moving the plane — a throw
         // still coasting, or the centring tween of a picked card
         gsap.killTweensOf(pan.current);
@@ -807,7 +957,9 @@ export default function Cloud({
           // …except the OPEN card, until it is at rest (then frozen: no
           // writes), so «Back» finds it still even when Play came before
           // its ease had finished — the stale-chunk reopen (review, 2026-10-30)
-          if (playingRef.current && !open) continue;
+          // The same rest while the series is not out (change 5.pdf p1:
+          // the section opens on the in-place puzzle, the plane hidden).
+          if ((playingRef.current || !seriesRef.current) && !open) continue;
           // A chosen card STOPS — eased to a standstill, then NOT WRITTEN
           // AT ALL. The old 0.25 damping kept writing a new transform every
           // frame, and a perpetually-animating transform keeps the card on
@@ -1029,6 +1181,51 @@ export default function Cloud({
     setChosen((cur) => (cur === id ? null : id));
   }, []);
 
+  // ---- the scenes (change 5.pdf p1) ----------------------------------------
+  /** the in-place bar's «See the series»: the cloud comes back as it was,
+   *  and focus waits on the way back to the puzzle (the same spot) */
+  const showSeries = useCallback(() => {
+    setSeries(true);
+    requestAnimationFrame(() => backBtn.current?.focus(scriptFocus()));
+  }, []);
+  /** the series' «Play the puzzle» on the moved layer: back to the game in
+   *  place, just as it was left (Puzzle keeps it) */
+  const backToPuzzle = useCallback(() => {
+    setChosen(null);
+    setPlaying(false);
+    setInFocus("exit");
+    setSeries(false);
+  }, []);
+  /** the plain layer's disclosure: the rail in, the rail out */
+  const toggleSeries = useCallback(() => {
+    if (seriesRef.current) setChosen(null);
+    setSeries((s) => !s);
+  }, []);
+  /** the still standing in for a failed in-place puzzle: its Play asks for
+   *  it again — and a press makes a second failure a stale-chunk reload */
+  const retryInPlace = useCallback(() => {
+    inPressAt.current = performance.now();
+    setOffline(false);
+    setInFocus(true);
+    setInFailed(false);
+    setInKey((k) => k + 1);
+  }, []);
+  // the still's window is the plain layer's: a window widened past it (or
+  // motion allowed again) closes it — the section is that puzzle in place
+  // …and on the way to the plain layer, the focus a press asked for is
+  // spent: a resize back to the moved layer later mounts the in-place game
+  // again, and nobody pressed anything then (review, change 5)
+  useEffect(() => {
+    if (!plain && playFromRef.current === "teaser") setPlaying(false);
+    if (plain) setInFocus(false);
+  }, [plain]);
+  /** the title's box: no piece rests on it (Puzzle `avoid`) */
+  const titleBox = useCallback(() => [root.current?.querySelector(".ap-cloud__say .ap-h2") ?? null], []);
+  /** the in-place bar names the series as its way on */
+  const inCopy = useMemo(() => ({ ...puzzle, back: puzzle.series }), [puzzle]);
+  const inArt = items.find((a) => a.id === IN_PLACE);
+  const railId = useId();
+
   return (
     // No `data-nosun` here: this section is an opaque stacking context at
     // z 2 (globals.css) and the flying sun (components/Sun.tsx) is under it
@@ -1065,23 +1262,60 @@ export default function Cloud({
         className="ap-cloud__frame"
         data-chosen={chosen || undefined}
         data-puzzle={playing && !plain ? "" : undefined}
+        // the in-place puzzle, or the series (cloud.css shows the one out)
+        data-scene={series ? "series" : "puzzle"}
         // Click-away to close: "a clean press on the ground puts one back".
         // A press on a card or on the panel is that element's business, and
         // the click the browser fires at the end of a DRAG (it lands here,
         // on the capturing frame) is not a press at all — see dragEndAt.
         // Nor is any press while the puzzle is out: the room is the frame.
         onClick={(e) => {
-          if (playingRef.current) return;
+          if (playingRef.current || !seriesRef.current) return;
           if (performance.now() - dragEndAt.current < 400) return;
           const t = e.target as HTMLElement;
-          if (!t.closest(".ap-cloud__card") && !t.closest(".ap-cloud__info")) setChosen(null);
+          // the still, its Play and the disclosure are presses of their own
+          // (a click-away there would close the panel under a puzzle being
+          // opened — and a new choice closes any puzzle)
+          if (!t.closest(".ap-cloud__card, .ap-cloud__info, .ap-cloud__teaser, .ap-cloud__more, .ap-cloud__back")) setChosen(null);
         }}
         // a drag that starts on a picture must pan the plane, not lift the
         // picture's bitmap out of the page (the native image drag fires
         // dragstart and cancels the pointer stream mid-gesture)
         onDragStart={(e) => e.preventDefault()}
       >
-        <div className="ap-cloud__plane">
+        {/* THE PLAIN LAYER'S PUZZLE (phones, reduced motion): her mock as a
+            still — the board with its cut lines, two pieces beside it — and
+            «Play the puzzle», which opens the window form. Shown by CSS on
+            that layer only; on the moved layer the <picture> source is the
+            inlined 1×1, so the still is never fetched there. */}
+        <div className="ap-cloud__teaser">
+          <picture aria-hidden="true">
+            <source media={MOVED} srcSet={NOTHING} />
+            {/* eslint-disable-next-line @next/next/no-img-element -- one small still, no resizing needed */}
+            <img src={teaser.src} alt="" width={teaser.w} height={teaser.h} loading="lazy" decoding="async" draggable={false} />
+          </picture>
+          <button type="button" className="ap-cloud__play" ref={teaserBtn} onClick={startTeaser}>
+            <PieceIcon />
+            {puzzle.cta}
+          </button>
+          <p className="ap-cloud__note" role="status">
+            {offline && playFrom === "teaser" ? OFFLINE_NOTE : ""}
+          </p>
+        </div>
+        {/* …and the series one press away: the rail, as a disclosure */}
+        <button type="button" className="ap-cloud__more" aria-expanded={series} aria-controls={railId} onClick={toggleSeries}>
+          {puzzle.series}
+        </button>
+        {/* THE MOVED LAYER'S WAY BACK from the series to the game in place
+            (the same words as every Play) — first in the frame's Tab order,
+            where «See the series» left focus */}
+        {!plain && series && !playing && (
+          <button type="button" className="ap-cloud__play ap-cloud__back" ref={backBtn} onClick={backToPuzzle}>
+            <PieceIcon />
+            {puzzle.cta}
+          </button>
+        )}
+        <div className="ap-cloud__plane" id={railId}>
           {placed.map((p) => (
             <button
               type="button"
@@ -1115,7 +1349,16 @@ export default function Cloud({
                 } as React.CSSProperties
               }
             >
-              <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" draggable={false} />
+              {/* NO ADDRESS UNTIL THE SERIES IS FIRST SHOWN (change 5.pdf p1):
+                  the section opens on the puzzle, and a hidden lazy picture
+                  is still fetched — thirty-five of them under the game. Without
+                  scripts the rail is simply open, and the <noscript> copy is
+                  the picture. */}
+              <img src={seen ? p.thumb : undefined} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" draggable={false} />
+              <noscript>
+                {/* eslint-disable-next-line @next/next/no-img-element -- the no-script rail's picture */}
+                <img src={p.thumb} alt="" width={p.w} height={p.h} loading="lazy" decoding="async" />
+              </noscript>
               {/* the chosen card shows the selected face — front print, the
                   postcard's back, or the printed mockup — and CHANGES FACE
                   LIKE A BOOK PAGE (client 2026-08-12): forward turns the
@@ -1252,14 +1495,14 @@ export default function Cloud({
                   desktop panel is already a status region (it announces the
                   line); the plain layer's has no role, so a hidden live line,
                   present before the words arrive, says it there. */}
-              {offline && (
+              {offline && playFrom === "panel" && (
                 <p className="ap-cloud__body" aria-hidden={plain || undefined}>
                   {OFFLINE_NOTE}
                 </p>
               )}
               {plain && (
                 <span className="ap-sr" aria-live="polite">
-                  {offline ? OFFLINE_NOTE : ""}
+                  {offline && playFrom === "panel" ? OFFLINE_NOTE : ""}
                 </span>
               )}
               <div className="ap-cloud__nav">
@@ -1326,23 +1569,81 @@ export default function Cloud({
 
         {/* the puzzle: in the frame on the desktop moved layer, as a window
             everywhere else (a portal — it lies over the page, not the rail) */}
+        {/* THE SECTION'S OWN PUZZLE, played in place (moved layer, change
+            5.pdf p1): No. 05 lies whole until the room is half on screen,
+            then breaks up round its board, between the title (no piece
+            rests on it) and the sun's lane (puzzle.css: the room ends at
+            0.84 of the width). The game is kept for the tab (`persist`).
+            Asked for only once `near` (a screen away, after load). A file
+            that will not come (a deploy since this page opened) leaves the
+            still and «Play the puzzle», whose press is the visitor asking —
+            a second failure then takes the guarded reload. */}
+        {!plain &&
+          !series &&
+          !playing &&
+          near &&
+          inArt &&
+          puzzles[IN_PLACE] &&
+          (inFailed ? (
+            <div className="ap-cloud__stand">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the still standing in for the game */}
+              <img src={teaser.src} alt="" width={teaser.w} height={teaser.h} draggable={false} />
+              <div className="ap-cloud__stand-row">
+                <button type="button" className="ap-cloud__play" onClick={retryInPlace}>
+                  <PieceIcon />
+                  {puzzle.cta}
+                </button>
+                <button type="button" className="ap-pz__btn" onClick={showSeries}>
+                  {puzzle.series}
+                </button>
+              </div>
+              <p className="ap-cloud__note" role="status">
+                {offline ? OFFLINE_NOTE : ""}
+              </p>
+            </div>
+          ) : (
+            <MapBoundary key={`in-${inKey}`} onError={inplaceFailed}>
+              <Puzzle
+                set={puzzles[IN_PLACE]}
+                art={{ id: inArt.id, src: inArt.lg ?? inArt.src, w: inArt.lgW ?? inArt.w, h: inArt.lgH ?? inArt.h }}
+                mode="inline"
+                placement="section"
+                dealWhen="visible"
+                autoFocus={inFocus}
+                escapeExits={false}
+                avoid={titleBox}
+                roving
+                persist={PERSIST}
+                label={`No. ${IN_PLACE}`}
+                copy={inCopy}
+                memory={puzzleMemory}
+                onExit={showSeries}
+              />
+            </MapBoundary>
+          ))}
+
+        {/* the puzzle a press opened: the chosen card's, in the frame on the
+            desktop moved layer, as a window everywhere else (a portal — it
+            lies over the page, not the rail); or No. 05 from the still */}
         {playing &&
-          chosen &&
           (() => {
-            const a = items.find((x) => x.id === chosen);
-            if (!a) return null;
+            const id = playFrom === "teaser" ? IN_PLACE : chosen;
+            const a = id ? items.find((x) => x.id === id) : undefined;
+            if (!id || !a) return null;
             return (
               <MapBoundary onError={puzzleFailed}>
                 <Puzzle
                   key={plain ? "sheet" : "inline"}
-                  set={puzzles[chosen]}
+                  set={puzzles[id]}
                   // the picture the open card already shows — so its file is
                   // already in the cache when a cut puzzle draws from it
                   art={{ id: a.id, src: a.lg ?? a.src, w: a.lgW ?? a.w, h: a.lgH ?? a.h }}
                   mode={plain ? "sheet" : "inline"}
-                  label={`No. ${chosen}`}
+                  label={`No. ${id}`}
                   copy={puzzle}
                   memory={puzzleMemory}
+                  // No. 05 is ONE game wherever it is played
+                  persist={id === IN_PLACE ? PERSIST : undefined}
                   onExit={stopPuzzle}
                 />
               </MapBoundary>

@@ -107,15 +107,31 @@ const PATH: Key[] = [
   // (0.08→0.19), before the first cards rise to its height, then drifts up
   // the margin at a quarter of the scroll's speed — far away, as a sun is —
   // and leaves for the gallery as the section goes.
-  { p: 0.15, x: 0.9, y: 0.58, s: 0.55, o: 0.6 }, // → down and right, receding
+  // A CURVE, NOT A LINE (client, change 5.pdf p1, 2026-11-04: «on this part
+  // the sun comes down in a straight line — could it come down on a rounder
+  // path?»). Measured: from 0.19 to 0.41 x was frozen at 0.931 of the width
+  // for 1,160px of scroll — against the section, a dead-straight drop. The
+  // corner at 0.15/0.19 is now one curve into the margin (0.14 → 0.19), and
+  // the margin leg bows out to 0.952 and back (0.30). Replayed over geometry
+  // measured at 1440×900, 1280×720, 1886×835, 1024×768 and 1920×945 — the
+  // cards' rest scatter AND the in-place puzzle's room, which ends at 0.84 of
+  // the width (imgss/change5-2026-11-04/build/g/out/sun-sim.json): no frame
+  // where the sun's box (rays included) meets a card (+40px float) or the
+  // room (+0.45 of a cell, the farthest a DRAGGED piece reaches), no stop,
+  // and level with the room its left edge stays at 0.8687 of the width or
+  // more. The analysis' first keys (0.14 at x .905 / s .55, 0.19 at x .934)
+  // dipped 6–22px into the room's top-right corner as the curtain rose;
+  // these are the nearest that do not (g5b-keysearch).
+  { p: 0.14, x: 0.92, y: 0.55, s: 0.53, o: 0.62 }, // → down and right, receding
   // OPACITY IS TUNED TO WHAT IT CROSSES, and it has to be. The sun is pale
   // yellow: against the dark bands (the cloud and the gallery) a third of it
   // is plenty and more would glare, but the same value over cream paper is
   // invisible — measured at p=0.80, where 0.41 left nothing on screen at all.
   // So it is held low through the dark sections and lifted through the light
   // ones, which is also what a sun crossing a sky would do.
-  { p: 0.19, x: 0.935, y: 0.6, s: 0.45, o: 0.42 }, // cloud — in the right margin
-  { p: 0.41, x: 0.935, y: 0.3, s: 0.45, o: 0.4 }, // cloud — up the margin as it leaves
+  { p: 0.19, x: 0.944, y: 0.6, s: 0.45, o: 0.42 }, // cloud — into the right margin
+  { p: 0.3, x: 0.952, y: 0.46, s: 0.45, o: 0.41 }, // cloud — bowing out toward the edge
+  { p: 0.41, x: 0.935, y: 0.3, s: 0.45, o: 0.4 }, // cloud — and back in as it leaves
   { p: 0.55, x: 0.74, y: 0.6, s: 0.6, o: 0.34 }, // gallery — dark
   { p: 0.76, x: 0.22, y: 0.3, s: 0.7, o: 0.66 }, // shop — paper
   { p: 0.93, x: 0.58, y: 0.78, s: 0.9, o: 0.82 }, // studio — paper
@@ -128,10 +144,61 @@ const PATH: Key[] = [
   { p: 1.0, x: 0.62, y: 1.06, s: 1.05, o: 0.95 },
 ];
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-/** smoothstep — a linear ramp between keys makes the sun visibly change
- *  direction at each one, like a paper cut-out being dragged */
+/** smoothstep — the veil's fade (below) */
 const ease = (t: number) => t * t * (3 - 2 * t);
+
+/** ONE SMOOTH CURVE THROUGH THE KEYS, per axis (client, change 5.pdf p1:
+ *  «make the sun's steps closer, so it moves smoothly»). Smoothstep per leg
+ *  brought the sun to a dead stop at EVERY key — its speed is zero at both
+ *  ends of a leg — which is what read as steps at 0.15 and 0.19. A linear
+ *  ramp has no stops but turns a sharp corner at each key, like a paper
+ *  cut-out being dragged. A monotone cubic (Fritsch–Carlson) is the curve
+ *  between the two: it passes through every key with a continuous speed,
+ *  and it never overshoots — between two keys a value stays between them,
+ *  so a clearance checked at the keys holds along the whole curve.
+ *  Returns v(p); `ps` ascending. */
+function monotone(ps: number[], vs: number[]) {
+  const n = ps.length;
+  const d: number[] = [];
+  for (let i = 0; i < n - 1; i++) d.push((vs[i + 1] - vs[i]) / (ps[i + 1] - ps[i]));
+  const m: number[] = new Array(n);
+  m[0] = d[0];
+  m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = m[i] / d[i];
+    const b = m[i + 1] / d[i];
+    const h = a * a + b * b;
+    if (h > 9) {
+      const t = 3 / Math.sqrt(h);
+      m[i] = t * a * d[i];
+      m[i + 1] = t * b * d[i];
+    }
+  }
+  return (p: number) => {
+    let i = 0;
+    while (i < n - 2 && p > ps[i + 1]) i++;
+    const h = ps[i + 1] - ps[i];
+    const t = Math.min(1, Math.max(0, (p - ps[i]) / h));
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * vs[i] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * vs[i + 1] + (t3 - t2) * h * m[i + 1];
+  };
+}
+
+/** THE SUN GLIDES BEHIND THE SCROLL by this much (seconds, exponential). A
+ *  wheel moves the page 100px in one frame; the sun followed in the same
+ *  jump, a step per notch (measured 18–38px a notch, real wheel input). It
+ *  now closes 1 − e^(−dt/τ) of the gap each frame: a notch becomes a short
+ *  glide, a trackpad's stream is followed within a frame or two. A jump
+ *  larger than SNAP (an anchor link, Home/End) is taken at once. */
+const GLIDE = 0.2;
+const SNAP = 0.12;
 
 /** her hair by colour — the same test scratchpad/head-key.cjs traced her
  *  with: her dark purple-brown base, or one of her magenta strands. A live
@@ -263,14 +330,22 @@ export default function Sun() {
     // (client, change 4.pdf p1, 2026-10-12.) The series section is an opaque
     // stacking context above this fixed sun, so the sun could not show
     // there. Cloud.tsx lays a second disc INSIDE that section, under its
-    // frame, and draw() below writes it the real disc's place (shifted by
-    // the section's own position on screen), size and opacity — one sun,
-    // seen through two layers, meeting at the curtain's edge without a jump.
+    // frame, and draw() below writes it the real disc's place, size and
+    // opacity — one sun, seen through two layers, meeting at the curtain's
+    // edge without a jump.
+    // THE TWIN IS FIXED TOO NOW (change 5.pdf p1, 2026-11-04). It was laid
+    // in the section's own coordinates — the real disc's place minus the
+    // section's offset on screen — and the section SCROLLS: the compositor
+    // carried the twin up with every wheel notch and the next frame put it
+    // back, a 44–65px jerk per notch (measured on the live site). Now it is
+    // `position: fixed` inside a `clip-path: inset(0)` wrapper (cloud.css;
+    // the house pattern of the cart's plate): the section still clips it,
+    // nothing carries it, and it takes the real disc's transform string
+    // unchanged.
     const cloud = document.querySelector<HTMLElement>(".ap-cloud");
     const twin = cloud?.querySelector<HTMLImageElement>(".ap-cloud__sun-disc") ?? null;
     /** the section's document top and height, re-read with the hero */
     let cloudTop = 0;
-    let cloudLeft = 0;
     let cloudH = 0;
 
     // ---- her layer -----------------------------------------------------------
@@ -312,7 +387,7 @@ export default function Sun() {
           me = parseKey(k, art.w, art.h);
           if (!me) {
             keyFailed = true;
-            draw();
+            redraw();
             return;
           }
           const o = document.createElement("canvas");
@@ -325,11 +400,11 @@ export default function Sun() {
           // pass (the film is downloading at the same time): decide now
           // whether the sun is over her, and start her copy if so
           measure();
-          draw();
+          snap();
         },
         () => {
           keyFailed = true;
-          draw();
+          redraw();
         },
       );
     } else keyFailed = true;
@@ -410,7 +485,7 @@ export default function Sun() {
       ctx.restore();
       if (!ready) {
         ready = true;
-        draw();
+        redraw();
       }
     };
     const tick = () => {
@@ -439,6 +514,9 @@ export default function Sun() {
      *  geometry — it is `contain` on the plain layer and `cover` once the
      *  media expansion engages, so the fit has to be read, not assumed */
     let home = { x: 0, y: 0, w: 0 };
+    /** the journey's curve per axis, in px (x, y), scale and opacity — built
+     *  by measure() once `home` is known */
+    let curve: { x: (p: number) => number; y: (p: number) => number; s: (p: number) => number; o: (p: number) => number } | null = null;
     /** the frame's box on screen: where the film's pixels actually are */
     let frame = { l: 0, t: 0, w: 0, h: 0, k: 1 };
     /** Where the sun stops being part of the picture and becomes scenery.
@@ -472,9 +550,20 @@ export default function Sun() {
         twin.style.height = el.style.height;
         const cr = cloud.getBoundingClientRect();
         cloudTop = cr.top + window.scrollY;
-        cloudLeft = cr.left;
         cloudH = cr.height;
       }
+      // the curve's keys in pixels: the first two depend on where the sun
+      // sits in the picture, the rest on the viewport — so the tangents are
+      // rebuilt whenever those are
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const ps = PATH.map((k) => k.p);
+      curve = {
+        x: monotone(ps, PATH.map((k) => (k.p === 0 || k.hx ? home.x : k.x * vw))),
+        y: monotone(ps, PATH.map((k) => (k.p === 0 ? home.y : k.y * vh))),
+        s: monotone(ps, PATH.map((k) => (k.home ? k.s : (k.s * JOURNEY_W * vw) / home.w))),
+        o: monotone(ps, PATH.map((k) => k.o)),
+      };
 
       const heroSec = hero.closest<HTMLElement>(".ap-hero");
       // half a screen before the picture is gone: by then it is mostly
@@ -506,27 +595,25 @@ export default function Sun() {
     const GLOW = 96;
     let lastHer = "";
     let raf = 0;
-    const draw = () => {
-      raf = 0;
+    /** where the scroll says the sun should be: progress through the page */
+    const target = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-
-      let i = 0;
-      while (i < PATH.length - 2 && p > PATH[i + 1].p) i++;
-      const a = PATH[i];
-      const b = PATH[i + 1];
-      const t = ease(b.p === a.p ? 0 : Math.min(1, Math.max(0, (p - a.p) / (b.p - a.p))));
-
+      return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    };
+    /** where the sun is drawn — `target` reached by a glide (see GLIDE);
+     *  −1 until the first draw */
+    let shown = -1;
+    /** the glide's last frame time (performance.now); 0 while at rest */
+    let glideT = 0;
+    const draw = (p: number) => {
+      if (!curve) return;
       // leg 0 starts from the sun's real place in the picture rather than a
       // viewport fraction, so it begins exactly where it was painted; a key
       // marked `hx` keeps that x, which is what makes the first leg a rise
-      const kx = (k: Key) => (k.p === 0 || k.hx ? home.x : k.x * window.innerWidth);
-      const ky = (k: Key) => (k.p === 0 ? home.y : k.y * window.innerHeight);
-      const ks = (k: Key) => (k.home ? k.s : (k.s * JOURNEY_W * window.innerWidth) / home.w);
-      const x = lerp(kx(a), kx(b), t);
-      const y = lerp(ky(a), ky(b), t);
-      const s = lerp(ks(a), ks(b), t);
-      const o = lerp(a.o, b.o, t);
+      const x = curve.x(p);
+      const y = curve.y(p);
+      const s = curve.s(p);
+      const o = curve.o(p);
 
       const h = (IMG_H / IMG_W) * home.w;
       el.style.transform = `translate3d(${x - home.w / 2}px, ${y - h / 2}px, 0) scale(${s})`;
@@ -560,8 +647,12 @@ export default function Sun() {
       // section with a slice of her neck across it).
       let hit = false;
       if (me && ctx) {
-        locate();
         if (window.scrollY < handover) {
+          // the film's live box — read only while the sun is still the
+          // hero's: past the handover nothing below uses it, and the glide
+          // draws every frame for a second and more after each scroll (a
+          // forced style read per frame for nothing — review, change 5)
+          locate();
           // the sun's box (glow included) in the frame's own pixels, against
           // her real width on each row it spans
           const k = frame.k;
@@ -613,15 +704,16 @@ export default function Sun() {
       const overHer = hit || (!me && !keyFailed && p < PATH[2].p);
       const hidden = overHer && !ready;
       el.style.opacity = hidden ? "0" : String(o * (1 - ease(veil)));
-      // the twin: the same disc in the cloud section's own coordinates,
-      // written only while the section is on screen (it is clipped to the
-      // section, so off screen it could not show anyway)
+      // the twin: the same disc, the same transform (it is fixed too),
+      // written only while the section is on screen — read from the RAW
+      // scroll, not the glide: the section itself does not glide, and the
+      // clip is the section's box (off screen it could not show anyway)
       if (twin) {
         const top = cloudTop - window.scrollY;
         const on = top < window.innerHeight && top + cloudH > 0;
         twin.style.visibility = on ? "visible" : "hidden";
         if (on) {
-          twin.style.transform = `translate3d(${x - home.w / 2 - cloudLeft}px, ${y - h / 2 - top}px, 0) scale(${s})`;
+          twin.style.transform = el.style.transform;
           twin.style.opacity = el.style.opacity;
         }
       }
@@ -640,7 +732,8 @@ export default function Sun() {
       // sun SETS behind it, a real occlusion, instead of fading out in mid
       // air. From the handover on it drops to 0, behind every section's
       // content, and comes back up over the gallery's sky from behind the
-      // cloud's bottom edge.
+      // cloud's bottom edge. (The RAW scroll again: the depth change is
+      // tied to where the curtain really is, not to where the sun glides.)
       if (window.scrollY > handover) {
         box.dataset.behind = "";
         delete box.dataset.hero;
@@ -650,16 +743,44 @@ export default function Sun() {
       }
     };
 
+    /** the glide: one step per animation frame until the sun is where the
+     *  scroll says, then the loop stops (nothing runs at rest) */
+    const glide = (now: number) => {
+      raf = 0;
+      const want = target();
+      const dt = glideT ? Math.min(0.1, Math.max(0, (now - glideT) / 1000)) : 1 / 60;
+      glideT = now;
+      if (shown < 0 || Math.abs(want - shown) > SNAP) shown = want;
+      else shown += (want - shown) * (1 - Math.exp(-dt / GLIDE));
+      if (Math.abs(want - shown) < 1e-5) shown = want;
+      draw(shown);
+      if (shown !== want) raf = requestAnimationFrame(glide);
+      else glideT = 0;
+    };
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(draw);
+      if (raf) return;
+      // the first step's dt is measured from this scroll event
+      if (!glideT) glideT = performance.now();
+      raf = requestAnimationFrame(glide);
+    };
+    /** the same place again, after something it depends on arrived (her
+     *  copy, or the key that says whether it is over her) */
+    const redraw = () => draw(shown < 0 ? target() : shown);
+    /** the geometry changed: the sun is put where it belongs at once */
+    const snap = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      glideT = 0;
+      shown = target();
+      draw(shown);
     };
     const onResize = () => {
       measure();
-      draw();
+      snap();
     };
 
     measure();
-    draw();
+    snap();
     box.dataset.on = "";
     // the hero's own plate finishes loading after this runs, and the media
     // expansion changes object-fit — both move where the sun belongs

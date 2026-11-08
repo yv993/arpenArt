@@ -71,6 +71,11 @@ export type PuzzleCopy = {
   piece: string;
   inPlace: string;
   complete: string;
+  /** roving pieces (in place): the arrows walk between them — added to the
+   *  screen reader's account of the keys */
+  keysWalk: string;
+  /** in place: the bar's way on to the cloud of the whole series */
+  series: string;
 };
 
 export type PuzzleSaved = {
@@ -109,6 +114,9 @@ const REACH = 24 / 110;
 
 // ---- the room --------------------------------------------------------------
 type Slot = { x: number; y: number };
+/** a box no piece may rest in (room px) — the cloud's title, when the
+ *  puzzle is played in place beside it */
+export type Rect = { l: number; t: number; r: number; b: number };
 /** c: the larger side of a cell, CSS px; cw × ch: a cell, CSS px; s: CSS px
  *  per source px */
 type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number; bx: number; by: number; slots: Slot[] };
@@ -124,24 +132,28 @@ type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number;
  *  columns wherever the room's width divided, so the ones that fell in the
  *  board's margin were lost, and its 1.42c spacing left wide gaps — the
  *  places ran out long before the room did, and held the board to 70% of
- *  the room's height at 1920×945. */
-function gen(W: number, H: number, c: number, bx: number, by: number, bw: number, bh: number, sp = 1) {
+ *  the room's height at 1920×945.
+ *  NO-GO BOXES (change 5.pdf p1, 2026-11-04): played in place, the cloud's
+ *  title stays up in the room's corner, and a place whose piece (its tabs
+ *  and its drift included) would reach into `no` is not a place. */
+function gen(W: number, H: number, c: number, bx: number, by: number, bw: number, bh: number, sp = 1, no: Rect[] = []) {
   const m = (0.8 + REACH) * c;
   const avoid = (0.86 + REACH) * c;
   const fx = 1.18 * sp;
   const fy = 1.08 * sp;
   const out: Slot[] = [];
+  const clear = (x: number, y: number) => !no.some((r) => x + m > r.l && x - m < r.r && y + m > r.t && y - m < r.b);
   /** slot centres spread over [x0, x1] × [y0, y1]; false when it has no room */
   const band = (x0: number, x1: number, y0: number, y1: number) => {
     if (x1 < x0 - 0.5 || y1 < y0 - 0.5) return false;
     const nx = Math.max(1, Math.floor((x1 - x0) / (fx * c) + 1e-6) + 1);
     const ny = Math.max(1, Math.floor((y1 - y0) / (fy * c) + 1e-6) + 1);
     for (let iy = 0; iy < ny; iy++)
-      for (let ix = 0; ix < nx; ix++)
-        out.push({
-          x: nx > 1 ? x0 + (ix * (x1 - x0)) / (nx - 1) : (x0 + x1) / 2,
-          y: ny > 1 ? y0 + (iy * (y1 - y0)) / (ny - 1) : (y0 + y1) / 2,
-        });
+      for (let ix = 0; ix < nx; ix++) {
+        const x = nx > 1 ? x0 + (ix * (x1 - x0)) / (nx - 1) : (x0 + x1) / 2;
+        const y = ny > 1 ? y0 + (iy * (y1 - y0)) / (ny - 1) : (y0 + y1) / 2;
+        if (clear(x, y)) out.push({ x, y });
+      }
     return true;
   };
   const left = band(m, bx - avoid, m, H - m);
@@ -161,7 +173,7 @@ function gen(W: number, H: number, c: number, bx: number, by: number, bw: number
  *  `c` is the LARGER side of a cell in CSS px (margins and reach are counted
  *  in it); a cut picture's cells may be a little taller than wide, so the
  *  board is cols × cw by rows × ch. */
-function layout(W: number, H: number, set: PuzzleSet): Lay {
+function layout(W: number, H: number, set: PuzzleSet, no: Rect[] = []): Lay {
   const { cols, rows } = set;
   const N = set.pieces.length;
   const big = Math.max(set.cw, set.ch);
@@ -192,7 +204,7 @@ function layout(W: number, H: number, set: PuzzleSet): Lay {
       const bh = rows * set.ch * s;
       const bx = kind === "side" ? Math.max(12, W * 0.04) : (W - bw) / 2;
       const by = kind === "top" ? 12 : (H - bh) / 2;
-      const slots = gen(W, H, c, bx, by, bw, bh);
+      const slots = gen(W, H, c, bx, by, bw, bh, 1, no);
       if (slots.length >= need) return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
     }
   }
@@ -204,7 +216,7 @@ function layout(W: number, H: number, set: PuzzleSet): Lay {
   const bh = rows * set.ch * s;
   const bx = (W - bw) / 2;
   const by = 12;
-  let slots = gen(W, H, c, bx, by, bw, bh, 0.9);
+  let slots = gen(W, H, c, bx, by, bw, bh, 0.9, no);
   if (!slots.length) slots = [{ x: W / 2, y: H - c }];
   while (slots.length < N) slots = slots.concat(slots.map((p) => ({ x: p.x + c * 0.3, y: p.y + c * 0.3 })));
   return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
@@ -284,6 +296,13 @@ export default function Puzzle({
   copy,
   memory,
   onExit,
+  placement = "panel",
+  dealWhen = "mount",
+  autoFocus = true,
+  escapeExits = true,
+  avoid,
+  roving = false,
+  persist,
 }: {
   /** his pieces (No. 05); without them the picture is cut here */
   set?: PuzzleSet;
@@ -295,6 +314,30 @@ export default function Puzzle({
   copy: PuzzleCopy;
   memory: React.MutableRefObject<Record<string, PuzzleSaved | undefined>>;
   onExit: () => void;
+  // ---- PLAYED IN PLACE (change 5.pdf p1, 2026-11-04: the cloud section
+  // opens on this puzzle). Every default below is the behaviour the puzzle
+  // had before, so the panel's «Play the puzzle» is unchanged.
+  /** "section": the room is the cloud section itself, beside its title and
+   *  clear of the sun's lane on the right (puzzle.css) */
+  placement?: "panel" | "section";
+  /** "visible": the picture lies whole until the room is half on screen
+   *  the first time, and only then breaks into pieces */
+  dealWhen?: "mount" | "visible";
+  /** where focus goes when the game is ready: the first loose piece (true),
+   *  the bar's way out ("exit"), or nowhere — a page that is only loading
+   *  must never have its focus or its scroll taken */
+  autoFocus?: boolean | "exit";
+  /** Escape leaves the puzzle; false: it only puts a piece down */
+  escapeExits?: boolean;
+  /** elements no piece may rest on (their box + 16px), read on every
+   *  measure of the room */
+  avoid?: () => (Element | null)[];
+  /** ONE tab stop for all the pieces; the arrow keys walk between loose
+   *  pieces (and still move a piece that is held) */
+  roving?: boolean;
+  /** sessionStorage key: the game outlives a reload (and a visit to the
+   *  series) — read at the start, written after each move and on the way out */
+  persist?: string;
 }) {
   // ONE SET FOR THE LIFE OF THE GAME: his pieces when the picture has them,
   // else this picture cut with his knob (lib/puzzleCut.ts, deterministic).
@@ -327,7 +370,32 @@ export default function Puzzle({
   const top = useRef(40);
   /** the "picture first" beat's delayed deal; null once it has dealt */
   const intro = useRef<gsap.core.Tween | null>(null);
-  const introPending = () => !!intro.current && intro.current.progress() < 1;
+  /** dealWhen "visible": the picture lies whole, waiting for the room to
+   *  be half on screen — the beat has not even started */
+  const holding = useRef(false);
+  /** the room has been half on screen at least once */
+  const seenHalf = useRef(false);
+  const introPending = () => holding.current || (!!intro.current && intro.current.progress() < 1);
+  /** IN PLACE ON A TOUCH SCREEN, A SWIPE SCROLLS (change 5.pdf p1): the
+   *  pieces lie across the section, and a page that will not scroll past a
+   *  puzzle is a trap. So the pieces start at `pan-y` — a vertical swipe
+   *  that begins on one moves the page, a tap picks it up — and only after
+   *  the first piece is picked or placed do they take the whole gesture
+   *  (`data-engaged`, puzzle.css), until the room leaves the screen. */
+  const [engaged, setEngagedState] = useState(false);
+  const engagedRef = useRef(false);
+  const engage = (on: boolean) => {
+    if (placement !== "section" || engagedRef.current === on) return;
+    engagedRef.current = on;
+    setEngagedState(on);
+  };
+  /** a solved game brought back: it is shown finished, not finished again
+   *  (no fade, no light passing) */
+  const [instant, setInstant] = useState(false);
+  /** the roving tab stop: the piece last focused */
+  const [rove, setRove] = useState<number | null>(null);
+  const avoidRef = useRef(avoid);
+  avoidRef.current = avoid;
   const titleId = useId();
   const keysId = useId();
 
@@ -474,6 +542,7 @@ export default function Puzzle({
       // the hand while the hand kept writing to it
       intro.current?.kill();
       intro.current = null;
+      holding.current = false;
       if (drag.current) {
         try {
           host.current?.releasePointerCapture(drag.current.id);
@@ -523,7 +592,10 @@ export default function Puzzle({
       });
       top.current = 10 + N;
       setPlaced(Array(N).fill(false));
+      setInstant(false);
       mark();
+      // a new deal is a new game: kept as it will lie (the flights' ends)
+      save();
     },
     // `set` and N are fixed for the life of the component
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -531,21 +603,37 @@ export default function Puzzle({
   );
 
   // ---- the room's size: measured, and re-measured on every resize --------
+  /** the no-go boxes in room px, and their signature for "nothing moved" */
+  const noGo = useRef<{ rects: Rect[]; sig: string }>({ rects: [], sig: "" });
   useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
+    const readAvoid = () => {
+      const list = (avoidRef.current?.() ?? []).filter((e): e is Element => !!e);
+      if (!list.length) return { rects: [] as Rect[], sig: "" };
+      const h = el.getBoundingClientRect();
+      const rects = list
+        .map((e) => {
+          const r = e.getBoundingClientRect();
+          return { l: r.left - h.left - 16, t: r.top - h.top - 16, r: r.right - h.left + 16, b: r.bottom - h.top + 16 };
+        })
+        .filter((r) => r.r > r.l && r.b > r.t);
+      return { rects, sig: rects.map((r) => [r.l, r.t, r.r, r.b].map(Math.round).join(",")).join("|") };
+    };
     const run = () => {
       const W = el.clientWidth;
       const H = el.clientHeight;
       if (W < 40 || H < 40) return;
       const prev = lay.current;
-      if (prev && Math.abs(prev.W - W) < 0.5 && Math.abs(prev.H - H) < 0.5) return;
+      const no = readAvoid();
+      if (prev && Math.abs(prev.W - W) < 0.5 && Math.abs(prev.H - H) < 0.5 && no.sig === noGo.current.sig) return;
+      noGo.current = no;
       // a flight, a snap or a keyboard step still running writes targets of
       // the OLD board: finish them there, then the rescale below carries
       // their end points over (review: a resize mid-flight left 4 pieces off
       // screen, one mid-snap left a placed piece 0.6 cell off its cell)
       if (prev) gsap.getTweensOf(ps.current).forEach((t) => t.progress(1));
-      const next = layout(W, H, set);
+      const next = layout(W, H, set, no.rects);
       // A SMALL ROOM GETS FEWER, BIGGER PIECES (review, 2026-10-30): on a
       // 360×640 phone the 4×5 cut came out 38×43 px — under the 44 px a
       // fingertip needs, where his No. 05 stays at 46. Before the game
@@ -583,6 +671,9 @@ export default function Puzzle({
     run();
     const ro = new ResizeObserver(run);
     ro.observe(el);
+    // the title can change size without the room changing (its font
+    // arriving, a window crossing a clamp): its box is watched too
+    for (const a of avoidRef.current?.() ?? []) if (a) ro.observe(a);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [set]);
@@ -603,6 +694,85 @@ export default function Puzzle({
     return () => m.removeEventListener("change", on);
   }, []);
 
+  /** the picture-first beat, then the deal */
+  const beat = () => {
+    holding.current = false;
+    if (still.current) scatter(false);
+    else intro.current = gsap.delayedCall(0.85, () => scatter(true));
+  };
+  const beatRef = useRef(beat);
+  beatRef.current = beat;
+
+  // ---- the game kept: in `memory` for this page, in sessionStorage too ---
+  /** the last visit's game, if it fits this set */
+  const readSaved = (): PuzzleSaved | undefined => {
+    const ok = (s: unknown): s is PuzzleSaved => {
+      const g = s as PuzzleSaved | null;
+      return (
+        !!g &&
+        Array.isArray(g.pieces) &&
+        g.pieces.length === N &&
+        Array.isArray(g.z) &&
+        g.z.length === N &&
+        g.z.every((z) => Number.isFinite(z)) &&
+        Number.isFinite(g.ms) &&
+        typeof g.done === "boolean" &&
+        g.pieces.every(
+          (q) => typeof q.placed === "boolean" && Number.isFinite(q.u) && Number.isFinite(q.v) && Number.isFinite(q.tilt) && Math.abs(q.u - 0.5) < 1 && Math.abs(q.v - 0.5) < 1,
+        )
+      );
+    };
+    if (persist) {
+      try {
+        const raw = sessionStorage.getItem(persist);
+        if (raw) {
+          const s: unknown = JSON.parse(raw);
+          if (ok(s)) return s;
+        }
+      } catch {
+        /* no storage, or not ours: the page's memory below */
+      }
+    }
+    const m = memory.current[set.art];
+    return ok(m) ? m : undefined;
+  };
+  /** where a piece will lie once its running tween ends — a save made mid-
+   *  flight keeps the piece where it was going, without ending the flight */
+  const ends = (p: P) => {
+    let x = p.x;
+    let y = p.y;
+    let tilt = p.tilt;
+    for (const t of gsap.getTweensOf(p)) {
+      const v = t.vars as { x?: unknown; y?: unknown; tilt?: unknown };
+      if (typeof v.x === "number") x = v.x;
+      if (typeof v.y === "number") y = v.y;
+      if (typeof v.tilt === "number") tilt = v.tilt;
+    }
+    return { x, y, tilt };
+  };
+  /** keep the game (never one that has not been dealt yet) */
+  const save = () => {
+    const l = lay.current;
+    if (!l || !ps.current.length || introPending()) return;
+    const kept: PuzzleSaved = {
+      pieces: ps.current.map((p) => {
+        const e = ends(p);
+        return { u: e.x / l.W, v: e.y / l.H, tilt: e.tilt, placed: p.placed };
+      }),
+      z: ps.current.map((p) => p.z),
+      ms: clockMs(),
+      done: doneRef.current,
+      ar: l.W / l.H,
+    };
+    memory.current[set.art] = kept;
+    if (!persist) return;
+    try {
+      sessionStorage.setItem(persist, JSON.stringify(kept));
+    } catch {
+      /* storage full or refused: the page's memory still has it */
+    }
+  };
+
   // ---- the first layout: restore the last visit, or deal a new game ------
   // A CUT PICTURE WAITS FOR ITS PAINT (review, 2026-10-30): dealt on the
   // layout alone, the 0.85 s "picture first" beat ran while its pieces were
@@ -614,8 +784,8 @@ export default function Puzzle({
     if (!L || !drawn || inited.current) return;
     inited.current = true;
     ps.current = set.pieces.map((_, i) => makeP(i));
-    const saved = memory.current[set.art];
-    if (saved && saved.pieces.length === N) {
+    const saved = readSaved();
+    if (saved) {
       saved.pieces.forEach((s, i) => {
         const p = ps.current[i];
         p.placed = s.placed;
@@ -640,7 +810,10 @@ export default function Puzzle({
       clock.current = { at: 0, ms: saved.ms };
       setPlaced(saved.pieces.map((s) => s.placed));
       setDone(saved.done);
-      if (saved.done) setTime(fmt(saved.ms));
+      if (saved.done) {
+        setTime(fmt(saved.ms));
+        setInstant(true);
+      }
     } else {
       // THE PICTURE FIRST: all eighteen lie in their places for a beat, so
       // the visitor sees what they are about to make, then the pieces fly
@@ -652,8 +825,10 @@ export default function Puzzle({
         const el = els.current[p.i];
         if (el) el.style.zIndex = String(p.z);
       });
-      if (still.current) scatter(false);
-      else intro.current = gsap.delayedCall(0.85, () => scatter(true));
+      // in place, the picture waits WHOLE until the room is half on screen
+      // (the observer below starts the beat then)
+      if (dealWhen === "visible" && !seenHalf.current) holding.current = true;
+      else beat();
     }
     // THE CHECK HARNESS'S WINDOW (imgss/puzzle-2026-10-29/check): the moving
     // state, read from outside on the dev server. The build replaces
@@ -663,10 +838,17 @@ export default function Puzzle({
     // shown after the first frame has put every piece where it belongs
     requestAnimationFrame(() => {
       setReady(true);
+      if (!autoFocus) return;
       // focus lands inside — on the first loose piece, in the scatter's
-      // order — so a keyboard starts where the game is
+      // order — so a keyboard starts where the game is (or on the way out,
+      // when that is the button the visitor just came through)
       const first = order.find((i) => !ps.current[i]?.placed);
-      const target = first !== undefined ? els.current[first] : bar.current?.querySelector("button");
+      const target =
+        autoFocus === "exit"
+          ? bar.current?.querySelector<HTMLButtonElement>(".ap-pz__exit")
+          : first !== undefined
+            ? els.current[first]
+            : bar.current?.querySelector("button");
       target?.focus(scriptFocus());
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -703,16 +885,29 @@ export default function Puzzle({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [L, mode]);
 
-  // the loop rests while the room is off screen (the cloud scrolls away)
+  // the loop rests while the room is off screen (the cloud scrolls away) —
+  // and in place, the pieces give the swipe back to the page once it has
+  // (see `engaged`), and the picture breaks up the first time the room is
+  // half on screen (dealWhen "visible")
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => {
-      visible.current = e.isIntersecting;
-      if (e.isIntersecting) mark();
-    });
+    const io = new IntersectionObserver(
+      ([e]) => {
+        visible.current = e.isIntersecting;
+        if (e.isIntersecting) mark();
+        else engage(false);
+        if (!seenHalf.current && e.intersectionRatio >= 0.5) {
+          seenHalf.current = true;
+          // dealt and still waiting: the beat starts now
+          if (holding.current && inited.current) beatRef.current();
+        }
+      },
+      { threshold: [0, 0.5] },
+    );
     io.observe(el);
     return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // on the way out: kill every tween, and hand the game to `memory`
@@ -726,19 +921,29 @@ export default function Puzzle({
       intro.current?.kill();
       if (!pending) gsap.getTweensOf(ps.current).forEach((t) => t.progress(1));
       gsap.killTweensOf(ps.current);
-      const l = lay.current;
-      if (pending || !l || !ps.current.length) return;
-      memory.current[set.art] = {
-        pieces: ps.current.map((p) => ({ u: p.x / l.W, v: p.y / l.H, tilt: p.tilt, placed: p.placed })),
-        z: ps.current.map((p) => p.z),
-        ms: clockMs(),
-        done: doneRef.current,
-        ar: l.W / l.H,
-      };
+      if (pending) return;
+      save();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+  // A RELOAD UNMOUNTS NOTHING: the page is simply gone. The game is kept on
+  // the way out of the page too (and when the tab is hidden, the last moment
+  // a phone browser promises to run anything).
+  useEffect(() => {
+    if (!persist) return;
+    const keep = () => save();
+    const hide = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("pagehide", keep);
+    document.addEventListener("visibilitychange", hide);
+    return () => {
+      window.removeEventListener("pagehide", keep);
+      document.removeEventListener("visibilitychange", hide);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persist]);
 
   // ---- the alpha masks, one per piece, built as its image arrives --------
   const onImg = (i: number, img: HTMLImageElement | HTMLCanvasElement) => {
@@ -848,7 +1053,7 @@ export default function Puzzle({
   // when the picture has failed, focus goes to the way back (it was on the
   // «Play» button, which is gone while the puzzle is out)
   useEffect(() => {
-    if (!failed) return;
+    if (!failed || !autoFocus) return;
     const way =
       mode === "sheet"
         ? sheet.current?.querySelector<HTMLButtonElement>(".ap-pz-sheet__x")
@@ -912,6 +1117,8 @@ export default function Puzzle({
     const n = ps.current.filter((q) => q.placed).length;
     if (n === N) complete();
     else setSay(fill(copy.placed, { n, total: N }));
+    engage(true);
+    save();
   };
   /** set down: into its place if it is close enough, else where it lies */
   const drop = (i: number) => {
@@ -920,11 +1127,17 @@ export default function Puzzle({
     const p = ps.current[i];
     const h = home(l, i);
     if (Math.abs(p.x - h.x) < SNAP * l.cw && Math.abs(p.y - h.y) < SNAP * l.ch) place(i);
-    else settle(i);
+    else {
+      settle(i);
+      save();
+    }
   };
 
   // ---- the hand ------------------------------------------------------------
-  const drag = useRef<{ id: number; i: number; ox: number; oy: number; sx: number; sy: number; moved: boolean } | null>(null);
+  /** `soft`: a finger on a piece before the room is engaged — nothing is
+   *  lifted until it moves sideways (an up-or-down swipe is the page's: the
+   *  browser scrolls and cancels it), and a tap picks it up */
+  const drag = useRef<{ id: number; i: number; ox: number; oy: number; sx: number; sy: number; moved: boolean; soft: boolean } | null>(null);
   /** a press on the empty room: a tap there sets the picked piece down */
   const tap = useRef<{ id: number; x: number; y: number } | null>(null);
   const kbd = useRef<{ i: number; from: { x: number; y: number; tilt: number }; r: number; c: number } | null>(null);
@@ -975,6 +1188,10 @@ export default function Puzzle({
       return;
     }
     e.preventDefault();
+    // THE CAPTURE STAYS HERE, IN THE PRESS (pointer-capture trap, 2026-10-13):
+    // a finger is implicitly captured by the piece it lands on; taken over
+    // by the room before that capture is active, no lostpointercapture ever
+    // bubbles up from the piece to end the drag one step in
     try {
       host.current?.setPointerCapture(e.pointerId);
     } catch {
@@ -985,12 +1202,21 @@ export default function Puzzle({
       setSel(null);
     }
     const p = ps.current[i];
+    if (placement === "section" && e.pointerType === "touch" && !engagedRef.current) {
+      drag.current = { id: e.pointerId, i, ox: 0, oy: 0, sx: pt.x, sy: pt.y, moved: false, soft: true };
+      return;
+    }
+    lift(i);
+    drag.current = { id: e.pointerId, i, ox: pt.x - p.x, oy: pt.y - p.y, sx: pt.x, sy: pt.y, moved: false, soft: false };
+  };
+  /** in the hand: the drift folded in, on top, up off the table */
+  const lift = (i: number) => {
+    const p = ps.current[i];
     take(p);
     raise(i);
     gsap.to(p, { lift: 1, tilt: 0, duration: dur(0.12), ease: "power2.out", onUpdate: mark });
     setHeld(i);
     startClock();
-    drag.current = { id: e.pointerId, i, ox: pt.x - p.x, oy: pt.y - p.y, sx: pt.x, sy: pt.y, moved: false };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -999,8 +1225,22 @@ export default function Puzzle({
     if (!d || !l || e.pointerId !== d.id) return;
     const pt = local(e);
     if (!d.moved) {
-      if (Math.hypot(pt.x - d.sx, pt.y - d.sy) < 4) return;
+      // a soft press lifts only for a clearly SIDEWAYS move: an up-or-down
+      // one is the page's (the browser scrolls and cancels it, a few px
+      // later than this would have lifted — measured: a 19px flicker)
+      if (d.soft) {
+        const dx = Math.abs(pt.x - d.sx);
+        if (dx < 10 || dx < Math.abs(pt.y - d.sy)) return;
+      } else if (Math.hypot(pt.x - d.sx, pt.y - d.sy) < 4) return;
       d.moved = true;
+      if (d.soft) {
+        // the browser kept it: a sideways drag, so it is the piece's after all
+        lift(d.i);
+        const p = ps.current[d.i];
+        d.ox = d.sx - p.x;
+        d.oy = d.sy - p.y;
+        d.soft = false;
+      }
     }
     const p = ps.current[d.i];
     // never so far out that it lies under the window's head or bar (their
@@ -1046,6 +1286,14 @@ export default function Puzzle({
     } catch {
       /* already released */
     }
+    // a soft press the page took for a scroll: nothing was lifted, nothing
+    // is put down — nor when it travelled up or down without the page
+    // taking it (at the page's end): a swipe is not a tap
+    if (d.soft) {
+      if (e.type !== "pointerup") return;
+      const pt = local(e);
+      if (Math.hypot(pt.x - d.sx, pt.y - d.sy) > 10) return;
+    }
     setHeld(null);
     if (!d.moved && e.type === "pointerup") {
       // A TAP ON A PIECE picks it up (and a second tap on it puts it back
@@ -1053,10 +1301,19 @@ export default function Puzzle({
       if (selRef.current === d.i) {
         setSel(null);
         settle(d.i);
-      } else setSel(d.i);
+      } else {
+        // a soft tap: up off the table now, as a press would have done
+        if (d.soft) {
+          lift(d.i);
+          setHeld(null);
+        }
+        setSel(d.i);
+        engage(true);
+      }
       return;
     }
     if (selRef.current === d.i) setSel(null);
+    if (e.type === "pointerup") engage(true);
     drop(d.i);
   };
 
@@ -1073,11 +1330,39 @@ export default function Puzzle({
     for (let s = 1; s <= N; s++) {
       const i = order[(at + s) % N];
       if (!ps.current[i].placed) {
+        if (roving) setRove(i);
         els.current[i]?.focus(scriptFocus());
         return;
       }
     }
     bar.current?.querySelector<HTMLButtonElement>("button")?.focus(scriptFocus());
+  };
+  /** THE ARROWS WALK THE TABLE (roving): from a loose piece to the nearest
+   *  loose piece that way — along the arrow, with a sideways offset counted
+   *  double, so → goes to the piece most nearly to the right. Nothing that
+   *  way: focus stays. */
+  const walk = (from: number, key: string) => {
+    const dir: Record<string, [number, number]> = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] };
+    const v = dir[key];
+    const a = ps.current[from];
+    if (!v || !a) return;
+    let best = -1;
+    let score = Infinity;
+    for (const p of ps.current) {
+      if (p.i === from || p.placed) continue;
+      const dx = p.rx - a.rx;
+      const dy = p.ry - a.ry;
+      const along = dx * v[0] + dy * v[1];
+      if (along <= 1) continue;
+      const s = along + 2 * Math.abs(dx * v[1] - dy * v[0]);
+      if (s < score) {
+        score = s;
+        best = p.i;
+      }
+    }
+    if (best < 0) return;
+    setRove(best);
+    els.current[best]?.focus(scriptFocus());
   };
   const onKey = (i: number) => (e: React.KeyboardEvent) => {
     const l = lay.current;
@@ -1119,8 +1404,15 @@ export default function Puzzle({
       setSay(fill(copy.picked, { k: rank.current[i], r: r + 1, c: c + 1 }));
       return;
     }
-    if (!k || k.i !== i) return;
     const step: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+    if (roving && !k && step[e.key]) {
+      // nothing held: the arrows move FOCUS, one tab stop for the lot
+      e.preventDefault();
+      e.stopPropagation();
+      walk(i, e.key);
+      return;
+    }
+    if (!k || k.i !== i) return;
     const s = step[e.key];
     if (s) {
       e.preventDefault();
@@ -1161,14 +1453,17 @@ export default function Puzzle({
           const inside = !!a && (!!host.current?.contains(a) || !!bar.current?.contains(a));
           if (!inside && !(a === document.body && visible.current)) return;
         }
-        e.preventDefault();
         // a piece picked up by a tap is put down first, as a held one is
         if (selRef.current !== null) {
+          e.preventDefault();
           settle(selRef.current);
           setSel(null);
           setSay(copy.putBack);
           return;
         }
+        // in place there is nothing to leave: the puzzle IS the section
+        if (!escapeExits) return;
+        e.preventDefault();
         exit.current();
         return;
       }
@@ -1184,7 +1479,8 @@ export default function Puzzle({
       window.removeEventListener("keydown", onWin);
       if (mode === "sheet") document.body.style.overflow = prev;
     };
-  }, [mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, escapeExits]);
 
   const again = () => {
     drag.current = null;
@@ -1195,6 +1491,9 @@ export default function Puzzle({
   };
 
   const count = placed.filter(Boolean).length;
+  /** the roving tab stop: the piece last focused while it is still loose,
+   *  else the first loose one in the scatter's order */
+  const tabStop = roving ? (rove !== null && !placed[rove] ? rove : order.find((i) => !placed[i])) : undefined;
   // a cut picture is the cloud's own file: asked for by its own address, so
   // it comes from the same cache (no ?v= — that would be a second download)
   const v = set.v ? `?v=${set.v}` : "";
@@ -1205,8 +1504,11 @@ export default function Puzzle({
       <div
         className="ap-pz"
         data-mode={mode}
+        data-place={placement}
         data-ready={(ready && drawn) || undefined}
         data-done={done || undefined}
+        data-instant={instant || undefined}
+        data-engaged={engaged || undefined}
         ref={host}
         role="group"
         aria-label={`${copy.title} — ${label}`}
@@ -1216,12 +1518,15 @@ export default function Puzzle({
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
         onLostPointerCapture={(e) => {
-          if (drag.current?.id === e.pointerId) onPointerEnd(e);
+          // only the ROOM's own capture ending ends a drag — one bubbled up
+          // from a piece is the hand-over to the room (pointer-capture trap)
+          if (e.target === e.currentTarget && drag.current?.id === e.pointerId) onPointerEnd(e);
         }}
         onDragStart={(e) => e.preventDefault()}
       >
         <p className="ap-sr" id={keysId}>
           {copy.keys}
+          {roving && copy.keysWalk ? ` ${copy.keysWalk}` : ""}
         </p>
         {board && !failed && (
           <div className="ap-pz__board" style={board} aria-hidden="true">
@@ -1254,9 +1559,13 @@ export default function Puzzle({
                 data-sel={sel === i || undefined}
                 data-placed={isIn || undefined}
                 disabled={isIn}
+                // roving: one piece is the tab stop, the rest are reached by
+                // the arrows (a page's Tab order does not grow by eighteen)
+                tabIndex={roving && !isIn ? (i === tabStop ? 0 : -1) : undefined}
                 aria-pressed={!isIn ? held === i || sel === i : undefined}
                 aria-label={isIn ? fill(copy.inPlace, { k: k + 1 }) : fill(copy.piece, { k: k + 1, total: N })}
                 onKeyDown={onKey(i)}
+                onFocus={roving ? () => setRove(i) : undefined}
                 onBlur={() => {
                   if (kbd.current?.i === i) dropKbd(true);
                 }}
@@ -1334,8 +1643,9 @@ export default function Puzzle({
           </>
         )}
         {mode === "inline" && (
-          <button type="button" className="ap-pz__btn" onClick={onExit}>
-            <span aria-hidden="true">←</span> {copy.back}
+          <button type="button" className="ap-pz__btn ap-pz__exit" onClick={onExit}>
+            {/* in place the way out goes ON (to the series), not back */}
+            {placement !== "section" && <span aria-hidden="true">←</span>} {copy.back}
           </button>
         )}
       </div>

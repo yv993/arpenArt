@@ -1120,6 +1120,13 @@ export const home = {
       miss: "Not its place — it stays loose.",
       putBack: "Put back.",
       failed: "The picture didn’t load — go back and try again.",
+      // IN PLACE (change 5.pdf p1, 2026-11-04 — interface words, the site's
+      // voice): the section opens on No. 05 as a puzzle, and the series is
+      // one press away. `series` is the bar's way to the cloud (and the
+      // phone's disclosure of the rail); `keysWalk` joins `keys` where the
+      // eighteen pieces share one tab stop.
+      series: "See the series",
+      keysWalk: "With nothing picked up, the arrow keys move from piece to piece.",
       piece: "Piece {k} of {total}",
       inPlace: "Piece {k}, in place",
       complete: "Complete — all {total} pieces in place, in {time}.",
