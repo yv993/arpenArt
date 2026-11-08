@@ -153,6 +153,10 @@ export const ownItemWord: Record<string, string> = {
   // own window). The cart's `art` is now the BAG number, 01–04, as the cards
   // name them; before this it was one of the 57 illustrations.
   totes: "Tote bag",
+  // TWENTY-SEVEN FIXED DESIGNS since 2026-11-04 (change 5.pdf p4) — the
+  // cart's `art` is the bookmark number, 01–27 in her file order (her file
+  // -02 is no. 01; scripts/bookmarks.mjs keeps her number as `her`)
+  bookmarks: "Bookmark",
 };
 
 /** WHERE AN OWN-ITEM LINE'S PICTURES LIVE, when that is not the category's
@@ -260,6 +264,27 @@ export const categories: Category[] = [
     // garment sizes, not product claims — the one choice a hoodie order
     // cannot be placed without
     variants: { label: "Size", options: ["S", "M", "L", "XL"] },
+  },
+  {
+    // BOOKMARKS (client, change 5.pdf p4, 2026-11-04: «New Page / BookMarks»),
+    // at her p3 slot, the first of the three new lines after T-Shirts.
+    // Twenty-seven fixed designs and one shared back, sold one by one from
+    // /shop/bookmarks (components/BookmarkShelf.tsx); the cart's `art` is the
+    // bookmark's number (ownItemWord below).
+    slug: "bookmarks",
+    name: "Bookmarks",
+    // HER WORDS, the first clause of her p4 paragraph («Illustrated bookmarks
+    // inspired by Armenia, made to bring …»), its comma made a full stop to
+    // stand alone like the other blurbs. She has not said which line goes
+    // under the tile; this is the default until she does (it is also the
+    // page's meta description).
+    blurb: "Illustrated bookmarks inspired by Armenia.",
+    media: "bookmark",
+    // HER PRICE, from her own 2026-09-21 list (change.pdf p9, «էջանշան
+    // 500»), where it waited in `priceList` until the line arrived. Not
+    // re-confirmed since; Arpine is asked to confirm it.
+    from: 500,
+    status: "open",
   },
   // CUPS, PLATES AND PUZZLES REMOVED (client, change 5.pdf p3, 2026-11-04:
   // «հանենք սրանք, փոխարենը նոր բաժիններ անենք» — let's remove these and
@@ -389,16 +414,15 @@ export const nav = [
 
 /** HER PRICE LIST, 2026-09-21 (change.pdf p9), for the lines the shop does
  *  not carry yet — the ones she underlined in red with «I will send the
- *  materials soon». Bookmarks were on the list without an underline and
- *  without a product anywhere, so they wait here too. The globe already
- *  shows three of these (her Drive set includes the bracelets, the brooches
- *  and the beaded pendant), and reads their prices from here; when a line
- *  arrives it becomes a `categories` entry and leaves this table. */
+ *  materials soon». The globe already shows three of these (her Drive set
+ *  includes the bracelets, the brooches and the beaded pendant), and reads
+ *  their prices from here; when a line arrives it becomes a `categories`
+ *  entry and leaves this table — as the bookmarks did (change 5.pdf p4,
+ *  2026-11-04: her 500 ֏ moved to their entry). */
 export const priceList: Record<string, { name: string; hy: string; from: number }> = {
   brooches: { name: "Stone brooches", hy: "Քարե բրոշ", from: 2500 },
   bracelets: { name: "Wooden bracelets", hy: "Թևնոց", from: 2000 },
   notebooks: { name: "Notebooks", hy: "Նոթատետր", from: 2500 },
-  bookmarks: { name: "Bookmarks", hy: "Էջանշան", from: 500 },
   pendants: { name: "Beaded pendants", hy: "Հուլունքով կախազարդ", from: 4000 },
 };
 
@@ -482,6 +506,9 @@ export const covers: Record<string, { src: string; thumb: string; w: number; h: 
   totes: { src: "/products/tile-totes.webp", thumb: "/products/tile-totes-sm.webp", w: 1089, h: 1400, avg: "#636247" },
   keychains: { src: "/products/tile-keychains.webp", thumb: "/products/tile-keychains-sm.webp", w: 1145, h: 1374, avg: "#b29d8e" },
   magnets: { src: "/products/tile-magnets.webp", thumb: "/products/tile-magnets-sm.webp", w: 933, h: 1400, avg: "#bbb4ae" },
+  // her styled photograph «cover/4.jpg» (change 5.pdf p4), read off the
+  // written files by scripts/bookmarks.mjs
+  bookmarks: { src: "/products/tile-bookmarks.webp", thumb: "/products/tile-bookmarks-sm.webp", w: 1312, h: 1199, avg: "#c2ab8d" },
 };
 
 /** THE RING'S CUT-OUTS (change.pdf p5: «replace the t-shirt, the scarf, the
@@ -497,6 +524,10 @@ export const ring: Record<string, { tex: string; w: number; h: number }> = {
   scarves: { tex: "/products/ring-scarf.webp", w: 700, h: 539 },
   postcards: { tex: "/products/ring-postcard.webp", w: 700, h: 602 },
   totes: { tex: "/products/ring-tote.webp", w: 419, h: 700 },
+  // A CROP of the tile's photograph (both bookmarks, the cover's full
+  // height), h/w 1.32: the ring stretches any card taller than 1.42, and a
+  // bookmark's own 190/56 = 3.39 would be squashed (scripts/bookmarks.mjs)
+  bookmarks: { tex: "/products/ring-bookmarks.webp", w: 531, h: 700 },
 };
 
 // ---------------------------------------------------------------------------
@@ -1348,6 +1379,26 @@ export const magnetFridge = {
     "Bring a little piece of Armenia to your home. Each Arpen Art magnet features an original illustration inspired by Armenian places, landscapes, culture and everyday moments — a small keepsake to remember Armenia by.",
   ],
   all: "The whole set",
+  add: "Add to cart",
+  added: "Added to your cart.",
+};
+
+// BOOKMARKS — /shop/bookmarks (client, change 5.pdf p4, 2026-11-04).
+// `title` and `copy` are HER WORDS, verbatim from the page («A LITTLE STORY
+// BETWEEN PAGES» and the three lines under it, joined where her box wraps).
+// Everything else is interface wording in the site's voice, not hers:
+// `add`/`added` are the magnets' own two, `item` names a design the way
+// every fixed item is named («Magnet no. 05»), `back` captions the one
+// picture of the shared back in the page head, and `backAlt` says what her
+// file -01 shows. `turn` finishes each card's button name («Bookmark no. 05:
+// show the back»), whose pressed state says which side is up.
+export const bookmarkShelf = {
+  title: "A LITTLE STORY BETWEEN PAGES",
+  copy: "Illustrated bookmarks inspired by Armenia, made to bring a little color and a piece of home to every reading moment.",
+  item: (id: string) => `Bookmark no. ${id}`,
+  back: "The back of every bookmark",
+  backAlt: "The back of the bookmark: a reading log with columns for the date, the title and a star rating",
+  turn: "show the back",
   add: "Add to cart",
   added: "Added to your cart.",
 };

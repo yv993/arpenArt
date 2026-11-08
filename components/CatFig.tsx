@@ -38,6 +38,9 @@ const THUMB_W: Record<string, number> = {
   "/products/tile-totes-sm.webp": 544,
   "/products/tile-keychains-sm.webp": 583,
   "/products/tile-magnets-sm.webp": 467,
+  // change 5.pdf p4 (2026-11-04), from scripts/bookmarks.mjs: 700px is
+  // enough for a 2x phone (the note above), so no middle rung
+  "/products/tile-bookmarks-sm.webp": 700,
   "/products/stickers-01-sm.webp": 553,
   "/products/sticker3d-01-sm.webp": 337,
   "/products/totes-01-sm.webp": 466,

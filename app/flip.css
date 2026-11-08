@@ -1,0 +1,164 @@
+/* ==========================================================================
+   FLIP CARD — a printed piece that turns over (components/FlipCard.tsx).
+   Shared by the bookmarks (change 5.pdf p4) and, next, the double-sided
+   Armenia Eternal postcards.
+
+   WHO MOVES. The <button> holds the perspective and the focus ring and is
+   never transformed, so the ring stays square to the page while the card
+   turns. Only `.ap-flip__in` rotates. No CSS `translate`/`rotate`/`scale`
+   individual properties anywhere here, and nothing GSAP touches.
+
+   The box takes the piece's print ratio from the component (inline
+   aspect-ratio), so a grid of cards is laid out before any picture loads.
+   ========================================================================== */
+
+.ap-flip {
+  position: relative;
+  width: 100%;
+  /* the corner of the printed piece; the faces, the turning span and the
+     focus ring all follow it */
+  --flip-r: 6px;
+  /* stands until the component's inline ratio applies (it always does) */
+  aspect-ratio: 1;
+}
+
+.ap-flip__btn {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: var(--flip-r);
+  cursor: pointer;
+  /* on the button, the turning span's own parent: perspective reaches the
+     span's 3D transform only from its containing block */
+  perspective: 1400px;
+  -webkit-tap-highlight-color: transparent;
+}
+/* the site's one ring (globals.css), on the button's own corner */
+.ap-flip__btn:focus-visible {
+  border-radius: var(--flip-r);
+}
+
+.ap-flip__in {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--flip-r);
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease);
+}
+.ap-flip[data-back] .ap-flip__in {
+  transform: rotateY(180deg);
+}
+
+.ap-flip__face {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--flip-r);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* paper on paper: a soft lift so the piece reads as an object */
+  box-shadow:
+    0 1px 2px rgb(35 40 52 / 0.12),
+    0 8px 22px -10px rgb(35 40 52 / 0.38);
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* the front's own (identity) turn: WebKit applies backface-visibility only
+   to a face that carries a 3D transform of its own */
+.ap-flip__face--front {
+  transform: rotateY(0deg);
+}
+.ap-flip__face--back {
+  transform: rotateY(180deg);
+}
+
+/* ---- the turn mark: "this piece has another side" ------------------------ */
+.ap-flip__mark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(35 40 52 / 0.25);
+  pointer-events: none;
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.ap-flip__mark svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* a press is keeping the card turned */
+.ap-flip[data-pressed] .ap-flip__mark {
+  background: var(--indigo-ink);
+  color: var(--cream);
+}
+
+/* ---- no script: a mouse can still turn it (the press needs the script) --- */
+@media (scripting: none) and (hover: hover) and (pointer: fine) {
+  .ap-flip__btn:hover .ap-flip__in {
+    transform: rotateY(180deg);
+  }
+}
+
+/* ---- reduced motion: no turn — the faces crossfade ------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .ap-flip__btn {
+    perspective: none;
+  }
+  .ap-flip__in,
+  .ap-flip[data-back] .ap-flip__in,
+  .ap-flip__btn:hover .ap-flip__in {
+    transform: none;
+    transform-style: flat;
+    transition: none;
+  }
+  .ap-flip__face {
+    -webkit-backface-visibility: visible;
+    backface-visibility: visible;
+    transition: opacity 0.16s linear;
+  }
+  .ap-flip__face--front {
+    transform: none;
+  }
+  .ap-flip__face--back {
+    transform: none;
+    opacity: 0;
+  }
+  .ap-flip[data-back] .ap-flip__face--back {
+    opacity: 1;
+  }
+  .ap-flip[data-back] .ap-flip__face--front {
+    opacity: 0;
+  }
+  .ap-flip__mark {
+    transition: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) and (scripting: none) and (hover: hover) and (pointer: fine) {
+  .ap-flip__btn:hover .ap-flip__face--back {
+    opacity: 1;
+  }
+  .ap-flip__btn:hover .ap-flip__face--front {
+    opacity: 0;
+  }
+}

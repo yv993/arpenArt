@@ -17,7 +17,7 @@ Prices are in Armenian dram (֏).
 | --- | --- | --- |
 | **A product line's price** | the line's name and the new price in ֏ | `categories[]` → `from` |
 | **A price for one option** (for example a postcard set, a garment size) | the line, the option, and its price | `categories[]` → `variants.prices`: option → price |
-| **Lines not on sale yet** (brooches, bracelets, notebooks, bookmarks, pendants) | the line and its price, then photos when it goes on sale | `priceList`. When a line opens, it moves into `categories`. |
+| **Lines not on sale yet** (brooches, bracelets, notebooks, pendants) | the line and its price, then photos when it goes on sale | `priceList`. When a line opens, it moves into `categories` (bookmarks did, 2026-11-04). |
 | **Delivery** (the 4 choices in the cart) | for each choice: its name, price, how long it takes, which carrier | `delivery.options` (`label`, `price`, `eta`, `address`) |
 | **"How ordering works"** (choose / confirm / pay) | the new wording, for example how buyers pay | `ordering.steps` |
 | **Social links** | the full profile link (for example her Telegram `@handle`) | `socials`. Remove `pending` once it is her own profile. |
@@ -165,7 +165,9 @@ export const soldOut: Record<string, readonly string[]> = {
   `scarves`, `totes`, `stickers`, `postcards`, …
 - Each entry is one of two things:
   - **the piece's number**, as text with two digits: `"03"`, not `"3"`. For keychains, magnets,
-    3D stickers, scarves (the design) and tote bags (the bag) that is the item's own number. For
+    3D stickers, scarves (the design), tote bags (the bag) and bookmarks that is the item's own
+    number (a bookmark's number is ours, 01–27 in her file order: no. 01 is her file -02 —
+    `scripts/bookmarks.mjs` prints the whole table, and products.json keeps hers as `her`). For
     the lines printed with her pictures (postcards, for example) it is the picture's number;
   - **an option label**, exactly as the picker shows it: `"Sheet 03"`, `"Bandana"`, `"M"`.
 - An option label counts for every piece of that line: `scarves: ["Bandana"]` marks every

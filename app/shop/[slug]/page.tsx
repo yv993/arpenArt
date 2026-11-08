@@ -22,6 +22,7 @@ import ToteGallery, { type ToteShot } from "@/components/ToteGallery";
 import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
+import BookmarkShelf, { type BookmarkShot } from "@/components/BookmarkShelf";
 import type { Keychain } from "@/types/keychain";
 import {
   brand,
@@ -158,8 +159,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   // THE PRODUCT MARKUP CLAIMS ONLY A PRICE THE PAGE SHOWS (2026-11-01). It
   // used to carry `cat.from` on every open line, but only some pages print
-  // it: the six bespoke views below (sticker sheets, 3D stickers, magnets,
-  // scarves, keychains, totes) each show `cat.from` ֏, and so does the
+  // it: the bespoke views below (sticker sheets, 3D stickers, magnets,
+  // scarves, keychains, totes, and since change 5 the bookmarks) each show
+  // `cat.from` ֏, and so does the
   // Overture's "from" line — while CategoryView names no figure at all since
   // prices left the catalogue (client, change.pdf p5 + p8, 2026-09-15). So
   // /shop/postcards claimed 1000 AMD and InStock with no ֏ anywhere on it
@@ -173,7 +175,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   // If a view starts or stops printing the price, change PRICED_VIEWS.
   // A NULL PRICE (change 5) is no price shown — the view prints «Price
   // confirmed by Arpine» — so such a line gets no Product either.
-  const PRICED_VIEWS = ["stickers", "3d-stickers", "magnets", "scarves", "keychains", "totes"];
+  const PRICED_VIEWS = ["stickers", "3d-stickers", "magnets", "scarves", "keychains", "totes", "bookmarks"];
   const price = cat.from;
   const showsPrice = price !== null && (opens || PRICED_VIEWS.includes(cat.slug));
   // The first product shot doubles as the Product image.
@@ -297,6 +299,34 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
 
           <MagnetFridge shots={P.magnet ?? []} slug={cat.slug} price={cat.from} heading="h1" />
+
+          <div className="ap-cv">
+            <div className="ap-sheets__foot">
+              <OrderingSteps />
+            </div>
+          </div>
+        </>
+      ) : cat.slug === "bookmarks" ? (
+        /* TWENTY-SEVEN FIXED BOOKMARKS (client, change 5.pdf p4, 2026-11-04),
+           the magnets' scaffolding: breadcrumb, the shelf carrying the h1 —
+           her heading and paragraph, the price, the shared back once, every
+           design turning over to it — then how ordering works. */
+        <>
+          <div className="ap-cv">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <BookmarkShelf
+            shots={(products as unknown as { bookmark?: BookmarkShot[] }).bookmark ?? []}
+            back={(products as unknown as { bookmarkBack?: BookmarkShot[] }).bookmarkBack?.[0]}
+            slug={cat.slug}
+            price={cat.from}
+            heading="h1"
+          />
 
           <div className="ap-cv">
             <div className="ap-sheets__foot">
