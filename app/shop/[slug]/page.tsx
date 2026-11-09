@@ -23,6 +23,7 @@ import ScarfDesigns from "@/components/ScarfDesigns";
 import KeychainSection from "@/components/keychains/KeychainSection";
 import MagnetFridge from "@/components/MagnetFridge";
 import BookmarkShelf, { type BookmarkShot } from "@/components/BookmarkShelf";
+import PosterGallery, { type PosterShot } from "@/components/PosterGallery";
 import type { Keychain } from "@/types/keychain";
 import {
   brand,
@@ -332,6 +333,34 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div className="ap-sheets__foot">
               <OrderingSteps />
             </div>
+          </div>
+        </>
+      ) : cat.slug === "posters" ? (
+        /* FOUR FIXED POSTERS (client, change 5.pdf p5, 2026-11-04), the
+           totes' scaffolding: the crumb on the gallery's own clearance, the
+           gallery carrying the h1 — her heading and paragraph, the four, each
+           opening its window on her wall — then how ordering works. NOT in
+           PRICED_VIEWS: no price is shown (`from: null`, «Price confirmed by
+           Arpine»), so the page carries the breadcrumb and no Product. */
+        <>
+          <div className="ap-pg__top">
+            <nav className="ap-crumb" aria-label="Breadcrumb">
+              <Link href="/shop">Shop</Link>
+              <span aria-hidden>/</span>
+              <span aria-current="page">{cat.name}</span>
+            </nav>
+          </div>
+
+          <PosterGallery
+            shots={(products as unknown as { poster?: PosterShot[] }).poster ?? []}
+            slug={cat.slug}
+            name={cat.name}
+            price={cat.from}
+            heading="h1"
+          />
+
+          <div className="ap-pg__foot">
+            <OrderingSteps />
           </div>
         </>
       ) : cat.slug === "scarves" ? (

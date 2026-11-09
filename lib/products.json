@@ -1890,5 +1890,95 @@
    "alpha": false,
    "avg": "#edf1f5"
   }
+ ],
+ "poster": [
+  {
+   "id": "01",
+   "her": "file/Untitled-3-01.jpg",
+   "src": "/products/poster-01.webp",
+   "thumb": "/products/poster-01-sm.webp",
+   "w": 596,
+   "h": 842,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#b0a68a",
+   "wall": {
+    "her": "mockup/2.jpg",
+    "src": "/products/poster-01-wall.webp",
+    "md": "/products/poster-01-wall-md.webp",
+    "sm": "/products/poster-01-wall-sm.webp",
+    "w": 2400,
+    "h": 1600,
+    "mdW": 1600,
+    "smW": 800,
+    "avg": "#a5a19b"
+   }
+  },
+  {
+   "id": "02",
+   "her": "file/Untitled-3-02.jpg",
+   "src": "/products/poster-02.webp",
+   "thumb": "/products/poster-02-sm.webp",
+   "w": 596,
+   "h": 842,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#8698a8",
+   "wall": {
+    "her": "mockup/3.jpg",
+    "src": "/products/poster-02-wall.webp",
+    "md": "/products/poster-02-wall-md.webp",
+    "sm": "/products/poster-02-wall-sm.webp",
+    "w": 2400,
+    "h": 1600,
+    "mdW": 1600,
+    "smW": 800,
+    "avg": "#9a9da2"
+   }
+  },
+  {
+   "id": "03",
+   "her": "file/Untitled-3-03.jpg",
+   "src": "/products/poster-03.webp",
+   "thumb": "/products/poster-03-sm.webp",
+   "w": 596,
+   "h": 842,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#677375",
+   "wall": {
+    "her": "mockup/4.jpg",
+    "src": "/products/poster-03-wall.webp",
+    "md": "/products/poster-03-wall-md.webp",
+    "sm": "/products/poster-03-wall-sm.webp",
+    "w": 2400,
+    "h": 1600,
+    "mdW": 1600,
+    "smW": 800,
+    "avg": "#929495"
+   }
+  },
+  {
+   "id": "04",
+   "her": "file/Untitled-3-04.jpg",
+   "src": "/products/poster-04.webp",
+   "thumb": "/products/poster-04-sm.webp",
+   "w": 596,
+   "h": 842,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#5d7e8a",
+   "wall": {
+    "her": "mockup/1.jpg",
+    "src": "/products/poster-04-wall.webp",
+    "md": "/products/poster-04-wall-md.webp",
+    "sm": "/products/poster-04-wall-sm.webp",
+    "w": 2400,
+    "h": 1600,
+    "mdW": 1600,
+    "smW": 800,
+    "avg": "#8f979a"
+   }
+  }
  ]
 }

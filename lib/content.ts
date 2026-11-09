@@ -157,6 +157,10 @@ export const ownItemWord: Record<string, string> = {
   // cart's `art` is the bookmark number, 01–27 in her file order (her file
   // -02 is no. 01; scripts/bookmarks.mjs keeps her number as `her`)
   bookmarks: "Bookmark",
+  // FOUR FIXED POSTERS since 2026-11-04 (change 5.pdf p5) — the cart's `art`
+  // is the poster number, 01–04, her flat files' own (Untitled-3-01…04);
+  // scripts/posters.mjs keeps each file name as `her`
+  posters: "Poster",
 };
 
 /** WHERE AN OWN-ITEM LINE'S PICTURES LIVE, when that is not the category's
@@ -284,6 +288,28 @@ export const categories: Category[] = [
     // 500»), where it waited in `priceList` until the line arrived. Not
     // re-confirmed since; Arpine is asked to confirm it.
     from: 500,
+    status: "open",
+  },
+  {
+    // POSTERS (client, change 5.pdf p5, 2026-11-04: «New Page / posters»), at
+    // her p3 slot — the third of the new lines; Armenia Eternal goes between
+    // the bookmarks and this one. Four fixed posters sold one by one from
+    // /shop/posters (components/PosterGallery.tsx); the cart's `art` is the
+    // poster's number, her flat file's own (ownItemWord below).
+    slug: "posters",
+    name: "Posters",
+    // HER WORDS, the first clause of her p5 paragraph («Illustrated stories
+    // of Armenia, made to bring …»), its comma made a full stop to stand
+    // alone like the other blurbs — the bookmarks' treatment. She has not
+    // said which line goes under the tile; this is the default until she
+    // does (it is also the page's meta description).
+    blurb: "Illustrated stories of Armenia.",
+    media: "poster",
+    // NO PRICE YET — she sent none, and no size, paper or frame either. The
+    // line is on sale with «Price confirmed by Arpine» (`priceTbc`), out of
+    // every total, and she names the price when she answers the order. Put
+    // her number here and the page, the cart and /api/order all follow.
+    from: null,
     status: "open",
   },
   // CUPS, PLATES AND PUZZLES REMOVED (client, change 5.pdf p3, 2026-11-04:
@@ -509,6 +535,9 @@ export const covers: Record<string, { src: string; thumb: string; w: number; h: 
   // her styled photograph «cover/4.jpg» (change 5.pdf p4), read off the
   // written files by scripts/bookmarks.mjs
   bookmarks: { src: "/products/tile-bookmarks.webp", thumb: "/products/tile-bookmarks-sm.webp", w: 1312, h: 1199, avg: "#c2ab8d" },
+  // her wall photograph of poster no. 04, «Yerevan» (change 5.pdf p5, her
+  // mockup/1.jpg), read off the written files by scripts/posters.mjs
+  posters: { src: "/products/tile-posters.webp", thumb: "/products/tile-posters-sm.webp", w: 1400, h: 934, avg: "#8f979a" },
 };
 
 /** THE RING'S CUT-OUTS (change.pdf p5: «replace the t-shirt, the scarf, the
@@ -528,6 +557,10 @@ export const ring: Record<string, { tex: string; w: number; h: number }> = {
   // height), h/w 1.32: the ring stretches any card taller than 1.42, and a
   // bookmark's own 190/56 = 3.39 would be squashed (scripts/bookmarks.mjs)
   bookmarks: { tex: "/products/ring-bookmarks.webp", w: 531, h: 700 },
+  // THE FLAT of the tile's poster (no. 04), whole: its h/w is 1.414, inside
+  // the ring's 1.42, so nothing needs cutting and nothing is stretched
+  // (scripts/posters.mjs checks it)
+  posters: { tex: "/products/ring-posters.webp", w: 495, h: 700 },
 };
 
 // ---------------------------------------------------------------------------
@@ -1401,6 +1434,30 @@ export const bookmarkShelf = {
   turn: "show the back",
   add: "Add to cart",
   added: "Added to your cart.",
+};
+
+// POSTERS — /shop/posters (client, change 5.pdf p5, 2026-11-04).
+// `title` and `copy` are HER WORDS, verbatim from the page («ART THAT BRINGS
+// WALLS TO LIFE» and the three lines under it, joined where her box wraps).
+// Her title is one line; it is set on two here, one entry per line as the
+// totes' title is, because the head is the totes' two columns — title left,
+// paragraph right — and a fixed break cannot re-wrap when the display face
+// arrives. Joined with a space the two entries are her line, word for word,
+// and that is what the heading reads to anything that takes its text.
+// Everything else is interface wording in the site's voice, not hers: `item`
+// names a poster the way every fixed item is named («Tote bag no. 01»), `cue`
+// and `cueTouch` say what a poster does when pressed (the totes' pair), and
+// `open` is the window's words, the totes' own. No size, paper or frame is
+// named anywhere: she has not given them.
+export const posterGallery = {
+  title: ["ART THAT BRINGS", "WALLS TO LIFE"],
+  copy: "Illustrated stories of Armenia, made to bring color, character and a little inspiration to your space.",
+  item: (id: string) => `Poster no. ${id}`,
+  /** what her wall photograph shows, after the poster's name */
+  onWall: "on a wall",
+  cue: "Click a poster to see it on the wall",
+  cueTouch: "Tap a poster to see it on the wall",
+  open: { each: "each", add: "Add to cart", added: "Added to your cart.", close: "Close" },
 };
 
 export const stickers3d = {
