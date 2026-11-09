@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { brand, home } from "@/lib/content";
+import { bring } from "@/lib/bring";
 import Socials from "./Socials";
 import Turnstile, { botCheckWords, tickWords, turnstileToken } from "./Turnstile";
 
@@ -78,11 +79,15 @@ export default function ContactBlock({
     `mailto:${brand.email}?subject=${encodeURIComponent(`Enquiry from ${k.name}`)}&body=${encodeURIComponent(`${k.message}\n\n${k.name} <${k.email}>`)}`;
 
   // put the keyboard where the fix is — the first field rejected, in the
-  // order they appear in the form (the cart's focusFirst, CartView.tsx)
+  // order they appear in the form (the cart's focusFirst, CartView.tsx) —
+  // and bring it into view clear of the fixed bar: a plain focus() stopped
+  // with Name at the window's top edge, its label under the bar (live check
+  // 2026-11-04, FL-1; lib/bring.ts)
   const focusFirst = (form: HTMLFormElement, errs: Record<string, string>) => {
     const first = ["name", "email", "message", "consent"].find((k) => errs[k]);
     if (!first) return;
-    (form.querySelector(`[name="${first}"]`) as HTMLElement | null)?.focus();
+    const el = form.querySelector<HTMLElement>(`[name="${first}"]`);
+    if (el) bring(el);
   };
 
   const send = async (e: React.FormEvent<HTMLFormElement>) => {

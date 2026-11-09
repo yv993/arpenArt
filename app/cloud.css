@@ -815,6 +815,16 @@
     border-radius: 6px;
     box-shadow: 0 10px 26px -18px rgba(0, 0, 0, 0.7);
   }
+  /* THE CARD THE KEYS ARE ON COMES TO THE FRONT (live check 2026-11-04,
+     FL-2). The resting order is by size (--z 29–47), so a small focused card
+     sat under its bigger neighbours with 2px of its ring showing. 550 puts it
+     over every resting card and the frame's vignette (500), and under a
+     chosen card (600, written by Cloud.tsx — which leaves every other card's
+     order to this sheet so this rule can apply), the title (999) and the
+     panel (1000). */
+  .ap-cloud__card:focus-visible {
+    z-index: 550;
+  }
   /* A paper mount behind about a third of them, as in the reference.
      BORDER, not padding: a percentage padding resolves against the containing
      block's width, and the containing block here is the 2592px plane, so

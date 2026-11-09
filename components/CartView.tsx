@@ -34,6 +34,7 @@ import {
 import { OrderingSteps } from "@/components/CategoryView";
 import Turnstile, { botCheckWords, tickWords, turnstileToken } from "@/components/Turnstile";
 import { lineWords, soldOutNamed, soldOutSay, variantInItem } from "@/lib/lineWords";
+import { bring } from "@/lib/bring";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 
@@ -401,23 +402,10 @@ export default function CartView() {
       if (errs.lines) toLines.current = true;
       return;
     }
+    // brought into view by hand, clear of the fixed nav (lib/bring.ts: focus()
+    // alone left Name 470px above the screen in this sticky column)
     const el = form.querySelector<HTMLElement>(`[name="${first}"]`);
     if (el) bring(el);
-  };
-  const bring = (el: HTMLElement) => {
-    // focus() alone left Name 470px ABOVE the screen at 1440x900 (measured
-    // 2026-10-31): the form rides in the sticky side column, taller than the
-    // window, and the browser's own scroll misjudges a sticky box. So the
-    // field is brought into view by hand, re-checked over a few frames
-    // while the column settles — clear of the fixed nav at the top.
-    el.focus({ preventScroll: true });
-    let n = 0;
-    const show = () => {
-      const r = el.getBoundingClientRect();
-      if (r.top < 110 || r.bottom > window.innerHeight - 24) window.scrollBy({ top: r.top - window.innerHeight / 3, behavior: "instant" });
-      if (++n < 3) requestAnimationFrame(show);
-    };
-    show();
   };
   // the cart's own line beside Send (`errors.lines`), focused once rendered
   const toLines = useRef(false);

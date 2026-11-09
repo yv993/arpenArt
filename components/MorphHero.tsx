@@ -66,7 +66,11 @@ const MAX_CARDS = 20;
  *  the thirteen get a 1x1 GIF wherever the plain layer is the one showing —
  *  CatFig's and ShopStrip's pattern. The moved layer keeps every file it had. */
 const FAN = 7;
+/** the deck's first cards load at once; the rest when near (loading=lazy) */
+const EAGER = 6;
 const PLAIN = "(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)";
+/** where the fan's `sizes` says 420px: every desktop, whichever layer shows */
+const WIDE = "(min-width: 861px)";
 /** a 1x1 transparent GIF, inline: a <source> that costs no request */
 const NOTHING = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
@@ -457,22 +461,43 @@ export default function MorphHero({
                 {/* the fan: the phone slot is 80px (covers 77, and a DPR-3
                     64px card); the desktop slot is said as the -sm's own
                     width so every desktop keeps the file it had — the moved
-                    layer blows a card up to 194px. React's hoisted preload
-                    carries the same srcset/sizes, so a phone preloads the
-                    -xs. The rest: nothing at all on the plain layer, where
-                    they are display:none (display: contents keeps
-                    `.ap-mh__face img` laying out exactly as before). */}
+                    layer blows a card up to 194px. The rest: nothing at all
+                    on the plain layer, where they are display:none
+                    (display: contents keeps `.ap-mh__face img` laying out
+                    exactly as before).
+                    THE PRELOAD SAYS ONLY WHAT IS SURE (live check
+                    2026-11-04, F1). React used to hoist a preload for each
+                    eager card with this srcset, which on a phone always
+                    named the -xs; but a phone with the -sm already cached
+                    (the home page's cloud shows them) draws the card from
+                    that copy, so after a visit to / the preloads of nos. 04
+                    and 07 went unused and the console warned twice (measured
+                    on production builds: imgss/change5-2026-11-04/build/h/
+                    out/f1-*.json). A desktop always takes the -sm, the
+                    largest candidate, so it keeps its preload, now named
+                    outright for wide screens. A phone gets none: the pick is
+                    its cache's, the card is in the first screen of the HTML
+                    anyway, and the page's LCP is its text. (The browser's
+                    own look-ahead still fetches that -xs from the srcset in
+                    the cached case, as it did through the preload; that is
+                    the browser's guess, not a preload, and warns nothing.)
+                    Inside a <picture>, React hoists nothing for the img. */}
                 {i < FAN ? (
-                  <img
-                    src={a.thumb}
-                    srcSet={artThumbSet(a.thumb)}
-                    sizes={artThumbSet(a.thumb) ? "(max-width: 860px) 80px, 420px" : undefined}
-                    alt=""
-                    width={a.w}
-                    height={a.h}
-                    loading={i < 6 ? undefined : "lazy"}
-                    decoding="async"
-                  />
+                  <>
+                    {i < EAGER && <link rel="preload" as="image" href={a.thumb} media={WIDE} />}
+                    <picture style={{ display: "contents" }}>
+                      <img
+                        src={a.thumb}
+                        srcSet={artThumbSet(a.thumb)}
+                        sizes={artThumbSet(a.thumb) ? "(max-width: 860px) 80px, 420px" : undefined}
+                        alt=""
+                        width={a.w}
+                        height={a.h}
+                        loading={i < EAGER ? undefined : "lazy"}
+                        decoding="async"
+                      />
+                    </picture>
+                  </>
                 ) : (
                   <picture style={{ display: "contents" }}>
                     <source media={PLAIN} srcSet={NOTHING} />

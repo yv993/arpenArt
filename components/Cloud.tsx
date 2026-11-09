@@ -1080,7 +1080,11 @@ export default function Cloud({
         duration: 0.45,
         ease: "power2.out",
       });
-      c.style.zIndex = isIt ? "600" : c.style.getPropertyValue("--z");
+      // the chosen card over everything; the others back to the sheet's own
+      // order (var(--z)), NOT a copy of it written inline — inline would
+      // out-rank cloud.css's :focus-visible rule that brings a focused card
+      // forward (live check 2026-11-04, FL-2)
+      c.style.zIndex = isIt ? "600" : "";
     });
     // (and while a puzzle is out — back on the desktop mid-game, see above)
     if (say) gsap.to(say, { autoAlpha: card || playingRef.current ? 0 : 1, duration: 0.35 });
