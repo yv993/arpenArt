@@ -477,6 +477,8 @@
 }
 .ap-st[data-stack] .ap-st__cover-say {
   align-content: start;
+  /* the title, the subtitle, and the peek taking what is left (below) */
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 .ap-st[data-stack] .ap-st__cover-say .ap-lede {
   /* a breath more than the grid's 16px under a title this size */
@@ -544,6 +546,58 @@
 }
 .ap-st[data-stack] .ap-st__cover .ap-st__sheet {
   position: relative; /* the cue is placed against it */
+}
+
+/* THE PEEK (client, change 5.pdf p7, 2026-11-04). She filled the bare paper
+   between her subtitle and the cue with a solid box in her own ink; until
+   she says what she meant, it holds a picture of the story the index points
+   at (components/StoriesPeek.tsx). The figure takes the column's third row —
+   whatever the title and subtitle leave — with a breath under the subtitle
+   and a clear gap above the cue. It is a SIZE container: each of its two
+   canvas faces is fitted with container units at its picture's own ratio
+   (--r, set by the component), uncropped, no taller than --peek-cap, from
+   the top-left corner under the subtitle. Only opacity moves, never a
+   transform: GSAP scales the sheet it sits on. The component exists on the
+   stack only; the base rule is a floor. */
+.ap-st__peek {
+  display: none;
+}
+.ap-st[data-stack] .ap-st__peek {
+  display: block;
+  position: relative;
+  min-height: 0;
+  margin: clamp(6px, 2.6svh, 30px) 0 clamp(8px, 2svh, 24px);
+  container-type: size;
+  pointer-events: none;
+}
+.ap-st__peek canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(100cqw, calc(min(100cqh, var(--peek-cap, 620px)) * var(--r, 1)));
+  height: auto;
+  aspect-ratio: var(--r, 1);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(27, 43, 76, 0.16);
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+.ap-st__peek canvas[data-on] {
+  opacity: 1;
+}
+/* a window too short (or a column too narrow) to show a picture worth the
+   name shows none — the paper, as before. The component mirrors these two
+   numbers and fetches nothing for such a box. */
+@container (max-height: 160px) or (max-width: 220px) {
+  .ap-st__peek canvas {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-st__peek canvas {
+    transition: none;
+  }
 }
 
 /* the stories: each a sticky screen; the next, 40svh later in flow, rides
@@ -695,6 +749,11 @@
   }
   .ap-st[data-stack] .ap-st__thumbs button {
     width: clamp(56px, 5vw, 80px);
+  }
+  /* the cover's 32px floor puts the column's foot inside the cue's own
+     36px: the peek keeps 16px+ clear of it (measured 8px at 1280×600) */
+  .ap-st[data-stack] .ap-st__peek {
+    margin-bottom: 24px;
   }
 }
 

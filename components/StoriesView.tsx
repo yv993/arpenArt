@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PhotoLightbox from "./PhotoLightbox";
+import StoriesPeek, { type PeekControl } from "./StoriesPeek";
 import { stories, type Story } from "@/lib/content";
 import shots from "@/lib/stories.json";
 
@@ -118,6 +119,13 @@ export default function StoriesView() {
   /** which story's pictures are open in the lightbox, and which picture */
   const [lb, setLb] = useState<{ s: number; i: number } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
+  /** the cover's peek (change 5.pdf p7, StoriesPeek.tsx): the index points
+   *  it at the row under a mouse or pen, or the row keyboard focus is on;
+   *  leaving the list hands it to whichever of the two is still inside, or
+   *  back to rest. Refs, not state — a hover never re-renders the page. */
+  const peek = useRef<PeekControl | null>(null);
+  const hoverAt = useRef<number | null>(null);
+  const focusAt = useRef<number | null>(null);
 
   useEffect(() => {
     const m = window.matchMedia(STACK);
@@ -415,11 +423,43 @@ export default function StoriesView() {
                 {stories.title}
               </h1>
               <p className="ap-lede">{stories.copy}</p>
+              {/* the box she drew under the subtitle (change 5.pdf p7) */}
+              {stack && <StoriesPeek control={peek} />}
             </div>
-            <ol className="ap-st__index" id="ap-st-index" aria-label="The stories">
+            <ol
+              className="ap-st__index"
+              id="ap-st-index"
+              aria-label="The stories"
+              onPointerLeave={() => {
+                hoverAt.current = null;
+                peek.current?.point(focusAt.current);
+              }}
+              onBlur={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                focusAt.current = null;
+                peek.current?.point(hoverAt.current);
+              }}
+            >
               {stories.entries.map((s, i) => (
                 <li key={s.id}>
-                  <a href={`#${s.id}`} onClick={(e) => go(i, e)}>
+                  <a
+                    href={`#${s.id}`}
+                    onClick={(e) => go(i, e)}
+                    // a mouse or a pen pointing is intent; a finger's tap is
+                    // a jump to the story, which takes the cover away
+                    onPointerEnter={(e) => {
+                      if (e.pointerType === "touch") return;
+                      hoverAt.current = i;
+                      peek.current?.point(i);
+                    }}
+                    // keyboard focus only: a click focuses the row too, and
+                    // then the page is already leaving for the story
+                    onFocus={(e) => {
+                      if (!e.currentTarget.matches(":focus-visible")) return;
+                      focusAt.current = i;
+                      peek.current?.point(i);
+                    }}
+                  >
                     <span className="ap-st__index-when">{s.when}</span>
                     <span className="ap-st__index-title">{s.title}</span>
                   </a>
