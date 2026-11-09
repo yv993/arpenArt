@@ -1980,5 +1980,358 @@
     "avg": "#8f979a"
    }
   }
+ ],
+ "eternal": [
+  {
+   "id": "sq01",
+   "kind": "sq",
+   "her": "postcards-1/1/Armenian postcard 92-92mm_2 side_350gr_mat x 30-01.jpg",
+   "src": "/products/ae-sq01.webp",
+   "thumb": "/products/ae-sq01-sm.webp",
+   "w": 545,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#f2dcd6",
+   "back": {
+    "her": "postcards-1/1/Armenian postcard 92-92mm_2 side_350gr_mat x 30-08.jpg",
+    "src": "/products/ae-sq01-back.webp",
+    "thumb": "/products/ae-sq01-back-sm.webp",
+    "w": 545,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#faf9f9"
+   }
+  },
+  {
+   "id": "sq02",
+   "kind": "sq",
+   "her": "postcards-1/2/Armenian postcard 92-92mm_2 side_350gr_mat x 30-02.jpg",
+   "src": "/products/ae-sq02.webp",
+   "thumb": "/products/ae-sq02-sm.webp",
+   "w": 544,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#d2b78a",
+   "back": {
+    "her": "postcards-1/2/Armenian postcard 92-92mm_2 side_350gr_mat x 30-14.jpg",
+    "src": "/products/ae-sq02-back.webp",
+    "thumb": "/products/ae-sq02-back-sm.webp",
+    "w": 545,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#fbfafa"
+   }
+  },
+  {
+   "id": "sq03",
+   "kind": "sq",
+   "her": "postcards-1/3/Armenian postcard 92-92mm_2 side_350gr_mat x 30-03.jpg",
+   "src": "/products/ae-sq03.webp",
+   "thumb": "/products/ae-sq03-sm.webp",
+   "w": 545,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#ddba8d",
+   "back": {
+    "her": "postcards-1/3/Armenian postcard 92-92mm_2 side_350gr_mat x 30-10.jpg",
+    "src": "/products/ae-sq03-back.webp",
+    "thumb": "/products/ae-sq03-back-sm.webp",
+    "w": 545,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#fafaf9"
+   }
+  },
+  {
+   "id": "sq04",
+   "kind": "sq",
+   "her": "postcards-1/4/Armenian postcard 92-92mm_2 side_350gr_mat x 30-04.jpg",
+   "src": "/products/ae-sq04.webp",
+   "thumb": "/products/ae-sq04-sm.webp",
+   "w": 544,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#deb488",
+   "back": {
+    "her": "postcards-1/4/Armenian postcard 92-92mm_2 side_350gr_mat x 30-11.jpg",
+    "src": "/products/ae-sq04-back.webp",
+    "thumb": "/products/ae-sq04-back-sm.webp",
+    "w": 544,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#faf9f9"
+   }
+  },
+  {
+   "id": "sq05",
+   "kind": "sq",
+   "her": "postcards-1/5/Armenian postcard 92-92mm_2 side_350gr_mat x 30-05.jpg",
+   "src": "/products/ae-sq05.webp",
+   "thumb": "/products/ae-sq05-sm.webp",
+   "w": 545,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#d8b491",
+   "back": {
+    "her": "postcards-1/5/Armenian postcard 92-92mm_2 side_350gr_mat x 30-09.jpg",
+    "src": "/products/ae-sq05-back.webp",
+    "thumb": "/products/ae-sq05-back-sm.webp",
+    "w": 544,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#faf9fa"
+   }
+  },
+  {
+   "id": "sq06",
+   "kind": "sq",
+   "her": "postcards-1/6/Armenian postcard 92-92mm_2 side_350gr_mat x 30-06.jpg",
+   "src": "/products/ae-sq06.webp",
+   "thumb": "/products/ae-sq06-sm.webp",
+   "w": 544,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#ceb896",
+   "back": {
+    "her": "postcards-1/6/Armenian postcard 92-92mm_2 side_350gr_mat x 30-13.jpg",
+    "src": "/products/ae-sq06-back.webp",
+    "thumb": "/products/ae-sq06-back-sm.webp",
+    "w": 544,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#fbfafa"
+   }
+  },
+  {
+   "id": "sq07",
+   "kind": "sq",
+   "her": "postcards-1/7/Armenian postcard 92-92mm_2 side_350gr_mat x 30-07.jpg",
+   "src": "/products/ae-sq07.webp",
+   "thumb": "/products/ae-sq07-sm.webp",
+   "w": 545,
+   "h": 544,
+   "thumbW": 320,
+   "alpha": false,
+   "avg": "#dbd0d8",
+   "back": {
+    "her": "postcards-1/7/Armenian postcard 92-92mm_2 side_350gr_mat x 30-12.jpg",
+    "src": "/products/ae-sq07-back.webp",
+    "thumb": "/products/ae-sq07-back-sm.webp",
+    "w": 545,
+    "h": 544,
+    "thumbW": 320,
+    "avg": "#fbfafa"
+   }
+  },
+  {
+   "id": "a601",
+   "kind": "a6",
+   "her": "postcards-2/1/Armenian postcard A6_2 side_350gr_mat x 30-01.jpg",
+   "src": "/products/ae-a601.webp",
+   "thumb": "/products/ae-a601-sm.webp",
+   "w": 621,
+   "h": 875,
+   "thumbW": 360,
+   "alpha": false,
+   "avg": "#dcb78a",
+   "back": {
+    "her": "postcards-2/1/Armenian postcard A6_2 side_350gr_mat x 30-02.jpg",
+    "src": "/products/ae-a601-back.webp",
+    "thumb": "/products/ae-a601-back-sm.webp",
+    "w": 622,
+    "h": 875,
+    "thumbW": 360,
+    "avg": "#fcfbfb"
+   }
+  },
+  {
+   "id": "a602",
+   "kind": "a6",
+   "her": "postcards-2/2/Armenian postcard A6_2 side_350gr_mat x 30-03.jpg",
+   "src": "/products/ae-a602.webp",
+   "thumb": "/products/ae-a602-sm.webp",
+   "w": 621,
+   "h": 875,
+   "thumbW": 360,
+   "alpha": false,
+   "avg": "#cfb386",
+   "back": {
+    "her": "postcards-2/2/Armenian postcard A6_2 side_350gr_mat x 30-04.jpg",
+    "src": "/products/ae-a602-back.webp",
+    "thumb": "/products/ae-a602-back-sm.webp",
+    "w": 622,
+    "h": 875,
+    "thumbW": 360,
+    "avg": "#fcfbfc"
+   }
+  },
+  {
+   "id": "a603",
+   "kind": "a6",
+   "her": "postcards-2/3/Armenian postcard A6_2 side_350gr_mat x 30-05.jpg",
+   "src": "/products/ae-a603.webp",
+   "thumb": "/products/ae-a603-sm.webp",
+   "w": 621,
+   "h": 875,
+   "thumbW": 360,
+   "alpha": false,
+   "avg": "#d9b48c",
+   "back": {
+    "her": "postcards-2/3/Armenian postcard A6_2 side_350gr_mat x 30-06.jpg",
+    "src": "/products/ae-a603-back.webp",
+    "thumb": "/products/ae-a603-back-sm.webp",
+    "w": 621,
+    "h": 875,
+    "thumbW": 360,
+    "avg": "#fcfbfc"
+   }
+  },
+  {
+   "id": "a604",
+   "kind": "a6",
+   "her": "postcards-2/Новая папка/Armenian postcard A6_2 side_350gr_mat x 30-07.jpg",
+   "src": "/products/ae-a604.webp",
+   "thumb": "/products/ae-a604-sm.webp",
+   "w": 621,
+   "h": 875,
+   "thumbW": 360,
+   "alpha": false,
+   "avg": "#d0b48f",
+   "back": {
+    "her": "postcards-2/Новая папка/Armenian postcard A6_2 side_350gr_mat x 30-08.jpg",
+    "src": "/products/ae-a604-back.webp",
+    "thumb": "/products/ae-a604-back-sm.webp",
+    "w": 621,
+    "h": 875,
+    "thumbW": 360,
+    "avg": "#fcfbfc"
+   }
+  },
+  {
+   "id": "sc01",
+   "kind": "sc",
+   "her": "scarves/Armenian 01_Монтажная область 1.jpg",
+   "src": "/products/ae-sc01.webp",
+   "thumb": "/products/ae-sc01-sm.webp",
+   "w": 1400,
+   "h": 1400,
+   "thumbW": 700,
+   "alpha": false,
+   "avg": "#463347"
+  },
+  {
+   "id": "sc02",
+   "kind": "sc",
+   "her": "scarves/Armenian 02_Монтажная область 1.jpg",
+   "src": "/products/ae-sc02.webp",
+   "thumb": "/products/ae-sc02-sm.webp",
+   "w": 1277,
+   "h": 1277,
+   "thumbW": 700,
+   "alpha": false,
+   "avg": "#715b78"
+  },
+  {
+   "id": "sc03",
+   "kind": "sc",
+   "her": "scarves/Armenian 03_Монтажная область 1.jpg",
+   "src": "/products/ae-sc03.webp",
+   "thumb": "/products/ae-sc03-sm.webp",
+   "w": 1277,
+   "h": 1277,
+   "thumbW": 700,
+   "alpha": false,
+   "avg": "#434c63"
+  },
+  {
+   "id": "sc04",
+   "kind": "sc",
+   "her": "scarves/Armenian 04-01.jpg",
+   "src": "/products/ae-sc04.webp",
+   "thumb": "/products/ae-sc04-sm.webp",
+   "w": 1276,
+   "h": 1276,
+   "thumbW": 700,
+   "alpha": false,
+   "avg": "#f3ddd8"
+  },
+  {
+   "id": "ru01",
+   "kind": "ru",
+   "her": "runner/erkar-01.jpg",
+   "src": "/products/ae-ru01.webp",
+   "thumb": "/products/ae-ru01-sm.webp",
+   "w": 700,
+   "h": 1400,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#463440",
+   "strip": {
+    "src": "/products/ae-ru01-strip.webp",
+    "sm": "/products/ae-ru01-strip-sm.webp",
+    "w": 960,
+    "h": 5270,
+    "smW": 480
+   }
+  },
+  {
+   "id": "ru02",
+   "kind": "ru",
+   "her": "runner/erkar2-01.jpg",
+   "src": "/products/ae-ru02.webp",
+   "thumb": "/products/ae-ru02-sm.webp",
+   "w": 700,
+   "h": 1400,
+   "thumbW": 400,
+   "alpha": false,
+   "avg": "#f4e2e1",
+   "strip": {
+    "src": "/products/ae-ru02-strip.webp",
+    "sm": "/products/ae-ru02-strip-sm.webp",
+    "w": 960,
+    "h": 5270,
+    "smW": 480
+   }
+  }
+ ],
+ "eternalExtra": [
+  {
+   "id": "worn",
+   "her": "scarves/3.jpg",
+   "src": "/products/ae-worn.webp",
+   "thumb": "/products/ae-worn-sm.webp",
+   "w": 765,
+   "h": 1374,
+   "thumbW": 480,
+   "alpha": false,
+   "avg": "#a07e6c"
+  },
+  {
+   "id": "table",
+   "her": "runner/5.jpg",
+   "src": "/products/ae-table.webp",
+   "thumb": "/products/ae-table-sm.webp",
+   "w": 1312,
+   "h": 1199,
+   "thumbW": 700,
+   "alpha": false,
+   "avg": "#8b776d"
+  },
+  {
+   "id": "bird",
+   "her": "runner/erkar2-01.jpg (x 1003, y 1320, 423 × 866)",
+   "src": "/products/ae-bird.webp",
+   "thumb": "/products/ae-bird.webp",
+   "w": 125,
+   "h": 256,
+   "alpha": true,
+   "avg": "#6d3c33"
+  }
  ]
 }

@@ -1,0 +1,575 @@
+/* ==========================================================================
+   ARMENIA ETERNAL — /armenia-eternal (components/EternalView.tsx; change
+   5.pdf p9 + p10, 2026-11-04: «it is very important to make this section
+   beautiful … what matters is the same fonts and colours»).
+
+   A MANUSCRIPT LEAF IN THE SITE'S OWN TYPE AND COLOUR. Nothing here is new
+   to the site: Fraunces for her words that are display (the title, her
+   subtitle, her sentence on the forms, her closing line), Karla for her two
+   paragraphs, Montserrat for the interface's labels; ink-indigo for the
+   title (her own lettering's colour), terracotta for the rules and the
+   painted initial (her bird's red), paper for the ground (her parchment).
+   Night swaps the title to the night ink, everything else follows the
+   tokens.
+
+   THE MEASURES, in rem or em, never ch: a ch follows the body face, which
+   swaps in after the first paint and would re-wrap every column (the
+   posters' and bookmarks' CLS lesson, change 5 steps c + d).
+
+   WHO MOVES. The h1's letters (TextFX) and the [data-rise] paragraphs (GSAP,
+   the moved layer only) — no CSS individual transform property sits on
+   either. The hero's two cards are tilted with a plain static `transform`
+   that nothing animates. The flip cards turn inside FlipCard's own span.
+
+   GAPS (UX law G0): a picture and its number 12px; pieces 20–40px; groups
+   56–120px — each wider than the one inside it.
+   ========================================================================== */
+
+/* ---- the crumb, on the page's own clearance (posters' .ap-pg__top) ------- */
+.ap-ae__top {
+  padding-top: clamp(84px, 11.5vh, 124px);
+}
+.ap-ae__top .ap-crumb {
+  margin-bottom: 0;
+}
+
+.ap-ae {
+  --ae-title: var(--ink-indigo);
+  --ae-rule: color-mix(in srgb, var(--terracotta) 52%, transparent);
+  --ae-col: 1120px;
+  --ae-gap: clamp(20px, 2.6vw, 40px);
+  --ae-shadow:
+    0 1px 2px rgb(35 40 52 / 0.12),
+    0 10px 26px -12px rgb(35 40 52 / 0.42);
+  padding: clamp(22px, 4.5vh, 56px) var(--gutter) clamp(30px, 6vh, 72px);
+}
+/* the night page: her title's ink-indigo is the ground there, so the title
+   takes the night ink (cream) — the same two blocks as the site's tokens */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ap-ae {
+    --ae-title: var(--ink);
+    --ae-shadow:
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 12px 30px -12px rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme="dark"] .ap-ae {
+  --ae-title: var(--ink);
+  --ae-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 12px 30px -12px rgb(0 0 0 / 0.6);
+}
+
+/* ---- the title and her card ------------------------------------------------ */
+.ap-ae__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 88px);
+  max-width: var(--ae-col);
+  margin: 0 auto;
+}
+.ap-ae__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  font-size: clamp(3.4rem, 8.6vw, 8.8rem);
+  line-height: 0.94;
+  letter-spacing: -0.022em;
+  color: var(--ae-title);
+  /* TWO LINES, «Armenia» over «Eternal», in either face: wider than either
+     word, narrower than both. In em, so the display face arriving cannot
+     re-break the title (each word measures under 4.3em in Fraunces and in
+     the Georgia fallback; the pair over 7.5em). */
+  max-width: 5.6em;
+}
+.ap-ae__sub {
+  position: relative;
+  margin: clamp(22px, 3.4vh, 36px) 0 0;
+  padding-top: clamp(18px, 2.6vh, 26px);
+  max-width: 21rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.15rem, 1.55vw, 1.45rem);
+  line-height: 1.42;
+  color: var(--indigo-ink);
+  text-wrap: balance;
+}
+/* a short terracotta rule over her subtitle, a scribe's line */
+.ap-ae__sub::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--terracotta);
+}
+
+/* her A6 card no. 01 in front, her square card no. 01 behind it: a box of
+   fixed shape, the two laid inside it, so nothing moves when they land */
+.ap-ae__fig {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1 / 1;
+  margin: 0;
+}
+.ap-ae__card {
+  position: absolute;
+  display: block;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: var(--ae-shadow);
+}
+.ap-ae__card--a6 {
+  z-index: 1;
+  left: 3%;
+  top: 2.5%;
+  width: 63%;
+  transform: rotate(-3.2deg);
+}
+.ap-ae__card--sq {
+  right: 1%;
+  top: 40%;
+  width: 49%;
+  transform: rotate(5.5deg);
+}
+
+/* ---- her bird between the parts --------------------------------------------- */
+.ap-ae__orn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 2vw, 26px);
+  max-width: 34rem;
+  margin: clamp(48px, 9vh, 104px) auto clamp(36px, 6vh, 64px);
+}
+.ap-ae__orn span {
+  flex: 1 1 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ae-rule));
+}
+.ap-ae__orn span:last-child {
+  background: linear-gradient(90deg, var(--ae-rule), transparent);
+}
+.ap-ae__orn img {
+  display: block;
+  flex: none;
+  width: auto;
+  height: clamp(60px, 6.4vw, 84px);
+}
+
+/* ---- her two paragraphs: one column, a painted initial ------------------ */
+.ap-ae__folio {
+  max-width: 35rem;
+  margin: 0 auto;
+  font-size: clamp(1.02rem, 1.1vw, 1.14rem);
+  line-height: 1.8;
+}
+.ap-ae__folio p {
+  margin: 0;
+}
+.ap-ae__folio p + p {
+  margin-top: 1.15em;
+}
+/* the initial, the way an illuminated page opens: her bird's red, in the
+   display face, three lines tall */
+.ap-ae__folio p:first-child::first-letter {
+  float: left;
+  margin: 0.08em 0.1em 0 -0.03em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 4.25em;
+  line-height: 0.8;
+  color: var(--terracotta);
+}
+
+/* THE INITIAL WAITS FOR ITS FACE. The float's width is the "D" in the face
+   it is drawn in, so when Fraunces replaces the fallback the first three
+   lines re-wrap — measured on the production build at 1440x900 (cold), where
+   the column's first lines show at the fold: 0.001 of layout shift, the only
+   shift on this page that is not the site-wide nav's. So with scripts on the
+   column stays unseen until the fonts are in (EternalView sets data-set on
+   document.fonts.ready) — a block that turns visible does not count as a
+   shift — and opens by itself after 1.6s whatever happens. Without scripts
+   it is simply there. */
+@media (scripting: enabled) {
+  .ap-ae__folio:not([data-set]) {
+    visibility: hidden;
+    animation: ap-ae-set 1ms 1.6s forwards;
+  }
+}
+@keyframes ap-ae-set {
+  to {
+    visibility: visible;
+  }
+}
+
+/* her sentence on the forms, which the groups answer — said in the display
+   face, centred, as the page turns from her words to her pieces */
+.ap-ae__forms {
+  max-width: 33rem;
+  margin: clamp(40px, 7vh, 76px) auto 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.14rem, 1.45vw, 1.38rem);
+  line-height: 1.55;
+  text-align: center;
+  color: var(--ae-title);
+  text-wrap: balance;
+}
+
+/* ---- the groups --------------------------------------------------------------- */
+.ap-ae__group {
+  max-width: var(--ae-col);
+  margin: clamp(60px, 10vh, 124px) auto 0;
+}
+.ap-ae__ghead {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin-bottom: clamp(24px, 4vh, 44px);
+  text-align: center;
+}
+.ap-ae__gtitle {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 22px);
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 2.9vw, 2.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--ae-title);
+}
+/* a scribe's rule each side of a group's name — the ornament's lines,
+   without the bird, so the leaf keeps one voice from title to colophon */
+.ap-ae__gtitle::before,
+.ap-ae__gtitle::after {
+  content: "";
+  flex: none;
+  width: clamp(28px, 4vw, 56px);
+  height: 1px;
+  background: var(--ae-rule);
+}
+.ap-ae__gprice {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+}
+.ap-ae__gprice strong {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+/* a group's pieces: four across, a short last row centred under them */
+.ap-ae__rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(30px, 4.4vh, 48px) var(--ae-gap);
+}
+.ap-ae__rail > li {
+  flex: 0 0 calc((100% - 3 * var(--ae-gap)) / 4);
+  min-width: 0;
+}
+.ap-ae__flip {
+  --flip-r: 3px;
+}
+
+/* the scarves and the runners stand beside her photograph of them in use */
+.ap-ae__gbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ae-gap);
+  align-items: start;
+}
+[data-kind="sc"] .ap-ae__gbody {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+[data-kind="ru"] .ap-ae__gbody {
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 2fr);
+}
+[data-kind="sc"] .ap-ae__rail > li,
+[data-kind="ru"] .ap-ae__rail > li {
+  flex-basis: calc((100% - var(--ae-gap)) / 2);
+}
+.ap-ae__scene {
+  margin: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--ae-shadow);
+}
+.ap-ae__scene img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* a scarf's print (opens large) and a runner's top (opens the whole strip) */
+.ap-ae__open {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: zoom-in;
+  box-shadow: var(--ae-shadow);
+  -webkit-tap-highlight-color: transparent;
+}
+.ap-ae__open:focus-visible {
+  border-radius: 4px;
+}
+.ap-ae__open img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ap-ae__open--ru {
+  cursor: pointer;
+}
+/* the runner card's own words: what a press does */
+.ap-ae__whole {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cream) 92%, transparent);
+  color: #232834;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgb(20 24 36 / 0.22);
+}
+.ap-ae__whole svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ap-ae__open img {
+    transition: transform 0.7s var(--ease);
+  }
+  .ap-ae__open:hover img {
+    transform: scale(1.035);
+  }
+}
+
+/* a piece's number and its button */
+.ap-ae__buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  margin-top: 12px;
+}
+.ap-ae__no {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ap-ae__add.ap-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+.ap-ae__added {
+  flex: 1 0 100%;
+  margin: 0;
+  min-height: 1.3em;
+  font-size: 13px;
+  text-align: right;
+  color: var(--marigold-ink);
+}
+
+/* ---- her closing line, a colophon ----------------------------------------- */
+.ap-ae__orn--end {
+  margin-top: clamp(72px, 12vh, 140px);
+  margin-bottom: clamp(20px, 3vh, 32px);
+}
+.ap-ae__close {
+  max-width: 30rem;
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.3vw, 2.1rem);
+  line-height: 1.32;
+  text-align: center;
+  color: var(--ae-title);
+  text-wrap: balance;
+}
+
+/* ---- how ordering works, centred under the leaf ---------------------------- */
+.ap-ae__foot {
+  max-width: calc(36rem + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: clamp(34px, 6vh, 70px) var(--gutter) clamp(48px, 8vh, 96px);
+}
+.ap-ae__foot .ap-how {
+  margin-top: 0;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+/* ---- a runner, whole (the totes' window, narrower) ------------------------
+   The strip is a metre of cloth at 1:5.5, so the box scrolls down it: its
+   head sticks to the top at every width (the totes' phone rule) and its buy
+   row to the foot (theirs at every width already). */
+.ap-aeq__box {
+  width: min(520px, 100%);
+  padding-top: 0;
+}
+.ap-aeq .ap-tgq__top {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 calc(-1 * var(--tgq-pad)) -10px;
+  padding: var(--tgq-pad) var(--tgq-pad) 10px;
+  background: var(--paper);
+}
+/* the box is narrow at every width, so its buy row is the totes' phone row:
+   the price, then the button across the box */
+.ap-aeq .ap-tgq__act {
+  flex: 1 1 100%;
+  justify-content: stretch;
+}
+.ap-aeq .ap-tgq__act .ap-btn {
+  flex: 1 1 100%;
+  justify-content: center;
+  order: -1;
+}
+.ap-aeq__strip {
+  width: min(360px, 72vw);
+  margin: 0 auto;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: var(--ae-shadow, 0 10px 26px -12px rgb(35 40 52 / 0.42));
+}
+.ap-aeq__strip img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---- tablets and phones ------------------------------------------------------
+   One column: the title, her subtitle, her cards under them. Every group
+   becomes a RAIL — one line of pieces that swipes sideways and snaps piece
+   by piece, the next one showing at the edge so the rail says it goes on.
+   Full-bleed to the screen's edges, the first piece on the page's gutter.
+   The photographs of the scarves and the runner stand above their rails. */
+@media (max-width: 860px) {
+  .ap-ae__hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(26px, 5vh, 40px);
+  }
+  .ap-ae__title {
+    font-size: clamp(3.1rem, 15.5vw, 5.6rem);
+  }
+  .ap-ae__fig {
+    width: min(84%, 400px);
+  }
+  [data-kind="sc"] .ap-ae__gbody,
+  [data-kind="ru"] .ap-ae__gbody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .ap-ae__rail {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 16px;
+    margin-inline: calc(-1 * var(--gutter));
+    /* 6px over the pieces: the focus ring (2px, 3px off the card) must not
+       meet the rail's clip */
+    padding: 6px var(--gutter) 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+    /* THE RAIL HOLDS ITS CARDS IN. Measured at 390: with the flip cards'
+       3D layers inside, the page itself reported 1713px of width (html
+       scrollWidth) although the rail scrolls them — body's overflow-x
+       hides that from Chromium, not from every phone browser. Paint
+       containment clips nothing the scroller does not clip already, and
+       brings the page back to 390. */
+    contain: paint;
+  }
+  .ap-ae__rail::-webkit-scrollbar {
+    display: none;
+  }
+  .ap-ae__rail > li,
+  [data-kind="sc"] .ap-ae__rail > li,
+  [data-kind="ru"] .ap-ae__rail > li {
+    flex: 0 0 66vw;
+    scroll-snap-align: start;
+  }
+  [data-kind="a6"] .ap-ae__rail > li {
+    flex-basis: 58vw;
+  }
+  [data-kind="sc"] .ap-ae__rail > li {
+    flex-basis: 70vw;
+  }
+  /* two runners: both fit the screen whole (40vw each + the gap is under a
+     390px phone's width less its gutters), so this rail never needs a swipe */
+  [data-kind="ru"] .ap-ae__rail > li {
+    flex-basis: 40vw;
+  }
+}
+@media (max-width: 860px) {
+  /* in a rail the next piece is 16–22px away, so a number on the left and
+     a button on the right put the button nearer the NEXT piece's number
+     than its own (UX law G0, seen at 390): the two stack under the picture */
+  .ap-ae__rail {
+    gap: 22px;
+  }
+  .ap-ae__buy {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .ap-ae__added {
+    text-align: left;
+  }
+  /* her worn photograph is 9:16 — whole, it filled 630px of a phone before
+     the first scarf; a 4:5 window on it keeps her and the knot */
+  .ap-ae__scene--sc img {
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 30%;
+  }
+}
+@media (max-width: 480px) {
+  .ap-ae__folio p:first-child::first-letter {
+    font-size: 3.9em;
+  }
+}

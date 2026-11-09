@@ -7,6 +7,7 @@ import {
   categories,
   delivery,
   home,
+  itemWords,
   ownItemMedia,
   ownItemWord,
   priceTbc,
@@ -32,7 +33,7 @@ import {
 } from "@/lib/cart";
 import { OrderingSteps } from "@/components/CategoryView";
 import Turnstile, { botCheckWords, tickWords, turnstileToken } from "@/components/Turnstile";
-import { lineWords, soldOutNamed, soldOutSay } from "@/lib/lineWords";
+import { lineWords, soldOutNamed, soldOutSay, variantInItem } from "@/lib/lineWords";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
 
@@ -1055,8 +1056,12 @@ export default function CartView() {
                         </>
                       )}
                     </h2>
-                    {l.art && <p>{ownItemWord[l.cat] ?? "Illustration"} no. {l.art}</p>}
-                    {l.variant && <p>{l.variant}</p>}
+                    {/* «Bookmark no. 05», «Illustration no. 12» — or an
+                        Armenia Eternal piece by its kind, «Square postcard
+                        no. 03», whose variant is that kind and is not said
+                        twice (lib/lineWords.ts variantInItem) */}
+                    {l.art && <p>{itemWords(l.cat, l.art)}</p>}
+                    {l.variant && !variantInItem(l) && <p>{l.variant}</p>}
                     <p className="ap-cart__unit">{u === null ? priceTbc : `${dram(u)} each`}</p>
                   </div>
                   <div className="ap-cart__qty">

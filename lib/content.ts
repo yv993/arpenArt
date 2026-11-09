@@ -161,7 +161,61 @@ export const ownItemWord: Record<string, string> = {
   // is the poster number, 01–04, her flat files' own (Untitled-3-01…04);
   // scripts/posters.mjs keeps each file name as `her`
   posters: "Poster",
+  // THE ARMENIA ETERNAL COLLECTION since 2026-11-04 (change 5.pdf p9 + p10)
+  // — the cart's `art` is the piece id (sq01 … ru02, scripts/eternal.mjs),
+  // which names its kind; the words for one piece come from `eternalKinds`
+  // through `itemWords` («Square postcard no. 03»), so this word itself is
+  // never shown — it is what makes /api/order check the id against the
+  // `eternal` roll.
+  "armenia-eternal": "Piece",
 };
+
+/** THE ARMENIA ETERNAL COLLECTION'S SLUG — the one place it is spelled for
+ *  code that treats the collection's pieces differently from other lines. */
+export const ETERNAL = "armenia-eternal";
+
+/** THE KINDS OF ARMENIA ETERNAL PIECE (change 5.pdf p9: her four folders —
+ *  postcards 1, postcards 2, Runner, Scarves), keyed by the piece id's
+ *  prefix. `one` is the cart's word for one piece and the line's `variant`
+ *  (categories → armenia-eternal → variants.options is read from here); `many`
+ *  heads the piece's group on the page. Interface words in the site's voice:
+ *  «square» and «A6» say which of her two postcard folders (92 × 92 mm, A6 —
+ *  her file names), and «Table runner» names what her Runner folder holds
+ *  (her table photograph, 5.jpg), which her text does not mention. */
+export const eternalKinds = {
+  sq: { one: "Square postcard", many: "Square postcards" },
+  a6: { one: "A6 postcard", many: "A6 postcards" },
+  sc: { one: "Scarf", many: "Scarves" },
+  ru: { one: "Table runner", many: "Table runner" },
+} as const;
+export type EternalKind = keyof typeof eternalKinds;
+
+/** an Armenia Eternal piece id read back: «sq03» → the square postcard
+ *  no. 03. Null for anything that is not an id of that shape. */
+export function eternalPiece(id: string): { key: EternalKind; kind: string; no: string } | null {
+  const m = /^(sq|a6|sc|ru)(\d{2})$/.exec(id);
+  if (!m) return null;
+  const key = m[1] as EternalKind;
+  return { key, kind: eternalKinds[key].one, no: m[2] };
+}
+
+/** THE RULE FOR AN ARMENIA ETERNAL CART LINE, the same in the browser
+ *  (lib/cart.ts parse) and in /api/order: it carries its kind, and a piece id
+ *  it names is of that kind. Anything else names no product. */
+export const eternalLineOk = (art: string | null | undefined, variant: string | null | undefined) =>
+  !!variant && (!art || eternalPiece(art)?.kind === variant);
+
+/** THE WORDS FOR ONE ITEM OF A LINE — «Bookmark no. 05», «Illustration
+ *  no. 12» — or, for an Armenia Eternal piece, its kind: «Square postcard
+ *  no. 03». The cart, its labels and the order mail all name an item this
+ *  way. */
+export function itemWords(cat: string, art: string): string {
+  if (cat === ETERNAL) {
+    const p = eternalPiece(art);
+    if (p) return `${p.kind} no. ${p.no}`;
+  }
+  return `${ownItemWord[cat] ?? "Illustration"} no. ${art}`;
+}
 
 /** WHERE AN OWN-ITEM LINE'S PICTURES LIVE, when that is not the category's
  *  `media` roll. The cart finds a fixed item's thumbnail by its id in
@@ -289,6 +343,39 @@ export const categories: Category[] = [
     // re-confirmed since; Arpine is asked to confirm it.
     from: 500,
     status: "open",
+  },
+  {
+    // ARMENIA ETERNAL (client, change 5.pdf p9 + p10, 2026-11-04: «շատ
+    // կարևոր ա, որ էս բաժինը սիրուն սարքենք» — it is very important that
+    // this section is beautiful). At her p3 slot, between Bookmarks and
+    // Posters, where she wrote «Armenia Eternal ?» with «I don't know if it
+    // should be here too, maybe it is completely separate». So BOTH, by
+    // default: a COLLECTION with a page of its own at /armenia-eternal
+    // (`href`), reached from this tile in the strip, the nav's menu and the
+    // home ring — every link through hrefOf. /shop/armenia-eternal answers a
+    // 308 to it (next.config.mjs RETIRED).
+    // One own-item cart line for every piece (ownItemWord below): `art` is
+    // the piece id (sq01–sq07, a601–a604, sc01–sc04, ru01–ru02, written by
+    // scripts/eternal.mjs) and `variant` its kind, set by the page — never
+    // chosen by the buyer. /api/order checks the two agree.
+    slug: "armenia-eternal",
+    name: "Armenia Eternal",
+    // HER SUBTITLE, verbatim (p10, the line under «ARMENIA ETERNAL»). Also
+    // the page's meta description.
+    blurb: "Inspired by the timeless beauty of Armenian manuscripts.",
+    media: "eternal",
+    // NO PRICE YET, for any kind: «Price confirmed by Arpine», out of every
+    // total. When she prices a kind, put her number in its `prices` entry.
+    from: null,
+    status: "open",
+    href: "/armenia-eternal",
+    // the four kinds (`eternalKinds` above), each priced on its own — an
+    // option's entry here is its price in dram, null = Arpine confirms it
+    variants: {
+      label: "Piece",
+      options: Object.values(eternalKinds).map((k) => k.one),
+      prices: { "Square postcard": null, "A6 postcard": null, Scarf: null, "Table runner": null },
+    },
   },
   {
     // POSTERS (client, change 5.pdf p5, 2026-11-04: «New Page / posters»), at
@@ -538,6 +625,10 @@ export const covers: Record<string, { src: string; thumb: string; w: number; h: 
   // her wall photograph of poster no. 04, «Yerevan» (change 5.pdf p5, her
   // mockup/1.jpg), read off the written files by scripts/posters.mjs
   posters: { src: "/products/tile-posters.webp", thumb: "/products/tile-posters-sm.webp", w: 1400, h: 934, avg: "#8f979a" },
+  // her table photograph of the navy runner (change 5.pdf p9, her Runner
+  // folder's 5.jpg) — the same two files the page's runner group shows, so
+  // the tile costs no picture of its own; read off them by scripts/eternal.mjs
+  "armenia-eternal": { src: "/products/ae-table.webp", thumb: "/products/ae-table-sm.webp", w: 1312, h: 1199, avg: "#8b776d" },
 };
 
 /** THE RING'S CUT-OUTS (change.pdf p5: «replace the t-shirt, the scarf, the
@@ -561,6 +652,10 @@ export const ring: Record<string, { tex: string; w: number; h: number }> = {
   // the ring's 1.42, so nothing needs cutting and nothing is stretched
   // (scripts/posters.mjs checks it)
   posters: { tex: "/products/ring-posters.webp", w: 495, h: 700 },
+  // HER A6 CARD NO. 01, whole — the red bird under her own «Armenia
+  // Eternal» lettering; h/w 1.408, inside the ring's 1.42 (scripts/eternal.mjs
+  // checks it)
+  "armenia-eternal": { tex: "/products/ring-armenia-eternal.webp", w: 497, h: 700 },
 };
 
 // ---------------------------------------------------------------------------
@@ -1458,6 +1553,46 @@ export const posterGallery = {
   cue: "Click a poster to see it on the wall",
   cueTouch: "Tap a poster to see it on the wall",
   open: { each: "each", add: "Add to cart", added: "Added to your cart.", close: "Close" },
+};
+
+// ARMENIA ETERNAL — /armenia-eternal (client, change 5.pdf p9 + p10,
+// 2026-11-04). `title`, `sub`, `body`, `forms` and `close` are HER WORDS,
+// verbatim from p10 («Բաժնի տեքստը» — the section's text), joined where her
+// box wraps; «genera-tions» is her line break, written «generations». Her
+// block opens with «ARMENIA ETERNAL», the same words as the title above it,
+// so the page prints them once, as the h1. Her sentence naming «a curated
+// sticker set» stays as she wrote it although no sticker files came with
+// it: the page shows no sticker group until she sends them.
+// Everything else is interface wording in the site's voice, not hers: `item`
+// names a piece in its group («No. 03» under «Square postcards»; the cart's
+// fuller words are `itemWords`), `turn` finishes a card's button name
+// («Square postcard no. 03: show the back» — the bookmarks' word), `whole`
+// opens a runner's full length, `larger` a scarf's print, and the `alt`s
+// say what her photographs show. No price, size, paper or envelope wording
+// beyond her own: she has given none.
+export const armeniaEternal = {
+  title: "Armenia Eternal",
+  sub: "Inspired by the timeless beauty of Armenian manuscripts.",
+  body: [
+    "Drawing inspiration from the rich ornamental world of Armenian illuminated manuscripts, Armenia Eternal brings the beauty of ancient visual traditions into a contemporary collection of illustrations.",
+    "Flourishing trees, graceful birds and intricate decorative motifs come together in a celebration of Armenian heritage, imagination and artistic expression. Echoing the colors and spirit of medieval Armenian book art, each illustration offers a fresh interpretation of a visual tradition that continues to inspire across generations.",
+  ],
+  forms:
+    "The collection is available in several forms: illustrated postcards, each paired with its own kraft envelope, wearable scarves, and a curated sticker set — little pieces of Armenian art to keep, share and carry with you.",
+  close: "An ancient inspiration, retold through contemporary illustration.",
+  item: (no: string) => `No. ${no}`,
+  turn: "show the back",
+  whole: "See the whole runner",
+  larger: "see it larger",
+  add: "Add to cart",
+  added: "Added to your cart.",
+  closeWindow: "Close",
+  each: "each",
+  alt: {
+    worn: "A scarf from Armenia Eternal, worn knotted at the neck",
+    table: "The navy table runner from Armenia Eternal on a laid dining table",
+    og: "Three Armenia Eternal postcards by Arpine Baroyan on her navy table runner",
+  },
 };
 
 export const stickers3d = {

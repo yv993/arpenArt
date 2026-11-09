@@ -2,7 +2,8 @@
 
 E-commerce site for [Arpine Baroyan](https://www.akneye.com/artists/arpine-baroyan), an Armenian
 illustrator. Her paintings are sold as prints on physical objects — postcards, scarves, sticker
-sheets, 3D stickers, keychains, magnets, tote bags, bookmarks and posters, with T-shirts to come — with ordering, a
+sheets, 3D stickers, keychains, magnets, tote bags, bookmarks and posters, with T-shirts to come — and her
+Armenia Eternal collection on a page of its own (/armenia-eternal) — with ordering, a
 cart, and a find-in-store page for the Yerevan shops that carry her work. The lines are the
 `categories` in `lib/content.ts`; every link to one goes through `hrefOf` there.
 

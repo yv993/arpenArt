@@ -9,7 +9,7 @@
 // PLACEHOLDERS until Arpine supplies real ones; the cart never invents a
 // total of its own, it only ever multiplies what is written there.
 
-import { categories, isSoldOut, priceTbc, withheldArt } from "./content";
+import { categories, ETERNAL, eternalLineOk, isSoldOut, priceTbc, withheldArt } from "./content";
 
 export type Line = {
   /** category slug, e.g. "postcards" */
@@ -61,6 +61,10 @@ function parse(raw: string | null): Line[] {
         // a stored variant that is not a string (old or tampered data) would
         // poison the merge key, so such lines are dropped, not coerced
         ((l as Line).variant === undefined || typeof (l as Line).variant === "string") &&
+        // an Armenia Eternal line names its piece's kind, and the piece is
+        // of that kind (content.ts eternalLineOk — /api/order drops any
+        // other, so the cart does not keep one the order would leave out)
+        ((l as Line).cat !== ETERNAL || eternalLineOk((l as Line).art, (l as Line).variant)) &&
         // an illustration the client has since withdrawn from this line
         // (`withheldArt` — the two postcards of change 3.pdf p2, 2026-10-01)
         // may still sit in a cart saved before she did; it is dropped here,

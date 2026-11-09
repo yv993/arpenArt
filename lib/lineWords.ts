@@ -1,10 +1,19 @@
-import { categories, ownItemWord } from "./content";
+import { categories, ETERNAL, eternalPiece, itemWords, ownItemWord } from "./content";
+
+/** true when the item's own words already say the line's variant — an
+ *  Armenia Eternal piece is named by its kind («Square postcard no. 03»), and
+ *  its variant IS that kind, so it is not said a second time */
+export const variantInItem = (l: { cat: string; art?: string | null; variant?: string | null }) =>
+  l.cat === ETERNAL && !!l.art && !!l.variant && eternalPiece(l.art)?.kind === l.variant;
 
 /** A cart line in words, as the buyer reads it: "Keychain no. 04",
  *  "Postcards — Illustration no. 05 (Full series set)", "Stickers (Sheet 03)".
  *  A fixed-item line names itself (the category would only repeat the noun);
  *  a choose-an-illustration line needs the category, because "Illustration
- *  no. 05" alone does not say it is a tote bag.
+ *  no. 05" alone does not say it is a tote bag. AN ARMENIA ETERNAL PIECE
+ *  (change 5, 2026-11) needs the collection too, for the same reason —
+ *  "Square postcard no. 03" alone would read as one of the Postcards line's:
+ *  "Armenia Eternal — Square postcard no. 03".
  *
  *  ONE RULE for the cart page and for /api/order's sold-out refusal
  *  (2026-11-02): the review found the two naming the same piece differently
@@ -15,8 +24,14 @@ import { categories, ownItemWord } from "./content";
 export function lineWords(l: { cat: string; art?: string | null; variant?: string | null }): string {
   const own = ownItemWord[l.cat];
   const name = categories.find((c) => c.slug === l.cat)?.name ?? l.cat;
-  const what = l.art ? (own ? `${own} no. ${l.art}` : `${name} — Illustration no. ${l.art}`) : name;
-  return `${what}${l.variant ? ` (${l.variant})` : ""}`;
+  const what = l.art
+    ? l.cat === ETERNAL
+      ? `${name} — ${itemWords(l.cat, l.art)}`
+      : own
+        ? `${own} no. ${l.art}`
+        : `${name} — Illustration no. ${l.art}`
+    : name;
+  return `${what}${l.variant && !variantInItem(l) ? ` (${l.variant})` : ""}`;
 }
 
 /** THE sold-out sentence (readiness #25), word for word the same in the

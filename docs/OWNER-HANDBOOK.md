@@ -17,6 +17,7 @@ Prices are in Armenian dram (֏).
 | --- | --- | --- |
 | **A product line's price** | the line's name and the new price in ֏ | `categories[]` → `from`. `null` = on sale, price not on the site yet: the page and the cart say «Price confirmed by Arpine» and leave it out of every total (posters, since 2026-11-04). |
 | **A price for one option** (for example a postcard set, a garment size) | the line, the option, and its price | `categories[]` → `variants.prices`: option → price |
+| **An Armenia Eternal price** (a square postcard, an A6 postcard, a scarf, the table runner) | the kind and its price | `categories[]` → `armenia-eternal` → `variants.prices`: put her number in place of that kind's `null`. The page's group, the cart and the order mail follow. |
 | **Lines not on sale yet** (brooches, bracelets, notebooks, pendants) | the line and its price, then photos when it goes on sale | `priceList`. When a line opens, it moves into `categories` (bookmarks did, 2026-11-04). |
 | **Delivery** (the 4 choices in the cart) | for each choice: its name, price, how long it takes, which carrier | `delivery.options` (`label`, `price`, `eta`, `address`) |
 | **"How ordering works"** (choose / confirm / pay) | the new wording, for example how buyers pay | `ordering.steps` |
@@ -168,7 +169,11 @@ export const soldOut: Record<string, readonly string[]> = {
     3D stickers, scarves (the design), tote bags (the bag), bookmarks and posters that is the
     item's own number (a bookmark's number is ours, 01–27 in her file order: no. 01 is her file
     -02 — `scripts/bookmarks.mjs` prints the whole table, and products.json keeps hers as `her`;
-    a poster's is her flat file's, 01–04, `Untitled-3-01` … `-04`). For
+    a poster's is her flat file's, 01–04, `Untitled-3-01` … `-04`). An Armenia Eternal piece
+    (key `"armenia-eternal"`) is named by its id, which says its kind: `"sq01"`–`"sq07"` square
+    postcards, `"a601"`–`"a604"` A6 postcards, `"sc01"`–`"sc04"` scarves, `"ru01"` (navy) and
+    `"ru02"` (white) table runners — `scripts/eternal.mjs` prints which of her files each one is.
+    For
     the lines printed with her pictures (postcards, for example) it is the picture's number;
   - **an option label**, exactly as the picker shows it: `"Sheet 03"`, `"Bandana"`, `"M"`.
 - An option label counts for every piece of that line: `scarves: ["Bandana"]` marks every

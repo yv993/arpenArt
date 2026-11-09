@@ -44,6 +44,9 @@ const THUMB_W: Record<string, number> = {
   // change 5.pdf p5 (2026-11-04), from scripts/posters.mjs: her wall
   // photograph of poster no. 04, 700px like the bookmarks' — no middle rung
   "/products/tile-posters-sm.webp": 700,
+  // change 5.pdf p9 (2026-11-04), from scripts/eternal.mjs: her table
+  // photograph of the navy runner, 700px like the bookmarks' — no middle rung
+  "/products/ae-table-sm.webp": 700,
   "/products/stickers-01-sm.webp": 553,
   "/products/sticker3d-01-sm.webp": 337,
   "/products/totes-01-sm.webp": 466,

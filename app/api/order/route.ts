@@ -4,8 +4,11 @@ import {
   brand,
   categories,
   delivery,
+  ETERNAL,
+  eternalLineOk,
   hrefOf,
   isSoldOut,
+  itemWords,
   ownItemMedia,
   ownItemWord,
   priceTbcMid,
@@ -131,11 +134,17 @@ type OrderLine = {
  *  Arpine to a different picture than the one the buyer chose. One rendering
  *  for the mail and the buyer's copy, so both say the same thing about the
  *  same line. (The sold-out refusal speaks the CART's words instead —
- *  lib/lineWords.ts — because the buyer reads it next to the cart.) */
+ *  lib/lineWords.ts — because the buyer reads it next to the cart.)
+ *  AN ARMENIA ETERNAL PIECE (change 5, 2026-11) is named by its kind, which
+ *  is also its variant — "Armenia Eternal (Square postcard no. 03)", the
+ *  kind's own capitals kept («A6» would read «a6»). Without a number (an id
+ *  the roll no longer holds) it is "Armenia Eternal [Scarf]". */
 const labelOf = (l: OrderLine) =>
-  `${l.name}${l.variant ? ` [${l.variant}]` : ""}${
-    l.art ? ` (${(ownItemWord[l.slug] ?? "illustration").toLowerCase()} no. ${l.art})` : ""
-  }`;
+  l.slug === ETERNAL && l.art
+    ? `${l.name} (${itemWords(l.slug, l.art)})`
+    : `${l.name}${l.variant ? ` [${l.variant}]` : ""}${
+        l.art ? ` (${(ownItemWord[l.slug] ?? "illustration").toLowerCase()} no. ${l.art})` : ""
+      }`;
 
 /** THE SOLD-OUT REFUSAL (readiness #25, 2026-11-01) — word for word the
  *  sentence the cart shows before sending, each line named the way the cart
@@ -220,6 +229,15 @@ export async function POST(req: Request) {
       // the line rather than guessing which product was meant
       const variant = clean(l.variant, 60) || null;
       if (variant && !variantsOf(cat).includes(variant)) continue;
+      // AN ARMENIA ETERNAL PIECE AND ITS KIND MUST AGREE (change 5,
+      // 2026-11). The page sets both: `art` the piece id (sq03), `variant`
+      // its kind (Square postcard), and the kind alone prices the line. A
+      // line with no kind, or whose id names another kind, would let a
+      // runner be ordered at a postcard's price once the kinds are priced —
+      // it names no product, so it is dropped, like an unknown variant. An
+      // id the roll does not hold was already un-named above; its kind
+      // still says what to make.
+      if (cat.slug === ETERNAL && !eternalLineOk(art, variant)) continue;
       // a sticker SHEET is the whole product — it never carries an illustration
       if (cat.slug === "stickers" && variant) art = null;
       const key = `${cat.slug}|${art ?? ""}|${variant ?? ""}`;

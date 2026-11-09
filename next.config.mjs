@@ -129,11 +129,16 @@ if (site && prodHost && prodHost !== site.hostname && !prodHost.endsWith(".verce
 //    noindex, so nothing is lost in search; 307, TEMPORARY, because a 308 is
 //    cached hard by browsers and would keep sending returning visitors away
 //    if a line ever came back at its old address. They land in the shop.
+//  - /shop/armenia-eternal: the collection's page is /armenia-eternal
+//    (change 5.pdf p9 + p10; content.ts `href`), so the address a line would
+//    have answers there. 308, PERMANENT: the collection's own address is the
+//    one meant to last, and /shop/[slug] builds no page under this one.
 // One entry per address; `permanent: true` is a 308, `false` a 307.
 const RETIRED = [
   { source: "/shop/cups", destination: "/shop", permanent: false },
   { source: "/shop/plates", destination: "/shop", permanent: false },
   { source: "/shop/puzzles", destination: "/shop", permanent: false },
+  { source: "/shop/armenia-eternal", destination: "/armenia-eternal", permanent: true },
 ];
 
 /** @type {import('next').NextConfig} */

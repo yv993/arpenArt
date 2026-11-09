@@ -263,6 +263,7 @@ const RETIRED = [
   ["/shop/cups", 307, "/shop"],
   ["/shop/plates", 307, "/shop"],
   ["/shop/puzzles", 307, "/shop"],
+  ["/shop/armenia-eternal", 308, "/armenia-eternal"],
 ];
 for (const [path, status, to] of RETIRED) get(path, status, lands(to), "retired");
 for (const p of ["/cart", "/about", "/stories", "/find-in-store", "/contact", "/account", "/privacy", "/terms"]) {
