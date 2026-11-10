@@ -132,8 +132,9 @@ type OrderLine = {
  *  (illustration no. 05)". The word next to the id must match the id's OWN
  *  numbering (ownItemWord): "(illustration 12)" on a magnet order would send
  *  Arpine to a different picture than the one the buyer chose. One rendering
- *  for the mail and the buyer's copy, so both say the same thing about the
- *  same line. (The sold-out refusal speaks the CART's words instead —
+ *  for the mail, the buyer's copy and the webhook (each payload line's
+ *  `label`), so all three say the same thing about the same line. (The
+ *  sold-out refusal speaks the CART's words instead —
  *  lib/lineWords.ts — because the buyer reads it next to the cart.)
  *  AN ARMENIA ETERNAL PIECE (change 5, 2026-11) is named by its kind, which
  *  is also its variant — "Armenia Eternal (Square postcard no. 03)", the
@@ -339,7 +340,12 @@ export async function POST(req: Request) {
         phone,
         note,
         consent: body.consent === true,
-        lines,
+        // each line carries its words from the mail (labelOf), so a receiver
+        // names it exactly as the mail does instead of rebuilding a label
+        // from its own copy of the item words, which falls behind whenever
+        // they change (n8n's intake said «illustration no. 05» for bookmark
+        // no. 05 after change 5, review 2026-11-09)
+        lines: lines.map((l) => ({ ...l, label: labelOf(l) })),
         goods,
         unpriced: unpriced.length,
         delivery: { id: ship!.id, label: ship!.label, price: post },
