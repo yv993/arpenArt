@@ -176,10 +176,16 @@
   margin-top: 1.15em;
 }
 /* the initial, the way an illuminated page opens: her bird's red, in the
-   display face, three lines tall */
+   display face, two lines tall. The float's box is its top margin plus the
+   letter's line box, 0.88 of the letter = 3.74em of the column, a hair more
+   than two of its 1.8em lines, so it pushed line 3 in beside empty paper.
+   The negative bottom margin ends the float inside line 2 (0.78 of the
+   letter = 3.3em; 3.04em at the phone size below) without moving the letter:
+   line 3 comes back to the margin. Firefox sizes the float to the glyph
+   itself, and fits two lines either way. */
 .ap-ae__folio p:first-child::first-letter {
   float: left;
-  margin: 0.08em 0.1em 0 -0.03em;
+  margin: 0.08em 0.1em -0.1em -0.03em;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 4.25em;
@@ -188,8 +194,8 @@
 }
 
 /* THE INITIAL WAITS FOR ITS FACE. The float's width is the "D" in the face
-   it is drawn in, so when Fraunces replaces the fallback the first three
-   lines re-wrap — measured on the production build at 1440x900 (cold), where
+   it is drawn in, so when Fraunces replaces the fallback the lines beside
+   it re-wrap — measured on the production build at 1440x900 (cold), where
    the column's first lines show at the fold: 0.001 of layout shift, the only
    shift on this page that is not the site-wide nav's. So with scripts on the
    column stays unseen until the fonts are in (EternalView sets data-set on

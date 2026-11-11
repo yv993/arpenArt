@@ -1,7 +1,7 @@
 /* ==========================================================================
    FLIP CARD — a printed piece that turns over (components/FlipCard.tsx).
-   Shared by the bookmarks (change 5.pdf p4) and, next, the double-sided
-   Armenia Eternal postcards.
+   Shared by the bookmarks (change 5.pdf p4) and the double-sided Armenia
+   Eternal postcards (components/EternalView.tsx).
 
    WHO MOVES. The <button> holds the perspective and the focus ring and is
    never transformed, so the ring stays square to the page while the card

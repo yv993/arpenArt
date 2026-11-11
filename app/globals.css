@@ -2119,6 +2119,11 @@ html[data-footfx] .ap-about__fig:not([data-curtain]) .ap-about__pic {
   .ap-btn:not([disabled]):active {
     background: var(--ink-indigo) linear-gradient(135deg, var(--indigo) 0%, var(--ink-indigo) 60%, #131c33 125%);
   }
+  /* the ghost's ink would sink into that indigo in the light theme; pressed,
+     it reads like the filled button */
+  .ap-btn.is-ghost:not([disabled]):active {
+    color: var(--cream);
+  }
   .ap-gal__close:active,
   .ap-cloud__close:active,
   .ap-cloud__nav button:active,

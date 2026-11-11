@@ -455,7 +455,13 @@ export default function StoriesView() {
                     // keyboard focus only: a click focuses the row too, and
                     // then the page is already leaving for the story
                     onFocus={(e) => {
-                      if (!e.currentTarget.matches(":focus-visible")) return;
+                      // an engine that does not know :focus-visible throws on
+                      // the selector; there every focus counts as the keyboard's
+                      let keyboard = true;
+                      try {
+                        keyboard = e.currentTarget.matches(":focus-visible");
+                      } catch {}
+                      if (!keyboard) return;
                       focusAt.current = i;
                       peek.current?.point(i);
                     }}
