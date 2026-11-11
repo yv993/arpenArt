@@ -33,10 +33,16 @@ import * as THREE from "three";
 //    none; `raycast` is a no-op as well, so a press on a word reaches the
 //    card behind it or the "missed" handler, exactly as before. Nothing is in
 //    the DOM, so nothing reaches the accessibility tree.
-//  - The shell turns at TURN (0.35) of the globe: the words drift slowly
-//    against the cards instead of riding with them. Measured over the globe's
-//    first full turn: 0.35 keeps 7/7/6/5 words in front at yaw 0/90/180/270
-//    (riding rigidly: 7/5/0/6).
+//  - The shell turns at TURN (0.35) of the globe's turn, so the words drift
+//    slowly against the cards instead of riding with them — but on a BOUNDED
+//    path (shellYaw below): it goes no further than ±63° and turns back, so
+//    no throw, drag, key run or idle drift can carry all seven round the back.
+//    imgss/change5-2026-11-04/review/fix2-p5/drift-sim.cjs, over five globe
+//    turns each way, idle tilt included: at least 6 of the 7 have opacity
+//    > 0.5 at ANY globe yaw (5 at the steepest pitch the visitor can drag
+//    to), mean 6.3. Riding 0.35 × the globe's raw yaw total, as before, it
+//    was 0 at worst and ≤ 1 for 44% of those turns — one phone flick (yaw
+//    0.8 → 8.8) left none for ~3 minutes.
 //
 // Imported ONLY by ParticleSphere, which lives in the GlobeCanvas chunk, so
 // three.js stays out of the home route's own chunk.
@@ -88,6 +94,22 @@ const SMALL = 0.756;
 const PHONE = 1.3;
 /** the words' turn as a share of the globe's */
 const TURN = 0.35;
+/** THE SHELL'S YAW FOR A GLOBE YAW (review fix L4-globe-words#1, 2026-11-11).
+ *  The globe's yaw is a running total — every throw, drag, arrow key and
+ *  the idle drift add to it, and nothing wraps it — and
+ *  her seven words all sit on one side of the shell (lon −75°…+69°, where her
+ *  picture puts them). TURN × that total therefore marched them round the
+ *  back and left them there. Instead the shell follows a TRIANGLE WAVE of the
+ *  globe's yaw: slope ±TURN (the drift is always 0.35 of the globe's speed),
+ *  peaks at ±TURN·π (±63°), one period every two globe turns. On −π…π it IS
+ *  TURN × yaw, so first sight and the first half turn either way are exactly
+ *  as before; past that the drift turns back at the same rate instead of
+ *  carrying on. Continuous — no jump at any yaw — and it never accumulates. A
+ *  bounded path has to turn back somewhere: the words cannot keep drifting
+ *  one way forever without going round the back. (A 2π-periodic triangle
+ *  with this slope would have to turn back at ±31.5°, halving the drift from
+ *  a quarter turn on.) */
+const shellYaw = (yaw: number) => 2 * TURN * Math.asin(Math.sin(yaw / 2));
 /** halo room around the lettering, in texture pixels */
 const PAD = 26;
 /** --ink-indigo's day value: the gallery band's own navy (the band is dark
@@ -185,7 +207,9 @@ export function GlobeWords({
     const turning = globe.current;
     if (!g || !turning) return;
     const step = Math.min(delta, 1 / 20) * 60;
-    g.rotation.set(turning.rotation.x * TURN, turning.rotation.y * TURN, 0);
+    // pitch is already clamped by ParticleSphere (±1.05 plus the idle tilt),
+    // so a straight share of it stays bounded; the yaw is not (shellYaw)
+    g.rotation.set(turning.rotation.x * TURN, shellYaw(turning.rotation.y), 0);
     const want = chosenRef.current === null && !forceHide.current ? 1 : 0;
     show.current += (want - show.current) * (1 - Math.pow(0.88, step));
     if (forceHide.current) show.current = 0;
@@ -270,7 +294,11 @@ export function GlobeWords({
       });
       return out.sort((a, b) => b.z - a.z);
     };
-    const pose = () => ({ yaw: +(globe.current?.rotation.y ?? 0).toFixed(4), pitch: +(globe.current?.rotation.x ?? 0).toFixed(4) });
+    const pose = () => ({
+      yaw: +(globe.current?.rotation.y ?? 0).toFixed(4),
+      pitch: +(globe.current?.rotation.x ?? 0).toFixed(4),
+      shellYaw: +(shell.current?.rotation.y ?? 0).toFixed(4),
+    });
     const probe = { read, cards, pose, hide: (v: boolean) => (forceHide.current = v) };
     (window as unknown as { __apGlobeWords?: typeof probe }).__apGlobeWords = probe;
     return () => {
