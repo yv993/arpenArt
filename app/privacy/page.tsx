@@ -3,6 +3,8 @@ import Chrome from "@/components/Chrome";
 import { brand, stockistPage } from "@/lib/content";
 import TextFX from "@/components/TextFX";
 import { pageMeta } from "@/lib/seo";
+// the picture the home page's puzzle is played on (Cloud.tsx IN_PLACE)
+import teaser from "@/lib/puzzle-teaser.json";
 
 // indexable and in the sitemap, so it gets its own snippet, canonical and card
 export const metadata: Metadata = pageMeta({
@@ -17,8 +19,9 @@ export const metadata: Metadata = pageMeta({
 // Every sentence below is traced to code — the three forms (CartView,
 // ContactBlock, AuthUI) and their routes under app/api, the session cookie
 // (lib/server/auth.ts), the browser storage (lib/cart.ts, ThemeToggle, the
-// puzzle note in Cloud.tsx), the location button (FindInStore) and the hosts
-// the CSP in next.config.mjs lets the browser reach.
+// puzzle note in Cloud.tsx, the in-place puzzle's game that Puzzle.tsx keeps
+// under Cloud.tsx's PERSIST key), the location button (FindInStore) and the
+// hosts the CSP in next.config.mjs lets the browser reach.
 //
 // OPTIONAL SERVICES ARE NAMED ONLY WHEN THEY ARE SWITCHED ON. The page is
 // prerendered, so these checks run at build — the same moment the routes'
@@ -149,11 +152,19 @@ export default function Page() {
             the tab closes, and the site removes it as soon as you go back to the cart or the order
             is sent.
           </p>
+          {/* the game sentence: Puzzle.tsx save() under Cloud.tsx's PERSIST key
+              (ap-puzzle:<teaser.art>:<set version>) — the in-place puzzle's
+              piece places, tilt, order, clock and done, written once it is
+              dealt, after each move and on the way out; read back on reload;
+              never removed by the site, so it lasts as long as the tab. The
+              other pictures' puzzles keep their game in the open page only. */}
           <p>
             If you switch between light and dark, that choice is kept in your browser too. And if
             the site is updated just as a picture&rsquo;s puzzle is opening, the tab notes which
             puzzle to reopen after it reloads itself; the browser discards that note when the tab
-            closes.
+            closes. The No. {teaser.art} puzzle on the home page keeps your game in the
+            tab&rsquo;s own storage too — where each piece lies and the time so far — so a reload
+            does not lose it; the browser discards it when the tab closes.
           </p>
           <p>
             On <a href="/find-in-store">Find in store</a>, &ldquo;{stockistPage.near}&rdquo; asks
