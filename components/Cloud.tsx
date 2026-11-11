@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { isSoldOut, priceTbc, withheldArt } from "@/lib/content";
@@ -262,6 +263,8 @@ export default function Cloud({
   const [inFocus, setInFocus] = useState<boolean | "exit">(false);
   /** the moved layer's «Play the puzzle», shown over the series */
   const backBtn = useRef<HTMLButtonElement | null>(null);
+  /** the still's «Play the puzzle», standing in for a failed in-place game */
+  const standBtn = useRef<HTMLButtonElement | null>(null);
   const wasPlaying = useRef(false);
   /** when Play was last pressed (performance.now) — see puzzleFailed */
   const playAt = useRef(0);
@@ -461,7 +464,15 @@ export default function Cloud({
       return;
     }
     const want = ok && items.some((a) => a.id === id) ? id : null;
-    if (!want) return;
+    // THE IN-PLACE PUZZLE'S RELOAD IS A REOPEN TOO (review, change 5): the
+    // still's Play wrote no picture (the in-place game comes back by
+    // itself), so this bailed — the page stayed where the browser's own
+    // restoration put it (the hero, at 1440×900) and focus on <body>. Now
+    // the frame is brought to the top and the game, once it is ready, takes
+    // focus, as the panel's reopen does. `:from` says which it was; the
+    // teaser's IN_PLACE would open the window form instead.
+    const inplace = ok && id === "" && from === "inplace";
+    if (!want && !inplace) return;
     if (by === "pointer") seedPointer();
     let touched = false;
     const touch = () => {
@@ -474,14 +485,28 @@ export default function Cloud({
     const go = () =>
       requestAnimationFrame(() => {
         unhook();
-        if (!live || touched || handChose.current || chosenRef.current || playingRef.current) return;
+        if (!live || touched || handChose.current || chosenRef.current || playingRef.current || (inplace && seriesRef.current)) return;
         const frame = root.current?.querySelector<HTMLElement>(".ap-cloud__frame");
-        if (frame) window.scrollTo({ top: window.scrollY + frame.getBoundingClientRect().top, behavior: "instant" });
+        if (frame) {
+          window.scrollTo({ top: window.scrollY + frame.getBoundingClientRect().top, behavior: "instant" });
+          // …AND SCROLLTRIGGER IS TOLD AT ONCE (review, change 5): its
+          // refresh (FootReveal calls one as the page grows while loading)
+          // scrolls to the top, measures, and puts back the position it read
+          // — from a cache that only a scroll event renews, and that event
+          // has not fired yet. Measured after the in-place reload: brought to
+          // 1440, put back to 0 by a refresh 11 ms later. update() renews it.
+          gsap.registerPlugin(ScrollTrigger);
+          ScrollTrigger.update();
+        }
         // the layer is read here too: Cloud hydrates at idle priority, so
         // the mount effect's own read lands after this choice, and a phone
         // built the desktop room first, then the window (review)
         const isPlain = !window.matchMedia(DESKTOP).matches;
         setPlain(isPlain);
+        if (inplace) {
+          if (!isPlain) setInFocus(true);
+          return;
+        }
         if (from === "teaser") {
           // No. 05 from the still: its window again (on the moved layer the
           // section is that puzzle already, in place)
@@ -1185,6 +1210,26 @@ export default function Cloud({
     setChosen((cur) => (cur === id ? null : id));
   }, []);
 
+  // FOCUS NEVER FALLS TO THE PAGE AS THE PILL GOES OR COMES BACK (review,
+  // change 5): opening a card unmounts the series' «Play the puzzle» pill
+  // (below), and putting the card back unmounts its panel. When focus was on
+  // the one that went — the pill, in a browser that does not focus a pressed
+  // button; the panel's ✕ or any of its buttons — it lands on the card that
+  // was opened: the one just chosen, or the one just put back. Focus that is
+  // anywhere else is left where it is. Not after a stale-chunk reopen, whose
+  // puzzle takes focus itself.
+  const lastChosen = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = lastChosen.current;
+    lastChosen.current = chosen;
+    if (!window.matchMedia(DESKTOP).matches || !seriesRef.current || playingRef.current || reopened.current) return;
+    const a = document.activeElement;
+    if (a && a !== document.body) return;
+    const id = chosen ?? prev;
+    const card = id ? root.current?.querySelector<HTMLElement>(`.ap-cloud__card[data-id="${id}"]`) : null;
+    card?.focus(scriptFocus());
+  }, [chosen]);
+
   // ---- the scenes (change 5.pdf p1) ----------------------------------------
   /** the in-place bar's «See the series»: the cloud comes back as it was,
    *  and focus waits on the way back to the puzzle (the same spot) */
@@ -1214,6 +1259,21 @@ export default function Cloud({
     setInFailed(false);
     setInKey((k) => k + 1);
   }, []);
+  // A PRESS THAT FAILS AGAIN KEEPS ITS FOCUS (review, change 5): the still
+  // is a new element each time it comes back, so a second failure — inside
+  // the reload guard, or after the reload itself (the file still gone) —
+  // left focus on <body>. When the press (or the reopen) asked for focus, it
+  // goes back to the still's Play; focus the visitor has taken elsewhere
+  // stays there.
+  useEffect(() => {
+    if (!inFailed || !inFocus) return;
+    const id = requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a !== document.body && !root.current?.contains(a)) return;
+      standBtn.current?.focus(scriptFocus());
+    });
+    return () => cancelAnimationFrame(id);
+  }, [inFailed, inFocus]);
   // the still's window is the plain layer's: a window widened past it (or
   // motion allowed again) closes it — the section is that puzzle in place
   // …and on the way to the plain layer, the focus a press asked for is
@@ -1312,9 +1372,21 @@ export default function Cloud({
         </button>
         {/* THE MOVED LAYER'S WAY BACK from the series to the game in place
             (the same words as every Play) — first in the frame's Tab order,
-            where «See the series» left focus */}
-        {!plain && series && !playing && (
-          <button type="button" className="ap-cloud__play ap-cloud__back" ref={backBtn} onClick={backToPuzzle}>
+            where «See the series» left focus.
+            ONE «PLAY THE PUZZLE» IN SIGHT AT A TIME (review, change 5; WCAG
+            2.4.6): with a card open, its panel's Play plays THAT picture, and
+            this pill — same words, same icon — would leave it for No. 05.
+            So the pill steps aside while a card is open (the panel's ✕ and
+            Escape put the card back, and it returns), and its name says
+            where it goes, its visible words first (2.5.3). */}
+        {!plain && series && !playing && !chosen && (
+          <button
+            type="button"
+            className="ap-cloud__play ap-cloud__back"
+            ref={backBtn}
+            onClick={backToPuzzle}
+            aria-label={`${puzzle.cta} — No. ${IN_PLACE}`}
+          >
             <PieceIcon />
             {puzzle.cta}
           </button>
@@ -1593,7 +1665,7 @@ export default function Cloud({
               {/* eslint-disable-next-line @next/next/no-img-element -- the still standing in for the game */}
               <img src={teaser.src} alt="" width={teaser.w} height={teaser.h} draggable={false} />
               <div className="ap-cloud__stand-row">
-                <button type="button" className="ap-cloud__play" onClick={retryInPlace}>
+                <button type="button" className="ap-cloud__play" ref={standBtn} onClick={retryInPlace}>
                   <PieceIcon />
                   {puzzle.cta}
                 </button>

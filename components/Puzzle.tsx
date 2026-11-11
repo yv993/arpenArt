@@ -191,6 +191,14 @@ function layout(W: number, H: number, set: PuzzleSet, no: Rect[] = []): Lay {
   // of its height (2026-10-31; 0.8 before, 0.6 at first), his 6×3 up to 0.8
   // — the places, not these shares, decide the size in most rooms
   const tall = rows > cols ? 0.9 : 0.8;
+  // THE BOARD KEEPS OFF THE NO-GO BOXES TOO, not only the pieces' places
+  // (review, change 5): in a room no wider than 5:4 the board went on top at
+  // y 12 — the very corner the title sits in — and covered «THROUGH». A
+  // board laid on top starts under every box over its columns, and no board
+  // of any kind may cross one. With no boxes (the panel, the sheet) both
+  // tests are idle and every layout is the one it always was.
+  const hits = (x: number, y: number, w: number, h: number) => no.some((r) => x < r.r && x + w > r.l && y < r.b && y + h > r.t);
+  const under = (x: number, w: number) => no.reduce((y, r) => (x < r.r && x + w > r.l ? Math.max(y, r.b) : y), 12);
   for (const [kind, need] of tries) {
     const s0 =
       kind === "centre" ? fit(W * 0.54, H * tall) : kind === "top" ? fit(W - 24, H * 0.44) : fit(W * 0.6, H - 24);
@@ -203,19 +211,26 @@ function layout(W: number, H: number, set: PuzzleSet, no: Rect[] = []): Lay {
       const bw = cols * set.cw * s;
       const bh = rows * set.ch * s;
       const bx = kind === "side" ? Math.max(12, W * 0.04) : (W - bw) / 2;
-      const by = kind === "top" ? 12 : (H - bh) / 2;
+      const by = kind === "top" ? under(bx, bw) : (H - bh) / 2;
+      if (by + bh > H || hits(bx, by, bw, bh)) continue;
       const slots = gen(W, H, c, bx, by, bw, bh, 1, no);
       if (slots.length >= need) return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
     }
   }
   // a room too small for all of them apart: the board as big as it can be
-  // in the middle, the pieces packed tighter (overlapping) around it
-  const s = Math.max(20 / big, fit(W - 24, H * 0.5));
+  // in the middle, the pieces packed tighter (overlapping) around it — and
+  // still under the no-go boxes, made smaller if it would not fit there
+  let s = Math.max(20 / big, fit(W - 24, H * 0.5));
+  let bw = cols * set.cw * s;
+  let bx = (W - bw) / 2;
+  const by = under(bx, bw);
+  if (by > 12 && by + rows * set.ch * s > H - 12) {
+    s = Math.max(20 / big, fit(W - 24, H - 12 - by));
+    bw = cols * set.cw * s;
+    bx = (W - bw) / 2;
+  }
   const c = s * big;
-  const bw = cols * set.cw * s;
   const bh = rows * set.ch * s;
-  const bx = (W - bw) / 2;
-  const by = 12;
   let slots = gen(W, H, c, bx, by, bw, bh, 0.9, no);
   if (!slots.length) slots = [{ x: W / 2, y: H - c }];
   while (slots.length < N) slots = slots.concat(slots.map((p) => ({ x: p.x + c * 0.3, y: p.y + c * 0.3 })));
@@ -350,7 +365,13 @@ export default function Puzzle({
   const host = useRef<HTMLDivElement | null>(null);
   /** a cut picture's pieces are canvases, drawn once the picture is in */
   const cvs = useRef<(HTMLCanvasElement | null)[]>([]);
-  const [drawn, setDrawn] = useState(!cut);
+  /** every piece has its paint: a cut picture's canvases are drawn, or his
+   *  eighteen files have all loaded (and been read for their hit masks) */
+  const [drawn, setDrawn] = useState(false);
+  /** his pieces: which files are in, and which have been asked for again */
+  const got = useRef<boolean[]>([]);
+  const [redo, setRedo] = useState<number[]>([]);
+  const redoAt = useRef<number[]>([]);
   /** the picture would not load, even on a second try */
   const [failed, setFailed] = useState(false);
   /** the set whose hit masks are built from outlines (cut sets only) */
@@ -552,6 +573,7 @@ export default function Puzzle({
       }
       drag.current = null;
       tap.current = null;
+      early.current = null;
       kbd.current = null;
       const slots = spread(l, N, set.cols, set.rows);
       const sequence = shuffle([...Array(N).keys()]);
@@ -778,8 +800,10 @@ export default function Puzzle({
   // layout alone, the 0.85 s "picture first" beat ran while its pieces were
   // still being drawn — on a picture not yet in the cache it was over before
   // they showed, and an invisible piece could be picked up. Now nothing is
-  // dealt (and nothing can be taken) until the pieces have their paint; his
-  // pieces are `drawn` from the start, so No. 05 is as it was.
+  // dealt (and nothing can be taken) until the pieces have their paint — his
+  // eighteen files too, since change 5's review (see onImg): in place, the
+  // picture is shown whole only once all of it is there, and the beat waits
+  // for that AND for the room to be half on screen.
   useEffect(() => {
     if (!L || !drawn || inited.current) return;
     inited.current = true;
@@ -946,23 +970,62 @@ export default function Puzzle({
   }, [persist]);
 
   // ---- the alpha masks, one per piece, built as its image arrives --------
+  // HIS PIECES ARE WAITED FOR TOO (review, change 5): they were `drawn` from
+  // the start, so on a slow link the «picture first» beat and the deal ran on
+  // files still downloading — an empty board, the bar already asking for a
+  // drag, pieces popping in one by one already scattered, and a press on a
+  // blank spot took a piece whose paint was not there (no mask yet, so its
+  // whole box counted). Now a piece is in when its file has loaded and its
+  // mask is read, and the game is dealt (and anything can be taken) only
+  // when all of them are — trap 3 of the cut pictures, for his files.
   const onImg = (i: number, img: HTMLImageElement | HTMLCanvasElement) => {
     const nw = img instanceof HTMLCanvasElement ? img.width : img.naturalWidth;
     const nh = img instanceof HTMLCanvasElement ? img.height : img.naturalHeight;
-    if (masks.current[i] || !nw) return;
+    if (got.current[i] || !nw) return;
     const w = Math.max(8, Math.round(nw / 4));
     const h = Math.max(8, Math.round(nh / 4));
-    const cv = document.createElement("canvas");
-    cv.width = w;
-    cv.height = h;
-    const g = cv.getContext("2d", { willReadFrequently: true });
-    if (!g) return;
-    g.drawImage(img, 0, 0, w, h);
-    const d = g.getImageData(0, 0, w, h).data;
     const a = new Uint8Array(w * h);
-    for (let k = 0; k < w * h; k++) a[k] = d[k * 4 + 3];
+    try {
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = h;
+      const g = cv.getContext("2d", { willReadFrequently: true });
+      if (!g) throw new Error("no 2d context");
+      g.drawImage(img, 0, 0, w, h);
+      const d = g.getImageData(0, 0, w, h).data;
+      for (let k = 0; k < w * h; k++) a[k] = d[k * 4 + 3];
+    } catch {
+      // the paint is in but its alpha cannot be read: the box is the piece
+      a.fill(255);
+    }
     masks.current[i] = { w, h, a };
+    got.current[i] = true;
+    if (!cut && set.pieces.every((_, k) => got.current[k])) setDrawn(true);
   };
+  /** a file of his that would not load is asked for once more, 1.2 s later
+   *  (a new element, the same address), then the room says so — the cut
+   *  picture's way: never a board waiting for ever on a piece */
+  const badEl = useRef<(HTMLImageElement | null)[]>([]);
+  const onBad = (i: number, el: HTMLImageElement) => {
+    // once per element: the ref below also sees a file that broke before
+    // its listener was there, and it runs on every render
+    if (got.current[i] || failed || badEl.current[i] === el) return;
+    badEl.current[i] = el;
+    if (redoAt.current[i]) {
+      setFailed(true);
+      return;
+    }
+    redoAt.current[i] = window.setTimeout(
+      () =>
+        setRedo((r) => {
+          const n = [...r];
+          n[i] = 1;
+          return n;
+        }),
+      1200,
+    );
+  };
+  useEffect(() => () => redoAt.current.forEach((t) => window.clearTimeout(t)), []);
 
   // A CUT PICTURE'S HIT MASKS come from the outlines alone, filled on one
   // small canvas the CPU keeps (review, 2026-10-30): read back from the
@@ -1079,8 +1142,10 @@ export default function Puzzle({
       const W = pc.w * l.s;
       const H = pc.h * l.s;
       if (lx < 0 || ly < 0 || lx >= W || ly >= H) continue;
+      // no mask, no paint yet: nothing there to take (it used to count the
+      // whole box — review, change 5: a press on a blank spot took a piece)
       const m = masks.current[p.i];
-      if (m && m.a[Math.floor((ly / H) * m.h) * m.w + Math.floor((lx / W) * m.w)] < 96) continue;
+      if (!m || m.a[Math.floor((ly / H) * m.h) * m.w + Math.floor((lx / W) * m.w)] < 96) continue;
       best = p.i;
       bz = p.z;
     }
@@ -1140,6 +1205,9 @@ export default function Puzzle({
   const drag = useRef<{ id: number; i: number; ox: number; oy: number; sx: number; sy: number; moved: boolean; soft: boolean } | null>(null);
   /** a press on the empty room: a tap there sets the picked piece down */
   const tap = useRef<{ id: number; x: number; y: number } | null>(null);
+  /** in place, a FINGER on the whole picture before the deal: the page's
+   *  gesture until it ends as a tap (see onPointerDown) */
+  const early = useRef<{ id: number; x: number; y: number } | null>(null);
   const kbd = useRef<{ i: number; from: { x: number; y: number; tilt: number }; r: number; c: number } | null>(null);
   const local = (e: { clientX: number; clientY: number }) => {
     const r = host.current!.getBoundingClientRect();
@@ -1169,6 +1237,19 @@ export default function Puzzle({
     // moment away: a press there deals now rather than lifting a piece the
     // deal would pull out of the hand (review, 2026-10-29)
     if (introPending()) {
+      // …BUT IN PLACE, A FINGER MAY ONLY BE SCROLLING PAST (review, change
+      // 5): a swipe through the section while the picture still lay whole
+      // dealt it at once — under 50% on screen, with no beat, even while
+      // the page carried it away. A touch takes nothing here (no capture:
+      // the browser keeps the gesture and cancels it if it scrolls); if it
+      // ends as a TAP — up, never cancelled, barely moved — that is the
+      // visitor asking to play, and the deal comes then. A mouse or pen
+      // press, and Enter or Space, deal at once as before.
+      if (placement === "section" && e.pointerType === "touch") {
+        const pt = local(e);
+        early.current = { id: e.pointerId, x: pt.x, y: pt.y };
+        return;
+      }
       e.preventDefault();
       scatter(true);
       return;
@@ -1269,6 +1350,17 @@ export default function Puzzle({
   };
 
   const onPointerEnd = (e: React.PointerEvent) => {
+    const w = early.current;
+    if (w && w.id === e.pointerId) {
+      early.current = null;
+      // cancelled (the page scrolled) or a swipe: the page's, nothing dealt;
+      // a tap still in the beat deals now (the beat may have dealt already)
+      if (e.type === "pointerup" && introPending()) {
+        const pt = local(e);
+        if (Math.hypot(pt.x - w.x, pt.y - w.y) <= 10) scatter(true);
+      }
+      return;
+    }
     const t = tap.current;
     if (t && t.id === e.pointerId) {
       tap.current = null;
@@ -1560,8 +1652,11 @@ export default function Puzzle({
                 data-placed={isIn || undefined}
                 disabled={isIn}
                 // roving: one piece is the tab stop, the rest are reached by
-                // the arrows (a page's Tab order does not grow by eighteen)
-                tabIndex={roving && !isIn ? (i === tabStop ? 0 : -1) : undefined}
+                // the arrows (a page's Tab order does not grow by eighteen).
+                // No stop at all while the pieces are not shown yet (their
+                // files still coming, or failed): an unseen button that
+                // does nothing is not a place for Tab to land
+                tabIndex={!(ready && drawn) ? -1 : roving && !isIn ? (i === tabStop ? 0 : -1) : undefined}
                 aria-pressed={!isIn ? held === i || sel === i : undefined}
                 aria-label={isIn ? fill(copy.inPlace, { k: k + 1 }) : fill(copy.piece, { k: k + 1, total: N })}
                 onKeyDown={onKey(i)}
@@ -1582,15 +1677,21 @@ export default function Puzzle({
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element -- his piece, moved by transform
                   <img
+                    // asked for again (a new element) once, after an error
+                    key={redo[i] ?? 0}
                     src={pc.src + v}
                     alt=""
                     width={pc.w}
                     height={pc.h}
                     draggable={false}
                     ref={(img) => {
-                      if (img?.complete) onImg(i, img);
+                      if (img?.complete) {
+                        if (img.naturalWidth) onImg(i, img);
+                        else onBad(i, img);
+                      }
                     }}
                     onLoad={(e) => onImg(i, e.currentTarget)}
+                    onError={(e) => onBad(i, e.currentTarget)}
                   />
                 )}
               </button>
