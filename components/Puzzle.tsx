@@ -87,6 +87,18 @@ export type PuzzleSaved = {
   done: boolean;
   /** the room's aspect when it was left — a different shape deals anew */
   ar?: number;
+  // THE ROOM IT WAS LEFT IN (review, change 5): the aspect alone let a game
+  // come back over the board — a 5:4 room puts the board on top, a slightly
+  // wider one in the middle, well inside the 25% the aspect allows, and the
+  // loose pieces kept their fractions right across the new board.
+  /** the layout's kind when it was left */
+  kind?: Kind;
+  /** the board, as fractions of the room [x, y, w, h] — a loose piece the
+   *  visitor laid on the board comes back on the same spot of the picture */
+  board?: [number, number, number, number];
+  /** the room's size, CSS px — the same room is the same layout, and a game
+   *  left in it comes back exactly as it was */
+  room?: [number, number];
 };
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ""));
@@ -117,9 +129,17 @@ type Slot = { x: number; y: number };
 /** a box no piece may rest in (room px) — the cloud's title, when the
  *  puzzle is played in place beside it */
 export type Rect = { l: number; t: number; r: number; b: number };
+/** which way the board lies in its room: in the middle with the pieces all
+ *  round ("centre"), to one side ("side"), on top with the pieces below
+ *  ("top"), or a room too small for every piece apart ("packed") */
+export type Kind = "centre" | "side" | "top" | "packed";
 /** c: the larger side of a cell, CSS px; cw × ch: a cell, CSS px; s: CSS px
  *  per source px */
-type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number; bx: number; by: number; slots: Slot[] };
+type Lay = { W: number; H: number; c: number; s: number; cw: number; ch: number; bx: number; by: number; slots: Slot[]; kind: Kind };
+/** the room a game was laid out in, as far as it is known: its layout's
+ *  kind, its aspect, its board (fractions of the room [x, y, w, h]), its
+ *  size (CSS px) and its no-go boxes (room px) */
+type Was = { kind?: Kind; ar?: number; board?: [number, number, number, number]; room?: [number, number]; no?: Rect[] };
 
 /** Candidate resting places for pieces, in BANDS laid round the board: a
  *  block of columns to its left and to its right (the room's full height),
@@ -214,7 +234,7 @@ function layout(W: number, H: number, set: PuzzleSet, no: Rect[] = []): Lay {
       const by = kind === "top" ? under(bx, bw) : (H - bh) / 2;
       if (by + bh > H || hits(bx, by, bw, bh)) continue;
       const slots = gen(W, H, c, bx, by, bw, bh, 1, no);
-      if (slots.length >= need) return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
+      if (slots.length >= need) return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots, kind };
     }
   }
   // a room too small for all of them apart: the board as big as it can be
@@ -234,7 +254,7 @@ function layout(W: number, H: number, set: PuzzleSet, no: Rect[] = []): Lay {
   let slots = gen(W, H, c, bx, by, bw, bh, 0.9, no);
   if (!slots.length) slots = [{ x: W / 2, y: H - c }];
   while (slots.length < N) slots = slots.concat(slots.map((p) => ({ x: p.x + c * 0.3, y: p.y + c * 0.3 })));
-  return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots };
+  return { W, H, c, s, cw: set.cw * s, ch: set.ch * s, bx, by, slots, kind: "packed" };
 }
 
 /** N of the slots, spread round the board (by angle from its centre), with
@@ -318,6 +338,7 @@ export default function Puzzle({
   avoid,
   roving = false,
   persist,
+  onFail,
 }: {
   /** his pieces (No. 05); without them the picture is cut here */
   set?: PuzzleSet;
@@ -353,6 +374,10 @@ export default function Puzzle({
   /** sessionStorage key: the game outlives a reload (and a visit to the
    *  series) — read at the start, written after each move and on the way out */
   persist?: string;
+  /** the pictures would not come, even on a second try: the caller puts its
+   *  own stand-in up (in place: the still and «Play the puzzle», as for a
+   *  file of code that failed). Without it the bar says `copy.failed`. */
+  onFail?: () => void;
 }) {
   // ONE SET FOR THE LIFE OF THE GAME: his pieces when the picture has them,
   // else this picture cut with his knob (lib/puzzleCut.ts, deterministic).
@@ -374,6 +399,22 @@ export default function Puzzle({
   const redoAt = useRef<number[]>([]);
   /** the picture would not load, even on a second try */
   const [failed, setFailed] = useState(false);
+  const onFailRef = useRef(onFail);
+  onFailRef.current = onFail;
+  // IN PLACE, A PICTURE THAT WILL NOT COME IS A STILL, NOT AN EMPTY ROOM
+  // (review, change 5): played in place the puzzle mounts on every desktop
+  // visit, and its pieces failing (offline, or a 404) left the section an
+  // empty dark room with «go back and try again» and nowhere to go back to.
+  // The caller is told at once — in the same press or load that failed — so
+  // the room's own failure line never shows under its stand-in.
+  const failedRef = useRef(false);
+  const fail = () => {
+    // eighteen files fail one by one: the room gives up once
+    if (failedRef.current) return;
+    failedRef.current = true;
+    setFailed(true);
+    onFailRef.current?.();
+  };
   /** the set whose hit masks are built from outlines (cut sets only) */
   const masked = useRef<PuzzleSet | null>(null);
   /** the game has been dealt (or restored): from here the set is fixed */
@@ -531,25 +572,137 @@ export default function Puzzle({
    *  turned on its side, a window made much narrower): kept as fractions of
    *  a portrait room they piled into two columns of a landscape one, two of
    *  them over the board (measured 390×844 → 844×390). Placed pieces stay
-   *  in; a piece in the hand is left in the hand. */
-  const redeal = (l: Lay) => {
-    const loose = ps.current.filter((p) => !p.placed && heldRef.current !== p.i);
+   *  in; a piece in the hand is left in the hand. `which`: the pieces to
+   *  deal (see refit) */
+  const redeal = (l: Lay, which: P[]) => {
+    const loose = which.filter((p) => !p.placed && heldRef.current !== p.i);
+    if (!loose.length) return;
     const slots = spread(l, loose.length, set.cols, set.rows);
-    loose.forEach((p, k) => {
-      take(p);
-      const [x, y] = settleIn(l, slots[k % slots.length]);
-      p.x = x;
-      p.y = y;
-      p.tilt = (Math.random() - 0.5) * 10;
-      p.w = still.current ? 0 : 1;
-    });
-    if (selRef.current !== null && !ps.current[selRef.current]?.placed) {
-      ps.current[selRef.current].lift = 0;
+    loose.forEach((p, k) => restAt(l, p, slots[k % slots.length]));
+    putDownSel(loose);
+  };
+  /** a loose piece to a new resting place (a slot, jittered), drifting */
+  const restAt = (l: Lay, p: P, s: Slot) => {
+    take(p);
+    const [x, y] = settleIn(l, s);
+    p.x = x;
+    p.y = y;
+    p.tilt = (Math.random() - 0.5) * 10;
+    p.w = still.current ? 0 : 1;
+  };
+  /** a piece picked up by a tap that has just been given a new place is
+   *  put down (its lift goes, nothing is picked) */
+  const putDownSel = (moved: P[]) => {
+    const s = selRef.current;
+    if (s !== null && moved.some((p) => p.i === s)) {
+      ps.current[s].lift = 0;
       setSel(null);
     }
   };
+  /** A FEW LOOSE PIECES TO THE FREEST PLACES round the board — each to the
+   *  place farthest from every other loose piece; the rest stay where they
+   *  lie (review, change 5: see refit) */
+  const moveFree = (l: Lay, which: P[]) => {
+    const others = ps.current.filter((p) => !p.placed && !which.includes(p)).map((p) => [p.x, p.y]);
+    for (const p of which) {
+      let best = l.slots[0];
+      let far = -1;
+      for (const s of l.slots) {
+        let d = Infinity;
+        for (const [x, y] of others) d = Math.min(d, Math.hypot(x - s.x, y - s.y));
+        if (d > far) {
+          far = d;
+          best = s;
+        }
+      }
+      restAt(l, p, best);
+      others.push([p.x, p.y]);
+    }
+    putDownSel(which);
+  };
   /** a change of shape worth a new deal: the aspect moved by over ~25% */
   const reshaped = (a: number, b: number) => Math.abs(Math.log(a / b)) > 0.22;
+  /** the board as fractions of its room [x, y, w, h] */
+  const boardOf = (l: Lay): [number, number, number, number] => [l.bx / l.W, l.by / l.H, (set.cols * l.cw) / l.W, (set.rows * l.ch) / l.H];
+  /** a piece's box, its tabs too, with its body's centre at (x, y), at s CSS
+   *  px per source px */
+  const boxAt = (i: number, x: number, y: number, s: number): Rect => {
+    const pc = set.pieces[i];
+    const o = origin(i, s);
+    return { l: x - o.x, t: y - o.y, r: x - o.x + pc.w * s, b: y - o.y + pc.h * s };
+  };
+  const meets = (a: Rect, b: Rect) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+  /** THE LOOSE PIECES INTO A ROOM LAID OUT ANEW (review, change 5) — after a
+   *  resize, or a game brought back into a room unlike the one it was left
+   *  in. They came back at their fractions of the room, re-dealt only when
+   *  its aspect moved over 25%; but a room just over 5:4 lays the board in
+   *  the middle where one just under lays it on top, so a game dealt at
+   *  1280×1024 came back at 1366×1000 with five loose pieces on the board.
+   *  Now:
+   *   · a loose piece the visitor laid ON the board (its centre on it) stays
+   *     on the same spot of the picture — her move, never the deal's;
+   *   · a new KIND of layout, or a new shape (the aspect moved over 25%):
+   *     the old places mean nothing here, and every other loose piece is
+   *     dealt a new place round the board;
+   *   · otherwise they keep their fractions of the room, and only a piece
+   *     the new layout put over the board or a no-go box (the title) moves,
+   *     to the freest place — one that lay over the old board (or old box)
+   *     already lay there by the visitor's hand (no deal leaves one there:
+   *     at least 0.17 of a cell clear) and stays. A whole re-deal here
+   *     threw away her own arrangement at a 1440×900 → 1400×880 resize.
+   *  Placed pieces are re-seated by the caller. `was`: the room they were
+   *  in; `at`: a piece's place there, as fractions of it; `same`: the very
+   *  same room and board, where every piece is already where she left it. */
+  const refit = (l: Lay, was: Was, at: (p: P) => [number, number], same = false) => {
+    const b = was.board;
+    const bw = set.cols * l.cw;
+    const bh = set.rows * l.ch;
+    const off: { p: P; u: number; v: number }[] = [];
+    for (const p of ps.current) {
+      if (p.placed) continue;
+      const [u, v] = at(p);
+      if (b && u > b[0] && u < b[0] + b[2] && v > b[1] && v < b[1] + b[3]) {
+        p.x = l.bx + ((u - b[0]) / b[2]) * bw;
+        p.y = l.by + ((v - b[1]) / b[3]) * bh;
+      } else {
+        p.x = u * l.W;
+        p.y = v * l.H;
+        off.push({ p, u, v });
+      }
+    }
+    if (same || !off.length) return;
+    if ((was.ar !== undefined && reshaped(l.W / l.H, was.ar)) || (was.kind !== undefined && was.kind !== l.kind)) {
+      redeal(l, off.map((o) => o.p));
+      return;
+    }
+    // a packed room (too small for every piece apart) deals onto the board
+    // itself: nothing there is out of its place
+    if (l.kind === "packed") return;
+    const now: Rect[] = [{ l: l.bx, t: l.by, r: l.bx + bw, b: l.by + bh }, ...noGo.current.rects];
+    // the old room, where it is known (a save from before these were kept
+    // has no room or board: then every piece in the way moves)
+    const R = was.room;
+    const old =
+      b && R
+        ? {
+            W: R[0],
+            H: R[1],
+            s: (b[2] * R[0]) / (set.cols * set.cw),
+            way: [{ l: b[0] * R[0], t: b[1] * R[1], r: (b[0] + b[2]) * R[0], b: (b[1] + b[3]) * R[1] }, ...(was.no ?? [])],
+          }
+        : null;
+    const move = off
+      .filter(({ p, u, v }) => {
+        if (p.i === heldRef.current) return false;
+        const box = boxAt(p.i, p.x, p.y, l.s);
+        if (!now.some((r) => meets(box, r))) return false;
+        if (!old) return true;
+        const was0 = boxAt(p.i, u * old.W, v * old.H, old.s);
+        return !old.way.some((r) => meets(was0, r));
+      })
+      .map((o) => o.p);
+    if (move.length) moveFree(l, move);
+  };
 
   // ---- scatter: every piece to a place of its own off the board ----------
   const scatter = useCallback(
@@ -649,6 +802,8 @@ export default function Puzzle({
       const prev = lay.current;
       const no = readAvoid();
       if (prev && Math.abs(prev.W - W) < 0.5 && Math.abs(prev.H - H) < 0.5 && no.sig === noGo.current.sig) return;
+      // the old boxes, for the pieces that already lay over one (see refit)
+      const was = noGo.current.rects;
       noGo.current = no;
       // a flight, a snap or a keyboard step still running writes targets of
       // the OLD board: finish them there, then the rescale below carries
@@ -673,20 +828,16 @@ export default function Puzzle({
       }
       lay.current = next;
       // a placed piece re-seats on the new board; a loose one keeps its place
-      // as a fraction of the room — unless the room changed shape, when the
-      // loose ones are dealt new places (see redeal)
-      const deal = !!prev && reshaped(W / H, prev.W / prev.H);
+      // as a fraction of the room, or of the board when it lies on it —
+      // unless that no longer fits the new layout (see refit)
       for (const p of ps.current) {
-        if (p.placed) {
-          const h = home(next, p.i);
-          p.x = h.x;
-          p.y = h.y;
-        } else if (prev && !deal) {
-          p.x *= W / prev.W;
-          p.y *= H / prev.H;
-        }
+        if (!p.placed) continue;
+        const h = home(next, p.i);
+        p.x = h.x;
+        p.y = h.y;
       }
-      if (deal && ps.current.length) redeal(next);
+      if (prev && ps.current.length)
+        refit(next, { kind: prev.kind, ar: prev.W / prev.H, board: boardOf(prev), room: [prev.W, prev.H], no: was }, (p) => [p.x / prev.W, p.y / prev.H]);
       setL(next);
       mark();
     };
@@ -744,19 +895,35 @@ export default function Puzzle({
         )
       );
     };
+    /** the room it was left in, read only where it is well formed (a save
+     *  from before these were kept has none: every check below then runs) */
+    const clean = (g: PuzzleSaved): PuzzleSaved => {
+      const nums = (a: unknown, n: number): a is number[] => Array.isArray(a) && a.length === n && a.every((x) => Number.isFinite(x) && x > -1 && x < 1e5);
+      const kinds: Kind[] = ["centre", "side", "top", "packed"];
+      return {
+        pieces: g.pieces,
+        z: g.z,
+        ms: g.ms,
+        done: g.done,
+        ar: typeof g.ar === "number" && Number.isFinite(g.ar) && g.ar > 0 ? g.ar : undefined,
+        kind: kinds.includes(g.kind as Kind) ? g.kind : undefined,
+        board: nums(g.board, 4) && g.board[2] > 0 && g.board[3] > 0 ? g.board : undefined,
+        room: nums(g.room, 2) && g.room[0] > 0 && g.room[1] > 0 ? g.room : undefined,
+      };
+    };
     if (persist) {
       try {
         const raw = sessionStorage.getItem(persist);
         if (raw) {
           const s: unknown = JSON.parse(raw);
-          if (ok(s)) return s;
+          if (ok(s)) return clean(s);
         }
       } catch {
         /* no storage, or not ours: the page's memory below */
       }
     }
     const m = memory.current[set.art];
-    return ok(m) ? m : undefined;
+    return ok(m) ? clean(m) : undefined;
   };
   /** where a piece will lie once its running tween ends — a save made mid-
    *  flight keeps the piece where it was going, without ending the flight */
@@ -785,6 +952,9 @@ export default function Puzzle({
       ms: clockMs(),
       done: doneRef.current,
       ar: l.W / l.H,
+      kind: l.kind,
+      board: boardOf(l),
+      room: [l.W, l.H],
     };
     memory.current[set.art] = kept;
     if (!persist) return;
@@ -820,17 +990,32 @@ export default function Puzzle({
           p.x = h.x;
           p.y = h.y;
         } else {
-          p.x = s.u * L.W;
-          p.y = s.v * L.H;
           p.tilt = s.tilt;
           p.w = still.current ? 0 : 1;
         }
         const el = els.current[i];
         if (el) el.style.zIndex = String(p.z);
       });
-      // left in a room of another shape (the window form on a phone that
-      // has since turned, the desktop room after the sheet): new places
-      if (saved.ar && reshaped(L.W / L.H, saved.ar)) redeal(L);
+      // left in a room unlike this one (the window form on a phone that has
+      // since turned, the desktop room after the sheet, a window resized
+      // between visits — or across the 5:4 line where the board moves from
+      // the top to the middle): the loose pieces are fitted to this layout —
+      // dealt anew for a new kind or shape, and any the new layout would put
+      // on the board or the title moved off it (see refit). The very same
+      // room brings the game back as it was left: the same size and the
+      // same board, to the pixel (a title grown since, its font in, can move
+      // the board in a room of the same size).
+      const sr = saved.room;
+      const sb = saved.board;
+      const px = (f: number, k: number) => f * (k % 2 ? L.H : L.W);
+      const same =
+        !!sr &&
+        !!sb &&
+        saved.kind === L.kind &&
+        Math.abs(sr[0] - L.W) < 1 &&
+        Math.abs(sr[1] - L.H) < 1 &&
+        boardOf(L).every((f, k) => Math.abs(px(f, k) - px(sb[k], k)) < 1);
+      refit(L, saved, (p) => [saved.pieces[p.i].u, saved.pieces[p.i].v], same);
       clock.current = { at: 0, ms: saved.ms };
       setPlaced(saved.pieces.map((s) => s.placed));
       setDone(saved.done);
@@ -1009,10 +1194,10 @@ export default function Puzzle({
   const onBad = (i: number, el: HTMLImageElement) => {
     // once per element: the ref below also sees a file that broke before
     // its listener was there, and it runs on every render
-    if (got.current[i] || failed || badEl.current[i] === el) return;
+    if (got.current[i] || failedRef.current || badEl.current[i] === el) return;
     badEl.current[i] = el;
     if (redoAt.current[i]) {
-      setFailed(true);
+      fail();
       return;
     }
     redoAt.current[i] = window.setTimeout(
@@ -1089,7 +1274,7 @@ export default function Puzzle({
       const bad = () => {
         if (gone) return;
         if (n === 0) retry = window.setTimeout(() => load(1), 1200);
-        else setFailed(true);
+        else fail();
       };
       const ok = () => {
         if (gone) return;

@@ -431,6 +431,20 @@ export default function Cloud({
       ),
     [chunkFailed],
   );
+  /** THE IN-PLACE PUZZLE'S PICTURES would not come, even on a second try
+   *  (review, change 5: offline, or his files gone since the page opened —
+   *  the section was left an empty room with «go back and try again»): the
+   *  still and «Play the puzzle» stand in, exactly as for its file of code,
+   *  and the press asks for them again. Offline, the line under Play says
+   *  why, as it does for the code. */
+  const inplacePicturesFailed = useCallback(() => {
+    if (navigator.onLine === false) setOffline(true);
+    // a keyboard already in the room (on its «See the series») would fall
+    // to <body> as the room goes: it is taken on to the still's Play
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && root.current?.contains(a) && a.closest(".ap-pz, .ap-pz__bar")) setInFocus(true);
+    setInFailed(true);
+  }, []);
   // …and after that reload: the picture is chosen again and its puzzle
   // started, once the page has loaded (the browser has put the scroll back;
   // the cloud's frame is then brought to the top at once).
@@ -1653,7 +1667,9 @@ export default function Cloud({
             Asked for only once `near` (a screen away, after load). A file
             that will not come (a deploy since this page opened) leaves the
             still and «Play the puzzle», whose press is the visitor asking —
-            a second failure then takes the guarded reload. */}
+            a second failure then takes the guarded reload. His piece
+            pictures failing twice (offline, or gone) leave the same still
+            (`onFail`), and its press asks for them again. */}
         {!plain &&
           !series &&
           !playing &&
@@ -1663,7 +1679,19 @@ export default function Cloud({
           (inFailed ? (
             <div className="ap-cloud__stand">
               {/* eslint-disable-next-line @next/next/no-img-element -- the still standing in for the game */}
-              <img src={teaser.src} alt="" width={teaser.w} height={teaser.h} draggable={false} />
+              <img
+                src={teaser.src}
+                alt=""
+                width={teaser.w}
+                height={teaser.h}
+                draggable={false}
+                // OFFLINE THE STILL CANNOT COME EITHER (review, change 5): on
+                // this layer it was never fetched, so it stood as a broken
+                // frame over Play; then only the buttons and the line remain
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
               <div className="ap-cloud__stand-row">
                 <button type="button" className="ap-cloud__play" ref={standBtn} onClick={retryInPlace}>
                   <PieceIcon />
@@ -1694,6 +1722,7 @@ export default function Cloud({
                 copy={inCopy}
                 memory={puzzleMemory}
                 onExit={showSeries}
+                onFail={inplacePicturesFailed}
               />
             </MapBoundary>
           ))}
