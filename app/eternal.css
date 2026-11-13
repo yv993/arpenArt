@@ -335,6 +335,17 @@
 .ap-ae__open:focus-visible {
   border-radius: 4px;
 }
+/* keyboard focus clears the fixed bar on the desktop too, as the flip
+   cards' does (flip.css, review O1): a Tab along the scarves or runners
+   parked the next one with its top behind the bar */
+.ap-ae__open {
+  scroll-margin-bottom: 12px;
+}
+@media (min-width: 861px) {
+  .ap-ae__open {
+    scroll-margin-top: 89px;
+  }
+}
 .ap-ae__open img {
   display: block;
   width: 100%;
@@ -342,35 +353,51 @@
 }
 .ap-ae__open--ru {
   cursor: pointer;
+  /* the chip below reads its card's width, not the screen's */
+  container-type: inline-size;
 }
-/* the runner card's own words: what a press does */
+/* the runner card's own words: what a press does.
+   A CORNER CHIP ON ONE LINE (review O1). It was a pill stretched across the
+   card's foot in tracked capitals, which a 40vw phone card (144–172px)
+   cannot hold: «SEE THE / WHOLE / RUNNER» on three lines at 360, two at
+   390–430 and 1024, over 9.5–15% of her runner. The same words now sit in
+   the card's lower-left corner, as wide as they are, in sentence case at
+   the site's 10px label floor (capitals need 135px of text alone, more
+   than a 360 card leaves) — and the arrow steps aside on a card too narrow
+   for both (the container query). The chip is aria-hidden: the button's
+   name carries the words. */
 .ap-ae__whole {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 10px;
+  left: 6px;
+  bottom: 6px;
+  max-width: calc(100% - 12px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 5px 9px 5px 7px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--cream) 92%, transparent);
   color: #232834;
   font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   line-height: 1.2;
-  text-align: center;
-  text-transform: uppercase;
+  white-space: nowrap;
   box-shadow: 0 2px 8px rgb(20 24 36 / 0.22);
+}
+@container (max-width: 159px) {
+  .ap-ae__whole {
+    padding-inline: 8px;
+  }
+  .ap-ae__whole svg {
+    display: none;
+  }
 }
 .ap-ae__whole svg {
   flex: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;

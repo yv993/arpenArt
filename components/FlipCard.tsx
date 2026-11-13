@@ -37,9 +37,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 //
 // THE BACK IS DECODED BEFORE THE FIRST TURN (the cloud viewer's trap,
 // Cloud.tsx `img.decode()`): a face that turns into view still decoding shows
-// a blank card for a frame. The decode starts on the first sign of intent —
-// pointer over, focus, press — and a turn waits for it (at most DECODE_WAIT,
-// so a broken or slow file can never hold a press hostage).
+// a blank card for a frame. The card never turns onto a back that is not
+// there (`backOk`: the file arrived and `img.decode()` settled).
+//
+// A PRESS ANSWERS AT ONCE, THE TURN FOLLOWS THE BACK (review O1, 2026-11-12).
+// It used to wait for the decode before it set any state, raced against a
+// 700 ms cap: on a slow line a tap did nothing for 0.6–0.7 s (a second tap
+// to check then cancelled the first, so the card never turned) and then the
+// card turned anyway onto the empty average-colour face. Now:
+//   · the press sets `pressed` (and the filled mark) in the same frame;
+//   · the card turns the moment its back is ready — no second press; until
+//     then it stays on its front and the mark's arrows turn, quietly
+//     (`data-wait`, flip.css), a beat late so a back that is merely
+//     decoding never flashes it;
+//   · the back is made ready in practice: once the page has loaded and gone
+//     idle, the backs of the cards on or near the screen are fetched and
+//     decoded (`warm`); the first sign of intent — pointer over, focus,
+//     press — asks for that card's back at once, ahead of the pictures still
+//     queued (`loading` eager, `fetchPriority` high).
+// A back that fails outright (a broken file) lets the card turn: nothing is
+// coming, and the press must not wait forever.
 //
 // The hidden face is aria-hidden. The button's name is fixed (`name`); the
 // pressed state, not a changing name, says which side is up.
@@ -55,8 +72,11 @@ export type FlipFace = {
 };
 
 const HOVER_DELAY = 120;
-const DECODE_WAIT = 700;
 const FINE = "(hover: hover) and (pointer: fine)";
+/** "near the screen" for the idle warm-up: a screen above and below; in a
+ *  sideways rail (the phone's), a rail's width either side too — Chromium
+ *  reads `scrollMargin`, the others ignore it and warm on sight */
+const WARM_NEAR = { rootMargin: "100% 0px", scrollMargin: "0px 100%" } as IntersectionObserverInit;
 
 export default function FlipCard({
   front,
@@ -88,13 +108,16 @@ export default function FlipCard({
   /** set by a press that turned the card BACK to the front while the pointer
    *  is still on it — the hover preview stays off until the pointer leaves */
   const [hold, setHold] = useState(false);
-  /** the latest toggle, read when a press resolves: two presses inside the
-   *  first decode must alternate, not both read the same stale state */
+  /** the back has arrived and is decoded: the only state a turn may show */
+  const [backOk, setBackOk] = useState(false);
+  /** the latest toggle, read in the press handler itself: a resting mouse
+   *  needs `next` before React has rendered the last press */
   const pressedNow = useRef(false);
   /** a mouse is resting on the card (fine-pointer devices only) */
   const mouseIn = useRef(false);
+  const box = useRef<HTMLDivElement>(null);
   const backImg = useRef<HTMLImageElement>(null);
-  const decoded = useRef<Promise<void> | null>(null);
+  const started = useRef(false);
   const timer = useRef(0);
   const alive = useRef(true);
 
@@ -106,28 +129,78 @@ export default function FlipCard({
     };
   }, []);
 
-  /** the back, decoded — started once, on the first sign of intent */
-  const ready = useCallback(() => {
-    if (!decoded.current) {
-      const img = backImg.current;
-      const decode = img ? img.decode().catch(() => undefined) : Promise.resolve();
-      decoded.current = Promise.race([decode, new Promise<void>((r) => window.setTimeout(r, DECODE_WAIT))]);
-    }
-    return decoded.current;
+  /** fetch the back now (not when the lazy loader gets to it) and decode it;
+   *  `backOk` once it is paintable — or once it has failed for good */
+  const warm = useCallback(() => {
+    const img = backImg.current;
+    if (!img || started.current) return;
+    started.current = true;
+    const ok = () => {
+      if (alive.current) setBackOk(true);
+    };
+    const settle = () => {
+      // still on its way (a deferred lazy image reports false too): its load
+      // or error event comes back here
+      if (!img.complete) return;
+      img.removeEventListener("load", settle);
+      img.removeEventListener("error", settle);
+      if (img.naturalWidth === 0) ok();
+      else img.decode().catch(() => undefined).then(ok);
+    };
+    img.addEventListener("load", settle);
+    img.addEventListener("error", settle);
+    if (img.loading !== "eager") img.loading = "eager";
+    settle();
   }, []);
 
-  const showBack = pressed || (hover && !hold);
+  /** the first sign of intent on THIS card: its back goes first */
+  const want = useCallback(() => {
+    const img = backImg.current;
+    if (img && !backOk) img.fetchPriority = "high";
+    warm();
+  }, [backOk, warm]);
+
+  // the idle warm-up: once the page has loaded and gone quiet, the backs of
+  // the cards on or near the screen, so the first turn needs no wait at all
+  useEffect(() => {
+    const el = box.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    let io: IntersectionObserver | null = null;
+    let idle = 0;
+    // Safari has no requestIdleCallback
+    const ric = "requestIdleCallback" in window;
+    const watch = () => {
+      io = new IntersectionObserver((entries) => {
+        if (!entries.some((en) => en.isIntersecting)) return;
+        io?.disconnect();
+        warm();
+      }, WARM_NEAR);
+      io.observe(el);
+    };
+    const arm = () => {
+      idle = ric ? window.requestIdleCallback(watch, { timeout: 2500 }) : window.setTimeout(watch, 300);
+    };
+    if (document.readyState === "complete") arm();
+    else window.addEventListener("load", arm, { once: true });
+    return () => {
+      window.removeEventListener("load", arm);
+      if (ric) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+      io?.disconnect();
+    };
+  }, [warm]);
+
+  /** the side the visitor has asked for */
+  const wantBack = pressed || (hover && !hold);
+  const showBack = wantBack && backOk;
 
   const onEnter = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || !window.matchMedia(FINE).matches) return;
     mouseIn.current = true;
-    ready();
+    want();
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
-      ready().then(() => {
-        // the pointer may have left while the back was decoding
-        if (alive.current && mouseIn.current) setHover(true);
-      });
+      if (alive.current && mouseIn.current) setHover(true);
     }, HOVER_DELAY);
   };
   const onLeave = (e: React.PointerEvent) => {
@@ -138,23 +211,23 @@ export default function FlipCard({
     setHold(false);
   };
   const onPress = () => {
-    ready().then(() => {
-      if (!alive.current) return;
-      const next = !pressedNow.current;
-      pressedNow.current = next;
-      // turning back to the front under a resting mouse: keep the preview
-      // off until the pointer leaves, or the card would stay on its back
-      // (only then — a key or a tap with no mouse on the card holds nothing)
-      if (!next && mouseIn.current) setHold(true);
-      setPressed(next);
-    });
+    want();
+    const next = !pressedNow.current;
+    pressedNow.current = next;
+    // turning back to the front under a resting mouse: keep the preview
+    // off until the pointer leaves, or the card would stay on its back
+    // (only then — a key or a tap with no mouse on the card holds nothing)
+    if (!next && mouseIn.current) setHold(true);
+    setPressed(next);
   };
 
   return (
     <div
+      ref={box}
       className={`ap-flip${className ? ` ${className}` : ""}`}
       data-back={showBack || undefined}
       data-pressed={pressed || undefined}
+      data-wait={(wantBack && !backOk) || undefined}
       style={{ aspectRatio: ratio }}
     >
       <button
@@ -165,8 +238,8 @@ export default function FlipCard({
         onClick={onPress}
         onPointerEnter={onEnter}
         onPointerLeave={onLeave}
-        onPointerDown={ready}
-        onFocus={ready}
+        onPointerDown={want}
+        onFocus={want}
       >
         <span className="ap-flip__in" style={avg ? { background: avg } : undefined}>
           <img

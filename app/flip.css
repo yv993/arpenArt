@@ -107,10 +107,44 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* a press is keeping the card turned */
+/* a press is keeping the card turned. The glyph takes --paper, not --cream
+   (review O1): --indigo-ink is the LIT indigo after dark (#949af4), and
+   cream on it was 2.32:1; --paper is the same cream by day (7.48:1, the
+   light look unchanged) and the night navy after dark (6.38:1). */
 .ap-flip[data-pressed] .ap-flip__mark {
   background: var(--indigo-ink);
-  color: var(--cream);
+  color: var(--paper);
+}
+/* the press (or the resting mouse) asked for the back and it has not
+   arrived yet: the card stays on its front — never an empty face — and the
+   mark's arrows turn, quietly, until it lands (FlipCard `data-wait`). The
+   delay keeps a back that is only decoding from flashing it. The svg spins,
+   inside the disc; nothing here is GSAP's. */
+.ap-flip[data-wait] .ap-flip__mark svg {
+  animation: ap-flip-wait 1.1s linear 0.15s infinite;
+}
+@keyframes ap-flip-wait {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* KEYBOARD FOCUS CLEARS THE BAR ON THE DESKTOP TOO (review O1). The tall
+   cards (a bookmark is 520px at 1440x900) are bigger than the step the
+   browser scrolls to show a focused one, so a Tab along a row parked the
+   next card at y 0: its top, the top of the ring and the turn mark behind
+   the fixed bar. 84px is the bar's clearance (globals.css gives it to the
+   whole page under 860px, where adding this would double it), here given
+   to the RING, which stands 5px off the card (2px, 3px off): 89px over the
+   card. 12px under it, at every width, keeps the ring's bottom edge on the
+   screen (a phone's first card of a row ended at the screen's last px). */
+.ap-flip__btn {
+  scroll-margin-bottom: 12px;
+}
+@media (min-width: 861px) {
+  .ap-flip__btn {
+    scroll-margin-top: 89px;
+  }
 }
 
 /* ---- no script: a mouse can still turn it (the press needs the script) --- */
@@ -152,6 +186,15 @@
   }
   .ap-flip__mark {
     transition: none;
+  }
+  /* the wait without the spin: the arrows breathe instead */
+  .ap-flip[data-wait] .ap-flip__mark svg {
+    animation: ap-flip-wait-still 1.2s ease-in-out 0.15s infinite alternate;
+  }
+}
+@keyframes ap-flip-wait-still {
+  to {
+    opacity: 0.35;
   }
 }
 @media (prefers-reduced-motion: reduce) and (scripting: none) and (hover: hover) and (pointer: fine) {
