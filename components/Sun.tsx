@@ -331,15 +331,17 @@ function parseKey(img: HTMLImageElement, fw: number, fh: number): Her | null {
 
 export default function Sun() {
   const wrap = useRef<HTMLDivElement>(null);
-  const img = useRef<HTMLImageElement>(null);
+  const disc = useRef<HTMLCanvasElement>(null);
+  const file = useRef<HTMLImageElement>(null);
   const cut = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!window.matchMedia(DESKTOP).matches) return;
-    const el = img.current;
+    const el = disc.current;
+    const src = file.current;
     const box = wrap.current;
     const her = cut.current;
-    if (!el || !box || !her) return;
+    if (!el || !src || !box || !her) return;
 
     const hero = document.querySelector<HTMLElement>(".ap-hero__img");
     if (!hero) return;
@@ -434,6 +436,67 @@ export default function Sun() {
         },
       );
     } else keyFailed = true;
+
+    // ---- the disc is DRAWN, not shown as an <img> ---------------------------
+    // (review, change 5, L7-regressions#1 — SPEC: «LCP stays the hero text».)
+    // As an <img> the disc was an LCP candidate. Chrome skips a paint at
+    // opacity 0, so the disc's first VISIBLE paint was reported, at whatever
+    // time it came: on a slow load the file landed after the disc had dawned
+    // (≈1.9 s), and any re-layout once it showed (a resize; measure() after
+    // the settle or the key) painted it again. The glow on .ap-sun counts too
+    // (a 42px drop-shadow, 3× on every side), so it was 398,724 px² against
+    // the title's 331,055 and won (measured: the file held 3 s, or the window
+    // made 40px taller after the dawn — the disc, every time). A canvas is
+    // never an LCP candidate. The <img> below still fetches the file, early
+    // and behind the same <picture> gate; it is never displayed, and its
+    // pixels are copied here at the canvas's own device-pixel size whenever
+    // that changes, which is the size the <img> was rastered at. The disc
+    // waits for that copy before it dawns (draw(): `hidden`), so a late file
+    // fades in like an early one instead of popping.
+    const pic = el.getContext("2d");
+    /** the file has been decoded / its pixels are on the canvas */
+    let fileOk = false;
+    let drawn = false;
+    /** the canvas's laid-out size in device pixels (ResizeObserver) */
+    let devW = 0;
+    let devH = 0;
+    const paint = () => {
+      if (!pic || !fileOk || !devW || !devH) return;
+      if (el.width !== devW) el.width = devW;
+      if (el.height !== devH) el.height = devH;
+      pic.clearRect(0, 0, devW, devH);
+      pic.imageSmoothingEnabled = true;
+      pic.imageSmoothingQuality = "high";
+      pic.drawImage(src, 0, 0, devW, devH);
+      if (!drawn) {
+        drawn = true;
+        redraw();
+      }
+    };
+    const fit = new ResizeObserver(([e]) => {
+      const d = e.devicePixelContentBoxSize?.[0];
+      devW = d ? d.inlineSize : Math.round(e.contentRect.width * window.devicePixelRatio);
+      devH = d ? d.blockSize : Math.round(e.contentRect.height * window.devicePixelRatio);
+      paint();
+    });
+    try {
+      fit.observe(el, { box: "device-pixel-content-box" });
+    } catch {
+      fit.observe(el);
+    }
+    const onFile = () =>
+      src.decode().then(
+        () => {
+          fileOk = true;
+          paint();
+        },
+        () => undefined,
+      );
+    onFile();
+    // a <picture> re-picks its source when the window crosses the gate
+    src.addEventListener("load", onFile);
+    // a GPU reset clears an accelerated canvas; it is drawn again
+    el.addEventListener("contextrestored", paint);
 
     /** copy her out of the current film frame. The band is keyed: a pixel
      *  is hers by how far its colour is from the hill's colour measured
@@ -741,9 +804,10 @@ export default function Sun() {
       }
       // over her, the sun waits for her copy — and while the key is still
       // on its way it is assumed to be over her as long as it has not left
-      // home; elsewhere it needs nothing
+      // home; elsewhere it needs nothing. Everywhere it waits for its own
+      // pixels to be on the canvas (paint() above).
       const overHer = hit || (!me && !keyFailed && p < PATH[2].p);
-      const hidden = overHer && !ready;
+      const hidden = (overHer && !ready) || !drawn;
       el.style.opacity = hidden ? "0" : String(o * (1 - ease(veil)));
       // the twin: the same disc, the same transform (it is fixed too),
       // written only while the section is on screen — read from the RAW
@@ -845,6 +909,9 @@ export default function Sun() {
       window.clearTimeout(settle);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
+      fit.disconnect();
+      src.removeEventListener("load", onFile);
+      el.removeEventListener("contextrestored", paint);
       if (raf) cancelAnimationFrame(raf);
       active = false;
       stop();
@@ -866,17 +933,21 @@ export default function Sun() {
             requested: under the effect's own gate's complement — narrow,
             reduced motion, or no scripting to fly it — the source is a 1x1
             transparent GIF inlined as data, so there is no request at all.
-            display: contents keeps the <img> laid out exactly as before. */}
+            The <img> only FETCHES now: it is never displayed (inline, as the
+            reset's `img { display: block }` outranks [hidden]), and the disc
+            is the canvas after it, drawn from it — see "the disc is DRAWN". */}
         <picture style={{ display: "contents" }}>
           <source
             media="(max-width: 860px), (prefers-reduced-motion: reduce), (scripting: none)"
             srcSet="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
           />
-          {/* eslint-disable-next-line @next/next/no-img-element -- positioned by
-              transform against measured hero geometry; next/image's own wrapper
-              fights that, and this is one small decorative cutout */}
-          <img ref={img} className="ap-sun__disc" src="/hero/sun.webp" alt="" width={IMG_W} height={IMG_H} />
+          {/* eslint-disable-next-line @next/next/no-img-element -- never shown;
+              it fetches the cutout for the canvas, and next/image would lazy-load
+              and re-encode it */}
+          <img ref={file} src="/hero/sun.webp" alt="" width={IMG_W} height={IMG_H} style={{ display: "none" }} />
         </picture>
+        {/* 1×1 until the effect sizes it: a phone never draws it */}
+        <canvas ref={disc} className="ap-sun__disc" width={1} height={1} />
       </div>
       {/* her, copied live out of the film, over the sun — see the header */}
       <canvas ref={cut} className="ap-sun__her" aria-hidden="true" />
