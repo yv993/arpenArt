@@ -153,9 +153,11 @@ export const ownItemWord: Record<string, string> = {
   // own window). The cart's `art` is now the BAG number, 01–04, as the cards
   // name them; before this it was one of the 57 illustrations.
   totes: "Tote bag",
-  // TWENTY-SEVEN FIXED DESIGNS since 2026-11-04 (change 5.pdf p4) — the
-  // cart's `art` is the bookmark number, 01–27 in her file order (her file
-  // -02 is no. 01; scripts/bookmarks.mjs keeps her number as `her`)
+  // TWENTY-FIVE FIXED DESIGNS since 2026-11-04 (change 5.pdf p4; her 27
+  // fronts less the re-exported twins -15 and -24, 2026-11-12) — the cart's
+  // `art` is the bookmark number, 01–25 in her file order (her file -02 is
+  // no. 01; scripts/bookmarks.mjs keeps her number as `her`, and her order
+  // mail prints it: «bookmark no. 14 · file 16»)
   bookmarks: "Bookmark",
   // FOUR FIXED POSTERS since 2026-11-04 (change 5.pdf p5) — the cart's `art`
   // is the poster number, 01–04, her flat files' own (Untitled-3-01…04);
@@ -326,17 +328,19 @@ export const categories: Category[] = [
   {
     // BOOKMARKS (client, change 5.pdf p4, 2026-11-04: «New Page / BookMarks»),
     // at her p3 slot, the first of the three new lines after T-Shirts.
-    // Twenty-seven fixed designs and one shared back, sold one by one from
+    // Twenty-five fixed designs and one shared back, sold one by one from
     // /shop/bookmarks (components/BookmarkShelf.tsx); the cart's `art` is the
     // bookmark's number (ownItemWord below).
     slug: "bookmarks",
     name: "Bookmarks",
-    // HER WORDS, the first clause of her p4 paragraph («Illustrated bookmarks
-    // inspired by Armenia, made to bring …»), its comma made a full stop to
-    // stand alone like the other blurbs. She has not said which line goes
-    // under the tile; this is the default until she does (it is also the
-    // page's meta description).
-    blurb: "Illustrated bookmarks inspired by Armenia.",
+    // HER WORDS, her whole p4 sentence verbatim (review O6 / L2-fidelity#4,
+    // 2026-11-12: a cut-down «…Armenia.» passed her clause off as her line).
+    // It fits the tile: 3 lines inside the strip panel's 5em, 2–4 in the
+    // grids, nothing clipped (imgss/change5-2026-11-04/review/fix3-o6/
+    // tiles.mjs). She has not said
+    // which line goes under the tile; this is the default until she does (it
+    // is also the page's meta description).
+    blurb: "Illustrated bookmarks inspired by Armenia, made to bring a little color and a piece of home to every reading moment.",
     media: "bookmark",
     // HER PRICE, from her own 2026-09-21 list (change.pdf p9, «էջանշան
     // 500»), where it waited in `priceList` until the line arrived. Not
@@ -385,12 +389,11 @@ export const categories: Category[] = [
     // poster's number, her flat file's own (ownItemWord below).
     slug: "posters",
     name: "Posters",
-    // HER WORDS, the first clause of her p5 paragraph («Illustrated stories
-    // of Armenia, made to bring …»), its comma made a full stop to stand
-    // alone like the other blurbs — the bookmarks' treatment. She has not
-    // said which line goes under the tile; this is the default until she
-    // does (it is also the page's meta description).
-    blurb: "Illustrated stories of Armenia.",
+    // HER WORDS, her whole p5 sentence verbatim — the bookmarks' treatment
+    // (review O6 / L2-fidelity#4, 2026-11-12). She has not said which line
+    // goes under the tile; this is the default until she does (it is also
+    // the page's meta description).
+    blurb: "Illustrated stories of Armenia, made to bring color, character and a little inspiration to your space.",
     media: "poster",
     // NO PRICE YET — she sent none, and no size, paper or frame either. The
     // line is on sale with «Price confirmed by Arpine» (`priceTbc`), out of
@@ -1170,9 +1173,11 @@ export const home = {
   shopIntro: {
     kicker: "(Shop)",
     title: ["THE PICTURES", "COME OFF", "THE PAGE"],
-    // the mug and «glazed» left with the cups and plates (change 5.pdf p3,
-    // 2026-11-04) — words taken out, none added
-    copy: "Each illustration is printed or painted onto something you can actually use — a card to send, a scarf to wear.",
+    // the mug clause left with the cups and plates (change 5.pdf p3,
+    // 2026-11-04; SPEC p3 names exactly «drop the mug clause» for this line)
+    // — those words taken out, nothing else changed. «glazed» stays until
+    // Arpine answers (review O6 / L2-fidelity#6, 2026-11-12).
+    copy: "Each illustration is printed, painted or glazed onto something you can actually use — a card to send, a scarf to wear.",
   },
   // -------------------------------------------------------------------------
   // FROM THE STUDIO — the strip above the footer. It is BUILT to hold short

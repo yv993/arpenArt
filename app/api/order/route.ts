@@ -128,6 +128,31 @@ type OrderLine = {
   page: string;
 };
 
+/** HER FILE NUMBER, keyed "slug|art", for Arpine's eyes only (review O6 /
+ *  L2-fidelity#2, 2026-11-12). Two rolls are numbered differently from her
+ *  own files, so our number alone sent her to the wrong design: our bookmark
+ *  no. 14 is her «էջանշան 56-190mm-16» (her -01 is the shared back, and two
+ *  re-exported twins left the set — scripts/bookmarks.mjs), and the A6
+ *  postcard no. 04 is file -07 in her unnumbered «Новая папка» folder. Her
+ *  mail and the webhook carry her number after ours — "Bookmarks (bookmark
+ *  no. 14 · file 16)", "Armenia Eternal (A6 postcard no. 04 · file 07)" — so
+ *  she finds the design without a table. The buyer's copy keeps the shop's
+ *  number alone: it is the one the buyer saw, and the number before the dot
+ *  is the same in both copies. */
+const herFile = new Map<string, string>([
+  ...((products as unknown as { bookmark?: { id: string; her: string }[] }).bookmark ?? []).map(
+    (b) => [`bookmarks|${b.id}`, b.her] as [string, string],
+  ),
+  // an A6 card's front file is her name's last number («… x 30-07.jpg»);
+  // the square cards' fronts already carry their card number (sq03 = -03)
+  ...((products as unknown as { eternal?: { id: string; kind: string; her: string }[] }).eternal ?? []).flatMap(
+    (e) => {
+      const n = e.kind === "a6" ? /-(\d+)\.jpg$/i.exec(e.her)?.[1] : undefined;
+      return n ? [[`${ETERNAL}|${e.id}`, n] as [string, string]] : [];
+    },
+  ),
+]);
+
 /** A line as the order mail names it — "Postcards [Single card]
  *  (illustration no. 05)". The word next to the id must match the id's OWN
  *  numbering (ownItemWord): "(illustration 12)" on a magnet order would send
@@ -139,13 +164,18 @@ type OrderLine = {
  *  AN ARMENIA ETERNAL PIECE (change 5, 2026-11) is named by its kind, which
  *  is also its variant — "Armenia Eternal (Square postcard no. 03)", the
  *  kind's own capitals kept («A6» would read «a6»). Without a number (an id
- *  the roll no longer holds) it is "Armenia Eternal [Scarf]". */
-const labelOf = (l: OrderLine) =>
-  l.slug === ETERNAL && l.art
-    ? `${l.name} (${itemWords(l.slug, l.art)})`
+ *  the roll no longer holds) it is "Armenia Eternal [Scarf]".
+ *  `forArpine` (her mail and the webhook) adds her own file number where
+ *  ours differs from it (herFile above); the buyer's copy goes without. */
+const labelOf = (l: OrderLine, forArpine = false) => {
+  const file = forArpine && l.art ? herFile.get(`${l.slug}|${l.art}`) : undefined;
+  const ref = file ? ` · file ${file}` : "";
+  return l.slug === ETERNAL && l.art
+    ? `${l.name} (${itemWords(l.slug, l.art)}${ref})`
     : `${l.name}${l.variant ? ` [${l.variant}]` : ""}${
-        l.art ? ` (${(ownItemWord[l.slug] ?? "illustration").toLowerCase()} no. ${l.art})` : ""
+        l.art ? ` (${(ownItemWord[l.slug] ?? "illustration").toLowerCase()} no. ${l.art}${ref})` : ""
       }`;
+};
 
 /** THE SOLD-OUT REFUSAL (readiness #25, 2026-11-01) — word for word the
  *  sentence the cart shows before sending, each line named the way the cart
@@ -289,14 +319,16 @@ export async function POST(req: Request) {
   // five characters a buyer can read back over the phone (no 0/O, 1/I)
   const ref = "AR-" + Array.from({ length: 5 }, () => REF_CHARS[randomInt(REF_CHARS.length)]).join("");
 
-  // one rendering of the lines, used by both the artist's and the buyer's copy
-  // (labelOf). The picture link under it is the one the buyer was looking
-  // at; the page link is the product's shop page.
-  const lineText = lines.flatMap((l) => [
-    `  ${l.qty} x ${labelOf(l)} — ${l.sum === null ? priceTbcMid : `${l.sum} AMD`}`,
-    ...(l.picture ? [`      Picture: ${l.picture}`] : []),
-    `      Page: ${l.page}`,
-  ]);
+  // one rendering of the lines for both the artist's and the buyer's copy
+  // (labelOf); hers adds her own file number where it differs from ours. The
+  // picture link under it is the one the buyer was looking at; the page link
+  // is the product's shop page.
+  const lineTextOf = (forArpine: boolean) =>
+    lines.flatMap((l) => [
+      `  ${l.qty} x ${labelOf(l, forArpine)} — ${l.sum === null ? priceTbcMid : `${l.sum} AMD`}`,
+      ...(l.picture ? [`      Picture: ${l.picture}`] : []),
+      `      Page: ${l.page}`,
+    ]);
 
   // the delivery half, rendered once for both copies
   const shipText = [
@@ -319,7 +351,7 @@ export async function POST(req: Request) {
     `${name} <${email}>`,
     `Phone: ${phone}`,
     "",
-    ...lineText,
+    ...lineTextOf(true),
     "",
     ...money,
     "",
@@ -345,7 +377,9 @@ export async function POST(req: Request) {
         // from its own copy of the item words, which falls behind whenever
         // they change (n8n's intake said «illustration no. 05» for bookmark
         // no. 05 after change 5, review 2026-11-09)
-        lines: lines.map((l) => ({ ...l, label: labelOf(l) })),
+        // (the webhook feeds Arpine's own Telegram card and sheet, so its
+        // label carries her file number, like her mail)
+        lines: lines.map((l) => ({ ...l, label: labelOf(l, true) })),
         goods,
         unpriced: unpriced.length,
         delivery: { id: ship!.id, label: ship!.label, price: post },
@@ -372,7 +406,7 @@ export async function POST(req: Request) {
         "availability, the final total and the postage — you pay only after",
         "that confirmation.",
         "",
-        ...lineText,
+        ...lineTextOf(false),
         "",
         ...money,
         "",

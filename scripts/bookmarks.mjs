@@ -10,25 +10,42 @@
 //   -02 … -28  27 fronts
 // plus cover/4.jpg, a styled photograph of two bookmarks on a book (the tile).
 //
-// THE DUPLICATE RULE (SPEC p4 default). -02/-15 and -08/-24 look alike in
-// Drive's grid. The later file of a pair is dropped ONLY if the two are
-// byte-identical or pixel-identical (same size, every decoded channel equal);
-// "looks the same" is Arpine's call, not this script's. The test is run and
-// printed on every run, so the numbers in the report are the script's own.
+// THE DUPLICATE RULE (SPEC p4: "drop the later file of each pair … which
+// leaves 25 designs"). -02/-15 and -08/-24 look alike in Drive's grid. The
+// later file of a pair is dropped when the two are THE SAME PICTURE: byte-
+// identical, pixel-identical, or perceptually identical — both shrunk to
+// 64×216 and their mean absolute channel difference at most SAME_PICTURE.
+// Exact equality alone kept both pairs (review O6 / L2-fidelity#1,
+// 2026-11-12): two separate JPEG exports of one artwork never decode to equal
+// pixels, and -15 is even 1 px wider than -02 with the art ~3 px higher, so
+// the shop sold no. 01 and no. 14 (and no. 07 and no. 23) as four designs
+// that are two. Measured on her masters (imgss/change5-2026-11-04/review/
+// fix3-o6/perceptual.mjs, with heat maps and side-by-sides):
+// -08/-24 differ by 0.01 and -02/-15 by 3.86, while the closest two DIFFERENT
+// designs differ by 48.63 (median 73.6). Every run prints each pair's figure
+// next to the nearest different design's, and warns if any other two fronts
+// come under the line, so a new near-duplicate cannot slip in unseen.
 //
 // THE NUMBERING. The kept fronts are numbered 01…NN in display order (her
 // file order) — the number a buyer reads («Bookmark no. 05») and the cart's
-// `art`. Her file number stays in each row as `her`, and the mapping table is
-// printed, so «Bookmark no. 05» can always be traced to her -06.
+// `art`. Her file number stays in each row as `her`; the order mail and the
+// webhook print it next to ours («bookmark no. 14 · file 16», app/api/order)
+// so Arpine finds the design an order names in her own folder without a
+// table. The mapping table is printed here too.
 //
 // RUNGS. The masters are only ~662 px wide, so nothing is upscaled: the full
 // file is the master's own width (q82) and the -sm is half of it (q78), which
-// covers a ~150 px grid cell at 2x and a ~110 px phone cell at 3x. Every
-// picture gets a NEW name (public/products is cached for a day).
+// covers a ~150 px grid cell at 2x and a ~110 px phone cell at 3x.
+// FILE NAMES FOLLOW HER FILE NUMBER, not ours (bookmark-file-16.webp is her
+// -16): our numbers move whenever a design leaves or joins the set, and
+// public/products is cached for a day, so a name tied to our number would
+// serve yesterday's picture under today's number. Her number never moves, and
+// the Picture link in her order mail then names her file too. Front files the
+// roll no longer names are deleted, so the folder and products.json agree.
 //
 //   node scripts/bookmarks.mjs
 // ---------------------------------------------------------------------------
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, readdir, unlink } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -63,8 +80,23 @@ const PAIRS = [
   ["02", "15"],
   ["08", "24"],
 ];
+// the perceptual line: far above two re-exports of one picture (0.01, 3.86),
+// far below two different designs (48.63 at the closest) — see the header
+const SAME_PICTURE = 8;
+const FRONTS = Array.from({ length: 27 }, (_, i) => String(i + 2).padStart(2, "0"));
+const small = new Map();
+for (const n of FRONTS)
+  small.set(n, await sharp(await source(fileOf(n))).removeAlpha().resize(64, 216, { fit: "fill" }).raw().toBuffer());
+const madOf = (a, b) => {
+  const A = small.get(a);
+  const B = small.get(b);
+  let s = 0;
+  for (let i = 0; i < A.length; i++) s += Math.abs(A[i] - B[i]);
+  return +(s / A.length).toFixed(2);
+};
+const isPair = (a, b) => PAIRS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 const drop = new Set();
-console.log("duplicate test (drop the later file only if byte- or pixel-identical):");
+console.log(`duplicate test (drop the later file if byte-, pixel- or perceptually identical: 64×216 mean channel difference ≤ ${SAME_PICTURE}):`);
 for (const [a, b] of PAIRS) {
   const A = await source(fileOf(a));
   const B = await source(fileOf(b));
@@ -73,27 +105,36 @@ for (const [a, b] of PAIRS) {
   const bytes = A.equals(B);
   const sameSize = ra.info.width === rb.info.width && ra.info.height === rb.info.height;
   let max = null;
-  let mean = null;
   if (sameSize) {
-    let sum = 0;
     max = 0;
-    for (let i = 0; i < ra.data.length; i++) {
-      const d = Math.abs(ra.data[i] - rb.data[i]);
-      if (d > max) max = d;
-      sum += d;
-    }
-    mean = +(sum / ra.data.length).toFixed(3);
+    for (let i = 0; i < ra.data.length; i++) max = Math.max(max, Math.abs(ra.data[i] - rb.data[i]));
   }
   const pixels = sameSize && max === 0;
-  if (bytes || pixels) drop.add(b);
+  const mad = madOf(a, b);
+  // the nearest DIFFERENT design to either file, so the margin is printed
+  const nearest = FRONTS.filter((n) => n !== a && n !== b)
+    .flatMap((n) => [[a, n], [b, n]])
+    .map(([x, n]) => ({ x, n, d: madOf(x, n) }))
+    .sort((p, q) => p.d - q.d)[0];
+  const same = bytes || pixels || mad <= SAME_PICTURE;
+  if (same) drop.add(b);
   console.log(
     `  -${a} / -${b}: bytes ${bytes ? "identical" : "differ"}; ` +
       (sameSize
-        ? `pixels ${pixels ? "identical" : `differ (max channel difference ${max}/255, mean ${mean})`}`
-        : `sizes differ (${ra.info.width}x${ra.info.height} vs ${rb.info.width}x${rb.info.height}), so not pixel-identical`) +
-      ` → ${bytes || pixels ? `-${b} DROPPED` : "both kept"}`,
+        ? `pixels ${pixels ? "identical" : `differ (max channel difference ${max}/255)`}`
+        : `sizes differ (${ra.info.width}x${ra.info.height} vs ${rb.info.width}x${rb.info.height})`) +
+      `; perceptual difference ${mad} (nearest different design: -${nearest.x} / -${nearest.n} at ${nearest.d})` +
+      ` → ${same ? `the same picture, -${b} DROPPED` : "different pictures, both kept"}`,
   );
 }
+// any OTHER two fronts under the line are reported, never dropped silently
+for (let i = 0; i < FRONTS.length; i++)
+  for (let j = i + 1; j < FRONTS.length; j++) {
+    const [a, b] = [FRONTS[i], FRONTS[j]];
+    if (isPair(a, b)) continue;
+    const d = madOf(a, b);
+    if (d <= SAME_PICTURE * 3) console.warn(`  WARNING: -${a} / -${b} differ by only ${d} — look at them; add the pair to PAIRS if they are one picture`);
+  }
 
 // ---- 2. the back -------------------------------------------------------------
 async function rungs(buf, base) {
@@ -122,16 +163,16 @@ const map = [];
 for (let n = 2; n <= 28; n++) {
   const her = String(n).padStart(2, "0");
   if (drop.has(her)) {
-    map.push([her, "— dropped (identical to its pair)"]);
+    map.push([her, `— dropped (the same picture as -${PAIRS.find(([, b]) => b === her)[0]})`]);
     continue;
   }
   const id = String(roll.length + 1).padStart(2, "0");
-  const r = await rungs(await source(fileOf(her)), `bookmark-${id}`);
+  const r = await rungs(await source(fileOf(her)), `bookmark-file-${her}`);
   roll.push({
     id,
     her,
-    src: `/products/bookmark-${id}.webp`,
-    thumb: `/products/bookmark-${id}-sm.webp`,
+    src: `/products/bookmark-file-${her}.webp`,
+    thumb: `/products/bookmark-file-${her}-sm.webp`,
     w: r.big.width,
     h: r.big.height,
     thumbW: r.sm.width,
@@ -140,6 +181,15 @@ for (let n = 2; n <= 28; n++) {
   });
   map.push([her, id]);
 }
+
+// front files the roll no longer names (an older numbering's bookmark-NN, a
+// dropped design's bookmark-file-NN) leave the folder
+const keep = new Set(roll.flatMap((r) => [r.src, r.thumb].map((p) => p.split("/").pop())));
+for (const f of await readdir(OUT))
+  if (/^bookmark-(\d{2}|file-\d{2})(-sm)?\.webp$/.test(f) && !keep.has(f)) {
+    await unlink(join(OUT, f));
+    console.log(`  removed public/products/${f}`);
+  }
 
 // ---- 4. the tile (cover/4.jpg) and the ring's crop ---------------------------
 const coverBuf = await source("cover/4.jpg");
