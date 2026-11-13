@@ -195,8 +195,18 @@ function monotone(ps: number[], vs: number[]) {
  *  wheel moves the page 100px in one frame; the sun followed in the same
  *  jump, a step per notch (measured 18–38px a notch, real wheel input). It
  *  now closes 1 − e^(−dt/τ) of the gap each frame: a notch becomes a short
- *  glide, a trackpad's stream is followed within a frame or two. A jump
- *  larger than SNAP (an anchor link, Home/End) is taken at once. */
+ *  glide, a trackpad's stream is followed within a frame or two.
+ *  SNAP is measured on the TARGET, from one frame to the next: only a jump
+ *  of the scroll itself larger than SNAP is taken at once — an anchor (the
+ *  footer's way back up), the rail's Home/End. The browser's own Home/End
+ *  keys animate the scroll over several frames, so they arrive as a fast
+ *  continuous scroll and are followed as one. SNAP was measured on the lag
+ *  (target − drawn), and a steady scroll faster than SNAP/GLIDE (0.6 of the
+ *  page a second: a hard wheel spin, a fling) built that much lag and threw
+ *  the sun 88–196px onto the target in one frame, the very steps the glide
+ *  was there to remove (review, change 5, L6-sun#2). The lag is now capped
+ *  at SNAP instead of zeroed: past that speed the sun follows SNAP behind at
+ *  the scroll's own pace, and glides in once the scroll eases. */
 const GLIDE = 0.2;
 const SNAP = 0.12;
 
@@ -603,6 +613,9 @@ export default function Sun() {
     /** where the sun is drawn — `target` reached by a glide (see GLIDE);
      *  −1 until the first draw */
     let shown = -1;
+    /** `target` as it was at the glide's last frame (or the last snap) —
+     *  what a jump is measured against, never `shown` (see SNAP) */
+    let lastWant = -1;
     /** the glide's last frame time (performance.now); 0 while at rest */
     let glideT = 0;
     const draw = (p: number) => {
@@ -750,8 +763,15 @@ export default function Sun() {
       const want = target();
       const dt = glideT ? Math.min(0.1, Math.max(0, (now - glideT) / 1000)) : 1 / 60;
       glideT = now;
-      if (shown < 0 || Math.abs(want - shown) > SNAP) shown = want;
-      else shown += (want - shown) * (1 - Math.exp(-dt / GLIDE));
+      if (shown < 0 || Math.abs(want - lastWant) > SNAP) shown = want;
+      else {
+        shown += (want - shown) * (1 - Math.exp(-dt / GLIDE));
+        // a scroll the glide cannot keep up with: held SNAP behind, so in
+        // that frame the sun moves no further than the scroll itself did
+        const lag = want - shown;
+        if (Math.abs(lag) > SNAP) shown = want - Math.sign(lag) * SNAP;
+      }
+      lastWant = want;
       if (Math.abs(want - shown) < 1e-5) shown = want;
       draw(shown);
       if (shown !== want) raf = requestAnimationFrame(glide);
@@ -772,6 +792,7 @@ export default function Sun() {
       raf = 0;
       glideT = 0;
       shown = target();
+      lastWant = shown;
       draw(shown);
     };
     const onResize = () => {
