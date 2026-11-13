@@ -5,6 +5,7 @@ import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_Z, type Spin } from "./sphereSpin";
 import { GlobeWords } from "./GlobeWords";
+import MapBoundary from "./MapBoundary";
 
 // ============================================================================
 // A slowly turning sphere of Arpine's illustrations, held in a haze of warm
@@ -332,6 +333,17 @@ function Artworks({
   );
 }
 
+/** Set once the words' boundary (below) has caught an error: from then on,
+ *  for the life of the page, the words are not mounted again. The canvas
+ *  remounts each time the gallery comes back near (Gallery.tsx), and the same
+ *  failure would be thrown, and reported, again each time. Nothing else to
+ *  hand on: R3F 9 already reports an error its tree catches (its root's
+ *  onCaughtError is reportError), so it is logged once. */
+let wordsDead = false;
+const wordsFailed = () => {
+  wordsDead = true;
+};
+
 export function ParticleSphere({
   images,
   spin,
@@ -385,11 +397,24 @@ export function ParticleSphere({
         <Artworks images={images} chosenRef={chosenRef} onPick={onPick} />
       </group>
       {/* HER SEVEN WORDS (change 5.pdf p2) on an inner shell that turns at a
-          share of this group's turn, so they are a sibling, not a child. Their
-          own boundary: the cards never wait for seven small PNGs. */}
-      <Suspense fallback={null}>
-        <GlobeWords globe={group} chosenRef={chosenRef} />
-      </Suspense>
+          share of this group's turn, so they are a sibling, not a child.
+          Two wrappers for two different things:
+          - the Suspense is for LOADING only: the cards never wait for seven
+            small PNGs. It catches no error.
+          - the MapBoundary is for FAILURE (review L4-globe-words#2,
+            L8-hostile-code#3): it renders nothing, so the words go and the
+            cards and the globe stay. Without it an error in the words climbed
+            to Gallery's MapBoundary, which swaps the whole canvas for the
+            link grid.
+          A word file that fails to load never gets this far: GlobeWords'
+          own loader leaves that word out without throwing. */}
+      {!wordsDead && (
+        <MapBoundary onError={wordsFailed}>
+          <Suspense fallback={null}>
+            <GlobeWords globe={group} chosenRef={chosenRef} />
+          </Suspense>
+        </MapBoundary>
+      )}
     </>
   );
 }

@@ -43,6 +43,8 @@ import * as THREE from "three";
 //    to), mean 6.3. Riding 0.35 × the globe's raw yaw total, as before, it
 //    was 0 at worst and ≤ 1 for 44% of those turns — one phone flick (yaw
 //    0.8 → 8.8) left none for ~3 minutes.
+//  - A word whose file fails to load is left out on its own (WordLoader
+//    below); the other words, the cards and the globe carry on.
 //
 // Imported ONLY by ParticleSphere, which lives in the GlobeCanvas chunk, so
 // three.js stays out of the home route's own chunk.
@@ -81,6 +83,31 @@ const WORDS: Word[] = [
   { phrase: "Wonder / More", src: "/globe/word-wonder-more.png", w: 197, h: 143, lat: -42, lon: -13, small: true },
 ];
 const URLS = WORDS.map((w) => w.src);
+
+/** A WORD THAT FAILS TO LOAD IS LEFT OUT, AND TAKES NOTHING WITH IT (review
+ *  fix L4-globe-words#2 / L8-hostile-code#3, 2026-11-12). useLoader loads the
+ *  seven as one batch and rejects the whole batch when any one file fails;
+ *  thrown inside the canvas, that rejection reached Gallery's MapBoundary, so
+ *  one 6 KB PNG cut off mid-load (a flaky phone connection) swapped the globe
+ *  and all 24 cards for the link grid. This loader settles a failed word as
+ *  null instead of an error, so the batch always resolves: GlobeWords leaves
+ *  that word out, the rest show, and the console gets one warning per page.
+ *  Settled, not thrown and caught: R3F 9 gives its root `reportError` as the
+ *  handler for CAUGHT errors too, so even a caught failure would print as an
+ *  uncaught error — too loud for a missing decoration. ParticleSphere wraps
+ *  the words in their own error boundary as well, for anything ELSE that
+ *  throws in here.
+ *  A Loader of its own (not an ImageLoader subclass): its result is honestly
+ *  "an image or null", so useLoader types it that way. */
+class WordLoader extends THREE.Loader<HTMLImageElement | null> {
+  private readonly images = new THREE.ImageLoader(this.manager);
+  override load(url: string, onLoad: (img: HTMLImageElement | null) => void, onProgress?: (e: ProgressEvent) => void) {
+    this.images.setPath(this.path).setCrossOrigin(this.crossOrigin).load(url, onLoad, onProgress, () => onLoad(null));
+  }
+}
+/** one console line per page, however many words failed and however often
+ *  the canvas mounts (the failed result stays in useLoader's cache) */
+let reported = false;
 
 const R_IN = 6.3;
 /** World units per pixel of her PNG: a two-line phrase (143 px) stands 1.7
@@ -169,9 +196,16 @@ export function GlobeWords({
   globe: React.RefObject<THREE.Group | null>;
   chosenRef: React.RefObject<number | null>;
 }) {
-  const images = useLoader(THREE.ImageLoader, URLS);
-  const textures = useMemo(() => images.map(haloTexture), [images]);
-  useEffect(() => () => textures.forEach((t) => t.dispose()), [textures]);
+  // null where a word's file failed (WordLoader)
+  const images = useLoader(WordLoader, URLS);
+  const textures = useMemo(() => images.map((img) => (img ? haloTexture(img) : null)), [images]);
+  useEffect(() => () => textures.forEach((t) => t?.dispose()), [textures]);
+  useEffect(() => {
+    const missing = WORDS.filter((_, i) => !images[i]).map((w) => w.src);
+    if (!missing.length || reported) return;
+    reported = true;
+    console.warn(`Globe words left out, their files did not load: ${missing.join(", ")}`);
+  }, [images]);
 
   // each word's home on the inner shell (same convention as the cards:
   // +z toward the camera at rest)
@@ -308,24 +342,30 @@ export function GlobeWords({
 
   return (
     <group ref={shell}>
-      {WORDS.map((w, i) => (
-        <sprite
-          key={w.src}
-          ref={(el) => {
-            sprites.current[i] = el;
-          }}
-          position={homes[i]}
-          raycast={noRaycast}
-          // first among the see-through things, so the additive haze adds its
-          // dots over a word like stars in front of it; the cards are opaque
-          // and drawn before anything see-through, so depth testing still
-          // puts every near card in front
-          renderOrder={-1}
-          visible={false}
-        >
-          <spriteMaterial map={textures[i]} transparent depthWrite={false} toneMapped={false} opacity={0} />
-        </sprite>
-      ))}
+      {WORDS.map((w, i) => {
+        const map = textures[i];
+        // a word whose file failed is simply not there; the frame loop and
+        // the dev probe already skip an empty slot
+        if (!map) return null;
+        return (
+          <sprite
+            key={w.src}
+            ref={(el) => {
+              sprites.current[i] = el;
+            }}
+            position={homes[i]}
+            raycast={noRaycast}
+            // first among the see-through things, so the additive haze adds its
+            // dots over a word like stars in front of it; the cards are opaque
+            // and drawn before anything see-through, so depth testing still
+            // puts every near card in front
+            renderOrder={-1}
+            visible={false}
+          >
+            <spriteMaterial map={map} transparent depthWrite={false} toneMapped={false} opacity={0} />
+          </sprite>
+        );
+      })}
     </group>
   );
 }
