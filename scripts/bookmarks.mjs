@@ -28,10 +28,11 @@
 //
 // THE NUMBERING. The kept fronts are numbered 01…NN in display order (her
 // file order) — the number a buyer reads («Bookmark no. 05») and the cart's
-// `art`. Her file number stays in each row as `her`; the order mail and the
-// webhook print it next to ours («bookmark no. 14 · file 16», app/api/order)
-// so Arpine finds the design an order names in her own folder without a
-// table. The mapping table is printed here too.
+// `art`. Her file number stays with each row as `her` — written to
+// lib/sources.json, not products.json (scripts/manifest.mjs) — and the order
+// mail and the webhook print it next to ours («bookmark no. 14 · file 16»,
+// app/api/order) so Arpine finds the design an order names in her own folder
+// without a table. The mapping table is printed here too.
 //
 // RUNGS. The masters are only ~662 px wide, so nothing is upscaled: the full
 // file is the master's own width (q82) and the -sm is half of it (q78), which
@@ -45,16 +46,16 @@
 //
 //   node scripts/bookmarks.mjs
 // ---------------------------------------------------------------------------
-import { readFile, writeFile, readdir, unlink } from "node:fs/promises";
+import { readFile, readdir, unlink } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
+import { saveRolls } from "./manifest.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "imgss", "change5-2026-11-04", "drive", "bookmarks");
 const OUT = join(ROOT, "public", "products");
-const MANIFEST = join(ROOT, "lib", "products.json");
 
 const fileOf = (n) => `էջանշան 56-190mm-${n}.jpg`;
 const sha1 = (b) => createHash("sha1").update(b).digest("hex");
@@ -208,11 +209,8 @@ const ring = await sharp(coverBuf).rotate().extract(CROP).resize(null, 700, { wi
 const ringRatio = ring.height / ring.width;
 if (ringRatio > 1.42 || ringRatio < 0.68) throw new Error(`ring crop h/w ${ringRatio.toFixed(3)} is outside FloatShopCanvas's [0.68, 1.42]`);
 
-// ---- 5. the manifest -----------------------------------------------------------
-const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
-manifest.bookmark = roll;
-manifest.bookmarkBack = [backRow];
-await writeFile(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
+// ---- 5. the manifest (her file numbers to lib/sources.json) --------------------
+await saveRolls(ROOT, { bookmark: roll, bookmarkBack: [backRow] });
 
 // ---- 6. what content.ts and CatFig need, read off the written files ----------
 console.log("\nher file → our number:");

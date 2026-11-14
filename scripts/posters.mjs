@@ -32,16 +32,16 @@
 //
 //   node scripts/posters.mjs
 // ---------------------------------------------------------------------------
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
+import { saveRolls } from "./manifest.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "imgss", "change5-2026-11-04", "drive", "posters");
 const OUT = join(ROOT, "public", "products");
-const MANIFEST = join(ROOT, "lib", "products.json");
 
 /** poster number (her flat file's) → the mockup that shows it on the wall */
 const WALL_OF = { "01": "2", "02": "3", "03": "4", "04": "1" };
@@ -173,10 +173,8 @@ const ring = await sharp(flats[FACE]).rotate().resize(null, 700, { withoutEnlarg
 const ringRatio = ring.height / ring.width;
 if (ringRatio > 1.42 || ringRatio < 0.68) throw new Error(`ring card h/w ${ringRatio.toFixed(3)} is outside FloatShopCanvas's [0.68, 1.42]`);
 
-// ---- 4. the manifest -------------------------------------------------------------
-const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
-manifest.poster = roll;
-await writeFile(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
+// ---- 4. the manifest (her file names to lib/sources.json) ------------------------
+await saveRolls(ROOT, { poster: roll });
 
 // ---- 5. what content.ts and CatFig need, read off the written files --------------
 console.log("\nposter → her files:");

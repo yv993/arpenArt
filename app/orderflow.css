@@ -205,3 +205,12 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
+/* THE "+" AT 99 (CartView, MAX_QTY — review O7) looks the same, but it keeps
+   the keyboard: aria-disabled, so it stays focused, and the dimming is on its
+   ink and border (the 0.35 above, worked out) instead of opacity, which would
+   fade the focus ring with it. */
+.ap-cart__qty button[aria-disabled="true"] {
+  color: color-mix(in srgb, currentColor 35%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 8.4%, transparent);
+  cursor: not-allowed;
+}

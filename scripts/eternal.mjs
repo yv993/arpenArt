@@ -53,16 +53,16 @@
 //
 //   node scripts/eternal.mjs
 // ---------------------------------------------------------------------------
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
+import { saveRolls } from "./manifest.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "imgss", "change5-2026-11-04", "drive", "eternal");
 const OUT = join(ROOT, "public", "products");
-const MANIFEST = join(ROOT, "lib", "products.json");
 const OG = join(ROOT, "app", "armenia-eternal", "armenia-eternal-og.jpg");
 
 const sha1 = (b) => createHash("sha1").update(b).digest("hex");
@@ -462,11 +462,8 @@ if (ringRatio > 1.42 || ringRatio < 0.68) throw new Error(`ring card h/w ${ringR
     .toFile(OG);
 }
 
-// ---- 9. the manifest -------------------------------------------------------------
-const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
-manifest.eternal = roll;
-manifest.eternalExtra = extra;
-await writeFile(MANIFEST, JSON.stringify(manifest, null, 1) + "\n");
+// ---- 9. the manifest (her file names to lib/sources.json) ------------------------
+await saveRolls(ROOT, { eternal: roll, eternalExtra: extra });
 
 // ---- 10. the report --------------------------------------------------------------
 console.log("\nfront / back, read off the pictures (her file numbers do not decide):");

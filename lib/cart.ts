@@ -9,7 +9,8 @@
 // PLACEHOLDERS until Arpine supplies real ones; the cart never invents a
 // total of its own, it only ever multiplies what is written there.
 
-import { categories, ETERNAL, eternalLineOk, isSoldOut, priceTbc, withheldArt } from "./content";
+import { categories, isSoldOut, priceTbc } from "./content";
+import { ART_MAX, MAX_QTY, orderLine, plainText, qtyOf, VARIANT_MAX } from "./lineRules";
 
 export type Line = {
   /** category slug, e.g. "postcards" */
@@ -33,44 +34,58 @@ const KEY = "arpenart.cart.v2";
 const OLD_KEY = "arpenart.cart.v1";
 const EVT = "arpenart:cart";
 
-/** true when a line of this category can be ordered today: the category
- *  exists and is open. /api/order keeps exactly these and no others. */
-const orderable = (slug: string) => categories.some((c) => c.slug === slug && c.status === "open");
+const same = (a: Line, b: Pick<Line, "cat" | "art" | "variant">) =>
+  a.cat === b.cat && (a.art ?? "") === (b.art ?? "") && (a.variant ?? "") === (b.variant ?? "");
 
-/** the lines in one stored value, with anything malformed or withdrawn dropped */
+/** identical lines folded into the first, the way /api/order merges them —
+ *  their quantities added, never past MAX_QTY */
+function merge(lines: Line[]): Line[] {
+  const out: Line[] = [];
+  for (const l of lines) {
+    const hit = out.find((o) => same(o, l));
+    if (hit) hit.qty = Math.min(MAX_QTY, hit.qty + l.qty);
+    else out.push({ ...l });
+  }
+  return out;
+}
+
+/** THE LINES IN ONE STORED VALUE, AS AN ORDER WOULD RECORD THEM (review O7,
+ *  L1-cart-order#2 + #3, 2026-11-13). Every rule /api/order applies that
+ *  needs no item roll runs here, from the same code (lib/lineRules.ts
+ *  orderLine): a category that is unknown or not open, an illustration the
+ *  client withdrew (`withheldArt`), a variant the line does not offer, an
+ *  Armenia Eternal piece whose kind does not match, all drop the line; a
+ *  sticker sheet loses any illustration; the quantity becomes a whole number
+ *  from 1 to 99; identical lines merge. Before this the cart kept its own
+ *  copy of some of them (the category, the withdrawn illustrations, the
+ *  Armenia Eternal kind) and not the variant or quantity rules, so a stale
+ *  or hand-edited cart could show «Poster no. 01 (A3)»,
+ *  a bookmark at 101 or −3, and count them in Items, while the order mail
+ *  dropped the line or charged another amount. (The one rule that needs the
+ *  rolls — an id the roll does not hold loses its number — is applied by the
+ *  cart page: unname below.) Every write goes through read(), so what this
+ *  returns is also what the next write stores. */
 function parse(raw: string | null): Line[] {
   try {
     const parsed = raw ? (JSON.parse(raw) as unknown) : [];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (l): l is Line =>
-        !!l &&
-        typeof l === "object" &&
-        typeof (l as Line).cat === "string" &&
-        // A LINE THAT CANNOT BE ORDERED LEAVES (change 5, 2026-11). A cart
-        // saved while cups, plates and puzzles still had tiles (before
-        // 2026-09-15 they could be added) kept such a line: the badge counted
-        // it, the total charged its old `from`, and /api/order dropped it
-        // without a word — so Arpine's mail lacked a line the buyer saw.
-        // Since change 5.pdf p3 removed those three there is not even a name
-        // to show it by. A category that is unknown or not open is dropped
-        // here, silently, the same rule as the server's; it also covers any
-        // line removed or paused later.
-        orderable((l as Line).cat) &&
-        Number.isFinite((l as Line).qty) &&
-        // a stored variant that is not a string (old or tampered data) would
-        // poison the merge key, so such lines are dropped, not coerced
-        ((l as Line).variant === undefined || typeof (l as Line).variant === "string") &&
-        // an Armenia Eternal line names its piece's kind, and the piece is
-        // of that kind (content.ts eternalLineOk — /api/order drops any
-        // other, so the cart does not keep one the order would leave out)
-        ((l as Line).cat !== ETERNAL || eternalLineOk((l as Line).art, (l as Line).variant)) &&
-        // an illustration the client has since withdrawn from this line
-        // (`withheldArt` — the two postcards of change 3.pdf p2, 2026-10-01)
-        // may still sit in a cart saved before she did; it is dropped here,
-        // silently, the way the picker no longer offers it
-        !withheldArt[(l as Line).cat]?.includes((l as Line).art ?? ""),
-    );
+    const kept: Line[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const l = item as Record<string, unknown>;
+      if (typeof l.cat !== "string" || typeof l.qty !== "number" || !Number.isFinite(l.qty)) continue;
+      // a stored id or variant that is not plain text (old or tampered data)
+      // would poison the merge key, or read differently on the server, so
+      // such lines are dropped, not coerced — the cart never sends them.
+      // A null id is no id, as it is to the server.
+      const art = l.art ?? undefined;
+      if (art !== undefined && (typeof art !== "string" || !plainText(art, ART_MAX))) continue;
+      if (l.variant !== undefined && (typeof l.variant !== "string" || !plainText(l.variant, VARIANT_MAX))) continue;
+      const line = orderLine(l.cat, art || null, (l.variant as string | undefined) || null);
+      if (!line) continue;
+      kept.push({ cat: line.cat.slug, art: line.art ?? undefined, variant: line.variant ?? undefined, qty: qtyOf(l.qty) });
+    }
+    return merge(kept);
   } catch {
     return [];
   }
@@ -139,26 +154,26 @@ function write(lines: Line[]) {
   window.dispatchEvent(new CustomEvent(EVT));
 }
 
-const same = (a: Line, b: Pick<Line, "cat" | "art" | "variant">) =>
-  a.cat === b.cat && (a.art ?? "") === (b.art ?? "") && (a.variant ?? "") === (b.variant ?? "");
-
 /** false (and nothing stored) when the piece is sold out — content.ts
  *  `soldOut`; the buttons say so first, this is the last word */
 export function add(cat: string, art?: string, qty = 1, variant?: string): boolean {
   if (isSoldOut(cat, art, variant)) return false;
   const lines = read();
   const hit = lines.find((l) => same(l, { cat, art, variant }));
-  if (hit) hit.qty = Math.min(99, hit.qty + qty);
-  else lines.push({ cat, art, variant, qty });
+  if (hit) hit.qty = Math.min(MAX_QTY, hit.qty + qty);
+  else lines.push({ cat, art, variant, qty: Math.min(MAX_QTY, qty) });
   write(lines);
   return true;
 }
 
 export function setQty(cat: string, art: string | undefined, qty: number, variant?: string) {
-  // a sold-out line saved before it sold out can go down or out, never up
+  // a sold-out line saved before it sold out can go down or out, never up;
+  // and no line goes past what an order carries (MAX_QTY, the same 99 as
+  // add() and /api/order — the cart's "+" went on to 100, 101 and counted
+  // them, while the order recorded 99: L1-cart-order#3)
   const out = isSoldOut(cat, art, variant);
   const lines = read()
-    .map((l) => (same(l, { cat, art, variant }) ? { ...l, qty: out ? Math.min(qty, l.qty) : qty } : l))
+    .map((l) => (same(l, { cat, art, variant }) ? { ...l, qty: Math.min(MAX_QTY, out ? Math.min(qty, l.qty) : qty) } : l))
     .filter((l) => l.qty > 0);
   write(lines);
 }
@@ -182,9 +197,27 @@ export function remove(cat: string, art?: string, variant?: string) {
 export function restore(line: Line, at: number) {
   const lines = read();
   const hit = lines.find((l) => same(l, line));
-  if (hit) hit.qty = Math.min(99, hit.qty + line.qty);
+  if (hit) hit.qty = Math.min(MAX_QTY, hit.qty + line.qty);
   else lines.splice(Math.max(0, Math.min(at, lines.length)), 0, line);
   write(lines);
+}
+
+/** AN ITEM NUMBER THE LINE'S ROLL DOES NOT HOLD LEAVES THE LINE — the cart
+ *  page's copy of /api/order's rule (review O7, L1-cart-order#2, 2026-11-13).
+ *  `named` is lib/lineIds.ts nameable, passed in because this module rides
+ *  on every page and must not carry the rolls. The server keeps such a line
+ *  at its category's price but sends it without a number; the cart showed
+ *  «Bookmark no. 28» with another design's picture. Stored, not only drawn,
+ *  so Remove and the quantity buttons still find the line, and identical
+ *  lines it leaves behind merge as the server merges them. Writes only when
+ *  something changed. Returns the lines as the order will record them. */
+export function unname(named: (cat: string, art: string) => boolean): Line[] {
+  const lines = read();
+  const ok = (l: Line) => !l.art || named(l.cat, l.art);
+  if (lines.every(ok)) return lines;
+  const next = merge(lines.map((l) => (ok(l) ? l : { ...l, art: undefined })));
+  write(next);
+  return next;
 }
 
 export function clear() {
@@ -206,10 +239,13 @@ export function unit(cat: string): number | null {
  *  A variant priced in content.ts (`variants.prices`) costs that; null there
  *  means "Arpine confirms it by reply" (the postcards' full series set,
  *  2026-10-31: it was being charged as one card). Every other line costs
- *  its category's `from`. /api/order applies the same rule to re-price. */
+ *  its category's `from`. /api/order applies the same rule to re-price.
+ *  An unknown slug is null too, like unit() — it was 0, which would print
+ *  «0 ֏» and add nothing (L8-hostile-code#8); parse() drops such a line
+ *  before any caller sees it, and every caller already handles null. */
 export function unitOf(l: Pick<Line, "cat" | "variant">): number | null {
   const cat = categories.find((c) => c.slug === l.cat);
-  if (!cat) return 0;
+  if (!cat) return null;
   const prices = cat.variants?.prices;
   if (l.variant && prices && Object.prototype.hasOwnProperty.call(prices, l.variant)) return prices[l.variant] ?? null;
   return cat.from;

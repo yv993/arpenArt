@@ -4,12 +4,14 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { about } from "@/lib/content";
-import products from "@/lib/products.json";
 
-/** `thumbW` is the small file's measured width (scratchpad/assets-1001-about.cjs
- *  writes it) — the srcSet below needs a true `w` descriptor for both files */
-type Shot = { id: string; src: string; thumb: string; w: number; h: number; thumbW?: number; alpha: boolean; avg: string };
-const P = products as Record<string, Shot[]>;
+/** Her portrait, as app/about/page.tsx reads it from lib/products.json and
+ *  hands it down (review O7, L7-regressions#2, 2026-11-13): imported here,
+ *  the whole of products.json — every roll on the site, 36 KB — came to
+ *  /about in its scripts for this one photograph. `thumbW` is the small
+ *  file's measured width (scratchpad/assets-1001-about.cjs writes it) — the
+ *  srcSet below needs a true `w` descriptor for both files. */
+export type AboutShot = { src: string; thumb: string; w: number; h: number; thumbW?: number };
 
 // ============================================================================
 // ABOUT — Arpine, in her own words. Lifted out of the home page onto /about
@@ -68,9 +70,8 @@ const DRIFT = 4.5;
  *  (globals.css, ap-curtain-park — keep the two equal) */
 const PARK_MS = 4000;
 
-export default function AboutView() {
+export default function AboutView({ shot }: { shot?: AboutShot }) {
   const root = useRef<HTMLDivElement | null>(null);
-  const shot = P.about?.[0];
 
   useEffect(() => {
     const el = root.current;

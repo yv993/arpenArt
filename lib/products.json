@@ -1582,7 +1582,6 @@
  "bookmark": [
   {
    "id": "01",
-   "her": "02",
    "src": "/products/bookmark-file-02.webp",
    "thumb": "/products/bookmark-file-02-sm.webp",
    "w": 662,
@@ -1593,7 +1592,6 @@
   },
   {
    "id": "02",
-   "her": "03",
    "src": "/products/bookmark-file-03.webp",
    "thumb": "/products/bookmark-file-03-sm.webp",
    "w": 662,
@@ -1604,7 +1602,6 @@
   },
   {
    "id": "03",
-   "her": "04",
    "src": "/products/bookmark-file-04.webp",
    "thumb": "/products/bookmark-file-04-sm.webp",
    "w": 663,
@@ -1615,7 +1612,6 @@
   },
   {
    "id": "04",
-   "her": "05",
    "src": "/products/bookmark-file-05.webp",
    "thumb": "/products/bookmark-file-05-sm.webp",
    "w": 662,
@@ -1626,7 +1622,6 @@
   },
   {
    "id": "05",
-   "her": "06",
    "src": "/products/bookmark-file-06.webp",
    "thumb": "/products/bookmark-file-06-sm.webp",
    "w": 663,
@@ -1637,7 +1632,6 @@
   },
   {
    "id": "06",
-   "her": "07",
    "src": "/products/bookmark-file-07.webp",
    "thumb": "/products/bookmark-file-07-sm.webp",
    "w": 662,
@@ -1648,7 +1642,6 @@
   },
   {
    "id": "07",
-   "her": "08",
    "src": "/products/bookmark-file-08.webp",
    "thumb": "/products/bookmark-file-08-sm.webp",
    "w": 663,
@@ -1659,7 +1652,6 @@
   },
   {
    "id": "08",
-   "her": "09",
    "src": "/products/bookmark-file-09.webp",
    "thumb": "/products/bookmark-file-09-sm.webp",
    "w": 663,
@@ -1670,7 +1662,6 @@
   },
   {
    "id": "09",
-   "her": "10",
    "src": "/products/bookmark-file-10.webp",
    "thumb": "/products/bookmark-file-10-sm.webp",
    "w": 662,
@@ -1681,7 +1672,6 @@
   },
   {
    "id": "10",
-   "her": "11",
    "src": "/products/bookmark-file-11.webp",
    "thumb": "/products/bookmark-file-11-sm.webp",
    "w": 663,
@@ -1692,7 +1682,6 @@
   },
   {
    "id": "11",
-   "her": "12",
    "src": "/products/bookmark-file-12.webp",
    "thumb": "/products/bookmark-file-12-sm.webp",
    "w": 662,
@@ -1703,7 +1692,6 @@
   },
   {
    "id": "12",
-   "her": "13",
    "src": "/products/bookmark-file-13.webp",
    "thumb": "/products/bookmark-file-13-sm.webp",
    "w": 663,
@@ -1714,7 +1702,6 @@
   },
   {
    "id": "13",
-   "her": "14",
    "src": "/products/bookmark-file-14.webp",
    "thumb": "/products/bookmark-file-14-sm.webp",
    "w": 662,
@@ -1725,7 +1712,6 @@
   },
   {
    "id": "14",
-   "her": "16",
    "src": "/products/bookmark-file-16.webp",
    "thumb": "/products/bookmark-file-16-sm.webp",
    "w": 662,
@@ -1736,7 +1722,6 @@
   },
   {
    "id": "15",
-   "her": "17",
    "src": "/products/bookmark-file-17.webp",
    "thumb": "/products/bookmark-file-17-sm.webp",
    "w": 663,
@@ -1747,7 +1732,6 @@
   },
   {
    "id": "16",
-   "her": "18",
    "src": "/products/bookmark-file-18.webp",
    "thumb": "/products/bookmark-file-18-sm.webp",
    "w": 663,
@@ -1758,7 +1742,6 @@
   },
   {
    "id": "17",
-   "her": "19",
    "src": "/products/bookmark-file-19.webp",
    "thumb": "/products/bookmark-file-19-sm.webp",
    "w": 662,
@@ -1769,7 +1752,6 @@
   },
   {
    "id": "18",
-   "her": "20",
    "src": "/products/bookmark-file-20.webp",
    "thumb": "/products/bookmark-file-20-sm.webp",
    "w": 662,
@@ -1780,7 +1762,6 @@
   },
   {
    "id": "19",
-   "her": "21",
    "src": "/products/bookmark-file-21.webp",
    "thumb": "/products/bookmark-file-21-sm.webp",
    "w": 662,
@@ -1791,7 +1772,6 @@
   },
   {
    "id": "20",
-   "her": "22",
    "src": "/products/bookmark-file-22.webp",
    "thumb": "/products/bookmark-file-22-sm.webp",
    "w": 663,
@@ -1802,7 +1782,6 @@
   },
   {
    "id": "21",
-   "her": "23",
    "src": "/products/bookmark-file-23.webp",
    "thumb": "/products/bookmark-file-23-sm.webp",
    "w": 662,
@@ -1813,7 +1792,6 @@
   },
   {
    "id": "22",
-   "her": "25",
    "src": "/products/bookmark-file-25.webp",
    "thumb": "/products/bookmark-file-25-sm.webp",
    "w": 662,
@@ -1824,7 +1802,6 @@
   },
   {
    "id": "23",
-   "her": "26",
    "src": "/products/bookmark-file-26.webp",
    "thumb": "/products/bookmark-file-26-sm.webp",
    "w": 663,
@@ -1835,7 +1812,6 @@
   },
   {
    "id": "24",
-   "her": "27",
    "src": "/products/bookmark-file-27.webp",
    "thumb": "/products/bookmark-file-27-sm.webp",
    "w": 662,
@@ -1846,7 +1822,6 @@
   },
   {
    "id": "25",
-   "her": "28",
    "src": "/products/bookmark-file-28.webp",
    "thumb": "/products/bookmark-file-28-sm.webp",
    "w": 662,
@@ -1859,7 +1834,6 @@
  "bookmarkBack": [
   {
    "id": "back",
-   "her": "01",
    "src": "/products/bookmark-back.webp",
    "thumb": "/products/bookmark-back-sm.webp",
    "w": 663,
@@ -1872,7 +1846,6 @@
  "poster": [
   {
    "id": "01",
-   "her": "file/Untitled-3-01.jpg",
    "src": "/products/poster-01.webp",
    "thumb": "/products/poster-01-sm.webp",
    "w": 596,
@@ -1881,7 +1854,6 @@
    "alpha": false,
    "avg": "#b0a68a",
    "wall": {
-    "her": "mockup/2.jpg",
     "src": "/products/poster-01-wall.webp",
     "md": "/products/poster-01-wall-md.webp",
     "sm": "/products/poster-01-wall-sm.webp",
@@ -1894,7 +1866,6 @@
   },
   {
    "id": "02",
-   "her": "file/Untitled-3-02.jpg",
    "src": "/products/poster-02.webp",
    "thumb": "/products/poster-02-sm.webp",
    "w": 596,
@@ -1903,7 +1874,6 @@
    "alpha": false,
    "avg": "#8698a8",
    "wall": {
-    "her": "mockup/3.jpg",
     "src": "/products/poster-02-wall.webp",
     "md": "/products/poster-02-wall-md.webp",
     "sm": "/products/poster-02-wall-sm.webp",
@@ -1916,7 +1886,6 @@
   },
   {
    "id": "03",
-   "her": "file/Untitled-3-03.jpg",
    "src": "/products/poster-03.webp",
    "thumb": "/products/poster-03-sm.webp",
    "w": 596,
@@ -1925,7 +1894,6 @@
    "alpha": false,
    "avg": "#677375",
    "wall": {
-    "her": "mockup/4.jpg",
     "src": "/products/poster-03-wall.webp",
     "md": "/products/poster-03-wall-md.webp",
     "sm": "/products/poster-03-wall-sm.webp",
@@ -1938,7 +1906,6 @@
   },
   {
    "id": "04",
-   "her": "file/Untitled-3-04.jpg",
    "src": "/products/poster-04.webp",
    "thumb": "/products/poster-04-sm.webp",
    "w": 596,
@@ -1947,7 +1914,6 @@
    "alpha": false,
    "avg": "#5d7e8a",
    "wall": {
-    "her": "mockup/1.jpg",
     "src": "/products/poster-04-wall.webp",
     "md": "/products/poster-04-wall-md.webp",
     "sm": "/products/poster-04-wall-sm.webp",
@@ -1963,7 +1929,6 @@
   {
    "id": "sq01",
    "kind": "sq",
-   "her": "postcards-1/1/Armenian postcard 92-92mm_2 side_350gr_mat x 30-01.jpg",
    "src": "/products/ae-sq01.webp",
    "thumb": "/products/ae-sq01-sm.webp",
    "w": 545,
@@ -1972,7 +1937,6 @@
    "alpha": false,
    "avg": "#f2dcd6",
    "back": {
-    "her": "postcards-1/1/Armenian postcard 92-92mm_2 side_350gr_mat x 30-08.jpg",
     "src": "/products/ae-sq01-back.webp",
     "thumb": "/products/ae-sq01-back-sm.webp",
     "w": 545,
@@ -1984,7 +1948,6 @@
   {
    "id": "sq02",
    "kind": "sq",
-   "her": "postcards-1/2/Armenian postcard 92-92mm_2 side_350gr_mat x 30-02.jpg",
    "src": "/products/ae-sq02.webp",
    "thumb": "/products/ae-sq02-sm.webp",
    "w": 544,
@@ -1993,7 +1956,6 @@
    "alpha": false,
    "avg": "#d2b78a",
    "back": {
-    "her": "postcards-1/2/Armenian postcard 92-92mm_2 side_350gr_mat x 30-14.jpg",
     "src": "/products/ae-sq02-back.webp",
     "thumb": "/products/ae-sq02-back-sm.webp",
     "w": 545,
@@ -2005,7 +1967,6 @@
   {
    "id": "sq03",
    "kind": "sq",
-   "her": "postcards-1/3/Armenian postcard 92-92mm_2 side_350gr_mat x 30-03.jpg",
    "src": "/products/ae-sq03.webp",
    "thumb": "/products/ae-sq03-sm.webp",
    "w": 545,
@@ -2014,7 +1975,6 @@
    "alpha": false,
    "avg": "#ddba8d",
    "back": {
-    "her": "postcards-1/3/Armenian postcard 92-92mm_2 side_350gr_mat x 30-10.jpg",
     "src": "/products/ae-sq03-back.webp",
     "thumb": "/products/ae-sq03-back-sm.webp",
     "w": 545,
@@ -2026,7 +1986,6 @@
   {
    "id": "sq04",
    "kind": "sq",
-   "her": "postcards-1/4/Armenian postcard 92-92mm_2 side_350gr_mat x 30-04.jpg",
    "src": "/products/ae-sq04.webp",
    "thumb": "/products/ae-sq04-sm.webp",
    "w": 544,
@@ -2035,7 +1994,6 @@
    "alpha": false,
    "avg": "#deb488",
    "back": {
-    "her": "postcards-1/4/Armenian postcard 92-92mm_2 side_350gr_mat x 30-11.jpg",
     "src": "/products/ae-sq04-back.webp",
     "thumb": "/products/ae-sq04-back-sm.webp",
     "w": 544,
@@ -2047,7 +2005,6 @@
   {
    "id": "sq05",
    "kind": "sq",
-   "her": "postcards-1/5/Armenian postcard 92-92mm_2 side_350gr_mat x 30-05.jpg",
    "src": "/products/ae-sq05.webp",
    "thumb": "/products/ae-sq05-sm.webp",
    "w": 545,
@@ -2056,7 +2013,6 @@
    "alpha": false,
    "avg": "#d8b491",
    "back": {
-    "her": "postcards-1/5/Armenian postcard 92-92mm_2 side_350gr_mat x 30-09.jpg",
     "src": "/products/ae-sq05-back.webp",
     "thumb": "/products/ae-sq05-back-sm.webp",
     "w": 544,
@@ -2068,7 +2024,6 @@
   {
    "id": "sq06",
    "kind": "sq",
-   "her": "postcards-1/6/Armenian postcard 92-92mm_2 side_350gr_mat x 30-06.jpg",
    "src": "/products/ae-sq06.webp",
    "thumb": "/products/ae-sq06-sm.webp",
    "w": 544,
@@ -2077,7 +2032,6 @@
    "alpha": false,
    "avg": "#ceb896",
    "back": {
-    "her": "postcards-1/6/Armenian postcard 92-92mm_2 side_350gr_mat x 30-13.jpg",
     "src": "/products/ae-sq06-back.webp",
     "thumb": "/products/ae-sq06-back-sm.webp",
     "w": 544,
@@ -2089,7 +2043,6 @@
   {
    "id": "sq07",
    "kind": "sq",
-   "her": "postcards-1/7/Armenian postcard 92-92mm_2 side_350gr_mat x 30-07.jpg",
    "src": "/products/ae-sq07.webp",
    "thumb": "/products/ae-sq07-sm.webp",
    "w": 545,
@@ -2098,7 +2051,6 @@
    "alpha": false,
    "avg": "#dbd0d8",
    "back": {
-    "her": "postcards-1/7/Armenian postcard 92-92mm_2 side_350gr_mat x 30-12.jpg",
     "src": "/products/ae-sq07-back.webp",
     "thumb": "/products/ae-sq07-back-sm.webp",
     "w": 545,
@@ -2110,7 +2062,6 @@
   {
    "id": "a601",
    "kind": "a6",
-   "her": "postcards-2/1/Armenian postcard A6_2 side_350gr_mat x 30-01.jpg",
    "src": "/products/ae-a601.webp",
    "thumb": "/products/ae-a601-sm.webp",
    "w": 621,
@@ -2119,7 +2070,6 @@
    "alpha": false,
    "avg": "#dcb78a",
    "back": {
-    "her": "postcards-2/1/Armenian postcard A6_2 side_350gr_mat x 30-02.jpg",
     "src": "/products/ae-a601-back.webp",
     "thumb": "/products/ae-a601-back-sm.webp",
     "w": 622,
@@ -2131,7 +2081,6 @@
   {
    "id": "a602",
    "kind": "a6",
-   "her": "postcards-2/2/Armenian postcard A6_2 side_350gr_mat x 30-03.jpg",
    "src": "/products/ae-a602.webp",
    "thumb": "/products/ae-a602-sm.webp",
    "w": 621,
@@ -2140,7 +2089,6 @@
    "alpha": false,
    "avg": "#cfb386",
    "back": {
-    "her": "postcards-2/2/Armenian postcard A6_2 side_350gr_mat x 30-04.jpg",
     "src": "/products/ae-a602-back.webp",
     "thumb": "/products/ae-a602-back-sm.webp",
     "w": 622,
@@ -2152,7 +2100,6 @@
   {
    "id": "a603",
    "kind": "a6",
-   "her": "postcards-2/3/Armenian postcard A6_2 side_350gr_mat x 30-05.jpg",
    "src": "/products/ae-a603.webp",
    "thumb": "/products/ae-a603-sm.webp",
    "w": 621,
@@ -2161,7 +2108,6 @@
    "alpha": false,
    "avg": "#d9b48c",
    "back": {
-    "her": "postcards-2/3/Armenian postcard A6_2 side_350gr_mat x 30-06.jpg",
     "src": "/products/ae-a603-back.webp",
     "thumb": "/products/ae-a603-back-sm.webp",
     "w": 621,
@@ -2173,7 +2119,6 @@
   {
    "id": "a604",
    "kind": "a6",
-   "her": "postcards-2/Новая папка/Armenian postcard A6_2 side_350gr_mat x 30-07.jpg",
    "src": "/products/ae-a604.webp",
    "thumb": "/products/ae-a604-sm.webp",
    "w": 621,
@@ -2182,7 +2127,6 @@
    "alpha": false,
    "avg": "#d0b48f",
    "back": {
-    "her": "postcards-2/Новая папка/Armenian postcard A6_2 side_350gr_mat x 30-08.jpg",
     "src": "/products/ae-a604-back.webp",
     "thumb": "/products/ae-a604-back-sm.webp",
     "w": 621,
@@ -2194,7 +2138,6 @@
   {
    "id": "sc01",
    "kind": "sc",
-   "her": "scarves/Armenian 01_Монтажная область 1.jpg",
    "src": "/products/ae-sc01.webp",
    "thumb": "/products/ae-sc01-sm.webp",
    "w": 1400,
@@ -2206,7 +2149,6 @@
   {
    "id": "sc02",
    "kind": "sc",
-   "her": "scarves/Armenian 02_Монтажная область 1.jpg",
    "src": "/products/ae-sc02.webp",
    "thumb": "/products/ae-sc02-sm.webp",
    "w": 1277,
@@ -2218,7 +2160,6 @@
   {
    "id": "sc03",
    "kind": "sc",
-   "her": "scarves/Armenian 03_Монтажная область 1.jpg",
    "src": "/products/ae-sc03.webp",
    "thumb": "/products/ae-sc03-sm.webp",
    "w": 1277,
@@ -2230,7 +2171,6 @@
   {
    "id": "sc04",
    "kind": "sc",
-   "her": "scarves/Armenian 04-01.jpg",
    "src": "/products/ae-sc04.webp",
    "thumb": "/products/ae-sc04-sm.webp",
    "w": 1276,
@@ -2242,7 +2182,6 @@
   {
    "id": "ru01",
    "kind": "ru",
-   "her": "runner/erkar-01.jpg",
    "src": "/products/ae-ru01.webp",
    "thumb": "/products/ae-ru01-sm.webp",
    "w": 700,
@@ -2261,7 +2200,6 @@
   {
    "id": "ru02",
    "kind": "ru",
-   "her": "runner/erkar2-01.jpg",
    "src": "/products/ae-ru02.webp",
    "thumb": "/products/ae-ru02-sm.webp",
    "w": 700,
@@ -2281,7 +2219,6 @@
  "eternalExtra": [
   {
    "id": "worn",
-   "her": "scarves/3.jpg",
    "src": "/products/ae-worn.webp",
    "thumb": "/products/ae-worn-sm.webp",
    "w": 765,
@@ -2292,7 +2229,6 @@
   },
   {
    "id": "table",
-   "her": "runner/5.jpg",
    "src": "/products/ae-table.webp",
    "thumb": "/products/ae-table-sm.webp",
    "w": 1312,
@@ -2303,7 +2239,6 @@
   },
   {
    "id": "bird",
-   "her": "runner/erkar2-01.jpg (x 1003, y 1320, 423 × 866)",
    "src": "/products/ae-bird.webp",
    "thumb": "/products/ae-bird.webp",
    "w": 125,

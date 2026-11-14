@@ -1,17 +1,30 @@
 import type { Metadata } from "next";
 import Chrome from "@/components/Chrome";
-import AboutView from "@/components/AboutView";
+import AboutView, { type AboutShot } from "@/components/AboutView";
 import { about, brand } from "@/lib/content";
+import products from "@/lib/products.json";
 import TextFX from "@/components/TextFX";
 import { pageMeta, personLd } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({ title: "About", description: about.lead, path: "/about" });
 
+// her portrait, read here on the server and handed to the view with only the
+// fields it draws — so /about's scripts carry no products.json (review O7,
+// L7-regressions#2: the client view imported the whole file for this one row)
+const portrait = (products as unknown as { about?: AboutShot[] }).about?.[0];
+const shot: AboutShot | undefined = portrait && {
+  src: portrait.src,
+  thumb: portrait.thumb,
+  w: portrait.w,
+  h: portrait.h,
+  ...(portrait.thumbW ? { thumbW: portrait.thumbW } : {}),
+};
+
 export default function Page() {
   return (
     <>
       <Chrome />
-      <AboutView />
+      <AboutView shot={shot} />
       {/* The artist, stated once more for machines — nothing invented: the
           locality is the footer's own line («Yerevan, Armenia») and the
           photograph's alt; `sameAs` is her akneye.com artist page, which

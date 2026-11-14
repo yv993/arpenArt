@@ -169,7 +169,7 @@ export const soldOut: Record<string, readonly string[]> = {
     3D stickers, scarves (the design), tote bags (the bag), bookmarks and posters that is the
     item's own number (a bookmark's number is ours, 01–25 in her file order: no. 01 is her file
     -02, and her -15 and -24 are left out as re-exports of -02 and -08 — `scripts/bookmarks.mjs`
-    prints the whole table, products.json keeps hers as `her`, and the order mail shows both,
+    prints the whole table, `lib/sources.json` keeps hers, and the order mail shows both,
     «bookmark no. 14 · file 16»;
     a poster's is her flat file's, 01–04, `Untitled-3-01` … `-04`). An Armenia Eternal piece
     (key `"armenia-eternal"`) is named by its id, which says its kind: `"sq01"`–`"sq07"` square

@@ -29,8 +29,11 @@ import {
   subscribe,
   total,
   unitOf,
+  unname,
   type Line,
 } from "@/lib/cart";
+import { nameable } from "@/lib/lineIds";
+import { MAX_QTY } from "@/lib/lineRules";
 import { OrderingSteps } from "@/components/CategoryView";
 import Turnstile, { botCheckWords, tickWords, turnstileToken } from "@/components/Turnstile";
 import { lineWords, soldOutNamed, soldOutSay, variantInItem } from "@/lib/lineWords";
@@ -237,7 +240,10 @@ export default function CartView() {
   const headRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    const sync = () => setLines(read());
+    // the stored lines as the order will record them: an item number the
+    // line's roll does not hold leaves it first, as /api/order would take it
+    // off (lib/cart.ts unname, lib/lineIds.ts — review O7, L1-cart-order#2)
+    const sync = () => setLines(unname(nameable));
     sync();
     // an undelivered order from this tab, before a reload — see PENDING
     try {
@@ -376,7 +382,13 @@ export default function CartView() {
       // those three rows into the manifest under their own key, which nothing
       // kept in step with the roll (reviewer, 2026-10-01).
       const id = l.cat === "scarves" ? scarfDesigns.designs.find((d) => d.id === l.art)?.shots[0] : l.art;
-      return (id && own?.find((s) => s.id === id)?.thumb) || own?.[0]?.thumb;
+      // NO STAND-IN for a fixed item without a number (review O7,
+      // L1-cart-order#2): the roll's first photograph is ANOTHER item — a
+      // stored «Bookmark no. 28» wore bookmark no. 01's picture. Such a line
+      // only exists once unname() has taken off a number its roll does not
+      // hold, and the order mail sends no picture for it either (route.ts
+      // pictureOf); the figure keeps its paper ground.
+      return id ? own?.find((s) => s.id === id)?.thumb : undefined;
     }
     // A STICKER SHEET HAS NO `art` — the sheet itself travels in `variant`
     // ("Sheet 03", StickerFolders' buy), so every sheet fell through to the
@@ -603,7 +615,9 @@ export default function CartView() {
       // line removed meanwhile still went out. The request, the receipt and
       // what leaves the cart afterwards are all this one list — and an empty
       // one sends nothing (it only spent a try on "Your cart is empty").
-      const sent = read();
+      // Read as the order will record it (see `sync`), so the receipt and the
+      // sig name each line exactly as Arpine's mail does.
+      const sent = unname(nameable);
       if (!sent.length) {
         setState("idle");
         return;
@@ -1064,11 +1078,18 @@ export default function CartView() {
                       −
                     </button>
                     <span aria-live="polite">{l.qty}</span>
+                    {/* stops at MAX_QTY, the 99 an order records (it went on
+                        to 100, 101 and counted them: L1-cart-order#3).
+                        aria-disabled, not disabled: the press that reaches 99
+                        keeps the keyboard on this button, where a disabled one
+                        would drop it to the page; it reads and looks like the
+                        sold-out one (orderflow.css) */}
                     <button
                       type="button"
                       aria-label={`One more: ${lineLabel(l)}`}
                       disabled={out}
-                      onClick={() => setQty(l.cat, l.art, l.qty + 1, l.variant)}
+                      aria-disabled={(!out && l.qty >= MAX_QTY) || undefined}
+                      onClick={() => l.qty < MAX_QTY && setQty(l.cat, l.art, l.qty + 1, l.variant)}
                     >
                       +
                     </button>

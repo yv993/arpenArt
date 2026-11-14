@@ -88,6 +88,10 @@ const signIn =
 //    vercel.app name. Preview builds never get this rule, and the configured
 //    host is never matched (no loop).
 // Today NEXT_PUBLIC_SITE_URL is unset, so redirects() returns only RETIRED.
+// (Proven both ways on 2026-11-13 by building with a dummy
+// NEXT_PUBLIC_SITE_URL=https://www.example.test, VERCEL_PROJECT_PRODUCTION_URL
+// =example.test and VERCEL_ENV=production, then following every hop with a
+// Host header: imgss/change5-2026-11-04/review/fix3-o7/hops.cjs.)
 const configured = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 const urlOrNull = (v) => {
   try {
@@ -198,7 +202,24 @@ const nextConfig = {
     // reload lands on the new home page without reopening the puzzle; and
     // the cart (localStorage) and the sign-in cookie, which is why
     // docs/LAUNCH-CHECKLIST.md §2 says to warn Arpine and pick a quiet hour.
+    //
+    // A RETIRED ADDRESS ON AN OLD HOST GOES STRAIGHT TO ITS PAGE (review O7,
+    // L8-hostile-code#11, 2026-11-13). The first rule that matches wins, and
+    // RETIRED names no host, so an old link to /shop/cups on the old host
+    // took two hops: 307 to /shop on that same host, then the host rule's 308
+    // to the new one (and /shop/armenia-eternal 308 + 308). Putting the host
+    // rules first only swaps the hops. So each old host gets its own copy of
+    // each retired address, aimed at the final page on the configured origin
+    // and keeping that address's own 307/308; they come first, the plain
+    // RETIRED rules still answer on the configured host itself.
     return [
+      ...redirectHosts.flatMap((host) =>
+        RETIRED.map((r) => ({
+          ...r,
+          has: [{ type: "host", value: host }],
+          destination: `${site.origin}${r.destination}`,
+        })),
+      ),
       ...RETIRED,
       ...redirectHosts.map((host) => ({
         source: `/:path((?!api/|_next/|(?:${PUBLIC_DIRS})/).*)`,

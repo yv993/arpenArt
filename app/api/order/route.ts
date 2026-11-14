@@ -1,11 +1,10 @@
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
+import sources from "@/lib/sources.json";
 import {
   brand,
-  categories,
   delivery,
   ETERNAL,
-  eternalLineOk,
   hrefOf,
   isSoldOut,
   itemWords,
@@ -14,9 +13,10 @@ import {
   priceTbcMid,
   scarfDesigns,
   stickerSheets,
-  withheldArt,
   type Category,
 } from "@/lib/content";
+import { nameable } from "@/lib/lineIds";
+import { ART_MAX, CAT_MAX, MAX_QTY, orderLine, qtyOf, VARIANT_MAX } from "@/lib/lineRules";
 import { lineWords, soldOutSay } from "@/lib/lineWords";
 import { origin as site } from "@/lib/site";
 import { botCheck, caught, clean, intake, reply } from "@/lib/server/intake";
@@ -50,7 +50,6 @@ export const maxDuration = 60;
 type Shot = { id: string; src: string };
 const P = products as unknown as Record<string, Shot[]>;
 const ART = artworks as unknown as Shot[];
-const artIds = new Set(ART.map((a) => a.id));
 
 /** A cart merges identical lines, so forty different ones is already a big
  *  order; the cap keeps a crafted request from mailing Arpine a novel. */
@@ -58,28 +57,10 @@ const MAX_LINES = 40;
 const TOO_MANY = "That is more than one order can carry — please split it into two.";
 const REF_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-/** The variant labels a line of this category can legitimately carry — every
- *  cart `add(…)` call site, checked 2026-10-31: the picker options
- *  (CategoryView, ScarfDesigns, the cloud's "Single card"), and for stickers
- *  the sheet names StickerFolders sends. Everything else sends none. */
-const variantsOf = (cat: Category): readonly string[] =>
-  cat.slug === "stickers" ? stickerSheets.sheets.map((s) => s.name) : (cat.variants?.options ?? []);
-
-/** The ids an OWN-ITEM line (ownItemWord) may name — its own roll, never the
- *  57 illustrations: the scarves' three designs, the four tote bags
- *  (ownItemMedia), the magnets', keychains' and 3D stickers' photographs. */
-const ownIds = new Map(
-  categories
-    .filter((c) => ownItemWord[c.slug])
-    .map((c) => [
-      c.slug,
-      new Set(
-        c.slug === "scarves"
-          ? scarfDesigns.designs.map((d) => d.id)
-          : (P[ownItemMedia[c.slug] ?? c.media] ?? []).map((s) => s.id),
-      ),
-    ]),
-);
+// WHICH VARIANTS AND WHICH IDS A LINE MAY CARRY are lib/lineRules.ts
+// (variantsOf, orderLine) and lib/lineIds.ts (nameable) since review O7
+// (2026-11-13): the cart reads the stored lines through the same code, so
+// what it shows and counts is what this route records.
 
 /** Unit price in dram for one line (readiness #7). A variant with its own
  *  entry in `variants.prices` costs that; null there means the price is not on
@@ -138,19 +119,21 @@ type OrderLine = {
  *  no. 14 · file 16)", "Armenia Eternal (A6 postcard no. 04 · file 07)" — so
  *  she finds the design without a table. The buyer's copy keeps the shop's
  *  number alone: it is the one the buyer saw, and the number before the dot
- *  is the same in both copies. */
+ *  is the same in both copies.
+ *  HER FILE NAMES LIVE IN lib/sources.json, beside products.json (review O7,
+ *  L8-hostile-code#6, 2026-11-13): products.json is imported by client pages
+ *  and shipped whole to each of them, her Drive file names with it, though
+ *  this route is their only reader at run time. The asset scripts write them
+ *  there (scripts/manifest.mjs), keyed by roll and id. */
+const her = sources as unknown as Record<string, Record<string, string> | undefined>;
 const herFile = new Map<string, string>([
-  ...((products as unknown as { bookmark?: { id: string; her: string }[] }).bookmark ?? []).map(
-    (b) => [`bookmarks|${b.id}`, b.her] as [string, string],
-  ),
+  ...Object.entries(her.bookmark ?? {}).map(([id, n]) => [`bookmarks|${id}`, n] as [string, string]),
   // an A6 card's front file is her name's last number («… x 30-07.jpg»);
   // the square cards' fronts already carry their card number (sq03 = -03)
-  ...((products as unknown as { eternal?: { id: string; kind: string; her: string }[] }).eternal ?? []).flatMap(
-    (e) => {
-      const n = e.kind === "a6" ? /-(\d+)\.jpg$/i.exec(e.her)?.[1] : undefined;
-      return n ? [[`${ETERNAL}|${e.id}`, n] as [string, string]] : [];
-    },
-  ),
+  ...((products as unknown as { eternal?: { id: string; kind: string }[] }).eternal ?? []).flatMap((e) => {
+    const n = e.kind === "a6" ? /-(\d+)\.jpg$/i.exec(her.eternal?.[e.id] ?? "")?.[1] : undefined;
+    return n ? [[`${ETERNAL}|${e.id}`, n] as [string, string]] : [];
+  }),
 ]);
 
 /** A line as the order mail names it — "Postcards [Single card]
@@ -236,45 +219,23 @@ export async function POST(req: Request) {
       // `lines: [null]` and friends used to throw here and come back a 500
       if (!item || typeof item !== "object" || Array.isArray(item)) continue;
       const l = item as Record<string, unknown>;
-      const cat = categories.find((c) => c.slug === clean(l.cat, 40) && c.status === "open");
-      if (!cat) continue;
-      // Number() on a crafted object can throw, so only a number or a string is read
-      const q = typeof l.qty === "number" ? l.qty : typeof l.qty === "string" ? Number(l.qty) : 0;
-      const qty = Math.max(1, Math.min(99, Math.floor(q || 0)));
-      let art = clean(l.art, 8) || null;
-      // an illustration the client withdrew from this line (`withheldArt`,
-      // change 3.pdf p2, 2026-10-01) is refused the way an unknown category
-      // is: the line is dropped, so a cart saved before the withdrawal — or
-      // a hand-made request — cannot put it in front of Arpine as an order
-      if (art && withheldArt[cat.slug]?.includes(art)) continue;
-      // AN ID THE LINE CANNOT NAME IS NOT NAMED. An own-item line's `art` is
-      // its own numbering (a TOTE line's has been a bag number since
-      // 2026-10-01, change 3.pdf p4 + p5); every other line's is one of the
-      // 57 illustrations. Anything else — a cart saved under an older
-      // meaning, or a hand-made request — keeps the line (its price is the
-      // category's either way) but reaches Arpine without a number rather
-      // than as an item she never made. The browser drops the v1 totes itself
-      // (lib/cart.ts); this is the server's own copy of the rule.
-      if (art && !(ownItemWord[cat.slug] ? ownIds.get(cat.slug)?.has(art) : artIds.has(art))) art = null;
-      // the variant must be one this category offers; an unknown one drops
-      // the line rather than guessing which product was meant
-      const variant = clean(l.variant, 60) || null;
-      if (variant && !variantsOf(cat).includes(variant)) continue;
-      // AN ARMENIA ETERNAL PIECE AND ITS KIND MUST AGREE (change 5,
-      // 2026-11). The page sets both: `art` the piece id (sq03), `variant`
-      // its kind (Square postcard), and the kind alone prices the line. A
-      // line with no kind, or whose id names another kind, would let a
-      // runner be ordered at a postcard's price once the kinds are priced —
-      // it names no product, so it is dropped, like an unknown variant. An
-      // id the roll does not hold was already un-named above; its kind
-      // still says what to make.
-      if (cat.slug === ETERNAL && !eternalLineOk(art, variant)) continue;
-      // a sticker SHEET is the whole product — it never carries an illustration
-      if (cat.slug === "stickers" && variant) art = null;
+      // THE ORDER'S RULES FOR ONE LINE (lib/lineRules.ts orderLine, with the
+      // roll check of lib/lineIds.ts): an unknown or closed category, a
+      // withdrawn illustration, a variant the line does not offer or an
+      // Armenia Eternal piece of the wrong kind drops the line; an id the
+      // line's roll does not hold loses its number; a sticker sheet carries
+      // no illustration. The cart reads its stored lines through the same
+      // code (lib/cart.ts parse + unname).
+      const kept = orderLine(clean(l.cat, CAT_MAX), clean(l.art, ART_MAX) || null, clean(l.variant, VARIANT_MAX) || null, nameable);
+      if (!kept) continue;
+      const { cat, art, variant } = kept;
+      // Number() on a crafted object can throw, so only a number or a string
+      // is read; then a whole number from 1 to 99 (lib/lineRules.ts qtyOf)
+      const qty = qtyOf(typeof l.qty === "number" ? l.qty : typeof l.qty === "string" ? Number(l.qty) : 0);
       const key = `${cat.slug}|${art ?? ""}|${variant ?? ""}`;
       const hit = merged.get(key);
       if (hit) {
-        hit.qty = Math.min(99, hit.qty + qty);
+        hit.qty = Math.min(MAX_QTY, hit.qty + qty);
         continue;
       }
       merged.set(key, {
