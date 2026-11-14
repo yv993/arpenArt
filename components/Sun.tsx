@@ -81,8 +81,12 @@ const JOURNEY_W = 0.29;
  *  leaving the picture rather than a decoration that was always floating.
  *  `hx`: this key keeps the sun's HOME x (its place in the picture) rather
  *  than a viewport fraction — so the first leg can be a straight rise.
- *  `home`: scale is relative to the home size, not the journey size. */
-type Key = { p: number; x: number; y: number; s: number; o: number; hx?: boolean; home?: boolean };
+ *  `home`: scale is relative to the home size, not the journey size.
+ *  `c`: this key's place is set in the CLOUD SECTION'S PASS, not the
+ *  document's — 0 when the section's top meets the bottom of the screen,
+ *  1 when its bottom leaves the top — and `p` is only where that falls at
+ *  1440×900, kept for a page without the section (measure() converts). */
+type Key = { p: number; x: number; y: number; s: number; o: number; hx?: boolean; home?: boolean; c?: number };
 const PATH: Key[] = [
   { p: 0.0, x: 0, y: 0, s: 1, o: 1, home: true }, // start: over the hills, right of her
   // IT LIFTS FIRST, straight up (~150px of scroll), to 0.22 of the screen —
@@ -111,17 +115,29 @@ const PATH: Key[] = [
   // the sun comes down in a straight line — could it come down on a rounder
   // path?»). Measured: from 0.19 to 0.41 x was frozen at 0.931 of the width
   // for 1,160px of scroll — against the section, a dead-straight drop. The
-  // corner at 0.15/0.19 is now one curve into the margin (0.14 → 0.19), and
-  // the margin leg bows out to 0.952 and back (0.30). Replayed over geometry
-  // measured at 1440×900, 1280×720, 1886×835, 1024×768 and 1920×945 — the
-  // cards' rest scatter AND the in-place puzzle's room, which ends at 0.84 of
-  // the width (imgss/change5-2026-11-04/build/g/out/sun-sim.json): no frame
-  // where the sun's box (rays included) meets a card (+40px float) or the
-  // room (+0.45 of a cell, the farthest a DRAGGED piece reaches), no stop,
-  // and level with the room its left edge stays at 0.8687 of the width or
-  // more. The analysis' first keys (0.14 at x .905 / s .55, 0.19 at x .934)
-  // dipped 6–22px into the room's top-right corner as the curtain rose;
-  // these are the nearest that do not (g5b-keysearch).
+  // first bow, out to 0.952 and back, still read as one: 8–11px over a
+  // 600–780px track (review, change 5, L6-sun#1). The lane is narrow — the
+  // in-place puzzle's room ends at 0.84 of the width, a DRAGGED piece
+  // reaches 0.45 of a cell past it (≈0.868), and the sun's box with its
+  // rays is 0.13 wide — so the round comes from the other side: the arc's
+  // ends keep the box just clear of the room, and its apex presses out to
+  // the screen's edge, rays off the screen and four fifths of the disc on
+  // it. Against the section that is a bow of 6.8% of the drawn track at
+  // 1440×900 (53px), 7.6% at 1280×720 and 9.5% at 1886×835 — one hump,
+  // fullest a third of the way down.
+  // THE ARC IS PLACED IN THE SECTION'S PASS, NOT THE DOCUMENT'S (`c`): the
+  // section ends anywhere from 0.43 to 0.49 of the page at the sizes
+  // measured, and keys in document progress put the arc's ends — the part
+  // beside the room — in a different place of the section at each size.
+  // Replayed over geometry measured at ten sizes from 1024×768 to 2560×1300
+  // (imgss/change5-2026-11-04/review/fix3-o5/: sim.mjs over geom.json): no
+  // frame where the sun's box (rays included) meets a card (+40px float) or
+  // the room (+0.45 of a cell); level with the room its left edge stays at
+  // 0.869 of the width or more. And NO NEAR-STOP: the old 0.19 key was a
+  // turn of y with almost no x left (6px of travel for a 100px notch, a
+  // fifth of its neighbours, L6-sun#3); the turn now falls where x is still
+  // on its way out, and the slowest notch inside the section moves the sun
+  // 15px, two thirds of the median.
   { p: 0.14, x: 0.92, y: 0.55, s: 0.53, o: 0.62 }, // → down and right, receding
   // OPACITY IS TUNED TO WHAT IT CROSSES, and it has to be. The sun is pale
   // yellow: against the dark bands (the cloud and the gallery) a third of it
@@ -129,9 +145,9 @@ const PATH: Key[] = [
   // invisible — measured at p=0.80, where 0.41 left nothing on screen at all.
   // So it is held low through the dark sections and lifted through the light
   // ones, which is also what a sun crossing a sky would do.
-  { p: 0.19, x: 0.944, y: 0.6, s: 0.45, o: 0.42 }, // cloud — into the right margin
-  { p: 0.3, x: 0.952, y: 0.46, s: 0.45, o: 0.41 }, // cloud — bowing out toward the edge
-  { p: 0.41, x: 0.935, y: 0.3, s: 0.45, o: 0.4 }, // cloud — and back in as it leaves
+  { p: 0.169, x: 0.941, y: 0.631, s: 0.45, o: 0.42, c: 0.199 }, // cloud — into the right margin, the arc begins
+  { p: 0.265, x: 0.982, y: 0.405, s: 0.45, o: 0.41, c: 0.481 }, // cloud — its apex, out at the screen's edge
+  { p: 0.404, x: 0.926, y: 0.316, s: 0.45, o: 0.4, c: 0.889 }, // cloud — and back in as it leaves
   { p: 0.55, x: 0.74, y: 0.6, s: 0.6, o: 0.34 }, // gallery — dark
   { p: 0.76, x: 0.22, y: 0.3, s: 0.7, o: 0.66 }, // shop — paper
   { p: 0.93, x: 0.58, y: 0.78, s: 0.9, o: 0.82 }, // studio — paper
@@ -529,6 +545,8 @@ export default function Sun() {
     let curve: { x: (p: number) => number; y: (p: number) => number; s: (p: number) => number; o: (p: number) => number } | null = null;
     /** the frame's box on screen: where the film's pixels actually are */
     let frame = { l: 0, t: 0, w: 0, h: 0, k: 1 };
+    /** the scroll range the `c` keys were placed against (measure()) */
+    let placedMax = 0;
     /** Where the sun stops being part of the picture and becomes scenery.
      *  Read from the hero's own laid-out height — which INCLUDES its pin
      *  spacer, so it is the real scroll distance the hero occupies — rather
@@ -567,7 +585,17 @@ export default function Sun() {
       // rebuilt whenever those are
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const ps = PATH.map((k) => k.p);
+      // a `c` key's progress: where the cloud section is at that share of
+      // its pass, in this document's scroll (see Key); always rising, as
+      // monotone() needs, whatever the page's proportions
+      const max = document.documentElement.scrollHeight - vh;
+      placedMax = max;
+      const ps: number[] = [];
+      for (const k of PATH) {
+        let p = k.c !== undefined && cloudH > 0 && max > 0 ? (cloudTop - vh + k.c * (cloudH + vh)) / max : k.p;
+        if (ps.length && !(p > ps[ps.length - 1])) p = ps[ps.length - 1] + 1e-4;
+        ps.push(p);
+      }
       curve = {
         x: monotone(ps, PATH.map((k) => (k.p === 0 || k.hx ? home.x : k.x * vw))),
         y: monotone(ps, PATH.map((k) => (k.p === 0 ? home.y : k.y * vh))),
@@ -760,6 +788,11 @@ export default function Sun() {
      *  scroll says, then the loop stops (nothing runs at rest) */
     const glide = (now: number) => {
       raf = 0;
+      // the page changed height since the `c` keys were placed — the series'
+      // pins and sections settle up to a second after the sun starts, past
+      // the settle pass (measured: 5685 → 5085px at 1280×720) — so they are
+      // placed again before this frame is drawn
+      if (document.documentElement.scrollHeight - window.innerHeight !== placedMax) measure();
       const want = target();
       const dt = glideT ? Math.min(0.1, Math.max(0, (now - glideT) / 1000)) : 1 / 60;
       glideT = now;
