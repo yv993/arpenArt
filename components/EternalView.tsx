@@ -48,7 +48,7 @@ import PhotoLightbox from "./PhotoLightbox";
 // simply stands.
 // ============================================================================
 
-export type EternalFace = { her: string; src: string; thumb: string; w: number; h: number; thumbW?: number; avg: string };
+export type EternalFace = { src: string; thumb: string; w: number; h: number; thumbW?: number; avg: string };
 export type EternalPiece = EternalFace & {
   id: string;
   kind: EternalKind;

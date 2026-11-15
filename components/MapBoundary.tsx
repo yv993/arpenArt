@@ -4,6 +4,8 @@ import { Component, type ReactNode } from "react";
 
 // ============================================================================
 // A boundary around the lazily-imported map, and nothing else.
+// (Written for the stockist map; the globe, the cloud's puzzle and the globe's
+// words now use it the same way: the optional thing fails alone.)
 //
 // `next/dynamic` is React.lazy + Suspense with NO error handling: a rejected
 // chunk fetch throws straight past it to the nearest boundary, which here is

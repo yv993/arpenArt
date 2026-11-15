@@ -20,7 +20,7 @@ import FlipCard from "./FlipCard";
 // No lightbox: the card is already the size the bookmark reads at, and a
 // press on it means "turn it", not "open it".
 //
-// Each bookmark is a fixed design; the cart's `art` is its number (01–27,
+// Each bookmark is a fixed design; the cart's `art` is its number (01–25,
 // scripts/bookmarks.mjs prints which of her files each one is), priced from
 // content.ts by the cart and again by /api/order.
 // ============================================================================
@@ -141,7 +141,7 @@ export default function BookmarkShelf({
               <div className="ap-bm__buy">
                 <p className="ap-bm__name">{label}</p>
                 {/* the bookmark rides in the button's NAME after the visible
-                    words, as on the magnets: 27 identical «Add to cart» could
+                    words, as on the magnets: 25 identical «Add to cart» could
                     not be told apart in a screen reader's list of buttons */}
                 <button
                   type="button"

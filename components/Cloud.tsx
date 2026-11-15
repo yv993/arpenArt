@@ -6,7 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { add, dram, unit } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
-import { isSoldOut, priceTbc, withheldArt } from "@/lib/content";
+import { categories, hrefOf, isSoldOut, priceTbc, withheldArt } from "@/lib/content";
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
 import { layout, type Rect } from "@/lib/puzzleLayout";
@@ -25,6 +25,8 @@ const Puzzle = dynamic(() => import("./Puzzle"), { ssr: false });
 
 /** one card's price, from the catalogue — null when Arpine confirms it */
 const CARD_PRICE = unit("postcards");
+/** the postcards page, through the one place that builds a category's link */
+const POSTCARDS_HREF = hrefOf(categories.find((c) => c.slug === "postcards")!);
 
 /** a jigsaw piece, the panel's sign for «Play the puzzle» (one tab out on
  *  top and right, a blank on the bottom and left) */
@@ -1833,7 +1835,7 @@ export default function Cloud({
                     {soldCard ? "Sold out" : added ? "Added ✓" : "Add to cart"}
                   </button>
                 )}
-                <Link className="ap-cloud__go" href="/shop/postcards">
+                <Link className="ap-cloud__go" href={POSTCARDS_HREF}>
                   {pick.cta} <span aria-hidden>→</span>
                 </Link>
               </div>
