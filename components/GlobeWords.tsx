@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -27,6 +27,8 @@ import * as THREE from "three";
 //  - Each texture is a CanvasTexture: a soft halo in the band's own navy
 //    (--ink-indigo) drawn from her lettering's shape, then her lettering on
 //    top, so a word that passes over a light far-side card still reads.
+//    The halos are drawn in the browser's idle time, a pass at a time, and
+//    each word fades in once its own is ready (haloSteps, the builder).
 //  - They fade by depth (a word turning to the far side goes out before it
 //    lies over the far cards) and fade out while a card is picked.
 //  - No raycast: r3f only tests objects that carry handlers, and these carry
@@ -149,36 +151,86 @@ const FADE_TO = 1.0;
 
 const noRaycast = () => {};
 
-/** her lettering, with a navy halo drawn from its own shape behind it */
-function haloTexture(img: HTMLImageElement): THREE.Texture {
+/** HER LETTERING, WITH A NAVY HALO DRAWN FROM ITS OWN SHAPE BEHIND IT — one
+ *  drawing pass per step. The builder in GlobeWords runs the steps in the
+ *  browser's idle time, so no pass lands in a render or a frame (review fix
+ *  L4-globe-words#3, below). Each step yields whether the builder must end
+ *  its slice there. Returns what the word's texture shows: the canvas, or
+ *  her bare PNG where there is no 2D context. */
+function* haloSteps(img: HTMLImageElement): Generator<boolean, HTMLCanvasElement | HTMLImageElement, void> {
   const cv = document.createElement("canvas");
   cv.width = img.naturalWidth + PAD * 2;
   cv.height = img.naturalHeight + PAD * 2;
   const ctx = cv.getContext("2d");
-  if (!ctx) {
-    const t = new THREE.Texture(img);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.needsUpdate = true;
-    return t;
-  }
+  if (!ctx) return img;
   // The halo is the lettering's SHADOW with the lettering itself drawn off
   // the canvas (offset back by the shadow's own offset), so only the soft
   // shape lands — drawing the white glyphs once per pass would thicken their
   // antialiased edges. A wide pass for the glow, a tight one for the rim.
+  // The context keeps these settings between steps; nothing else draws here.
   const off = cv.width * 2;
   ctx.shadowColor = HALO;
   ctx.shadowOffsetX = off;
   for (const blur of [22, 22, 8]) {
     ctx.shadowBlur = blur;
     ctx.drawImage(img, PAD - off, PAD);
+    yield false;
   }
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.drawImage(img, PAD, PAD);
-  const t = new THREE.CanvasTexture(cv);
+  // End the slice: the texture is made and uploaded in the next one, once
+  // the GPU has drawn these passes. Uploaded right behind them, in the same
+  // task, the upload waited for the GPU — 3–6 ms a word at 4× CPU throttle
+  // where the slices are forced (fix3-o8/after1-prod), against 0.4–1.2 ms
+  // a word a slice later (fix3-o8/after-prod2).
+  yield true;
+  return cv;
+}
+
+function toTexture(src: HTMLCanvasElement | HTMLImageElement): THREE.Texture {
+  let t: THREE.Texture;
+  // a CanvasTexture is born needing its upload; a plain Texture is not
+  if (src instanceof HTMLCanvasElement) t = new THREE.CanvasTexture(src);
+  else {
+    t = new THREE.Texture(src);
+    t.needsUpdate = true;
+  }
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/** THE BUILDER'S TIME BUDGET. A slice runs steps for at most SLICE ms, and
+ *  stops early when the idle period has less than ROOM ms left. IDLE_WAIT:
+ *  if the main thread never goes idle (a slow phone, where each frame of the
+ *  globe takes longer than the frame itself), the browser runs the next
+ *  slice after this long anyway — the same bounded slice. At 4× CPU throttle
+ *  that is every slice, and the seven words come in over ~1–2.5 s
+ *  (fix3-o8/after-prod2); with idle time, well under a second. */
+const SLICE = 8;
+const ROOM = 2;
+const IDLE_WAIT = 100;
+type Idle = { timeRemaining(): number; didTimeout: boolean };
+/** run `cb` in idle time — or, where there is no requestIdleCallback
+ *  (Safari), just after the next frame with a SLICE-long deadline; returns
+ *  the cancel */
+function whenIdle(cb: (d: Idle) => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(cb, { timeout: IDLE_WAIT });
+    return () => window.cancelIdleCallback(id);
+  }
+  let t = 0;
+  const f = requestAnimationFrame(() => {
+    t = window.setTimeout(() => {
+      const end = performance.now() + SLICE;
+      cb({ timeRemaining: () => Math.max(0, end - performance.now()), didTimeout: false });
+    }, 0);
+  });
+  return () => {
+    cancelAnimationFrame(f);
+    window.clearTimeout(t);
+  };
 }
 
 const smooth = (z: number) => {
@@ -198,8 +250,58 @@ export function GlobeWords({
 }) {
   // null where a word's file failed (WordLoader)
   const images = useLoader(WordLoader, URLS);
-  const textures = useMemo(() => images.map((img) => (img ? haloTexture(img) : null)), [images]);
-  useEffect(() => () => textures.forEach((t) => t?.dispose()), [textures]);
+  const { camera, gl, scene } = useThree();
+
+  // THE HALOS ARE BUILT IN IDLE TIME, NOT IN THE RENDER (review fix
+  // L4-globe-words#3, 2026-11-13). They were built in a useMemo: 21 shadow-
+  // blur passes and 7 plain ones in the one task that rendered the words —
+  // on a remount (the canvas comes back each time the gallery is scrolled
+  // near) the same task that mounts the whole globe. Now each drawing pass is
+  // one step, the steps run in idle slices of at most SLICE ms, and a word's
+  // texture is uploaded in the slice after its last pass (gl.initTexture), so
+  // neither the render nor a frame carries the build or the upload. Each
+  // word mounts as its texture is ready and fades in on its own (`born`).
+  // The same calls, the same canvases, the same texture settings: the words
+  // look exactly as before (imgss/change5-2026-11-04/review/fix3-o8, the held
+  // globe diffed pixel for pixel).
+  const [textures, setTextures] = useState<(THREE.Texture | null)[]>(() => WORDS.map(() => null));
+  // a step that throws is handed to the render (thrown at the end of this
+  // component), so the words' own error boundary in ParticleSphere still
+  // takes it, as when the build ran in the render
+  const [failed, setFailed] = useState<{ error: unknown } | null>(null);
+  useEffect(() => {
+    const jobs = images.flatMap((img, i) => (img ? [{ i, steps: haloSteps(img) }] : []));
+    const made: THREE.Texture[] = [];
+    let k = 0;
+    let cancel = () => {};
+    const work = (d: Idle) => {
+      const until = performance.now() + SLICE;
+      try {
+        do {
+          const job = jobs[k];
+          const r = job.steps.next();
+          if (!r.done) {
+            if (r.value) break;
+            continue;
+          }
+          const t = toTexture(r.value);
+          made.push(t);
+          gl.initTexture(t);
+          setTextures((prev) => prev.map((x, i) => (i === job.i ? t : x)));
+          k++;
+        } while (k < jobs.length && performance.now() < until && (d.didTimeout || d.timeRemaining() > ROOM));
+      } catch (error) {
+        setFailed({ error });
+        return;
+      }
+      if (k < jobs.length) cancel = whenIdle(work);
+    };
+    if (jobs.length) cancel = whenIdle(work);
+    return () => {
+      cancel();
+      made.forEach((t) => t.dispose());
+    };
+  }, [images, gl]);
   useEffect(() => {
     const missing = WORDS.filter((_, i) => !images[i]).map((w) => w.src);
     if (!missing.length || reported) return;
@@ -233,37 +335,54 @@ export function GlobeWords({
   /** 0 → 1: fades the words in once they have loaded, and out while a card
    *  is picked */
   const show = useRef(0);
+  /** 0 → 1 per word, from the frame its texture is ready: a word built a few
+   *  slices after the others fades in on its own instead of popping in at
+   *  `show`'s level. A word shows at the lesser of the two, so once built it
+   *  follows `show` exactly as before (out while a card is picked, back in). */
+  const born = useRef(WORDS.map(() => 0));
   /** dev hook only: hold the words hidden (the pixel test diffs with/without) */
   const forceHide = useRef(false);
 
+  /** One frame's placement for a globe pose: the shell's turn, each word's
+   *  opacity and size. `delta` 0 places without easing anything (the dev
+   *  hold below re-places at a held pose just before the render). */
+  const place = useCallback(
+    (pitch: number, yaw: number, delta: number, width: number) => {
+      const g = shell.current;
+      if (!g) return;
+      const step = Math.min(delta, 1 / 20) * 60;
+      // pitch is already clamped by ParticleSphere (±1.05 plus the idle tilt),
+      // so a straight share of it stays bounded; the yaw is not (shellYaw)
+      g.rotation.set(pitch * TURN, shellYaw(yaw), 0);
+      const want = chosenRef.current === null && !forceHide.current ? 1 : 0;
+      const ease = 1 - Math.pow(0.88, step);
+      show.current += (want - show.current) * ease;
+      if (forceHide.current) show.current = 0;
+      const k = width > 860 ? 1 : PHONE;
+      for (let i = 0; i < WORDS.length; i++) {
+        const sp = sprites.current[i];
+        if (!sp) continue;
+        born.current[i] += (1 - born.current[i]) * ease;
+        TMP.copy(homes[i]).applyEuler(g.rotation);
+        const a = smooth(TMP.z) * Math.min(show.current, born.current[i]);
+        sp.visible = a > 0.01;
+        (sp.material as THREE.SpriteMaterial).opacity = a;
+        sp.scale.set(sizes[i].w * k, sizes[i].h * k, 1);
+      }
+    },
+    [chosenRef, homes, sizes],
+  );
+
   useFrame((state, delta) => {
-    const g = shell.current;
     const turning = globe.current;
-    if (!g || !turning) return;
-    const step = Math.min(delta, 1 / 20) * 60;
-    // pitch is already clamped by ParticleSphere (±1.05 plus the idle tilt),
-    // so a straight share of it stays bounded; the yaw is not (shellYaw)
-    g.rotation.set(turning.rotation.x * TURN, shellYaw(turning.rotation.y), 0);
-    const want = chosenRef.current === null && !forceHide.current ? 1 : 0;
-    show.current += (want - show.current) * (1 - Math.pow(0.88, step));
-    if (forceHide.current) show.current = 0;
-    const k = state.size.width > 860 ? 1 : PHONE;
-    for (let i = 0; i < WORDS.length; i++) {
-      const sp = sprites.current[i];
-      if (!sp) continue;
-      TMP.copy(homes[i]).applyEuler(g.rotation);
-      const a = smooth(TMP.z) * show.current;
-      sp.visible = a > 0.01;
-      (sp.material as THREE.SpriteMaterial).opacity = a;
-      sp.scale.set(sizes[i].w * k, sizes[i].h * k, 1);
-    }
+    if (!turning) return;
+    place(turning.rotation.x, turning.rotation.y, delta, state.size.width);
   });
 
   // DEV-ONLY PROBE (the verification harness reads it; `next build` drops it,
   // as Puzzle.tsx's __pz): each word's opacity, its lettering's box on the
   // canvas in CSS px, and the share of that box a card covers, by casting rays
   // from the camera against the card planes.
-  const { camera, gl, scene } = useThree();
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     const ray = new THREE.Raycaster();
@@ -306,6 +425,7 @@ export function GlobeWords({
           mounted: true,
           visible: sp.visible,
           opacity: +(sp.material as THREE.SpriteMaterial).opacity.toFixed(3),
+          fade: +born.current[i].toFixed(3),
           z: +c.z.toFixed(2),
           rect: [x0, y0, x1, y1].map((v) => Math.round(v)),
           covered: +(hit / n).toFixed(3),
@@ -333,13 +453,40 @@ export function GlobeWords({
       pitch: +(globe.current?.rotation.x ?? 0).toFixed(4),
       shellYaw: +(shell.current?.rotation.y ?? 0).toFixed(4),
     });
-    const probe = { read, cards, pose, hide: (v: boolean) => (forceHide.current = v) };
+    // HOLD (review fix L4-globe-words#3, for the pixel test): pin the globe to
+    // a pose so two builds can be shot frame for frame. Applied just before
+    // each render, after every frame callback (whatever order they ran in):
+    // the globe group takes the held pose, the words are re-placed for it,
+    // and the world matrices are brought up to date. `withHaze` false hides
+    // the particle haze, whose dots are random per mount.
+    let held: { yaw: number; pitch: number } | null = null;
+    const ownBefore = scene.onBeforeRender;
+    scene.onBeforeRender = (...a) => {
+      ownBefore.apply(scene, a);
+      const turning = globe.current;
+      if (!held || !turning) return;
+      turning.rotation.set(held.pitch, held.yaw, 0);
+      place(held.pitch, held.yaw, 0, gl.domElement.clientWidth);
+      scene.updateMatrixWorld();
+    };
+    const haze = (v: boolean) =>
+      scene.traverse((o) => {
+        if ((o as THREE.Points).isPoints) o.visible = v;
+      });
+    const hold = (yaw: number | null, pitch = 0, withHaze = true) => {
+      held = yaw === null ? null : { yaw, pitch };
+      haze(held === null || withHaze);
+    };
+    const probe = { read, cards, pose, hold, hide: (v: boolean) => (forceHide.current = v) };
     (window as unknown as { __apGlobeWords?: typeof probe }).__apGlobeWords = probe;
     return () => {
+      scene.onBeforeRender = ownBefore;
+      haze(true);
       delete (window as unknown as { __apGlobeWords?: typeof probe }).__apGlobeWords;
     };
-  }, [camera, gl, scene, sizes, globe]);
+  }, [camera, gl, scene, sizes, globe, place]);
 
+  if (failed) throw failed.error;
   return (
     <group ref={shell}>
       {WORDS.map((w, i) => {
