@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -9,6 +9,7 @@ import { flyToCart } from "@/lib/fly";
 import { isSoldOut, priceTbc, withheldArt } from "@/lib/content";
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
+import { layout, type Rect } from "@/lib/puzzleLayout";
 import teaser from "@/lib/puzzle-teaser.json";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
 import MapBoundary from "./MapBoundary";
@@ -258,6 +259,27 @@ export default function Cloud({
   const [inKey, setInKey] = useState(0);
   /** when the still's Play was pressed to retry it (0: never) */
   const inPressAt = useRef(0);
+  // THE SECTION IS NEVER AN EMPTY ROOM (review, change 5): on a slow link the
+  // visitor got here long before window load and the game's file — 5–7 s of
+  // the title over an empty dark room, nothing to see and nothing to press.
+  // Until the game's pieces are shown, No. 05's still lies whole exactly
+  // where its board will be (the same layout, lib/puzzleLayout.ts) with «See
+  // the series» where the game's bar will be; then it fades as the pieces
+  // come in. The still is asked for only once the section is on screen — a
+  // page that opens on the hero asks for nothing of the puzzle before load.
+  /** the in-place game has shown its pieces on this page: "fading" while
+   *  its still makes way (false again once it fails) */
+  const [inReady, setInReady] = useState<boolean | "fading">(false);
+  /** the still's Play was pressed, and the game has not come yet */
+  const [inPressed, setInPressed] = useState(false);
+  /** the section is on screen: the still may be asked for (and stays) */
+  const [stillOn, setStillOn] = useState(false);
+  /** the board's box in the room, CSS px: where the still lies */
+  const [standGeo, setStandGeo] = useState<{ l: number; t: number; w: number; h: number } | null>(null);
+  /** the still has loaded (it fades in over the board's ground) */
+  const [stillIn, setStillIn] = useState(false);
+  const standRoom = useRef<HTMLDivElement | null>(null);
+  const standBar = useRef<HTMLDivElement | null>(null);
   /** where focus goes when the in-place puzzle next mounts: onto its way to
    *  the series, when the visitor came back from there by the keyboard */
   const [inFocus, setInFocus] = useState<boolean | "exit">(false);
@@ -273,7 +295,16 @@ export default function Cloud({
    *  picture back, silently). Cleared by the next press, another picture, or
    *  the connection coming back. */
   const [offline, setOffline] = useState(false);
-  useEffect(() => setOffline(false), [chosen]);
+  /** A PRESS THAT CANNOT DO ANYTHING SAYS WHY (review, change 5): inside the
+   *  reload guard (the puzzle's file still gone a minute after the reload
+   *  that should have brought it) a press on «Play the puzzle» only put the
+   *  same still back — no line, no reload. Now the existing failure line is
+   *  said under the Play that was pressed: which one, by where it was. */
+  const [failNote, setFailNote] = useState<null | "panel" | "teaser" | "inplace">(null);
+  useEffect(() => {
+    setOffline(false);
+    setFailNote(null);
+  }, [chosen]);
   useEffect(() => {
     const back = () => setOffline(false);
     window.addEventListener("online", back);
@@ -282,6 +313,7 @@ export default function Cloud({
   const startPuzzle = useCallback(() => {
     playAt.current = performance.now();
     setOffline(false);
+    setFailNote(null);
     setPlayFrom("panel");
     // the desktop room is the frame: bring the whole of it on screen first,
     // or the board can open half under the fold
@@ -297,6 +329,7 @@ export default function Cloud({
   const startTeaser = useCallback(() => {
     playAt.current = performance.now();
     setOffline(false);
+    setFailNote(null);
     setPlayFrom("teaser");
     setPlaying(true);
   }, []);
@@ -363,13 +396,20 @@ export default function Cloud({
    *  (0: nobody did — the in-place puzzle mounts by itself, and a page
    *  never reloads itself under a visitor who asked for nothing);
    *  `waiting` says whether they still wait on it; `giveUp` puts the
-   *  picture (or the still) back. */
+   *  picture (or the still) back; `from` is the Play that was pressed,
+   *  under which a press that came to nothing says so (`failNote`). */
   const chunkFailed = useCallback(
-    (err: unknown, at: number, waiting: () => boolean, giveUp: () => void) => {
+    (err: unknown, at: number, waiting: () => boolean, giveUp: () => void, from: "panel" | "teaser" | "inplace") => {
       const stale =
         err instanceof Error &&
         (err.name === "ChunkLoadError" ||
           /Loading (CSS )?chunk|dynamically imported module|Importing a module script failed/i.test(err.message));
+      // only for a visitor still waiting on their press (a page that fails
+      // by itself, or a hung request answering two minutes later under a
+      // visitor who has moved on, says nothing)
+      const tell = () => {
+        if (at > 0 && performance.now() - at < 15_000) setFailNote(from);
+      };
       if (stale && navigator.onLine !== false && at > 0 && performance.now() - at < 15_000) {
         // webpack's ChunkLoadError carries the address that failed
         const url = (err as { request?: unknown }).request;
@@ -393,7 +433,13 @@ export default function Cloud({
             unhook();
             // the visitor left (or put the picture away) while it was asked
             if (!alive.current || !waiting()) return;
-            if (acted || !reloadOnce()) giveUp();
+            // the guard refused the reload (it was taken within the minute
+            // and the file is still gone), or they moved on: back to the
+            // picture, and the line under Play says the press came to nothing
+            if (acted || !reloadOnce()) {
+              tell();
+              giveUp();
+            }
           },
           () => {
             unhook();
@@ -405,8 +451,10 @@ export default function Cloud({
         return;
       }
       // the browser itself says it is offline: no reload (above), and no
-      // silent press either — the line under Play says why
+      // silent press either — the line under Play says why; any other
+      // failure of a press says it came to nothing
       if (stale && navigator.onLine === false) setOffline(true);
+      else tell();
       giveUp();
     },
     [reloadOnce],
@@ -418,18 +466,18 @@ export default function Cloud({
         playAt.current,
         () => playingRef.current,
         () => setPlaying(false),
+        playFromRef.current,
       ),
     [chunkFailed],
   );
+  /** the in-place game failed: the still and «Play the puzzle» stand in */
+  const inplaceDown = useCallback(() => {
+    setInFailed(true);
+    setInReady(false);
+  }, []);
   const inplaceFailed = useCallback(
-    (err?: unknown) =>
-      chunkFailed(
-        err,
-        inPressAt.current,
-        () => !seriesRef.current,
-        () => setInFailed(true),
-      ),
-    [chunkFailed],
+    (err?: unknown) => chunkFailed(err, inPressAt.current, () => !seriesRef.current, inplaceDown, "inplace"),
+    [chunkFailed, inplaceDown],
   );
   /** THE IN-PLACE PUZZLE'S PICTURES would not come, even on a second try
    *  (review, change 5: offline, or his files gone since the page opened —
@@ -439,12 +487,41 @@ export default function Cloud({
    *  why, as it does for the code. */
   const inplacePicturesFailed = useCallback(() => {
     if (navigator.onLine === false) setOffline(true);
+    // …and when the still's Play asked for them again, the press says it
+    // came to nothing (review, change 5 — the same line as for the code)
+    else if (inPressAt.current > 0) setFailNote("inplace");
     // a keyboard already in the room (on its «See the series») would fall
     // to <body> as the room goes: it is taken on to the still's Play
     const a = document.activeElement;
     if (a instanceof HTMLElement && root.current?.contains(a) && a.closest(".ap-pz, .ap-pz__bar")) setInFocus(true);
-    setInFailed(true);
+    inplaceDown();
+  }, [inplaceDown]);
+  /** the in-place game shows its pieces: its still fades away, and its bar
+   *  hands over to the game's. A keyboard on the still's «See the series»
+   *  goes on to the game's — the same words in the same place; one on its
+   *  Play has already been taken into the pieces by the game (`autoFocus`,
+   *  which that press set). */
+  const handOver = useRef(false);
+  const inplaceReady = useCallback(() => {
+    const a = document.activeElement;
+    handOver.current = a instanceof HTMLElement && !!standBar.current?.contains(a);
+    setInPressed(false);
+    setFailNote(null);
+    setInReady((r) => (r === true ? r : "fading"));
   }, []);
+  // …once the still has begun to fade: the game's bar is shown from then on
+  // (cloud.css), and a hidden button cannot take focus
+  useLayoutEffect(() => {
+    if (inReady !== "fading" || !handOver.current) return;
+    handOver.current = false;
+    root.current?.querySelector<HTMLButtonElement>(".ap-pz + .ap-pz__bar .ap-pz__exit")?.focus(scriptFocus());
+  }, [inReady]);
+  useEffect(() => {
+    if (inReady !== "fading") return;
+    // the pieces' own fade-in is 0.35 s (puzzle.css), and the still's the same
+    const id = window.setTimeout(() => setInReady(true), 450);
+    return () => window.clearTimeout(id);
+  }, [inReady]);
   // …and after that reload: the picture is chosen again and its puzzle
   // started, once the page has loaded (the browser has put the scroll back;
   // the cloud's frame is then brought to the top at once).
@@ -519,6 +596,10 @@ export default function Cloud({
         setPlain(isPlain);
         if (inplace) {
           if (!isPlain) setInFocus(true);
+          // the game coming back is the visitor's press carried through the
+          // reload: if its file is still gone, the line under Play says so
+          // (as it does for the window form), and the guard keeps the page
+          inPressAt.current = performance.now();
           return;
         }
         if (from === "teaser") {
@@ -1269,6 +1350,11 @@ export default function Cloud({
   const retryInPlace = useCallback(() => {
     inPressAt.current = performance.now();
     setOffline(false);
+    setFailNote(null);
+    // the still and this Play stay where they are while the game is asked
+    // for again (review, change 5: they went for ~140 ms and came back as
+    // new elements — focus fell to <body>, and nothing said anything)
+    setInPressed(true);
     setInFocus(true);
     setInFailed(false);
     setInKey((k) => k + 1);
@@ -1303,6 +1389,112 @@ export default function Cloud({
   const inCopy = useMemo(() => ({ ...puzzle, back: puzzle.series }), [puzzle]);
   const inArt = items.find((a) => a.id === IN_PLACE);
   const railId = useId();
+
+  // ---- the still where the game will be (review, change 5) ---------------
+  /** the moved layer's puzzle scene, with no game shown yet (or a failed
+   *  one): the still holds the board's place */
+  const standShown = !plain && !series && !playing && !!inArt && !!puzzles[IN_PLACE] && (inFailed || inReady !== true);
+  // THE BOARD'S PLACE IS THE GAME'S OWN LAYOUT: the stand's room box is the
+  // game's room box (cloud.css, the same insets as puzzle.css), the no-go
+  // box is the title's + 16 px (Puzzle `avoid`), and lib/puzzleLayout.ts is
+  // the code the game itself runs — so the still lies exactly where the
+  // board will, and the pieces come in over it without a shift.
+  useLayoutEffect(() => {
+    const el = standRoom.current;
+    const set = puzzles[IN_PLACE];
+    if (!standShown || !el || !set) return;
+    const title = root.current?.querySelector(".ap-cloud__say .ap-h2") ?? null;
+    const run = () => {
+      const W = el.clientWidth;
+      const H = el.clientHeight;
+      // the plain layer hides the stand (cloud.css): nothing to lay out
+      if (W < 40 || H < 40 || !window.matchMedia(DESKTOP).matches) {
+        setStandGeo(null);
+        return;
+      }
+      const h = el.getBoundingClientRect();
+      const no: Rect[] = [];
+      const r = title?.getBoundingClientRect();
+      if (r && r.right > r.left && r.bottom > r.top) no.push({ l: r.left - h.left - 16, t: r.top - h.top - 16, r: r.right - h.left + 16, b: r.bottom - h.top + 16 });
+      const L = layout(W, H, set, no);
+      const g = { l: L.bx, t: L.by, w: L.cw * set.cols, h: L.ch * set.rows };
+      setStandGeo((o) => (o && Math.abs(o.l - g.l) < 0.5 && Math.abs(o.t - g.t) < 0.5 && Math.abs(o.w - g.w) < 0.5 && Math.abs(o.h - g.h) < 0.5 ? o : g));
+    };
+    run();
+    const ro = new ResizeObserver(run);
+    ro.observe(el);
+    if (title) ro.observe(title);
+    return () => ro.disconnect();
+  }, [standShown]);
+  // THE STILL IS ASKED FOR ONLY WHEN THE SECTION IS ON SCREEN — never with
+  // the hero (SPEC: nothing of the puzzle loads before window load unless
+  // it is what the section shows). The page opens with the section 0.6 of
+  // a screen below the fold; with the game there first, it is never asked.
+  useEffect(() => {
+    const el = root.current;
+    if (!el || stillOn || !standShown || !standGeo) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) setStillOn(true);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [stillOn, standShown, standGeo]);
+  // …AND IT IS FETCHED, NOT GIVEN TO THE <img> AS AN ADDRESS, BEFORE LOAD:
+  // an image asked for before window load holds the load event back until
+  // it is in, and the game's own file and pictures wait for that event — on
+  // a 1.6 Mbit/s link the still put the game a second later (measured). A
+  // fetch does not hold it back; the picture is then shown from its bytes,
+  // and the file sits in the HTTP cache for any later <img> of it. After
+  // load (or if the fetch fails) the address itself is used.
+  const [stillUrl, setStillUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!stillOn) return;
+    if (document.readyState === "complete") {
+      setStillUrl(teaser.src);
+      return;
+    }
+    let gone = false;
+    let blob: string | null = null;
+    const ctl = new AbortController();
+    fetch(teaser.src, { signal: ctl.signal })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then(
+        (b) => {
+          if (gone) return;
+          blob = URL.createObjectURL(b);
+          setStillUrl(blob);
+        },
+        () => {
+          if (!gone) setStillUrl(teaser.src);
+        },
+      );
+    return () => {
+      gone = true;
+      ctl.abort();
+      if (blob) URL.revokeObjectURL(blob);
+    };
+  }, [stillOn]);
+  /** the line over the still's bar */
+  const standNote = offline ? OFFLINE_NOTE : failNote === "inplace" ? puzzle.failed : "";
+  /** the still's Play: once the game has failed, and while a press asks
+   *  for it again */
+  const standPlay = inFailed || inPressed;
+  /** the still's bar is the section's bar: until the game's pieces show */
+  const standBarOn = standShown && !!standGeo && (inFailed || inReady === false);
+  // BACK FROM THE SERIES BY THE KEYBOARD BEFORE THE GAME HAS COME: its way
+  // to the series is not shown yet, so focus waits on the still's own «See
+  // the series» — the same words in the same place — and goes on to the
+  // game's when its pieces show (inplaceReady), not on <body> meanwhile
+  useEffect(() => {
+    if (inFocus !== "exit" || !standBarOn) return;
+    const id = requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a !== document.body && !root.current?.contains(a)) return;
+      if (a && standBar.current?.contains(a)) return;
+      standBar.current?.querySelector<HTMLButtonElement>(".ap-pz__btn")?.focus(scriptFocus());
+    });
+    return () => cancelAnimationFrame(id);
+  }, [inFocus, standBarOn]);
 
   return (
     // No `data-nosun` here: this section is an opaque stacking context at
@@ -1377,7 +1569,7 @@ export default function Cloud({
             {puzzle.cta}
           </button>
           <p className="ap-cloud__note" role="status">
-            {offline && playFrom === "teaser" ? OFFLINE_NOTE : ""}
+            {playFrom === "teaser" ? (offline ? OFFLINE_NOTE : failNote === "teaser" ? puzzle.failed : "") : ""}
           </p>
         </div>
         {/* …and the series one press away: the rail, as a disclosure */}
@@ -1585,14 +1777,14 @@ export default function Cloud({
                   desktop panel is already a status region (it announces the
                   line); the plain layer's has no role, so a hidden live line,
                   present before the words arrive, says it there. */}
-              {offline && playFrom === "panel" && (
+              {(offline || failNote === "panel") && playFrom === "panel" && (
                 <p className="ap-cloud__body" aria-hidden={plain || undefined}>
-                  {OFFLINE_NOTE}
+                  {offline ? OFFLINE_NOTE : puzzle.failed}
                 </p>
               )}
               {plain && (
                 <span className="ap-sr" aria-live="polite">
-                  {offline && playFrom === "panel" ? OFFLINE_NOTE : ""}
+                  {playFrom === "panel" ? (offline ? OFFLINE_NOTE : failNote === "panel" ? puzzle.failed : "") : ""}
                 </span>
               )}
               <div className="ap-cloud__nav">
@@ -1670,62 +1862,94 @@ export default function Cloud({
             a second failure then takes the guarded reload. His piece
             pictures failing twice (offline, or gone) leave the same still
             (`onFail`), and its press asks for them again. */}
-        {!plain &&
-          !series &&
-          !playing &&
-          near &&
-          inArt &&
-          puzzles[IN_PLACE] &&
-          (inFailed ? (
-            <div className="ap-cloud__stand">
-              {/* eslint-disable-next-line @next/next/no-img-element -- the still standing in for the game */}
-              <img
-                src={teaser.src}
-                alt=""
-                width={teaser.w}
-                height={teaser.h}
-                draggable={false}
-                // OFFLINE THE STILL CANNOT COME EITHER (review, change 5): on
-                // this layer it was never fetched, so it stood as a broken
-                // frame over Play; then only the buttons and the line remain
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-              <div className="ap-cloud__stand-row">
-                <button type="button" className="ap-cloud__play" ref={standBtn} onClick={retryInPlace}>
-                  <PieceIcon />
-                  {puzzle.cta}
-                </button>
+        {!plain && !series && !playing && near && inArt && puzzles[IN_PLACE] && !inFailed && (
+          <MapBoundary key={`in-${inKey}`} onError={inplaceFailed}>
+            <Puzzle
+              set={puzzles[IN_PLACE]}
+              art={{ id: inArt.id, src: inArt.lg ?? inArt.src, w: inArt.lgW ?? inArt.w, h: inArt.lgH ?? inArt.h }}
+              mode="inline"
+              placement="section"
+              dealWhen="visible"
+              autoFocus={inFocus}
+              escapeExits={false}
+              avoid={titleBox}
+              roving
+              persist={PERSIST}
+              label={`No. ${IN_PLACE}`}
+              copy={inCopy}
+              memory={puzzleMemory}
+              onExit={showSeries}
+              onFail={inplacePicturesFailed}
+              onReady={inplaceReady}
+            />
+          </MapBoundary>
+        )}
+        {/* THE STILL WHERE THE GAME WILL BE (review, change 5): until the
+            game's pieces are shown — before window load, while its file and
+            its pictures come, or when they would not come — No. 05 lies
+            whole on the board's own place (her still's board, cut lines and
+            all; its two loose pieces are the game's to deal), and «See the
+            series» stands where the game's bar will (which waits unseen
+            under it — cloud.css). When the pieces show, the still and its
+            bar fade as the pieces and the game's bar come in. Failed, the
+            bar offers «Play the puzzle» too (it asks again; a second
+            failure takes the guarded reload) and the line over it says why
+            a press came to nothing. One element all along, so a press never
+            loses its focus. Fading, it takes no press and no focus. */}
+        {standShown && (
+          <div
+            className="ap-cloud__stand"
+            data-out={(inReady === "fading" && !inFailed) || undefined}
+            inert={(inReady === "fading" && !inFailed) || undefined}
+          >
+            <div className="ap-cloud__stand-room" ref={standRoom}>
+              {standGeo && (
+                <div
+                  className="ap-cloud__still"
+                  aria-hidden="true"
+                  style={{ left: standGeo.l, top: standGeo.t, width: standGeo.w, height: standGeo.h }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the still, cut to its board by its own box */}
+                  <img
+                    src={stillUrl ?? undefined}
+                    alt=""
+                    width={teaser.w}
+                    height={teaser.h}
+                    decoding="async"
+                    draggable={false}
+                    data-in={stillIn || undefined}
+                    style={{
+                      width: standGeo.w / teaser.board.w,
+                      height: standGeo.h / teaser.board.h,
+                      left: (-teaser.board.x * standGeo.w) / teaser.board.w,
+                      top: (-teaser.board.y * standGeo.h) / teaser.board.h,
+                    }}
+                    onLoad={() => setStillIn(true)}
+                    // OFFLINE THE STILL CANNOT COME EITHER (review, change 5):
+                    // then the board's ground, the buttons and the line remain
+                    onError={() => setStillIn(false)}
+                  />
+                </div>
+              )}
+            </div>
+            {standGeo && (
+              <div className="ap-pz__bar ap-cloud__stand-bar" data-mode="inline" ref={standBar}>
+                <p className="ap-cloud__note" role="status">
+                  {standNote}
+                </p>
+                {standPlay && (
+                  <button type="button" className="ap-cloud__play" ref={standBtn} onClick={retryInPlace}>
+                    <PieceIcon />
+                    {puzzle.cta}
+                  </button>
+                )}
                 <button type="button" className="ap-pz__btn" onClick={showSeries}>
                   {puzzle.series}
                 </button>
               </div>
-              <p className="ap-cloud__note" role="status">
-                {offline ? OFFLINE_NOTE : ""}
-              </p>
-            </div>
-          ) : (
-            <MapBoundary key={`in-${inKey}`} onError={inplaceFailed}>
-              <Puzzle
-                set={puzzles[IN_PLACE]}
-                art={{ id: inArt.id, src: inArt.lg ?? inArt.src, w: inArt.lgW ?? inArt.w, h: inArt.lgH ?? inArt.h }}
-                mode="inline"
-                placement="section"
-                dealWhen="visible"
-                autoFocus={inFocus}
-                escapeExits={false}
-                avoid={titleBox}
-                roving
-                persist={PERSIST}
-                label={`No. ${IN_PLACE}`}
-                copy={inCopy}
-                memory={puzzleMemory}
-                onExit={showSeries}
-                onFail={inplacePicturesFailed}
-              />
-            </MapBoundary>
-          ))}
+            )}
+          </div>
+        )}
 
         {/* the puzzle a press opened: the chosen card's, in the frame on the
             desktop moved layer, as a window everywhere else (a portal — it

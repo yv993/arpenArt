@@ -39,6 +39,11 @@
 .ap-cloud__more {
   display: none;
 }
+/* …and the in-place game's stand-in (the still on the board's place, its
+   bar) is the moved layer's alone — its block below shows it */
+.ap-cloud__stand {
+  display: none;
+}
 /* the card's picture before the series is first shown has no address (a
    hidden lazy <img> still loads): no empty box, the card's own average
    colour stands in (its size is its aspect-ratio, never the picture's) */
@@ -721,30 +726,67 @@
   .ap-cloud__play.ap-cloud__back:hover {
     background: color-mix(in srgb, var(--cream) 14%, var(--ink-solid));
   }
-  /* the still standing in for a game whose file would not come — in the
-     room's own box, centred */
+  /* THE STILL WHERE THE GAME WILL BE (review, change 5 — Cloud.tsx): until
+     the in-place game shows its pieces (before window load, while its file
+     and pictures come, or when they would not), No. 05 lies whole on the
+     board's own place and «See the series» stands where the game's bar will.
+     Over the game's room (1100) and bar (1101) while the game lays itself
+     out beneath; it takes no press of its own but its bar's, and fades as
+     the pieces fade in (0.35 s each, puzzle.css). */
   .ap-cloud__stand {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 1102;
+    pointer-events: none;
+    transition: opacity 0.35s var(--ease);
+  }
+  .ap-cloud__stand[data-out] {
+    opacity: 0;
+  }
+  /* one bar in sight: the game's waits unseen (and out of the Tab order)
+     under the still's until the pieces show — its hint and «Scatter again»
+     mean nothing before there are pieces — then comes in as the still's
+     fades over it */
+  .ap-cloud__frame:has(> .ap-cloud__stand:not([data-out])) > .ap-pz__bar[data-mode="inline"] {
+    visibility: hidden;
+  }
+  /* the game's room box, to the pixel (puzzle.css .ap-pz[data-mode="inline"]
+     and [data-place="section"]): the board's place is laid out in it */
+  .ap-cloud__stand-room {
     position: absolute;
     top: var(--nav-h, 84px);
     bottom: 92px;
     left: calc(var(--gutter) * 0.4 + 52px);
     right: 16vw;
-    z-index: 1100;
-    display: grid;
-    place-content: center;
-    justify-items: center;
-    gap: 16px;
   }
-  .ap-cloud__stand img {
+  /* the board's ground and edge are the game's board's (puzzle.css
+     .ap-pz__board); the still is cut to its board by this box */
+  .ap-cloud__still {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ink-solid) 60%, #000);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--cream) 24%, transparent),
+      0 30px 60px -30px rgba(0, 0, 0, 0.7);
+  }
+  .ap-cloud__still img {
+    position: absolute;
     display: block;
-    width: min(100%, 760px);
-    height: auto;
+    max-width: none;
+    opacity: 0;
+    transition: opacity 0.35s var(--ease);
+    -webkit-user-drag: none;
   }
-  .ap-cloud__stand-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
+  .ap-cloud__still img[data-in] {
+    opacity: 1;
+  }
+  /* the bar is the game's pill (puzzle.css .ap-pz__bar[data-mode="inline"])
+     with only its buttons in it */
+  .ap-cloud__stand-bar {
+    pointer-events: auto;
+    padding-left: 6px;
   }
   .ap-cloud__stand .ap-cloud__play {
     margin: 0;
@@ -754,8 +796,27 @@
     font-size: 13.5px;
     color: color-mix(in srgb, var(--cream) 84%, transparent);
   }
-  .ap-cloud__note:empty {
-    display: none;
+  /* …and the line that says why a press came to nothing sits just over the
+     pill, centred, so the pill never changes size under the pointer that
+     pressed it (a line inside it pushed Play 127 px aside) */
+  .ap-cloud__stand-bar .ap-cloud__note {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 12px);
+    width: max-content;
+    max-width: min(46ch, 90vw);
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: normal;
+  }
+  /* empty, the status line keeps its place in the accessibility tree (a
+     line that is there before its words arrive is the one that is read)
+     and takes none on screen */
+  .ap-cloud__stand-bar .ap-cloud__note:empty {
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
   /* .ap-dark only fixes focus rings — every dark band sets its own type
