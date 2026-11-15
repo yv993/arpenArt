@@ -122,9 +122,9 @@ const PATH: Key[] = [
   // rays is 0.13 wide — so the round comes from the other side: the arc's
   // ends keep the box just clear of the room, and its apex presses out to
   // the screen's edge, rays off the screen and four fifths of the disc on
-  // it. Against the section that is a bow of 6.8% of the drawn track at
-  // 1440×900 (53px), 7.6% at 1280×720 and 9.5% at 1886×835 — one hump,
-  // fullest a third of the way down.
+  // it. Against the section that is a bow of 6.9% of the drawn track at
+  // 1440×900 (54px), 7.7% at 1280×720 and 9.6% at 1886×835 — one hump,
+  // fullest a little above the middle.
   // THE ARC IS PLACED IN THE SECTION'S PASS, NOT THE DOCUMENT'S (`c`): the
   // section ends anywhere from 0.43 to 0.49 of the page at the sizes
   // measured, and keys in document progress put the arc's ends — the part
@@ -136,8 +136,8 @@ const PATH: Key[] = [
   // 0.869 of the width or more. And NO NEAR-STOP: the old 0.19 key was a
   // turn of y with almost no x left (6px of travel for a 100px notch, a
   // fifth of its neighbours, L6-sun#3); the turn now falls where x is still
-  // on its way out, and the slowest notch inside the section moves the sun
-  // 15px, two thirds of the median.
+  // on its way out, and the speed along the arc is kept even: the slowest
+  // notch inside the section moves the sun 18px, four fifths of the median.
   { p: 0.14, x: 0.92, y: 0.55, s: 0.53, o: 0.62 }, // → down and right, receding
   // OPACITY IS TUNED TO WHAT IT CROSSES, and it has to be. The sun is pale
   // yellow: against the dark bands (the cloud and the gallery) a third of it
@@ -145,9 +145,9 @@ const PATH: Key[] = [
   // invisible — measured at p=0.80, where 0.41 left nothing on screen at all.
   // So it is held low through the dark sections and lifted through the light
   // ones, which is also what a sun crossing a sky would do.
-  { p: 0.169, x: 0.941, y: 0.631, s: 0.45, o: 0.42, c: 0.199 }, // cloud — into the right margin, the arc begins
-  { p: 0.265, x: 0.982, y: 0.405, s: 0.45, o: 0.41, c: 0.481 }, // cloud — its apex, out at the screen's edge
-  { p: 0.404, x: 0.926, y: 0.316, s: 0.45, o: 0.4, c: 0.889 }, // cloud — and back in as it leaves
+  { p: 0.167, x: 0.938, y: 0.617, s: 0.45, o: 0.42, c: 0.193 }, // cloud — into the right margin, the arc begins
+  { p: 0.267, x: 0.983, y: 0.42, s: 0.45, o: 0.41, c: 0.488 }, // cloud — its apex, out at the screen's edge
+  { p: 0.404, x: 0.926, y: 0.311, s: 0.45, o: 0.4, c: 0.891 }, // cloud — and back in as it leaves
   { p: 0.55, x: 0.74, y: 0.6, s: 0.6, o: 0.34 }, // gallery — dark
   { p: 0.76, x: 0.22, y: 0.3, s: 0.7, o: 0.66 }, // shop — paper
   { p: 0.93, x: 0.58, y: 0.78, s: 0.9, o: 0.82 }, // studio — paper
