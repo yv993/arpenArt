@@ -7,6 +7,7 @@ import { armeniaEternal as T, ETERNAL, eternalKinds, isSoldOut, priceTbc, type E
 import { add, dram, priceText, unitOf } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
 import { FX_MEDIA } from "@/lib/textfx";
+import { useReveal } from "@/lib/reveal";
 import FlipCard from "./FlipCard";
 import PhotoLightbox from "./PhotoLightbox";
 
@@ -46,7 +47,20 @@ import PhotoLightbox from "./PhotoLightbox";
 // the moved layer only (FX_MEDIA: desktop, full motion) — the same gate as
 // the title, so the plain layer, phones and reduced motion read a page that
 // simply stands.
+//
+// THE IRIS (Vardan's pick, 2026-11-17, from eleven shown to him). Every
+// picture below the title — the cards, the scarves, the runners, her two
+// photographs, the closing bird — opens through a circle from its centre the
+// first time it comes into view, one after another along a row — phones too,
+// as a rail's card swipes in. The rules (full motion only, nothing on screen
+// is hidden, the attribute goes once open) are the shop's shared ones:
+// lib/reveal.ts; the look is app/reveal.css. The A6 card beside the title is
+// not irised: it is the page's largest paint (LCP).
 // ============================================================================
+
+/** what opens through the iris: each piece's picture (the flip card or the
+ *  button that opens it), her two photographs, the bird ornaments */
+const IRIS = ".ap-ae__scene, .ap-ae__rail > li > :first-child, .ap-ae__orn img";
 
 export type EternalFace = { src: string; thumb: string; w: number; h: number; thumbW?: number; avg: string };
 export type EternalPiece = EternalFace & {
@@ -132,6 +146,9 @@ export default function EternalView({
     });
     return () => mm.revert();
   }, []);
+
+  // ---- every picture opens through the iris as it comes into view ------------
+  useReveal(root, IRIS, { duration: 1 });
 
   // ---- her two paragraphs show once the fonts are in (eternal.css: the
   // painted initial re-wraps three lines when its face arrives) -------------

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { bookmarkShelf, isSoldOut, priceTbc } from "@/lib/content";
 import { add, dram } from "@/lib/cart";
+import { useReveal } from "@/lib/reveal";
 import { flyToCart } from "@/lib/fly";
 import FlipCard from "./FlipCard";
 
@@ -60,6 +61,10 @@ export default function BookmarkShelf({
   const [added, setAdded] = useState<string | null>(null);
   const addedTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
+  // each bookmark arrives on its back and turns to its front (lib/reveal.ts,
+  // app/reveal.css — Vardan's pick, 2026-11-17)
+  const root = useRef<HTMLElement | null>(null);
+  useReveal(root, ".ap-bm__all > li > .ap-flip", { duration: 1 });
 
   const H = heading;
   const srcSet = (s: BookmarkShot) => (s.thumbW ? `${s.thumb} ${s.thumbW}w, ${s.src} ${s.w}w` : undefined);
@@ -83,7 +88,7 @@ export default function BookmarkShelf({
   };
 
   return (
-    <section className="ap-bm" aria-labelledby="ap-bm-title">
+    <section className="ap-bm" aria-labelledby="ap-bm-title" ref={root}>
       <div className="ap-bm__head">
         <div className="ap-bm__say">
           <H className="ap-h2" id="ap-bm-title" data-tfx="rise">

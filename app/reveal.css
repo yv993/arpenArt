@@ -1,0 +1,167 @@
+/* ==========================================================================
+   THE ENTRANCES (lib/reveal.ts says when; this file says how each looks).
+   Only that hook ever sets data-reveal — "" while a picture waits off
+   screen, "open" as it arrives, gone once it has — so the no-JS page and
+   reduced motion never meet any of this. Each look's length matches the
+   `duration` its page passes to useReveal. --rv-delay is the picture's
+   place in its arrival.
+
+   Imported last (globals.css), so the waiting and arriving states win over
+   each page's own hover and turn rules for the second they apply.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- /armenia-eternal: IRIS, 1s. 100% of the reference radius reaches
+     past the box, so the shadow is inside the circle before the clip goes. */
+  .ap-ae [data-reveal] {
+    clip-path: circle(0% at 50% 50%);
+  }
+  .ap-ae [data-reveal="open"] {
+    clip-path: circle(100% at 50% 50%);
+    transition: clip-path 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+
+  /* ---- /shop/bookmarks: FLIP, 1s. The card waits on its back (the shared
+     back, which the page has already shown in its head) and turns to its
+     front with the card's own turning span (flip.css). A press during the
+     turn still wins: :not([data-back]) leaves the turn to the card. */
+  .ap-bm .ap-flip[data-reveal] .ap-flip__in {
+    transform: rotateY(180deg);
+    transition: none;
+  }
+  .ap-bm .ap-flip[data-reveal="open"] .ap-flip__in {
+    transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+  .ap-bm .ap-flip[data-reveal="open"]:not([data-back]) .ap-flip__in {
+    transform: rotateY(0deg);
+  }
+
+  /* ---- /shop/posters: CURTAIN, 0.9s. The print is uncovered from the
+     bottom up; the clip stands 48px outside the other three sides so its
+     shadow on the wall is never cut. */
+  .ap-pg .ap-pg__art[data-reveal] {
+    clip-path: inset(100% -48px -48px -48px);
+  }
+  .ap-pg .ap-pg__art[data-reveal="open"] {
+    clip-path: inset(-48px);
+    transition: clip-path 0.9s cubic-bezier(0.77, 0, 0.175, 1) var(--rv-delay, 0s);
+  }
+
+  /* ---- /shop/stickers: DROPPED, 0.9s. The folder (the plain layer: each
+     picture) falls in from above, turned a little — every other one the
+     other way — and settles with a small bounce. */
+  .ap-sf [data-reveal] {
+    opacity: 0;
+    transform: translateY(-48px) rotate(var(--rv-r, -6deg));
+  }
+  .ap-sf__row > li:nth-child(even) > [data-reveal],
+  .ap-sf__plain li:nth-child(even)[data-reveal] {
+    --rv-r: 5deg;
+  }
+  .ap-sf [data-reveal="open"] {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.45s ease-out var(--rv-delay, 0s),
+      transform 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) var(--rv-delay, 0s);
+  }
+
+  /* ---- /shop/magnets: SOFT ZOOM, 0.7s. Grows from 88% as it fades up, like
+     a magnet put on the fridge. */
+  .ap-mf .ap-mf__cell[data-reveal] {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  .ap-mf .ap-mf__cell[data-reveal="open"] {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.7s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s),
+      transform 0.7s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+}
+
+/* ---- WHAT IS ON SCREEN WHEN THE PAGE OPENS -------------------------------
+   The hook leaves a picture that is already visible alone (hiding it after
+   it has painted would blink). So those pictures take the same entrance as a
+   CSS animation from the very first paint: measured 2026-11-17, all four
+   posters and the first row of bookmarks sit on screen at 1440x900 and would
+   otherwise never move. Every picture gets it; the hook turns it off
+   (`animation: none` in the waiting rules above) on the ones off screen,
+   which then wait for their scroll. Fill `backwards`, never `both`: the end
+   state must not outlive the animation, or it would pin the bookmarks' turn
+   and the magnets' hover lift. `scripting: enabled` keeps the no-JS page
+   still, as it was. The stagger is the item's place in its list. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .ap-ae :is(.ap-ae__scene, .ap-ae__rail > li > :first-child, .ap-ae__orn img) {
+    animation: rv-iris 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-bm .ap-bm__all > li > .ap-flip .ap-flip__in {
+    animation: rv-flip 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-pg .ap-pg__art {
+    animation: rv-curtain 0.9s cubic-bezier(0.77, 0, 0.175, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-sf :is(.ap-sf__stage, .ap-sf__plain li) {
+    animation: rv-drop 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-sf__row > li:nth-child(even) > .ap-sf__stage,
+  .ap-sf__plain li:nth-child(even) {
+    --rv-r: 5deg;
+  }
+  .ap-mf .ap-mf__cell {
+    animation: rv-zoom 0.7s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(2) { --rv-load: 0.07s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(3) { --rv-load: 0.14s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(4) { --rv-load: 0.21s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(5) { --rv-load: 0.28s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(6) { --rv-load: 0.35s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(7) { --rv-load: 0.42s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(8) { --rv-load: 0.49s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(9) { --rv-load: 0.56s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(10) { --rv-load: 0.63s; }
+  :is(.ap-ae__rail, .ap-bm__all, .ap-pg__row, .ap-sf__row, .ap-sf__plain ul, .ap-mf__all) > li:nth-child(n + 11) { --rv-load: 0.7s; }
+
+  /* the hook's pictures never take the page-load animation: waiting or
+     arriving (data-reveal), nor once done (data-revealed — the mark that
+     stays, or dropping data-reveal would start the animation again) */
+  [data-reveal],
+  [data-reveal] .ap-flip__in,
+  [data-revealed],
+  [data-revealed] .ap-flip__in {
+    animation: none !important;
+  }
+}
+@keyframes rv-iris {
+  from { clip-path: circle(0% at 50% 50%); }
+  to { clip-path: circle(100% at 50% 50%); }
+}
+@keyframes rv-flip {
+  from { transform: rotateY(180deg); }
+  to { transform: rotateY(0deg); }
+}
+@keyframes rv-curtain {
+  from { clip-path: inset(100% -48px -48px -48px); }
+  to { clip-path: inset(-48px); }
+}
+@keyframes rv-drop {
+  from { opacity: 0; transform: translateY(-48px) rotate(var(--rv-r, -6deg)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rv-zoom {
+  from { opacity: 0; transform: scale(0.88); }
+  to { opacity: 1; transform: none; }
+}
+
+@media print {
+  [data-reveal] {
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-reveal] .ap-flip__in {
+    transform: none !important;
+  }
+}

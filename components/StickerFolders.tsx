@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
 import { isSoldOut, priceTbc, stickerSheets } from "@/lib/content";
 import { add, dram, priceText } from "@/lib/cart";
+import { useReveal } from "@/lib/reveal";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
 
@@ -205,6 +206,12 @@ export default function StickerFolders({
       window.removeEventListener("pointerdown", onDown);
     };
   }, [open, close]);
+
+  // each folder (on the plain layer, each picture) drops in and settles as it
+  // comes into view (lib/reveal.ts, app/reveal.css — Vardan's pick,
+  // 2026-11-17). Keyed on `live`: the folders only take up room once the live
+  // layer is on, a render after this first runs.
+  useReveal(root, ".ap-sf__stage, .ap-sf__plain li", { duration: 0.9, key: live });
 
   useEffect(() => () => drags.current.forEach((d) => d.kill()), []);
   useEffect(() => () => { if (addTimer.current) window.clearTimeout(addTimer.current); }, []);

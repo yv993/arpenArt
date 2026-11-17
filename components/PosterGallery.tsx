@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { add, dram, priceText } from "@/lib/cart";
+import { useReveal } from "@/lib/reveal";
 import { flyToCart } from "@/lib/fly";
 import { isSoldOut, posterGallery, priceTbc, priceTbcMid } from "@/lib/content";
 
@@ -157,6 +158,12 @@ export default function PosterGallery({
 
   useEffect(() => () => window.clearTimeout(addTimer.current), []);
 
+  // each print is uncovered from the bottom up as it comes into view
+  // (lib/reveal.ts, app/reveal.css — Vardan's pick, 2026-11-17). Before the
+  // early return below: a hook may not sit behind one.
+  const root = useRef<HTMLElement | null>(null);
+  useReveal(root, ".ap-pg__art", { duration: 0.9 });
+
   const buy = (s: PosterShot) => {
     // `art` carries the POSTER number — see ownItemWord in content.ts. The
     // cart and the order mail both read "Poster no. 02" from it; the server
@@ -180,7 +187,7 @@ export default function PosterGallery({
   const sold = !!poster && isSoldOut(slug, poster.id);
 
   return (
-    <section className="ap-pg" aria-labelledby="ap-pg-title">
+    <section className="ap-pg" aria-labelledby="ap-pg-title" ref={root}>
       <div className="ap-pg__head">
         {/* ONE SPAN PER LINE, each revealed by the text-FX runner on its own
             and the second a beat behind — the totes' title. A REAL SPACE

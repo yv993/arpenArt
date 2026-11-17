@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isSoldOut, magnetFridge, priceTbc } from "@/lib/content";
 import { add, dram, priceText } from "@/lib/cart";
+import { useReveal } from "@/lib/reveal";
 import { flyToCart } from "@/lib/fly";
 import PhotoLightbox from "./PhotoLightbox";
 
@@ -61,6 +62,10 @@ export default function MagnetFridge({
 
   // a confirmation fading after unmount would setState on a dead component
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
+  // each magnet grows in as it comes into view (lib/reveal.ts,
+  // app/reveal.css — Vardan's pick, 2026-11-17)
+  const root = useRef<HTMLElement | null>(null);
+  useReveal(root, ".ap-mf__cell", { duration: 0.7 });
 
   const H = heading;
 
@@ -96,7 +101,7 @@ export default function MagnetFridge({
   };
 
   return (
-    <section className="ap-mf" aria-labelledby="ap-mf-title">
+    <section className="ap-mf" aria-labelledby="ap-mf-title" ref={root}>
       <div className="ap-mf__head">
         {/* no kicker above the title since 2026-10-12 (change 4.pdf p8,
             «(ON THE FRIDGE)» circled: «հանենք սա») — the title is the first
