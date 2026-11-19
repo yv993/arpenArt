@@ -5,9 +5,12 @@ import Link from "next/link";
 import {
   brand,
   categories,
+  covers,
   delivery,
   home,
+  hrefOf,
   itemWords,
+  ordering,
   ownItemMedia,
   ownItemWord,
   priceTbc,
@@ -45,6 +48,9 @@ type Art = { id: string; thumb: string; w: number; h: number; avg: string };
 type Shot = { id: string; thumb: string; w: number; h: number; avg: string };
 const ART = artworks as Art[];
 const P = products as Record<string, Shot[]>;
+
+/** THE THREE LINES AN EMPTY CART OFFERS. Stand-ins until Arpine names her three. */
+const EMPTY_LINES = ["postcards", "bookmarks", "magnets"].flatMap((slug) => categories.filter((c) => c.slug === slug));
 
 /** sent: delivered to Arpine · logged: NOT delivered, cart kept · handed:
  *  the buyer sent it from their own mail and emptied the cart themselves */
@@ -217,6 +223,10 @@ export default function CartView() {
   // address is what most orders need anyway.
   const [shipId, setShipId] = useState("yerevan");
   const ship = delivery.options.find((o) => o.id === shipId) ?? delivery.options[0];
+  // the order that left was one to COLLECT in Yerevan: no postage, no address
+  // (review 2026-11-19). Read back from the frozen receipt's label, so a
+  // restored screen after a reload gets it right too.
+  const collecting = !!receipt && delivery.options.some((o) => !o.address && o.label === receipt.shipLabel);
 
   // A REMOVAL CAN BE TAKEN BACK (2026-10-05). "−" at a quantity of one, and
   // Remove, deleted a line silently and for good — the only way back was
@@ -889,7 +899,7 @@ export default function CartView() {
           )}
           {state === "sent" && (
             <p>
-              Arpine has your request and will reply to confirm the total and postage.
+              Arpine has your request and will reply to confirm the total{collecting ? "" : " and postage"}.
               {copied && " A copy was sent to your email."}
               {/* only the order left the cart (takeOut): a line added while
                   it travelled, in another tab, is still there */}
@@ -922,8 +932,25 @@ export default function CartView() {
               {/* only the order left the cart (sentIt): lines added since, in
                   another tab, are still there and must not be called gone */}
               {lines.length ? "This order is out of your cart; what you added since is still there." : "Your cart is empty now."}{" "}
-              When your email reaches Arpine, she will reply to confirm the total and postage.
+              When your email reaches Arpine, she will reply to confirm the total{collecting ? "" : " and postage"}.
             </p>
+          )}
+
+          {/* WHERE THE ORDER STANDS, in her three steps' own words. Not on a
+              fallback («Not sent yet»): that order has not reached her, so
+              nothing is being confirmed. */}
+          {!notSent && (
+            <ol className="ap-cart__steps" aria-label={ordering.title}>
+              {ordering.steps.map((s, i) => (
+                <li key={s.k} aria-current={i === 1 ? "step" : undefined}>
+                  <small>{["Done", "Now", "Next"][i]}</small>
+                  <strong>{s.k}</strong>
+                  {/* a buyer collecting in Yerevan is promised no postage to an
+                      address that was never asked for (`collecting`, above) */}
+                  <span>{(collecting && ordering.collect[s.k]) || s.v}</span>
+                </li>
+              ))}
+            </ol>
           )}
 
           {receipt && (
@@ -993,7 +1020,7 @@ export default function CartView() {
               </div>
             </>
           ) : (
-            <Link className="ap-btn" href="/shop">
+            <Link className="ap-btn is-ink" href="/shop">
               Back to the shop
             </Link>
           )}
@@ -1024,9 +1051,25 @@ export default function CartView() {
       {!lines.length ? (
         <div className="ap-cart__empty">
           <p>Nothing chosen yet.</p>
-          <Link className="ap-btn" href="/shop">
-            Go to the shop
+          <Link className="ap-btn is-ink" href="/shop">
+            {home.hero.cta}
           </Link>
+          {/* three of her lines, so an empty cart still leads somewhere */}
+          <ul className="ap-cart__three">
+            {EMPTY_LINES.map((c) => (
+              <li key={c.slug}>
+                <Link href={hrefOf(c)}>
+                  <img src={covers[c.slug]?.thumb} alt="" width={200} height={200} loading="lazy" decoding="async" />
+                  <span>
+                    {c.name}
+                    <i aria-hidden="true" style={{ fontStyle: "normal" }}>
+                      →
+                    </i>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : (
         <div className="ap-cart__grid">

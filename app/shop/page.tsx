@@ -3,7 +3,8 @@ import Link from "next/link";
 import Chrome from "@/components/Chrome";
 import CatFig, { soloSoon } from "@/components/CatFig";
 import ShopStrip, { type StripCat } from "@/components/ShopStrip";
-import { categories, covers, hrefOf, soon } from "@/lib/content";
+import { categories, covers, hrefOf, soon, stockists, towns } from "@/lib/content";
+import { lineCount } from "@/lib/lineCounts";
 import { SoonLink } from "@/components/Soon";
 import products from "@/lib/products.json";
 import artworks from "@/lib/artworks.json";
@@ -24,6 +25,10 @@ const ART = artworks as Art[];
 export const metadata: Metadata = pageMeta({ title: "Shop", description: shopDescription, path: "/shop" });
 
 export default function ShopPage() {
+  // «Yerevan, Dilijan and Garni», from the towns that have shops
+  const names = towns.map((t) => t.town);
+  const townList = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
+
   // One panel per category. A line still waiting on its shoot has no
   // photograph, so it borrows the first artwork of its swatch — the same
   // substitution CatFig makes, so the two layers never disagree.
@@ -88,12 +93,13 @@ export default function ShopPage() {
               {/* no price under the name (change.pdf p8); a closed line opens
                   the Available Soon window, not a page */}
               {c.status === "open" ? (
-                <Link href={hrefOf(c)} aria-label={c.name}>
+                <Link href={hrefOf(c)} aria-label={lineCount(c.slug) ? `${c.name}, ${lineCount(c.slug)}` : c.name}>
                   {/* the first card is this page's LCP on a phone (2026-10-05
                       package) — see CatFig */}
                   <CatFig cat={c} eager={i === 0} />
                   <div className="ap-cat__row">
                     <h2>{c.name}</h2>
+                    {lineCount(c.slug) && <span className="ap-cat__count">{lineCount(c.slug)}</span>}
                   </div>
                   <p className="ap-cat__blurb">{c.blurb}</p>
                 </Link>
@@ -110,6 +116,15 @@ export default function ShopPage() {
             </li>
           ))}
         </ul>
+
+        {/* where else her work is sold, read from the Find in store list; on
+            the plain layer only, closing the grid it follows */}
+        <p className="ap-shop__stock">
+          Also in {stockists.length} shops in {townList}.{" "}
+          <Link href="/find-in-store">
+            Find a shop <span aria-hidden="true">→</span>
+          </Link>
+        </p>
       </div>
       {/* splits and reveals the [data-tfx] headings — page-mounted so it
           cannot run before this page hydrates */}

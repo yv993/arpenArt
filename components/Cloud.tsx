@@ -10,6 +10,7 @@ import { categories, hrefOf, isSoldOut, priceTbc, withheldArt } from "@/lib/cont
 import dynamic from "next/dynamic";
 import { puzzles } from "@/lib/puzzles";
 import { layout, type Rect } from "@/lib/puzzleLayout";
+import { RIDGE } from "@/lib/ridge";
 import teaser from "@/lib/puzzle-teaser.json";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
 import MapBoundary from "./MapBoundary";
@@ -1516,6 +1517,9 @@ export default function Cloud({
     // every card's box at rest (measured — see Sun.tsx PATH), and the
     // z-order means it can never cover one in any case.
     <section className="ap-cloud ap-dark" ref={root} aria-label={title.join(" ")}>
+      <svg className="ap-cloud__edge" viewBox="0 0 1440 110" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path d={RIDGE} />
+      </svg>
       <div className="ap-cloud__sun" aria-hidden="true">
         {/* the same <picture> gate as Sun.tsx: where the sun never flies —
             narrow, reduced motion, no scripting — the source is a 1×1 data

@@ -607,6 +607,9 @@ export default function FloatShop({
   // The centre always names something: whatever the room has brought to the
   // centre position, unless a pointer is on a card, which wins.
   const shown = hovered ?? cats[focusI] ?? cats[0] ?? null;
+  const shownAt = Math.max(0, cats.indexOf(shown as FloatCat));
+  // +1 when the next card stands to the right of the centre one (spiral), -1 when it stands to the left (ring)
+  const nearStep = mode === "sphere" ? -1 : 1;
 
   // ---- the centre's entrance ----------------------------------------------
   // Every change of the named category replays the same logic. Runs after
@@ -728,8 +731,17 @@ export default function FloatShop({
           plainly that there are more pieces below, which a room that simply
           rotates never manages to */}
       <p className="ap-fs__count" aria-hidden="true">
-        <span>{String(cats.indexOf(shown as FloatCat) + 1 || 1).padStart(2, "0")}</span>
-        <span className="ap-fs__count-of">/ {String(cats.length).padStart(2, "0")}</span>
+        {/* the lines either side of the one in the middle, so the ring says
+            what comes next (Vardan's pick, 2026-11-18). The ring seats card
+            i+1 to the LEFT of the centre (FloatShopCanvas: cos/sin, centre at
+            π/2) while the spiral seats it to the right (sin/cos), so the side
+            follows the pill — measured on the page, all 11 stops */}
+        <span className="ap-fs__near">← {cats[(shownAt - nearStep + cats.length) % cats.length]?.name}</span>
+        <span className="ap-fs__count-at">
+          <span>{String(shownAt + 1).padStart(2, "0")}</span>
+          <span className="ap-fs__count-of">/ {String(cats.length).padStart(2, "0")}</span>
+        </span>
+        <span className="ap-fs__near">{cats[(shownAt + nearStep + cats.length) % cats.length]?.name} →</span>
       </p>
 
       <div className="ap-fs__pill" role="group" aria-label="Change the view">

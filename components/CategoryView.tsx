@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { add } from "@/lib/cart";
 import { flyToCart } from "@/lib/fly";
@@ -24,6 +24,8 @@ type Art = {
   mock?: string;
   mockW?: number;
   mockH?: number;
+  /** her published words about the picture, where she wrote some */
+  text?: string;
 };
 type Shot = { id: string; src: string; thumb: string; w: number; h: number; alpha: boolean; avg: string };
 const ART = artworks as Art[];
@@ -379,6 +381,32 @@ export default function CategoryView({
   }, [cat.slug]);
   const chosenArt = art ? pool.find((a) => a.id === art) : undefined;
 
+  /** THE OPENED CARD ON A PHONE (Vardan's pick, 2026-11-18): its number, its
+   *  neighbours in what this line sells (so 22 steps to 24, past her withdrawn
+   *  23) and her words about it. `clipped` says whether the words need «more»:
+   *  measured, because how many lines they take depends on the phone. */
+  const chosenAt = chosenArt ? pool.indexOf(chosenArt) : -1;
+  const prevArt = chosenAt < 0 ? undefined : pool[(chosenAt - 1 + pool.length) % pool.length];
+  const nextArt = chosenAt < 0 ? undefined : pool[(chosenAt + 1) % pool.length];
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  const wordsRef = useRef<HTMLParagraphElement | null>(null);
+  useEffect(() => {
+    const el = wordsRef.current;
+    if (!el || moreOpen) return;
+    const measure = () => setClipped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [art, moreOpen]);
+  const stepTo = (a: Art | undefined) => {
+    if (!a) return;
+    setArt(a.id);
+    setFace("front");
+    setMoreOpen(false);
+  };
+
   /** The chosen card's faces, in the order a buyer wants them: the picture
    *  first, then what is on the back, then the thing itself printed. Built
    *  from what EXISTS — 23, 25 and 34 came with no print folder — so the row
@@ -588,6 +616,36 @@ export default function CategoryView({
                 </ul>
               )}
 
+              {chosenArt && cat.slug === "postcards" && (
+                <div className="ap-cv__plate">
+                  <div className="ap-cv__plateRow">
+                    <p className="ap-cv__no" aria-live="polite">
+                      No. {chosenArt.id}
+                    </p>
+                    <div className="ap-cv__steps">
+                      <button type="button" aria-label={`Previous postcard, no. ${prevArt?.id}`} onClick={() => stepTo(prevArt)}>
+                        <span aria-hidden="true">←</span>
+                      </button>
+                      <button type="button" aria-label={`Next postcard, no. ${nextArt?.id}`} onClick={() => stepTo(nextArt)}>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                  </div>
+                  {chosenArt.text && (
+                    <>
+                      <p className="ap-cv__words" ref={wordsRef} data-open={moreOpen || undefined}>
+                        {chosenArt.text}
+                      </p>
+                      {(clipped || moreOpen) && (
+                        <button type="button" className="ap-cv__more" aria-expanded={moreOpen} onClick={() => setMoreOpen((o) => !o)}>
+                          {moreOpen ? "less" : "more"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Only postcards lose the scene strip. Every other category
                   still gets it, because none of them has anything else to
                   switch between. */}
@@ -667,10 +725,7 @@ export default function CategoryView({
                       // under whoever was looking at another scene. Every
                       // usable photograph now carries the print instead, so
                       // the choice simply appears wherever the buyer already is.
-                      onClick={() => {
-                        setArt(a.id);
-                        setFace("front");
-                      }}
+                      onClick={() => stepTo(a)}
                       style={{ background: a.avg }}
                     >
                       {/* the 240px -xs where it exists (lib/thumbs.ts,

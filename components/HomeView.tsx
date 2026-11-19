@@ -10,7 +10,7 @@ import Cloud from "./Cloud";
 import FloatShop, { type FloatCat } from "./FloatShop";
 import Selector from "./Selector";
 import Sun from "./Sun";
-import { brand, categories, home, hrefOf, ribbon, ring, soon } from "@/lib/content";
+import { brand, categories, home, hrefOf, ribbon, ring, soon, stockists } from "@/lib/content";
 import { SoonLink } from "./Soon";
 import artworks from "@/lib/artworks.json";
 import products from "@/lib/products.json";
@@ -479,6 +479,21 @@ export default function HomeView() {
         </div>
         <Selector />
       </section>
+
+      {/* WHERE ELSE HER WORK IS SOLD, the shops of Find in store in her order
+          (Vardan's pick, 2026-11-18) */}
+      <aside className="ap-stock ap-dark" aria-labelledby="ap-stock-title">
+        <p className="ap-stock__title" id="ap-stock-title">
+          Also in shops:
+        </p>
+        <ul className="ap-stock__list">
+          {stockists.map((s) => (
+            <li key={s.id}>
+              <Link href="/find-in-store">{s.shop}</Link>
+            </li>
+          ))}
+        </ul>
+      </aside>
 
       {/* ABOUT used to sit here; it is its own page now (/about), which the
           nav links to directly. */}

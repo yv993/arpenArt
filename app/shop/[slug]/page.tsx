@@ -4,6 +4,7 @@ import { indexable, origin } from "@/lib/site";
 import Chrome from "@/components/Chrome";
 import Link from "next/link";
 import CategoryView, { OrderingSteps } from "@/components/CategoryView";
+import OtherLines from "@/components/OtherLines";
 // One route serves eight product pages, so GSAP + ScrollTrigger ride along on
 // all of them even though only the photographed ones render a lookbook —
 // /shop/[slug] went from 110 kB to 159 kB First Load. next/dynamic was tried
@@ -330,8 +331,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           />
 
           <div className="ap-cv">
-            <div className="ap-sheets__foot">
+            <div className="ap-sheets__foot ap-sheets__foot--wide">
               <OrderingSteps />
+              <OtherLines except={cat.slug} />
             </div>
           </div>
         </>

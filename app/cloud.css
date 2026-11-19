@@ -22,9 +22,50 @@
    the lookbook tiles hit.
    ========================================================================== */
 
+/* the ridge's height lives on the home page's root, not on the section: the
+   hero above has to read it too (the reserve just below) */
+.ap {
+  --ridge-h: clamp(44px, 7.6vw, 110px);
+}
+/* ROOM FOR THE RIDGE wherever the hero is NOT the pinned stage the section
+   slides over — phones, tablets, reduced motion, no scripting. There the
+   ridge, standing above the section, was drawn across the bottom of «See the
+   shop» (17.8px of its 48 at 860 wide, 12.6 at 768) and across the vertical
+   scroll cue at 1440 under reduced motion. The hill's highest point is 76% of
+   its box (lib/ridge.ts, x 40), so 80% of it is reserved under the hero, on
+   the hero's own indigo. The moved layer keeps the curtain over the painting:
+   there the section covers the hero by design. */
+@media not all and (min-width: 861px) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .ap > .ap-hero {
+    padding-bottom: calc(var(--ridge-h) * 0.8);
+  }
+}
 .ap-cloud {
+  /* the ridge along its top edge (its height is on .ap above), and the same
+     line (lib/ridge.ts) as a mask, for the sun's twin below */
+  --ridge-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 110' preserveAspectRatio='none'%3E%3Cpath d='M0 110L0 32.6L10 28.5L20 31.8L30 27.6L40 26.6L50 28.9L60 28.2L70 27.8L80 31.0L90 32.6L100 33.3L110 36.2L120 38.2L130 41.5L140 41.0L150 43.9L160 47.6L170 49.3L180 47.5L190 51.7L200 51.1L210 53.5L220 52.6L230 48.5L240 49.4L250 50.2L260 47.6L270 45.8L280 43.9L290 44.1L300 42.8L310 39.0L320 38.0L330 39.9L340 37.1L350 36.1L360 37.1L370 38.1L380 38.0L390 41.7L400 40.4L410 41.7L420 42.7L430 38.7L440 39.7L450 40.7L460 39.8L470 38.5L480 36.3L490 38.7L500 33.2L510 33.5L520 32.3L530 33.0L540 33.7L550 31.4L560 29.9L570 31.8L580 32.4L590 34.5L600 37.0L610 39.2L620 43.3L630 47.1L640 48.8L650 56.0L660 57.5L670 63.3L680 65.8L690 69.1L700 71.6L710 74.2L720 77.4L730 80.7L740 79.5L750 82.3L760 81.0L770 83.5L780 82.9L790 83.4L800 84.2L810 86.8L820 88.0L830 85.0L840 89.5L850 87.0L860 90.0L870 90.1L880 91.2L890 97.2L900 94.7L910 97.9L920 96.4L930 98.5L940 99.4L950 96.8L960 100.0L970 98.6L980 96.9L990 94.8L1000 92.4L1010 88.8L1020 83.3L1030 78.8L1040 76.8L1050 72.7L1060 69.4L1070 69.8L1080 65.5L1090 66.0L1100 63.2L1110 63.1L1120 60.1L1130 63.0L1140 59.8L1150 60.8L1160 63.9L1170 60.6L1180 63.1L1190 61.3L1200 66.3L1210 65.2L1220 66.7L1230 62.1L1240 66.1L1250 61.9L1260 65.0L1270 62.0L1280 61.5L1290 58.3L1300 57.1L1310 56.1L1320 57.2L1330 54.1L1340 57.5L1350 57.3L1360 57.8L1370 57.4L1380 56.1L1390 57.6L1400 62.9L1410 60.3L1420 64.3L1430 66.4L1440 63.0L1440 110Z'/%3E%3C/svg%3E");
+  position: relative;
   background: var(--ink-solid);
   color: var(--cream);
+}
+/* THE SECTION'S TOP EDGE IS A HILL LINE (Vardan's pick, 2026-11-18): the dark
+   section rises over her painting as a ridge, in its own colour, standing
+   just above the box. Three classes outrank the rule that lifts every section
+   child into flow (globals.css). */
+.ap > .ap-cloud > .ap-cloud__edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - 1px);
+  /* under the sun's twin, which is the next child at the same level */
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: var(--ridge-h);
+  fill: var(--ink-solid);
+  /* the depth a curtain over a bright painting wants, along the ridge */
+  filter: drop-shadow(0 -12px 22px rgba(12, 18, 36, 0.4));
+  pointer-events: none;
 }
 /* the sun's twin exists only in the moved layer (its block below); on the
    plain layer — phones, reduced motion, no scripting — there is no flying
@@ -573,7 +614,16 @@
        selector outranks the base rule; it only ever needed to say so. */
     display: block;
     position: absolute;
-    inset: 0;
+    /* UP OVER THE RIDGE, cut to its line: with the layer ending at the box's
+       straight top the ridge drew a dark band through the sun as it passed.
+       A mask, like the clip-path below, leaves the fixed disc on the viewport. */
+    inset: calc(-1 * var(--ridge-h)) 0 0;
+    -webkit-mask:
+      var(--ridge-mask) 0 0 / 100% var(--ridge-h) no-repeat,
+      linear-gradient(#000 0 0) 0 100% / 100% calc(100% - var(--ridge-h) + 1px) no-repeat;
+    mask:
+      var(--ridge-mask) 0 0 / 100% var(--ridge-h) no-repeat,
+      linear-gradient(#000 0 0) 0 100% / 100% calc(100% - var(--ridge-h) + 1px) no-repeat;
     z-index: 0;
     pointer-events: none;
     /* THE CLIP IS A clip-path, NOT overflow (change 5.pdf p1, 2026-11-04 —
@@ -586,6 +636,37 @@
        may make this box the fixed child's containing block: no filter, no
        transform, no will-change, no contain — the glow moved onto the disc. */
     clip-path: inset(0);
+  }
+  /* the frame's vignette (below) stands at 58% along its top edge and ends
+     there; this carries the same shade up over the ridge, so the twin keeps
+     one tone from the ridge line down */
+  .ap > .ap-cloud::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* exactly ON the box top, not 1px into it as the ridge is: overlapping,
+       the section's first row took this shade AND the vignette — a dark 1px
+       line through the sun (79,72,53 between rows of 99,87,50) */
+    bottom: 100%;
+    z-index: 1;
+    height: var(--ridge-h);
+    background: color-mix(in srgb, var(--ink-solid) 58%, transparent);
+    -webkit-mask: var(--ridge-mask) 0 0 / 100% 100% no-repeat;
+    mask: var(--ridge-mask) 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease);
+  }
+  /* …and it steps back exactly when the vignette below it does (the frame's
+     ::after rules further down: 0.35 with a picture chosen, 0.6 under any
+     puzzle — the section OPENS on one). A fixed 58% here left a straight seam
+     through the sun at the box top: 2px above it (77,71,52), 2px below
+     (98,86,49), measured at 1440×900 in the opening puzzle scene. */
+  .ap > .ap-cloud:has(> .ap-cloud__frame[data-chosen])::before {
+    opacity: 0.35;
+  }
+  .ap > .ap-cloud:has(> .ap-cloud__frame:is([data-puzzle], [data-scene="puzzle"]))::before {
+    opacity: 0.6;
   }
   .ap-cloud__sun-disc {
     position: fixed;

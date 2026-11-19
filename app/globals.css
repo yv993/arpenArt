@@ -1009,8 +1009,6 @@ select {
     position: relative;
     z-index: 2; /* above the stuck stage; the sections' own children are 1 */
     margin-top: -100svh;
-    /* the edge of a curtain over a bright painting wants a little depth */
-    box-shadow: 0 -34px 70px -24px rgba(12, 18, 36, 0.55);
   }
 }
 

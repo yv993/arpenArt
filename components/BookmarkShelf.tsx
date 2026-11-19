@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { bookmarkShelf, isSoldOut, priceTbc } from "@/lib/content";
-import { add, dram } from "@/lib/cart";
+import { add, dram, read, subscribe } from "@/lib/cart";
 import { useReveal } from "@/lib/reveal";
 import { flyToCart } from "@/lib/fly";
 import FlipCard from "./FlipCard";
@@ -39,9 +40,9 @@ export type BookmarkShot = {
 
 /** the printed piece: 56 × 190 mm */
 const RATIO = "56 / 190";
-/** a card's width: ~150px in the desktop grid, a third of the column on a
- *  phone — the srcset picks the -sm (331w) at 1x–2x, the master at 3x */
-const SIZES = "(max-width: 640px) 30vw, 160px";
+/** a card's width: 177px in the five desktop columns, a third of the column
+ *  on a phone — the srcset picks the -sm (331w) at 1x–2x, the master at 3x */
+const SIZES = "(max-width: 640px) 30vw, 177px";
 
 export default function BookmarkShelf({
   shots,
@@ -61,6 +62,18 @@ export default function BookmarkShelf({
   const [added, setAdded] = useState<string | null>(null);
   const addedTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
+  /** how many of each design the cart holds, for the card's stamp. Read after
+   *  mount: the cart lives in this browser, so the server's page has none. */
+  const [held, setHeld] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const sync = () => {
+      const next: Record<string, number> = {};
+      for (const l of read()) if (l.cat === slug && l.art) next[l.art] = (next[l.art] ?? 0) + l.qty;
+      setHeld(next);
+    };
+    sync();
+    return subscribe(sync);
+  }, [slug]);
   // each bookmark arrives on its back and turns to its front (lib/reveal.ts,
   // app/reveal.css — Vardan's pick, 2026-11-17)
   const root = useRef<HTMLElement | null>(null);
@@ -104,6 +117,9 @@ export default function BookmarkShelf({
               </>
             )}
           </p>
+          <p className="ap-bm__honest">
+            {bookmarkShelf.honest} <Link href="/contact">{bookmarkShelf.ask}</Link>
+          </p>
         </div>
         {back && (
           <figure className="ap-bm__back">
@@ -128,6 +144,7 @@ export default function BookmarkShelf({
           const front = { src: s.thumb, srcSet: srcSet(s), w: s.w, h: s.h, alt: `${label} by Arpine Baroyan` };
           return (
             <li key={s.id}>
+              {held[s.id] > 0 && <span className="ap-bm__stamp">{bookmarkShelf.inCart(held[s.id])}</span>}
               {backFace ? (
                 <FlipCard
                   front={front}
@@ -148,16 +165,19 @@ export default function BookmarkShelf({
                 {/* the bookmark rides in the button's NAME after the visible
                     words, as on the magnets: 25 identical «Add to cart» could
                     not be told apart in a screen reader's list of buttons */}
-                <button
-                  type="button"
-                  className="ap-btn ap-bm__add"
-                  onClick={(e) => buy(s.id, e.currentTarget)}
-                  disabled={sold}
-                  data-sold={sold || undefined}
-                >
-                  {sold ? "Sold out" : bookmarkShelf.add}
-                  <span className="ap-sr">: {label}</span>
-                </button>
+                <div className="ap-bm__row">
+                  {price !== null && <span className="ap-bm__price">{dram(price)}</span>}
+                  <button
+                    type="button"
+                    className="ap-btn ap-bm__add"
+                    onClick={(e) => buy(s.id, e.currentTarget)}
+                    disabled={sold}
+                    data-sold={sold || undefined}
+                  >
+                    {sold ? "Sold out" : bookmarkShelf.add}
+                    <span className="ap-sr">: {label}</span>
+                  </button>
+                </div>
                 <p className="ap-bm__added" role="status">
                   {added === s.id ? bookmarkShelf.added : ""}
                 </p>

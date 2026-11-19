@@ -42,6 +42,23 @@
   font-size: 1.25rem;
   color: var(--ink);
 }
+/* the one honest line, once, under the one price */
+.ap-bm__honest {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+.ap-bm__honest a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  /* a 44px-tall press area (it was 93×17) without changing the line: an
+     inline box's vertical padding does not move the line box */
+  padding: 14px 0;
+  margin: -14px 0;
+}
 .ap-bm__back {
   flex: none;
   width: 112px;
@@ -79,10 +96,49 @@
   gap: clamp(26px, 3.4vw, 44px) clamp(14px, 2vw, 28px);
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
 }
+/* FIVE COLUMNS where five fit (Vardan's pick, 2026-11-18): 25 designs make
+   five full rows, so no row ends short */
+@media (min-width: 1100px) {
+  .ap-bm__all {
+    max-width: 1000px;
+    grid-template-columns: repeat(5, minmax(0, 177px));
+    justify-content: space-between;
+    gap: 44px 0;
+  }
+}
+/* …and on the narrower desktops too: auto-fill fitted SIX from 981 to 1099
+   wide, which left the 25th design alone on a sixth row */
+@media (min-width: 861px) and (max-width: 1099px) {
+  .ap-bm__all {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
 .ap-bm__all > li {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+/* a design already in the cart wears a small paper stamp; it reads the real
+   cart and never takes a press meant for the card */
+.ap-bm__stamp {
+  position: absolute;
+  top: 14px;
+  left: -8px;
+  z-index: 6;
+  padding: 6px 10px;
+  rotate: -6deg;
+  background: var(--paper);
+  color: var(--ink);
+  outline: 1px solid var(--terracotta-ink);
+  box-shadow: 0 3px 8px rgb(35 40 52 / 0.2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
 }
 .ap-bm__buy {
   margin-top: 10px;
@@ -97,15 +153,47 @@
   font-size: 13px;
   color: var(--ink);
 }
-/* the whole cell's width, so a narrow phone cell still fits the words; the
-   site's button keeps its 48px height */
+/* the price beside a quiet Add */
+.ap-bm__row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.ap-bm__price {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* an outline, so 25 buttons do not out-shout 25 paintings */
 .ap-bm__add.ap-btn {
   width: 100%;
+  min-height: 44px;
   justify-content: center;
   padding: 8px 10px;
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--ink);
   font-size: 11.5px;
   letter-spacing: 0.12em;
   text-align: center;
+}
+/* a real pointer only: on a phone :hover sticks after the tap, and one of 25
+   outlines stayed filled as if it were selected — first with this rule's
+   cream, then (once it was gated) with the site-wide .ap-btn:hover indigo,
+   which outranks the outline above by load order. So the outline is restated
+   for any hover, and only a real pointer gets the fill. */
+.ap-bm__add.ap-btn:hover {
+  background: none;
+}
+@media (hover: hover) {
+  .ap-bm__add.ap-btn:hover:not([disabled]) {
+    background: var(--ink);
+    color: var(--paper);
+  }
 }
 .ap-bm__add.ap-btn[data-sold] {
   opacity: 0.55;
@@ -147,6 +235,19 @@
   .ap-bm__add.ap-btn {
     padding: 8px 4px;
     font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  /* a third of a phone holds the price over the button, not beside it */
+  .ap-bm__row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 6px;
+  }
+  .ap-bm__stamp {
+    top: 8px;
+    left: -4px;
+    padding: 4px 6px;
+    font-size: 10px;
     letter-spacing: 0.06em;
   }
 }

@@ -673,6 +673,14 @@ export const ordering = {
     { k: "Confirm", v: "Arpine replies herself with the final total, postage to your address included." },
     { k: "Pay", v: "You pay only after her confirmation — then the order is made and posted from Yerevan." },
   ],
+  /** the same two steps for a buyer who COLLECTS in Yerevan, on the cart's
+   *  "Order received" cards: no postage, no address (review 2026-11-19). Built
+   *  from the lines above and the pickup option's own words — NOT YET SEEN BY
+   *  ARPINE, like the bookmark shelf's honest line. */
+  collect: {
+    Confirm: "Arpine replies herself with the final total.",
+    Pay: "You pay only after her confirmation — then the order is made, and you arrange a time to collect it in Yerevan.",
+  } as Record<string, string>,
 };
 
 // ---------------------------------------------------------------------------
@@ -1539,8 +1547,13 @@ export const bookmarkShelf = {
   back: "The back of every bookmark",
   backAlt: "The back of the bookmark: a reading log with columns for the date, the title and a star rating",
   turn: "show the back",
-  add: "Add to cart",
+  add: "Add",
   added: "Added to your cart.",
+  /** said once under the price: both sentences are the ordering steps' own
+   *  promise (`ordering` above), shortened; she has not seen this wording */
+  honest: "Nothing is charged on this site. Arpine replies herself with the final total.",
+  ask: "Ask about this",
+  inCart: (n: number) => `In cart · ${n}`,
 };
 
 // POSTERS — /shop/posters (client, change 5.pdf p5, 2026-11-04).
