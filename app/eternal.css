@@ -18,8 +18,9 @@
 
    WHO MOVES. The h1's letters (TextFX) and the [data-rise] paragraphs (GSAP,
    the moved layer only) — no CSS individual transform property sits on
-   either. The hero's two cards are tilted with a plain static `transform`
-   that nothing animates. The flip cards turn inside FlipCard's own span.
+   either. The hero's two cards are tilted with a plain `transform` that only
+   their one CSS entrance moves (THE SPREAD, below); GSAP never touches them.
+   The flip cards turn inside FlipCard's own span.
 
    GAPS (UX law G0): a picture and its number 12px; pieces 20–40px; groups
    56–120px — each wider than the one inside it.
@@ -136,6 +137,81 @@
   top: 40%;
   width: 49%;
   transform: rotate(5.5deg);
+}
+
+/* THE SPREAD (Vardan's pick, 2026-11-20: «spread from one card», with both
+   cards moving). The page opens on ONE card near the middle of the box —
+   the square lies exactly under the A6, both turned the same 1° — and then
+   they part: the A6 slides up and left to its place, turning to −3.2°, and
+   the square slides out from under it, down and right, turning to 5.5°.
+   They meet 40% of the way from the A6's centre to the square's, so the
+   larger card travels less, as the heavier one would.
+
+   THE NUMBERS, in each card's own size (translate % is the element's box).
+   Centres in the box's side S: A6 (0.345, 0.4688) — 63% wide, 621:875 tall;
+   square (0.745, 0.6446) — 49% wide, 545:544. The meeting point
+   (0.505, 0.5391) is 0.4 of the way between them, so the A6 starts
+   (+0.16, +0.0703)·S off its place = (+25.4%, +7.92%) of itself, and the
+   square (−0.24, −0.1054)·S = (−48.98%, −21.56%) of itself. At that point
+   the square sits inside the A6 with 0.07·S to spare left and right and
+   0.2·S above and below, and both turn about centres that coincide, so the
+   first frame reads as one card. The `to` frames repeat each tilt above,
+   function for function, so translate and rotate travel separately.
+
+   ONLY TRANSFORM MOVES. Both cards are drawn whole from the first frame,
+   only somewhere else, so no paint waits on them — the A6 is the largest
+   paint on phones and short windows, the title at 1440x900 (measured
+   2026-11-20) — and a transform is no layout shift either.
+
+   THE HOLD. No clock decides when they part: a clock lost to the pictures
+   on every slow link measured (1.2s on Slow 4G, 4s on 3G, where hydration
+   came at 12.9s — review, 2026-11-20). The inline script in layout.tsx sets
+   html[data-spread] before the first paint, which PAUSES both entrances on
+   their first frame (fill `backwards`); EternalView takes that hold over
+   and lifts it only when both pictures are decoded and the box is on a
+   visible screen — paintings, not their average colour, part, and a phone
+   held sideways or a tab in the background sees them part when it comes to
+   them. --ae-hold is the delay left for the rare page where nothing holds
+   (the attribute's own 20 s failsafe, a client-side arrival before the
+   effect runs). Once the entrance is over, data-spread-done takes the
+   animation away, so no later media flip (printing, reduced motion off and
+   on) can start it again. NOT gated on `screen`: leaving print would make
+   a fresh, unheld entrance — paper takes the rest pose with !important
+   instead, which outranks an animation. `scripting: enabled` keeps the
+   no-JS page still, as on the rest of the page (reveal.css). Phones take
+   it as well, as they take the iris. */
+.ap-ae__fig {
+  --ae-hold: 1s;
+}
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .ap-ae__card--a6 {
+    animation: ae-spread-a6 1s cubic-bezier(0.23, 1, 0.32, 1) var(--ae-hold) backwards;
+  }
+  .ap-ae__card--sq {
+    animation: ae-spread-sq 1.15s cubic-bezier(0.23, 1, 0.32, 1) calc(var(--ae-hold) + 0.05s) backwards;
+  }
+  html[data-spread] .ap-ae__card {
+    animation-play-state: paused;
+  }
+  .ap-ae__fig[data-spread-done] .ap-ae__card {
+    animation: none;
+  }
+}
+@media print {
+  .ap-ae__card--a6 {
+    transform: rotate(-3.2deg) !important;
+  }
+  .ap-ae__card--sq {
+    transform: rotate(5.5deg) !important;
+  }
+}
+@keyframes ae-spread-a6 {
+  from { transform: translate(25.4%, 7.92%) rotate(1deg); }
+  to { transform: translate(0, 0) rotate(-3.2deg); }
+}
+@keyframes ae-spread-sq {
+  from { transform: translate(-48.98%, -21.56%) rotate(1deg); }
+  to { transform: translate(0, 0) rotate(5.5deg); }
 }
 
 /* ---- her bird between the parts --------------------------------------------- */

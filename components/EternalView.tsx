@@ -56,7 +56,22 @@ import PhotoLightbox from "./PhotoLightbox";
 // is hidden, the attribute goes once open) are the shop's shared ones:
 // lib/reveal.ts; the look is app/reveal.css. The A6 card beside the title is
 // not irised: it is the page's largest paint (LCP).
+//
+// THE SPREAD (Vardan's pick, 2026-11-20). The two cards beside the title open
+// as one card that parts in two, both moving — transform only, so neither
+// card is ever hidden and no paint waits on it. The look and its numbers are
+// eternal.css («THE SPREAD»); the effect below decides WHEN they part: once
+// both pictures are decoded and the box is on a visible screen.
 // ============================================================================
+
+/** the least time one card is on screen before it parts, so the eye reads it */
+const SPREAD_HOLD_MIN = 300;
+/** after this long the pictures count as lost: the cards are laid at rest at
+ *  once, never sent sliding as two blank colour blocks */
+const SPREAD_WAIT_MAX = 6000;
+/** how much of the box must be on screen for the cards to part — reachable
+ *  even where the box (at most 400px) is taller than a landscape phone */
+const SPREAD_SEEN = 0.4;
 
 /** what opens through the iris: each piece's picture (the flip card or the
  *  button that opens it), her two photographs, the bird ornaments */
@@ -149,6 +164,175 @@ export default function EternalView({
 
   // ---- every picture opens through the iris as it comes into view ------------
   useReveal(root, IRIS, { duration: 1 });
+
+  // ---- the hero's two cards part when there is something to see --------------
+  // html[data-spread] (set before the first paint by layout.tsx's inline
+  // script) holds both CSS entrances on their first frame — one card. This
+  // takes that hold over ("boot" -> "hold", so the inline failsafe leaves it
+  // alone) and lifts it only when all of these are true:
+  //   1. both pictures are decoded — on slow links a clock sent two blank
+  //      colour blocks sliding (Slow 4G and 3G, review 2026-11-20);
+  //   2. at least SPREAD_SEEN of the box is on screen — a phone held sideways
+  //      has the box below the fold (the iris's rule, lib/reveal.ts);
+  //   3. the tab is visible — a page left in the background used to part
+  //      unseen and greet the visitor with cards already at rest;
+  //   4. the painted card has shown for SPREAD_HOLD_MIN, so the eye reads one
+  //      card before it becomes two.
+  // Both entrances move forward by the same amount, so the square keeps its
+  // beat after the A6. A broken picture, or none after SPREAD_WAIT_MAX, lays
+  // the cards at rest at once (finish): blank blocks never travel. An entrance
+  // that is over — or that reduced motion cancelled — marks the box
+  // data-spread-done, which takes the animation away for good. Reduced motion
+  // and the no-JS page have no entrance, so nothing is found.
+  const fig = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const box = fig.current;
+    if (!box || typeof box.getAnimations !== "function") return;
+    const html = document.documentElement;
+    const done = () => box.setAttribute("data-spread-done", "");
+    // asked fresh every time: a CSS animation that reduced motion (switched
+    // on mid-hold) has cancelled must not be moved again from an old handle
+    const spreads = () =>
+      box
+        .getAnimations({ subtree: true })
+        .filter((a) => (a as CSSAnimation).animationName?.startsWith("ae-spread") && a.playState !== "idle");
+    const timeOf = (a: Animation) => (typeof a.currentTime === "number" ? a.currentTime : null);
+    const delayOf = (a: Animation) => Number(a.effect?.getTiming().delay ?? 0);
+    const leadOf = (runs: Animation[]) => runs.reduce((a, b) => (delayOf(b) < delayOf(a) ? b : a));
+    const whenOver = (runs: Animation[]) => Promise.all(runs.map((a) => a.finished)).then(done, done);
+
+    const first = spreads();
+    if (!first.length) {
+      delete html.dataset.spread;
+      done();
+      return;
+    }
+    const startedAt = timeOf(leadOf(first));
+    // already parting on --ae-hold (nothing held it): let it finish
+    if (startedAt === null || startedAt >= delayOf(leadOf(first))) {
+      delete html.dataset.spread;
+      whenOver(first);
+      return;
+    }
+    html.dataset.spread = "hold";
+    /** when the one card first showed (its CSS entrance began with it) */
+    const shownFrom = performance.now() - startedAt;
+
+    let holding = true;
+    let ready: boolean | null = null; // true: both decoded · false: lost
+    let decodedAt = 0;
+    let inView = false;
+    let seenSince: number | null = null;
+    let firstLook = true;
+    let wait = 0;
+    const visible = () => document.visibilityState === "visible";
+    /** asked of the layout itself at the moment of parting: the observer's
+     *  word can be a frame stale after a resize (a phone turned mid-load) */
+    const onScreen = () => {
+      const r = box.getBoundingClientRect();
+      const w = Math.min(r.right, window.innerWidth) - Math.max(r.left, 0);
+      const h = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0);
+      return w > 0 && h > 0 && (w * h) / (r.width * r.height) >= SPREAD_SEEN - 0.01;
+    };
+    const go = () => {
+      if (!holding || ready === null) return;
+      if (!ready) {
+        holding = false;
+        delete html.dataset.spread;
+        spreads().forEach((a) => a.finish());
+        done();
+        return;
+      }
+      if (seenSince === null || !visible()) return;
+      const left = SPREAD_HOLD_MIN - (performance.now() - Math.max(seenSince, decodedAt));
+      if (left > 0) {
+        window.clearTimeout(wait);
+        wait = window.setTimeout(go, left);
+        return;
+      }
+      // the observer reports the change and calls back here when it is seen
+      if (!onScreen()) {
+        seenSince = null;
+        return;
+      }
+      holding = false;
+      const runs = spreads();
+      delete html.dataset.spread;
+      if (!runs.length) {
+        done();
+        return;
+      }
+      const lead = leadOf(runs);
+      const t = timeOf(lead);
+      const skip = t === null ? 0 : Math.max(0, delayOf(lead) - t);
+      runs.forEach((a) => {
+        const at = timeOf(a);
+        if (at !== null) a.currentTime = at + skip;
+      });
+      whenOver(runs);
+    };
+
+    const look = (seen: boolean, fresh: boolean) => {
+      if (!seen || !visible()) {
+        seenSince = null;
+        window.clearTimeout(wait);
+      } else if (seenSince === null) seenSince = fresh ? shownFrom : performance.now();
+      go();
+    };
+    let io: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver === "undefined") {
+      inView = true;
+      look(true, true);
+    } else {
+      io = new IntersectionObserver(
+        (entries) => {
+          const e = entries[entries.length - 1];
+          inView = e.isIntersecting && e.intersectionRatio >= SPREAD_SEEN - 0.01;
+          // on screen from the start: it has been one card since it showed
+          look(inView, firstLook);
+          firstLook = false;
+        },
+        { threshold: [0, SPREAD_SEEN] },
+      );
+      io.observe(box);
+    }
+    const onVis = () => look(inView, false);
+    document.addEventListener("visibilitychange", onVis);
+
+    // a srcset swap mid-load (a phone turned, the page zoomed) rejects the
+    // pending decode though the picture is fine: only a finished request with
+    // no pixels counts as broken
+    const decoded = (c: HTMLImageElement, tries = 3): Promise<boolean> =>
+      c.decode().then(
+        () => true,
+        () => (tries > 0 && !(c.complete && c.naturalWidth === 0) ? decoded(c, tries - 1) : false),
+      );
+    const cards = Array.from(box.querySelectorAll("img"));
+    Promise.all(cards.map((c) => decoded(c))).then((ok) => {
+      if (ready !== null) return;
+      ready = ok.every(Boolean);
+      decodedAt = performance.now();
+      go();
+    });
+    const lost = window.setTimeout(() => {
+      if (ready !== null) return;
+      ready = false;
+      go();
+    }, SPREAD_WAIT_MAX);
+
+    return () => {
+      io?.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearTimeout(wait);
+      window.clearTimeout(lost);
+      // a hold this effect never ended goes back to the CSS clock (React's dev
+      // double effect takes it again at once)
+      if (holding) {
+        holding = false;
+        delete html.dataset.spread;
+      }
+    };
+  }, []);
 
   // ---- her two paragraphs show once the fonts are in (eternal.css: the
   // painted initial re-wraps three lines when its face arrives) -------------
@@ -313,7 +497,7 @@ export default function EternalView({
           </p>
         </div>
         {hero && (
-          <figure className="ap-ae__fig">
+          <figure className="ap-ae__fig" ref={fig}>
             {/* her square card no. 01 behind, her A6 card no. 01 in front:
                 the two forms of the postcards, laid down like a still life.
                 The A6 card's alt names it; the square is decoration here —

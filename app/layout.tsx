@@ -162,12 +162,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             here under FootReveal's own gate (lib/textfx FX_MEDIA), the footer
             is fixed from the first frame; the effect still measures --foot-h
             and drives the reveal. suppressHydrationWarning above covers the
-            attribute the server could not have known about. */}
+            attribute the server could not have known about.
+
+            AND THE ETERNAL HERO'S HOLD (eternal.css «THE SPREAD»): on
+            /armenia-eternal, html[data-spread] pauses the two cards' entrance
+            on its first frame — one card — from the first paint, so no clock
+            can part them before the page's script has woken and seen both
+            pictures in (measured 2026-11-20: on 3G, hydration came at 12.9 s
+            and any CSS timer fired first). EternalView takes the hold over;
+            "boot" lifting itself after 20 s is the failsafe for a script that
+            never wakes. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
               "try{var t=localStorage.getItem('ap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}" +
-              "try{if(matchMedia('(min-width: 861px) and (prefers-reduced-motion: no-preference)').matches)document.documentElement.setAttribute('data-footfx','')}catch(e){}",
+              "try{if(matchMedia('(min-width: 861px) and (prefers-reduced-motion: no-preference)').matches)document.documentElement.setAttribute('data-footfx','')}catch(e){}" +
+              "try{if(location.pathname.indexOf('/armenia-eternal')===0&&matchMedia('(prefers-reduced-motion: no-preference)').matches){var d=document.documentElement;d.dataset.spread='boot';setTimeout(function(){if(d.dataset.spread==='boot')delete d.dataset.spread},20000)}}catch(e){}",
           }}
         />
         <a className="ap-skip" href="#content">
