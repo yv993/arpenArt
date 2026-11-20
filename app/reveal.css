@@ -11,14 +11,66 @@
    ========================================================================== */
 
 @media (prefers-reduced-motion: no-preference) {
-  /* ---- /armenia-eternal: IRIS, 1s. 100% of the reference radius reaches
-     past the box, so the shadow is inside the circle before the clip goes. */
-  .ap-ae [data-reveal] {
+  /* ---- /armenia-eternal: a look per group (Vardan's picks, 2026-11-20).
+     The bird ornaments keep the IRIS, 1s: 100% of the reference radius
+     reaches past the box, so the shadow is inside the circle before the
+     clip goes. */
+  .ap-ae .ap-ae__orn [data-reveal] {
     clip-path: circle(0% at 50% 50%);
   }
-  .ap-ae [data-reveal="open"] {
+  .ap-ae .ap-ae__orn [data-reveal="open"] {
     clip-path: circle(100% at 50% 50%);
     transition: clip-path 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+  /* the postcards: TURNED OVER, 1s — each waits on its own printed back and
+     turns to its front with the card's own turning span (the bookmarks'
+     look). A press during the turn still wins: :not([data-back]). */
+  .ap-ae .ap-flip[data-reveal] .ap-flip__in {
+    transform: rotateY(180deg);
+    transition: none;
+  }
+  .ap-ae .ap-flip[data-reveal="open"] .ap-flip__in {
+    transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+  .ap-ae .ap-flip[data-reveal="open"]:not([data-back]) .ap-flip__in {
+    transform: rotateY(0deg);
+  }
+  /* the scarves: UNFURL, 1s — the print falls open from its top edge,
+     leaning a little as silk does, and straightens. The clip ends 40px
+     outside the box so its shadow is never cut. */
+  .ap-ae [data-kind="sc"] .ap-ae__rail [data-reveal] {
+    clip-path: inset(0 0 100% 0);
+    transform: skewY(5deg);
+    transform-origin: 50% 0;
+  }
+  .ap-ae [data-kind="sc"] .ap-ae__rail [data-reveal="open"] {
+    clip-path: inset(-40px);
+    transform: none;
+    transition:
+      clip-path 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s),
+      transform 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-delay, 0s);
+  }
+  /* the table runners: ROLLED OUT, 1.2s — uncovered from the top down, at
+     the even pace of a runner unrolled along a table */
+  .ap-ae [data-kind="ru"] .ap-ae__rail [data-reveal] {
+    clip-path: inset(0 0 100% 0);
+  }
+  .ap-ae [data-kind="ru"] .ap-ae__rail [data-reveal="open"] {
+    clip-path: inset(-40px);
+    transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.175, 1) var(--rv-delay, 0s);
+  }
+  /* her two photographs: DEVELOP, 1.6s — pale and warm, like a print in the
+     tray, coming up to full colour */
+  .ap-ae .ap-ae__scene[data-reveal] {
+    filter: sepia(1) brightness(1.5) contrast(0.6);
+    opacity: 0.35;
+  }
+  .ap-ae .ap-ae__scene[data-reveal="open"] {
+    filter: none;
+    opacity: 1;
+    transition:
+      filter 1.6s ease-out var(--rv-delay, 0s),
+      opacity 1.6s ease-out var(--rv-delay, 0s);
   }
 
   /* ---- /shop/bookmarks: FLIP, 1s. The card waits on its back (the shared
@@ -93,8 +145,21 @@
    and the magnets' hover lift. `scripting: enabled` keeps the no-JS page
    still, as it was. The stagger is the item's place in its list. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  .ap-ae :is(.ap-ae__scene, .ap-ae__rail > li > :first-child, .ap-ae__orn img) {
+  .ap-ae .ap-ae__orn img {
     animation: rv-iris 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-ae .ap-ae__rail > li > .ap-flip .ap-flip__in {
+    animation: rv-flip 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-ae [data-kind="sc"] .ap-ae__rail > li > :first-child {
+    transform-origin: 50% 0;
+    animation: rv-unfurl 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-ae [data-kind="ru"] .ap-ae__rail > li > :first-child {
+    animation: rv-roll 1.2s cubic-bezier(0.77, 0, 0.175, 1) var(--rv-load, 0s) backwards;
+  }
+  .ap-ae .ap-ae__scene {
+    animation: rv-develop 1.6s ease-out var(--rv-load, 0s) backwards;
   }
   .ap-bm .ap-bm__all > li > .ap-flip .ap-flip__in {
     animation: rv-flip 1s cubic-bezier(0.23, 1, 0.32, 1) var(--rv-load, 0s) backwards;
@@ -142,6 +207,20 @@
   from { transform: rotateY(180deg); }
   to { transform: rotateY(0deg); }
 }
+/* each `to` is spelled out: clip-path does not interpolate to `none`, and
+   would jump half way */
+@keyframes rv-unfurl {
+  from { clip-path: inset(0 0 100% 0); transform: skewY(5deg); }
+  to { clip-path: inset(-40px); transform: none; }
+}
+@keyframes rv-roll {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(-40px); }
+}
+@keyframes rv-develop {
+  from { filter: sepia(1) brightness(1.5) contrast(0.6); opacity: 0.35; }
+  to { filter: none; opacity: 1; }
+}
 @keyframes rv-curtain {
   from { clip-path: inset(100% -48px -48px -48px); }
   to { clip-path: inset(-48px); }
@@ -160,6 +239,7 @@
     clip-path: none !important;
     opacity: 1 !important;
     transform: none !important;
+    filter: none !important;
   }
   [data-reveal] .ap-flip__in {
     transform: none !important;

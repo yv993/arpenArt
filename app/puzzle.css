@@ -52,6 +52,11 @@
    past them is a trap. A sideways drag moves a piece from the first touch. */
 .ap-pz[data-place="section"] {
   right: 16vw;
+  /* the picture strip lies over the bar (cloud.css .ap-cloud__strip, 76–129px
+     up): the room ends 4px over it, so no piece rests under it. Kept as slim
+     as a 32×45 picture allows: every pixel of height here is board on a
+     short laptop (measured at 1366×625: a 64px strip cost the board 20%) */
+  bottom: 133px;
   touch-action: pan-y pinch-zoom;
 }
 .ap-pz[data-place="section"] .ap-pz__piece {
@@ -233,7 +238,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 20px;
+  /* 14px, not 20: the picture strip stacks over it (cloud.css) */
+  bottom: 14px;
   z-index: 1101;
   width: max-content;
   max-width: calc(100% - 32px);
@@ -321,6 +327,75 @@
 }
 .ap-pz__btn:active {
   transform: scale(0.97);
+}
+/* THE NEXT PICTURE (2026-11-20): a finished game's three more, one press each */
+.ap-pz__next {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ap-pz__next-l {
+  margin-right: 4px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--cream) 78%, transparent);
+}
+/* no taller than the bar's 44px buttons, so the pill keeps its height */
+.ap-pz__nx {
+  flex: none;
+  display: block;
+  width: 31px;
+  height: 44px;
+  padding: 0;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.16s ease-out;
+}
+.ap-pz__nx:hover {
+  border-color: var(--cream);
+}
+.ap-pz__nx:active {
+  transform: scale(0.97);
+}
+.ap-pz__nx img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* in the window the three lie OVER the room, just above the bar — where the
+   pieces' tray was, empty now that every piece is in. As a row of the bar
+   they took height from the room at the moment of finishing, and the
+   finished picture shrank 6% under the visitor's eyes (measured, 1440×900) */
+.ap-pz__bar[data-mode="sheet"] .ap-pz__next[data-at="under"] {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(100% + 12px);
+  justify-content: center;
+}
+/* held sideways or a short window: a column in the lane beside the board
+   (Puzzle.tsx places it); its words stay in the group's name */
+.ap-pz__bar[data-mode="sheet"] .ap-pz__next[data-at="side"] {
+  position: absolute;
+  flex-direction: column;
+  gap: 8px;
+}
+.ap-pz__bar[data-mode="sheet"] .ap-pz__next[data-at="side"] .ap-pz__next-l {
+  display: none;
+}
+/* no room for either: a row of the bar after all */
+.ap-pz__bar[data-mode="sheet"] .ap-pz__next[data-at="bar"] {
+  flex-basis: 100%;
+}
+.ap-pz__bar[data-mode="sheet"] .ap-pz__nx {
+  width: 44px;
+  height: 62px;
 }
 
 /* ---- the window form ------------------------------------------------------ */

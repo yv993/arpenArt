@@ -1141,6 +1141,14 @@ export const home = {
       piece: "Piece {k} of {total}",
       inPlace: "Piece {k}, in place",
       complete: "Complete — all {total} pieces in place, in {time}.",
+      // THE PICTURE STRIP and THE NEXT PICTURE (Vardan's picks, 2026-11-20 —
+      // interface words, the site's voice): every picture is one press from
+      // its puzzle, and a finished one offers the next three
+      choose: "Choose a picture",
+      pick: "Play No. {n}",
+      earlier: "Earlier pictures",
+      later: "More pictures",
+      next: "Next picture",
     },
   },
   // The sphere turned from the 57 illustrations to the SHOP (client

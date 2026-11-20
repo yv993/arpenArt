@@ -20,6 +20,13 @@ const XS = new Set([
 /** the -sm files that are not 420px wide, read off the files with sharp */
 const SM_W: Record<string, number> = { "23": 299, "25": 299, "34": 298 };
 
+/** the 240px -xs file for a -sm thumb, or the thumb itself when it has none
+ *  (the puzzle's picture strip: 40–56px tiles, ~110 device px at most) */
+export function artXs(thumb: string): string {
+  const m = /^\/art\/art-(\d+)-sm\.webp$/.exec(thumb);
+  return m && XS.has(m[1]) ? `/art/art-${m[1]}-xs.webp` : thumb;
+}
+
 /** `srcSet` offering the 240px -xs beside the -sm thumb, or undefined when
  *  this thumb has no -xs (the caller then keeps its plain `src`) */
 export function artThumbSet(thumb: string): string | undefined {

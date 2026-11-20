@@ -5,7 +5,9 @@ import { useEffect, type RefObject } from "react";
 // ============================================================================
 // THE ENTRANCES — every picture of a page appears once, as it comes into view
 // (Vardan's picks, 2026-11-17, from eleven shown to him as live demos):
-//   /armenia-eternal   iris      a circle opens from the picture's centre
+//   /armenia-eternal   a look per group (picked 2026-11-20): postcards turned
+//                      over, scarves unfurl, runners rolled out, photographs
+//                      develop; the bird ornaments keep the 2026-11-17 iris
 //   /shop/bookmarks    flip      the card arrives on its back and turns over
 //   /shop/posters      curtain   the print is uncovered from the bottom up
 //   /shop/stickers     dropped   the sheet falls in, turned, and settles

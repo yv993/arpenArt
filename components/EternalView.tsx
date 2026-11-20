@@ -48,14 +48,21 @@ import PhotoLightbox from "./PhotoLightbox";
 // the title, so the plain layer, phones and reduced motion read a page that
 // simply stands.
 //
-// THE IRIS (Vardan's pick, 2026-11-17, from eleven shown to him). Every
-// picture below the title — the cards, the scarves, the runners, her two
-// photographs, the closing bird — opens through a circle from its centre the
-// first time it comes into view, one after another along a row — phones too,
-// as a rail's card swipes in. The rules (full motion only, nothing on screen
-// is hidden, the attribute goes once open) are the shop's shared ones:
-// lib/reveal.ts; the look is app/reveal.css. The A6 card beside the title is
-// not irised: it is the page's largest paint (LCP).
+// THE ENTRANCES. Every picture below the title appears the first time it
+// comes into view, one after another along a row — phones too, as a rail's
+// card swipes in. Each group has its own look (Vardan's picks, 2026-11-20,
+// from live demos; until then all of them opened through the 2026-11-17
+// circle, which the bird ornaments keep):
+//   postcards (square, A6)   TURNED OVER  each arrives on its own printed back
+//                                         and turns to its front
+//   scarves                  UNFURL       falls open from the top, like silk
+//   table runners            ROLLED OUT   unrolls from the top down
+//   her two photographs      DEVELOP      pale and warm first, then full colour
+// The rules (full motion only, nothing on screen is hidden, the attribute
+// goes once open) are the shop's shared ones: lib/reveal.ts; the looks are
+// app/reveal.css. Each look is its own hook call, so the clean-up waits for
+// that look's own length. The A6 card beside the title is not part of this:
+// it is the page's largest paint on phones (LCP) and has THE SPREAD.
 //
 // THE SPREAD (Vardan's pick, 2026-11-20). The two cards beside the title open
 // as one card that parts in two, both moving — transform only, so neither
@@ -73,9 +80,12 @@ const SPREAD_WAIT_MAX = 6000;
  *  even where the box (at most 400px) is taller than a landscape phone */
 const SPREAD_SEEN = 0.4;
 
-/** what opens through the iris: each piece's picture (the flip card or the
- *  button that opens it), her two photographs, the bird ornaments */
-const IRIS = ".ap-ae__scene, .ap-ae__rail > li > :first-child, .ap-ae__orn img";
+/** each look's pictures (app/reveal.css has the looks, keyed the same way) */
+const TURNED = ".ap-ae__rail > li > .ap-flip";
+const UNFURL = '.ap-ae__group[data-kind="sc"] .ap-ae__rail > li > :first-child';
+const ROLLED = '.ap-ae__group[data-kind="ru"] .ap-ae__rail > li > :first-child';
+const DEVELOP = ".ap-ae__scene";
+const IRIS = ".ap-ae__orn img";
 
 export type EternalFace = { src: string; thumb: string; w: number; h: number; thumbW?: number; avg: string };
 export type EternalPiece = EternalFace & {
@@ -162,7 +172,11 @@ export default function EternalView({
     return () => mm.revert();
   }, []);
 
-  // ---- every picture opens through the iris as it comes into view ------------
+  // ---- every picture appears as it comes into view, each group its own way ---
+  useReveal(root, TURNED, { duration: 1 });
+  useReveal(root, UNFURL, { duration: 1 });
+  useReveal(root, ROLLED, { duration: 1.2 });
+  useReveal(root, DEVELOP, { duration: 1.6 });
   useReveal(root, IRIS, { duration: 1 });
 
   // ---- the hero's two cards part when there is something to see --------------

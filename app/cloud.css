@@ -343,6 +343,50 @@
   .ap-cloud__teaser .ap-cloud__play {
     margin-top: 4px;
   }
+  /* …or any other picture: a swipe row under Play (PicStrip "row"), from
+     edge to edge, its first picture on the gutter */
+  .ap-cloud__choose {
+    margin: 14px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--cream) 78%, transparent);
+  }
+  .ap-picks--row {
+    justify-self: stretch;
+    margin-inline: calc(-1 * var(--gutter));
+  }
+  .ap-picks--row .ap-picks__list {
+    flex: 1 1 auto;
+    padding: 4px var(--gutter);
+    scroll-padding-inline: var(--gutter);
+    scroll-snap-type: x mandatory;
+  }
+  .ap-picks--row .ap-picks__pic {
+    width: 56px;
+    height: 79px;
+    scroll-snap-align: start;
+  }
+  /* a finger swipes; ‹ › are for a pointer (a reduced-motion desktop) */
+  @media (hover: none), (pointer: coarse) {
+    .ap-picks--row .ap-picks__nav {
+      display: none;
+    }
+  }
+  /* edge to edge only where the page has no side rail: on a wide plain
+     layer (a reduced-motion desktop) the fixed section rail stands at the
+     left edge, and its slider took the right of ‹ (review, 2026-11-20) */
+  @media (min-width: 861px) {
+    /* …and its left edge where the puzzle room's is (puzzle.css: the rail's
+       0.4 gutter + 52px), clear of the rail at every width */
+    .ap-picks--row {
+      margin-inline: max(0px, calc(var(--gutter) * 0.4 + 52px - var(--gutter))) 0;
+    }
+    .ap-picks--row .ap-picks__list {
+      padding-inline: 4px;
+      scroll-padding-inline: 4px;
+    }
+  }
   .ap-cloud__note:empty {
     display: none;
   }
@@ -837,7 +881,7 @@
   .ap-cloud__stand-room {
     position: absolute;
     top: var(--nav-h, 84px);
-    bottom: 92px;
+    bottom: 133px;
     left: calc(var(--gutter) * 0.4 + 52px);
     right: 16vw;
   }
@@ -883,7 +927,8 @@
   .ap-cloud__stand-bar .ap-cloud__note {
     position: absolute;
     left: 50%;
-    bottom: calc(100% + 12px);
+    /* over the picture strip, which lies just over this pill */
+    bottom: calc(100% + 70px);
     width: max-content;
     max-width: min(46ch, 90vw);
     transform: translateX(-50%);
@@ -898,6 +943,52 @@
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
+  }
+  /* THE PICTURE STRIP (Vardan's pick, 2026-11-20 — PicStrip): a pill of
+     every picture just over the game's bar (14–72px up), under its room
+     (puzzle.css ends the room at 133px). Its words, ‹, the pictures, ›.
+     53px tall: 32×45 pictures in a 3px gutter — the slimmest strip whose
+     pictures still read, as its height is taken from the board. */
+  .ap-cloud__strip {
+    position: absolute;
+    z-index: 1101;
+    bottom: 76px;
+    left: calc(var(--gutter) * 0.4 + 52px);
+    right: 16vw;
+    width: max-content;
+    max-width: calc(84vw - var(--gutter) * 0.4 - 52px);
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px 0 16px;
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
+    background: color-mix(in srgb, var(--ink-solid) 78%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .ap-cloud__strip-l {
+    margin: 0 4px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--cream) 78%, transparent);
+  }
+  .ap-picks--bar .ap-picks__list {
+    max-width: min(560px, calc(84vw - var(--gutter) * 0.4 - 52px - 250px));
+    padding: 3px;
+    gap: 5px;
+  }
+  .ap-picks--bar .ap-picks__pic {
+    width: 32px;
+    height: 45px;
+  }
+  .ap-picks--bar .ap-picks__nav {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 
   /* .ap-dark only fixes focus rings — every dark band sets its own type
@@ -1225,4 +1316,102 @@
    step brighter, instead of the page's muted ink. Both layers. */
 .ap-cloud__buy .ap-btn[data-sold] {
   --sold-ink: color-mix(in srgb, var(--cream) 76%, transparent);
+}
+
+/* ---- THE PICTURE STRIP (components/PicStrip.tsx, 2026-11-20) --------------
+   Both forms share this: ‹, a row of her pictures that scrolls sideways, ›.
+   The moved layer's pill and the plain layer's swipe row size it above. */
+.ap-picks {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.ap-picks__list {
+  /* the offset parent of its pictures: PicStrip reads li.offsetLeft as a
+     place on THIS list's scroll (centring, and ← → Home End) */
+  position: relative;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  /* room for the ring of the picture being played and the focus ring */
+  padding: 4px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.ap-picks__list::-webkit-scrollbar {
+  display: none;
+}
+.ap-picks__list > li {
+  flex: none;
+}
+.ap-picks__pic {
+  display: block;
+  width: 40px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  scroll-snap-align: center;
+  opacity: 0.82;
+  transition:
+    opacity 0.2s ease,
+    transform 0.16s ease-out;
+}
+.ap-picks__pic:hover {
+  opacity: 1;
+}
+.ap-picks__pic:active {
+  transform: scale(0.97);
+}
+.ap-picks__pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* not asked for yet (PicStrip `load`): the tile's own colour stands in */
+.ap-picks__pic img:not([src]) {
+  display: none;
+}
+/* the picture being played: whole, ringed in cream */
+.ap-picks__pic[aria-current="true"] {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--cream);
+}
+.ap-picks__pic:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+.ap-picks__nav {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--cream) 34%, transparent);
+  background: none;
+  color: var(--cream);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.ap-picks__nav:hover {
+  background: color-mix(in srgb, var(--cream) 12%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-picks__pic {
+    transition: none;
+  }
 }

@@ -14,6 +14,8 @@ import { RIDGE } from "@/lib/ridge";
 import teaser from "@/lib/puzzle-teaser.json";
 import type { PuzzleCopy, PuzzleSaved } from "./Puzzle";
 import MapBoundary from "./MapBoundary";
+import PicStrip from "./PicStrip";
+import { artXs } from "@/lib/thumbs";
 import { lastKeys, scriptFocus, seedPointer } from "@/lib/modality";
 
 // THE PUZZLE COMES WHEN IT IS ASKED FOR: its code is not in the home page's
@@ -229,11 +231,37 @@ export default function Cloud({
   const [playing, setPlaying] = useState(false);
   const playingRef = useRef(false);
   playingRef.current = playing;
-  /** what `playing` opens: the chosen card's puzzle (its panel's Play), or
-   *  No. 05 from the still (phones, reduced motion) */
-  const [playFrom, setPlayFrom] = useState<"panel" | "teaser">("panel");
+  /** what `playing` opens: the chosen card's puzzle (its panel's Play), No.
+   *  05 from the still (phones, reduced motion), or a picture picked from the
+   *  strip or offered as the next one (`pickId`) */
+  const [playFrom, setPlayFrom] = useState<"panel" | "teaser" | "pick">("panel");
   const playFromRef = useRef(playFrom);
   playFromRef.current = playFrom;
+  // THE PICTURE STRIP (Vardan's pick, 2026-11-20 — PicStrip): every picture
+  // is one press from its puzzle. On the moved layer a pick swaps the game
+  // played in place (`inId`); on the plain layer it opens that picture's
+  // window (`pickId`). A finished game offers the next three either way.
+  /** the picture the section plays in place (moved layer) */
+  const [inId, setInId] = useState<string>(IN_PLACE);
+  const inIdRef = useRef(inId);
+  inIdRef.current = inId;
+  /** the picture a strip press or a «Next picture» opened in the window */
+  const [pickId, setPickId] = useState<string | null>(null);
+  const pickIdRef = useRef(pickId);
+  pickIdRef.current = pickId;
+  /** the strip button that opened the window — where focus goes back to */
+  const pickOpener = useRef<HTMLButtonElement | null>(null);
+  /** the picture a «Next picture» moved a panel's or the still's game on to
+   *  (null: the one it opened on). Kept apart from `playFrom`, which stays
+   *  where the game was OPENED — the way back and a layer change go by that
+   *  (review, 2026-11-20: as "pick", Back from a panel game moved on lost
+   *  its focus, and a layer round trip closed it) */
+  const [playNext, setPlayNext] = useState<string | null>(null);
+  const playNextRef = useRef(playNext);
+  playNextRef.current = playNext;
+  /** said once a strip press has swapped the game in place (focus stays on
+   *  the strip, so nothing else would say it) */
+  const [pickSaid, setPickSaid] = useState("");
   const puzzleMemory = useRef<Record<string, PuzzleSaved | undefined>>({});
   const playBtn = useRef<HTMLButtonElement | null>(null);
   /** the still's «Play the puzzle» — where focus comes back to from its window */
@@ -258,6 +286,8 @@ export default function Cloud({
   /** the in-place puzzle's file failed (a deploy since the page opened, or
    *  no connection): the still and «Play the puzzle» stand in */
   const [inFailed, setInFailed] = useState(false);
+  const inFailedRef = useRef(inFailed);
+  inFailedRef.current = inFailed;
   /** a new mount of the in-place puzzle (its retry) */
   const [inKey, setInKey] = useState(0);
   /** when the still's Play was pressed to retry it (0: never) */
@@ -303,7 +333,7 @@ export default function Cloud({
    *  that should have brought it) a press on «Play the puzzle» only put the
    *  same still back — no line, no reload. Now the existing failure line is
    *  said under the Play that was pressed: which one, by where it was. */
-  const [failNote, setFailNote] = useState<null | "panel" | "teaser" | "inplace">(null);
+  const [failNote, setFailNote] = useState<null | "panel" | "teaser" | "pick" | "inplace">(null);
   useEffect(() => {
     setOffline(false);
     setFailNote(null);
@@ -317,6 +347,7 @@ export default function Cloud({
     playAt.current = performance.now();
     setOffline(false);
     setFailNote(null);
+    setPlayNext(null);
     setPlayFrom("panel");
     // the desktop room is the frame: bring the whole of it on screen first,
     // or the board can open half under the fold
@@ -333,8 +364,28 @@ export default function Cloud({
     playAt.current = performance.now();
     setOffline(false);
     setFailNote(null);
+    setPlayNext(null);
     setPlayFrom("teaser");
     setPlaying(true);
+  }, []);
+  /** a strip press on the plain layer: that picture's window (the moved
+   *  layer swaps the game in place instead — pickInPlace) */
+  const pickSheet = useCallback((id: string, from?: HTMLButtonElement) => {
+    playAt.current = performance.now();
+    setOffline(false);
+    setFailNote(null);
+    if (from) pickOpener.current = from;
+    setPlayNext(null);
+    setPickId(id);
+    setPlayFrom("pick");
+    setPlaying(true);
+  }, []);
+  /** «Next picture» in a game a press opened: a strip game moves the strip
+   *  on with it; a panel's or the still's keeps where it was opened from */
+  const nextInWindow = useCallback((id: string) => {
+    playAt.current = performance.now();
+    if (playFromRef.current === "pick") setPickId(id);
+    else setPlayNext(id);
   }, []);
   /** the visitor closed the puzzle themselves (Back, ✕, Escape) — see the way back */
   const exitByHand = useRef(false);
@@ -380,10 +431,19 @@ export default function Cloud({
       if (Date.now() - last <= 60_000) return false;
       sessionStorage.setItem(`${REOPEN}:at`, String(Date.now()));
       // what the reload reopens: the chosen card's puzzle, No. 05 from the
-      // still, or nothing (the in-place puzzle comes back by itself)
-      const from = playingRef.current ? playFromRef.current : "inplace";
-      sessionStorage.setItem(REOPEN, from === "panel" ? (chosenRef.current ?? "") : from === "teaser" ? IN_PLACE : "");
+      // still, a strip's picture, or nothing (the in-place puzzle comes back
+      // by itself) — the picture a «Next picture» moved a game on to wins
+      const opened = playingRef.current ? playFromRef.current : "inplace";
+      const moved = playingRef.current ? playNextRef.current : null;
+      const from = moved && opened === "teaser" ? "pick" : opened;
+      sessionStorage.setItem(
+        REOPEN,
+        moved ?? (from === "panel" ? (chosenRef.current ?? "") : from === "teaser" ? IN_PLACE : from === "pick" ? (pickIdRef.current ?? "") : ""),
+      );
       sessionStorage.setItem(`${REOPEN}:from`, from);
+      // the picture played in place, when the strip picked one (review: a
+      // reload after a strip press dropped it for No. 05)
+      sessionStorage.setItem(`${REOPEN}:in`, inIdRef.current);
       // the page the note is for: only a reload of THIS address may use it
       sessionStorage.setItem(`${REOPEN}:href`, location.href.split("#")[0]);
       // how Play was pressed, so the reopened page treats focus the same
@@ -402,7 +462,7 @@ export default function Cloud({
    *  picture (or the still) back; `from` is the Play that was pressed,
    *  under which a press that came to nothing says so (`failNote`). */
   const chunkFailed = useCallback(
-    (err: unknown, at: number, waiting: () => boolean, giveUp: () => void, from: "panel" | "teaser" | "inplace") => {
+    (err: unknown, at: number, waiting: () => boolean, giveUp: () => void, from: "panel" | "teaser" | "pick" | "inplace") => {
       const stale =
         err instanceof Error &&
         (err.name === "ChunkLoadError" ||
@@ -473,8 +533,12 @@ export default function Cloud({
       ),
     [chunkFailed],
   );
-  /** the in-place game failed: the still and «Play the puzzle» stand in */
+  /** the in-place game failed: the still and «Play the puzzle» stand in.
+   *  The still is No. 05's and its Play asks for No. 05, so a picture the
+   *  strip had picked goes back to it — the still, its Play and the strip's
+   *  ring agree (review, 2026-11-20) */
   const inplaceDown = useCallback(() => {
+    setInId(IN_PLACE);
     setInFailed(true);
     setInReady(false);
   }, []);
@@ -539,14 +603,16 @@ export default function Cloud({
     let ok = false;
     let by: string | null = null;
     let from: string | null = null;
+    let inWas: string | null = null;
     try {
       id = sessionStorage.getItem(REOPEN);
       if (id === null) return; // an ordinary visit: nothing was set
       by = sessionStorage.getItem(`${REOPEN}:by`);
       from = sessionStorage.getItem(`${REOPEN}:from`);
+      inWas = sessionStorage.getItem(`${REOPEN}:in`);
       const href = sessionStorage.getItem(`${REOPEN}:href`);
       // `:at` stays: it is the loop guard
-      for (const k of [REOPEN, `${REOPEN}:by`, `${REOPEN}:href`, `${REOPEN}:from`]) sessionStorage.removeItem(k);
+      for (const k of [REOPEN, `${REOPEN}:by`, `${REOPEN}:href`, `${REOPEN}:from`, `${REOPEN}:in`]) sessionStorage.removeItem(k);
       const at = Number(sessionStorage.getItem(`${REOPEN}:at`) || 0);
       const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
       ok =
@@ -598,6 +664,8 @@ export default function Cloud({
         const isPlain = !window.matchMedia(DESKTOP).matches;
         setPlain(isPlain);
         if (inplace) {
+          // the picture the strip had put in place comes back with it
+          if (inWas && items.some((a) => a.id === inWas)) setInId(inWas);
           if (!isPlain) setInFocus(true);
           // the game coming back is the visitor's press carried through the
           // reload: if its file is still gone, the line under Play says so
@@ -609,6 +677,14 @@ export default function Cloud({
           // No. 05 from the still: its window again (on the moved layer the
           // section is that puzzle already, in place)
           if (isPlain) startTeaser();
+          return;
+        }
+        // a picture picked from the strip (or offered as the next one): its
+        // window again on the plain layer; on the moved layer it was a
+        // window opened from the series, so its card is brought out (below)
+        if (from === "pick" && want && isPlain) {
+          reopened.current = true;
+          pickSheet(want);
           return;
         }
         reopen.current = want;
@@ -656,8 +732,23 @@ export default function Cloud({
       exitByHand.current = false;
       requestAnimationFrame(() => {
         const a = document.activeElement;
-        // back to the button that opened it: the panel's Play, or the still's
-        const b = playFromRef.current === "teaser" ? teaserBtn.current : playBtn.current;
+        // back to the button that opened it: the panel's Play, the still's,
+        // or — for a picked picture — that picture on the strip (the window
+        // may have moved on through «Next picture» since: the strip follows)
+        // Only a button that is drawn counts (review: one in a hidden layer
+        // took the focus and dropped it). `playFrom` is where the game was
+        // OPENED: a panel game moved on by «Next picture» goes back to its
+        // panel's Play.
+        const from = playFromRef.current;
+        const drawn = (el: HTMLButtonElement | null | undefined) => (el && el.isConnected && el.getClientRects().length > 0 ? el : null);
+        const b =
+          from === "teaser"
+            ? teaserBtn.current
+            : from === "pick"
+              ? (drawn(root.current?.querySelector<HTMLButtonElement>(`.ap-picks--row [data-id="${pickIdRef.current}"]`)) ??
+                drawn(pickOpener.current) ??
+                teaserBtn.current)
+              : playBtn.current;
         if (!b || !(!a || a === document.body || root.current?.contains(a))) return;
         const r = b.getBoundingClientRect();
         const off = r.top < 0 || r.bottom > window.innerHeight;
@@ -1362,6 +1453,52 @@ export default function Cloud({
     setInFailed(false);
     setInKey((k) => k + 1);
   }, []);
+  /** a strip press on the moved layer: the game played in place becomes that
+   *  picture's (Puzzle remounts; the strip keeps the visitor's focus, so ← →
+   *  can go on choosing). A failed game is asked for again, with this one. */
+  // A STRIP PRESS IS A PRESS (review, 2026-11-20): it is timed like the
+  // still's Play, so a game that will not come takes the guarded reload (a
+  // deploy since the page opened) or says why under the stand-in's bar —
+  // as 0 («nobody pressed») it came to nothing silently
+  const pickInPlace = useCallback(
+    (id: string) => {
+      if (id === inIdRef.current && !inFailedRef.current) return;
+      inPressAt.current = performance.now();
+      setOffline(false);
+      setFailNote(null);
+      setInFocus(false);
+      setInFailed(false);
+      setInId(id);
+      setPickSaid(`${puzzle.title} — No. ${id}`);
+    },
+    [puzzle.title],
+  );
+  /** a finished in-place game's «Next picture»: its button goes with the old
+   *  game, so the new game takes focus (its first loose piece) */
+  const nextInPlace = useCallback(
+    (id: string) => {
+      pickInPlace(id);
+      setInFocus(true);
+    },
+    [pickInPlace],
+  );
+  /** the three pictures after this one, in the series' order */
+  const nextOf = useCallback(
+    (id: string) => {
+      const i = items.findIndex((a) => a.id === id);
+      if (i < 0 || items.length < 2) return [];
+      const out: { id: string; src: string; label: string }[] = [];
+      for (let d = 1; d <= Math.min(3, items.length - 1); d++) {
+        const a = items[(i + d) % items.length];
+        out.push({ id: a.id, src: artXs(a.thumb), label: `No. ${a.id}` });
+      }
+      return out;
+    },
+    [items],
+  );
+  const stripPics = useMemo(() => items.map((a) => ({ id: a.id, thumb: a.thumb, avg: a.avg })), [items]);
+  const stripLabel = useId();
+  const rowLabel = useId();
   // A PRESS THAT FAILS AGAIN KEEPS ITS FOCUS (review, change 5): the still
   // is a new element each time it comes back, so a second failure — inside
   // the reload guard, or after the reload itself (the file still gone) —
@@ -1383,20 +1520,31 @@ export default function Cloud({
   // spent: a resize back to the moved layer later mounts the in-place game
   // again, and nobody pressed anything then (review, change 5)
   useEffect(() => {
-    if (!plain && playFromRef.current === "teaser") setPlaying(false);
+    // …a window the plain layer's row opened too — its picture carried into
+    // the game played in place, which the moved layer's strip then shows
+    // (a panel's game, even one moved on by «Next picture», stays open)
+    const from = playFromRef.current;
+    if (!plain && (from === "teaser" || from === "pick")) {
+      const carry = from === "pick" ? pickIdRef.current : playNextRef.current;
+      if (playingRef.current && carry && items.some((a) => a.id === carry)) setInId(carry);
+      setPlaying(false);
+    }
     if (plain) setInFocus(false);
-  }, [plain]);
+  }, [plain, items]);
   /** the title's box: no piece rests on it (Puzzle `avoid`) */
   const titleBox = useCallback(() => [root.current?.querySelector(".ap-cloud__say .ap-h2") ?? null], []);
   /** the in-place bar names the series as its way on */
   const inCopy = useMemo(() => ({ ...puzzle, back: puzzle.series }), [puzzle]);
-  const inArt = items.find((a) => a.id === IN_PLACE);
+  /** No. 05: the section's own puzzle, whose still stands in for the game */
+  const homeArt = items.find((a) => a.id === IN_PLACE);
+  /** the picture played in place now — No. 05 until the strip picks another */
+  const inArt = items.find((a) => a.id === inId) ?? homeArt;
   const railId = useId();
 
   // ---- the still where the game will be (review, change 5) ---------------
   /** the moved layer's puzzle scene, with no game shown yet (or a failed
    *  one): the still holds the board's place */
-  const standShown = !plain && !series && !playing && !!inArt && !!puzzles[IN_PLACE] && (inFailed || inReady !== true);
+  const standShown = !plain && !series && !playing && !!homeArt && !!puzzles[IN_PLACE] && (inFailed || inReady !== true);
   // THE BOARD'S PLACE IS THE GAME'S OWN LAYOUT: the stand's room box is the
   // game's room box (cloud.css, the same insets as puzzle.css), the no-go
   // box is the title's + 16 px (Puzzle `avoid`), and lib/puzzleLayout.ts is
@@ -1575,8 +1723,27 @@ export default function Cloud({
             {puzzle.cta}
           </button>
           <p className="ap-cloud__note" role="status">
-            {playFrom === "teaser" ? (offline ? OFFLINE_NOTE : failNote === "teaser" ? puzzle.failed : "") : ""}
+            {playFrom === "teaser" || playFrom === "pick" ? (offline ? OFFLINE_NOTE : failNote === "teaser" || failNote === "pick" ? puzzle.failed : "") : ""}
           </p>
+          {/* …or any other picture, one press from its window (PicStrip) */}
+          {puzzle.choose && puzzle.pick && (
+            <>
+              <p className="ap-cloud__choose" id={rowLabel}>
+                {puzzle.choose}
+              </p>
+              <PicStrip
+                variant="row"
+                load={near}
+                pics={stripPics}
+                current={pickId ?? IN_PLACE}
+                onPick={pickSheet}
+                labelId={rowLabel}
+                pickLabel={puzzle.pick}
+                prevLabel={puzzle.earlier ?? ""}
+                nextLabel={puzzle.later ?? ""}
+              />
+            </>
+          )}
         </div>
         {/* …and the series one press away: the rail, as a disclosure */}
         <button type="button" className="ap-cloud__more" aria-expanded={series} aria-controls={railId} onClick={toggleSeries}>
@@ -1597,7 +1764,8 @@ export default function Cloud({
             className="ap-cloud__play ap-cloud__back"
             ref={backBtn}
             onClick={backToPuzzle}
-            aria-label={`${puzzle.cta} — No. ${IN_PLACE}`}
+            // the picture it goes back to: the one the strip put in place
+            aria-label={`${puzzle.cta} — No. ${inArt?.id ?? IN_PLACE}`}
           >
             <PieceIcon />
             {puzzle.cta}
@@ -1868,10 +2036,14 @@ export default function Cloud({
             a second failure then takes the guarded reload. His piece
             pictures failing twice (offline, or gone) leave the same still
             (`onFail`), and its press asks for them again. */}
+        {/* …AND ANY OTHER PICTURE THE STRIP PICKS (2026-11-20): a new key
+            per picture, so the game is that picture's from its first frame;
+            each game is kept in `puzzleMemory` (No. 05's for the tab too),
+            so going back to a picture finds its pieces where they were. */}
         {!plain && !series && !playing && near && inArt && puzzles[IN_PLACE] && !inFailed && (
-          <MapBoundary key={`in-${inKey}`} onError={inplaceFailed}>
+          <MapBoundary key={`in-${inKey}-${inArt.id}`} onError={inplaceFailed}>
             <Puzzle
-              set={puzzles[IN_PLACE]}
+              set={puzzles[inArt.id]}
               art={{ id: inArt.id, src: inArt.lg ?? inArt.src, w: inArt.lgW ?? inArt.w, h: inArt.lgH ?? inArt.h }}
               mode="inline"
               placement="section"
@@ -1880,15 +2052,42 @@ export default function Cloud({
               escapeExits={false}
               avoid={titleBox}
               roving
-              persist={PERSIST}
-              label={`No. ${IN_PLACE}`}
+              persist={inArt.id === IN_PLACE ? PERSIST : undefined}
+              label={`No. ${inArt.id}`}
               copy={inCopy}
               memory={puzzleMemory}
               onExit={showSeries}
               onFail={inplacePicturesFailed}
               onReady={inplaceReady}
+              next={nextOf(inArt.id)}
+              onNext={nextInPlace}
             />
           </MapBoundary>
+        )}
+        {/* THE PICTURE STRIP (moved layer): in the puzzle scene, over the
+            game's bar and under its room (puzzle.css leaves it the room's
+            bottom band); one element for every game, so its focus stays */}
+        {/* what a strip press did, said (focus stays on the strip) */}
+        <p className="ap-sr" role="status">
+          {!plain && !series && !playing ? pickSaid : ""}
+        </p>
+        {!plain && !series && !playing && homeArt && puzzles[IN_PLACE] && puzzle.choose && puzzle.pick && (
+          <div className="ap-cloud__strip">
+            <p className="ap-cloud__strip-l" id={stripLabel}>
+              {puzzle.choose}
+            </p>
+            <PicStrip
+              variant="bar"
+              load={near}
+              pics={stripPics}
+              current={inArt?.id ?? IN_PLACE}
+              onPick={pickInPlace}
+              labelId={stripLabel}
+              pickLabel={puzzle.pick}
+              prevLabel={puzzle.earlier ?? ""}
+              nextLabel={puzzle.later ?? ""}
+            />
+          </div>
         )}
         {/* THE STILL WHERE THE GAME WILL BE (review, change 5): until the
             game's pieces are shown — before window load, while its file and
@@ -1962,13 +2161,14 @@ export default function Cloud({
             lies over the page, not the rail); or No. 05 from the still */}
         {playing &&
           (() => {
-            const id = playFrom === "teaser" ? IN_PLACE : chosen;
+            const id = playNext ?? (playFrom === "teaser" ? IN_PLACE : playFrom === "pick" ? pickId : chosen);
             const a = id ? items.find((x) => x.id === id) : undefined;
             if (!id || !a) return null;
             return (
               <MapBoundary onError={puzzleFailed}>
                 <Puzzle
-                  key={plain ? "sheet" : "inline"}
+                  // a new game for each picture («Next picture» swaps it)
+                  key={`${plain ? "sheet" : "inline"}-${id}`}
                   set={puzzles[id]}
                   // the picture the open card already shows — so its file is
                   // already in the cache when a cut puzzle draws from it
@@ -1980,6 +2180,8 @@ export default function Cloud({
                   // No. 05 is ONE game wherever it is played
                   persist={id === IN_PLACE ? PERSIST : undefined}
                   onExit={stopPuzzle}
+                  next={nextOf(id)}
+                  onNext={nextInWindow}
                 />
               </MapBoundary>
             );

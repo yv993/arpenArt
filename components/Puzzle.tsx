@@ -77,6 +77,13 @@ export type PuzzleCopy = {
   keysWalk: string;
   /** in place: the bar's way on to the cloud of the whole series */
   series: string;
+  /** the picture strip (Cloud, PicStrip): its name, each picture's, its ‹ › */
+  choose?: string;
+  pick?: string;
+  earlier?: string;
+  later?: string;
+  /** a finished game's way on: «Next picture», with three of them */
+  next?: string;
 };
 
 export type PuzzleSaved = {
@@ -212,6 +219,8 @@ export default function Puzzle({
   persist,
   onFail,
   onReady,
+  next,
+  onNext,
 }: {
   /** his pieces (No. 05); without them the picture is cut here */
   set?: PuzzleSet;
@@ -254,6 +263,10 @@ export default function Puzzle({
   /** in place: the pieces are shown — the caller's still (and its bar,
    *  which stands in for this one until then) can go */
   onReady?: () => void;
+  /** THE NEXT PICTURE (Vardan's pick, 2026-11-20): a finished game offers
+   *  these in its bar — one press plays that one (the caller swaps the game) */
+  next?: { id: string; src: string; label: string }[];
+  onNext?: (id: string) => void;
 }) {
   // ONE SET FOR THE LIFE OF THE GAME: his pieces when the picture has them,
   // else this picture cut with his knob (lib/puzzleCut.ts, deterministic).
@@ -1723,6 +1736,21 @@ export default function Puzzle({
   // it comes from the same cache (no ?v= — that would be a second download)
   const v = set.v ? `?v=${set.v}` : "";
   const board = L ? { left: L.bx, top: L.by, width: L.cw * set.cols, height: L.ch * set.rows } : undefined;
+  // WHERE THE NEXT PICTURES LIE IN THE WINDOW (review, 2026-11-20): over the
+  // room, never in the bar's flow (that took height from the room and the
+  // finished picture shrank) — under the board when the band there holds
+  // them (a phone held upright), else in a column beside it (held sideways,
+  // a short window: the band under the board is too thin and they covered
+  // the picture), else in the bar after all
+  const nextAt: "under" | "side" | "bar" =
+    mode !== "sheet" || !L || !board ? "bar" : L.H - (board.top + board.height) >= 86 ? "under" : L.W - (board.left + board.width) >= 64 ? "side" : "bar";
+  // the bar starts where the room ends (the window's column: head, room,
+  // bar), so a place in the room is `top − room height` from the bar's top;
+  // the column (3 × 62px + gaps) stays whole inside the room
+  const nextSide =
+    nextAt === "side" && L && board
+      ? { left: board.left + board.width + (L.W - board.left - board.width - 44) / 2, top: Math.max(8, Math.min(board.top, L.H - 210)) - L.H }
+      : undefined;
 
   const room = (
     <>
@@ -1866,6 +1894,27 @@ export default function Puzzle({
               <p className="ap-pz__msg">{fill(copy.done, { time })}</p>
             ) : (
               !count && <p className="ap-pz__msg is-hint">{copy.hint}</p>
+            )}
+            {/* THE NEXT PICTURE: three more, one press each (the caller
+                swaps the game and the new one takes focus) */}
+            {done && onNext && next && next.length > 0 && copy.next && (
+              <div
+                className="ap-pz__next"
+                role="group"
+                aria-label={copy.next}
+                data-at={mode === "sheet" ? nextAt : undefined}
+                style={nextSide ? { left: nextSide.left, top: nextSide.top } : undefined}
+              >
+                <span className="ap-pz__next-l" aria-hidden="true">
+                  {copy.next}
+                </span>
+                {next.map((n) => (
+                  <button key={n.id} type="button" className="ap-pz__nx" aria-label={`${copy.next}: ${n.label}`} onClick={() => onNext(n.id)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a 240px file for a small tile */}
+                    <img src={n.src} alt="" width={240} height={339} loading="lazy" decoding="async" draggable={false} />
+                  </button>
+                ))}
+              </div>
             )}
             {/* the keyboard's way, in sight while a piece has keyboard focus
                 (puzzle.css shows it on :focus-visible) — not only in the
